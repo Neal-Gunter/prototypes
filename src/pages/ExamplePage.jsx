@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { containerClass } from "../container";
 import ServoDemo from "../components/ServoDemo";
 import TentacleFigure from "../components/TentacleFigure";
@@ -59,6 +59,13 @@ export default function ExamplePage() {
         <h1 className="mt-3 text-4xl font-medium tracking-tight sm:text-5xl">八触手机器人</h1>
         <p className="mt-4 max-w-2xl text-lg leading-8 text-ink-soft">
           ESP32‑S3 驱动舵机，舵机改变八条触手的姿态。按想法、仿真、装配点开看。仿真里的两块面板是占位。
+        </p>
+        <p className="mt-3 max-w-2xl leading-7 text-ink-soft">
+          这页仍是概念占位。可交互的简化原型在{" "}
+          <Link to="/workbench" className="underline decoration-copper decoration-2 underline-offset-4">
+            工作台
+          </Link>
+          。
         </p>
       </header>
 

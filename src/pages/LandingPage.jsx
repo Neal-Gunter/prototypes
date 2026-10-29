@@ -115,10 +115,16 @@ export default function LandingPage() {
               <Link to="/example" className={primaryLinkClass()}>
                 看示例
               </Link>
+              <Link to="/workbench" data-testid="open-workbench" className={secondaryLinkClass()}>
+                打开工作台
+              </Link>
               <a href="#waitlist" className={secondaryLinkClass()}>
                 留下邮箱
               </a>
             </div>
+            <p className="mt-4 max-w-xl text-sm leading-6 text-ink-soft">
+              工作台是单独的一页，早期原型，里面是简化仿真。这一页和示例页仍然是概念演示。
+            </p>
           </div>
           <aside className="border border-ink bg-paper-2" aria-label="概念说明">
             <p className="border-b border-ink px-4 py-2 text-sm font-medium">概念说明</p>
