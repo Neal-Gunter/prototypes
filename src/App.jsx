@@ -4,6 +4,8 @@ import Layout from "./components/Layout";
 import LandingPage from "./pages/LandingPage";
 import ExamplePage from "./pages/ExamplePage";
 const WorkbenchPage = lazy(() => import("./pages/WorkbenchPage"));
+const AssemblyPage = lazy(() => import("./pages/AssemblyPage"));
+const PartsPage = lazy(() => import("./pages/PartsPage"));
 import NotFoundPage from "./pages/NotFoundPage";
 import CreditsPage from "./pages/CreditsPage";
 
@@ -19,6 +21,22 @@ export default function App() {
             element={
               <Suspense fallback={<p className="p-8 text-ink-soft">正在加载工作台…</p>}>
                 <WorkbenchPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/assembly"
+            element={
+              <Suspense fallback={<p className="p-8 text-ink-soft">正在加载装配台…</p>}>
+                <AssemblyPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/parts"
+            element={
+              <Suspense fallback={<p className="p-8 text-ink-soft">正在加载零件库…</p>}>
+                <PartsPage />
               </Suspense>
             }
           />

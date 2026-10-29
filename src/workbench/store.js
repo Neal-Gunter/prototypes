@@ -378,7 +378,7 @@ export const useBench = create((set, get) => ({
       T: sim.padT[pin] ?? AMBIENT,
       vol: j.vol || 0,
       flux: !!j.flux,
-      fluxLeft: j.flux ? 3.0 : 0,
+      fluxLeft: j.flux ? 6.0 : 0, // 事先点的助焊剂量多，能撑更久
       preFlux: !!j.flux, // 事先点了助焊剂：润湿更快、更不容易桥连、更耐久热
       dryTime: 0,
       damage: j.damage || 0,
@@ -427,7 +427,7 @@ export const useBench = create((set, get) => ({
         o.vol += FEED_RATE * dt;
         o.fedHot += dt;
         o.flux = true; // 焊锡丝里有松香芯，但量很少：停止送锡后很快就烧完
-        o.fluxLeft = Math.max(o.fluxLeft, 0.8);
+        o.fluxLeft = Math.max(o.fluxLeft, 0.5);
       } else {
         o.fedCold += dt;
         o.vol += FEED_RATE * 0.3 * dt; // 锡只在烙铁头上化开，滴到冷焊盘上成了一坨
@@ -437,7 +437,7 @@ export const useBench = create((set, get) => ({
         }
       }
     }
-    if (o.T >= WET_T && o.flux && o.vol > 0.1) o.hotTime += dt * (o.preFlux ? 1.6 : 1);
+    if (o.T >= WET_T && o.flux && o.vol > 0.1) o.hotTime += dt * (o.preFlux ? 2.5 : 1);
     // 助焊剂烧完还继续加热：锡面氧化、发灰起皱
     if (o.T >= WET_T && !o.flux && o.vol > 0.1) {
       o.dryTime += dt;
@@ -562,7 +562,7 @@ export const useBench = create((set, get) => ({
     }
     if (o.insulated) {
       j.state = "cold";
-    } else if (j.vol > GOOD_VOL[1] * (o.preFlux ? 1.3 : 1) && nbs.length) {
+    } else if (j.vol > GOOD_VOL[1] * (o.preFlux ? 1.6 : 1) && nbs.length) {
       clearBridge();
       const nb = nbs[0];
       j.state = "bridge";
@@ -572,10 +572,10 @@ export const useBench = create((set, get) => ({
       get().penalize("bridge");
     } else {
       clearBridge();
-      const coldOk = o.preFlux ? 0.6 : 0.35; // 有助焊剂时，少量“冷送锡”也能被重新润湿
-      const wet = o.hotTime >= 0.35 && o.dryTime < 1.0 && o.fedCold <= coldOk * (o.fedHot + o.fedCold + 1e-6);
+      const coldOk = o.preFlux ? 0.8 : 0.25; // 有助焊剂时，少量“冷送锡”也能被重新润湿
+      const wet = o.hotTime >= (o.preFlux ? 0.35 : 0.5) && o.dryTime < (o.preFlux ? 1.6 : 1.0) && o.fedCold <= coldOk * (o.fedHot + o.fedCold + 1e-6);
       j.state = wet && j.vol >= GOOD_VOL[0] ? "good" : "cold";
-      o.oxidized = o.dryTime >= 1.0;
+      o.oxidized = o.dryTime >= (o.preFlux ? 1.6 : 1.0);
     }
     joints[o.pin] = j;
     finish();
