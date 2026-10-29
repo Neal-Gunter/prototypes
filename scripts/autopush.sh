@@ -10,7 +10,7 @@ case "$BRANCH" in
 esac
 if [ -z "${GITHUB_TOKEN:-}" ]; then echo "缺少 GITHUB_TOKEN 环境变量，未推送。" >&2; exit 1; fi
 MSG="${1:-}"
-git add -A -- . ':!node_modules' ':!dist' ':!*.env' ':!.env*' ':!*.pem' ':!*.key'
+git add -A
 # 防止误提交：暂存区里出现 node_modules 或疑似密钥文件就中止
 if git diff --cached --name-only | grep -E '(^|/)node_modules/|(^|/)\.env|\.pem$|\.key$|id_rsa' >/dev/null; then
   echo "暂存区里有 node_modules 或疑似密钥文件，已中止。" >&2; git reset -q; exit 1
