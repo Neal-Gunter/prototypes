@@ -33,24 +33,68 @@ npm run preview
 - Waitlist: email plus an optional free-text answer, held in page state only; nothing is sent or stored
 
 
-## Workbench (`/workbench`) — early prototype, simplified simulation
+## Workbench (`/workbench`): early prototype, simplified simulation (v3)
 
-The page shows the label 早期原型，简化仿真 / Early prototype, simplified simulation. Everything below is simplified.
+The page shows the label 早期原型，简化仿真 and a list of what is simplified. The assets and their licences are listed on `/credits` and in `LICENSES.md`.
 
-Flow (guided mode on top of the page): 放置零件 → 连线 → 焊接 → 烧录代码 → 看它动.
+There are two modes:
 
-What works:
+- **自由搭建（引导）**: place the parts, cut the wires, strip them, solder, screw the servo down, plug in USB, flash, then watch it move.
+- **维修任务：机器人不动**: a pre-built robot has 3 hidden faults:
+  - a cold joint on servo VCC;
+  - the signal wire is on GPIO6 but the code says `attach(5)`;
+  - there is no common ground.
+  Find them with the magnifier and the multimeter, fix them, mount the servo and flash. The checklist gives a score with penalties for burnt pads, bridges, nicked wire, undo and fixing a fault before finding it.
 
-- **Assemble**: 3D bench (three.js / react-three-fiber). Procedural, simplified models: ESP32‑S3 dev board with 20 labeled pins (pin layout is *not* the real board), up to 3 MG90S‑like servos, 4×AA battery box. Drag a part from the tray onto the base plate (or click to drop it at a suggested spot). Parts snap to a 0.5 grid, can be moved, rotated 90° and removed.
-- **Wire and solder**: wire tool = click pin → pin (Dupont wire drawn as a curve; double‑click or the list to delete). Iron tool = press and hold on a joint: 0.5 s heating, then keep holding until 1.3 s total. Releasing early gives a cold joint (虚焊) that must be redone. Joints can also be soldered from the joint list (keyboard accessible).
-- **Check panel** (`src/workbench/circuit.js`, rule based, no voltages/currents): short circuits, two supplies tied together, power on a signal pin, servo signal on a non‑PWM pin (EN, GPIO43/44 UART0, GPIO0 strapping), reversed VCC/GND, missing common ground, unsoldered and cold joints, 3V3 too low for a servo, 5V/USB powering servos (warning).
-- **Firmware**: in‑page editor with a mini Arduino dialect (`Servo.attach/write/read`, `delay`, `millis`, `Serial.begin/print/println`, `pinMode/digitalWrite/digitalRead`, `map/constrain/min/max/abs/sin/cos/random`, `int/float/bool/String`, arrays, functions, `if/for/while`). Hand‑written tokenizer + parser + generator interpreter running in a Web Worker (`src/workbench/firmware/`), no `eval` / `new Function`. Serial monitor and pin table. A servo only moves when its circuit passes the check; otherwise the serial log shows a `[仿真]` note why.
-- **Robot**: 8‑tentacle body; tentacle *n* follows servo *n* through a spring‑damper chain (`src/workbench/physics/simpleSpring.js`).
+### Real and procedural
 
-What is stubbed / not real:
+- **Real CAD**: Feather ESP32-S3, the micro servo and the 4×AA holder. These are Adafruit STEP files (MIT), converted to GLB.
+- **CC0 from Poly Haven**: the HDRI and the wood desk textures.
+- **Procedural**: all the tools, the wires, the solder joints and the mat.
 
-- No ESP32‑S3 emulation, no compiler; the interpreter only knows the subset above.
-- No electrical simulation; each pin is one joint; solder quality = hold time.
-- **MuJoCo WASM seam**: `src/workbench/physics/index.js` documents the `PhysicsBackend` interface (`step(dt, drives)`, `getPose()`, `dispose()`). `createPhysicsBackend("mujoco")` loads `mujocoAdapter.js`, which is a documented stub that throws until a MuJoCo WASM build and an MJCF model are added.
+### Tools (keys 1–9)
 
-Automated walkthrough (Playwright, headless Chrome): `e2e/walk.mjs` — needs `npm run build && npm run preview -- --port 4173` running; it places parts, mis‑wires (signal on GPIO43, no common ground), fixes, makes a cold joint, re‑solders, flashes code with a typo, fixes it, and checks the servo angle changes. Screenshots are written to `OUT` in the script.
+You can pick a tool from the toolbar, the tray, or by clicking it on the desk. The tools are:
+
+- magnifier: inspect a joint;
+- wire stripper: 22/24/26 AWG holes, where only 24 strips cleanly;
+- wire;
+- flux pen;
+- iron: hold the mouse on the pad, watch the pad temperature, hold Space to feed solder;
+- solder wick;
+- solder pump;
+- multimeter: continuity with a beep, or DC volts;
+- screwdriver: hold to drive the M2 screws.
+
+The workbench also has:
+
+- undo/redo with Ctrl+Z and Ctrl+Y;
+- camera presets;
+- an iron temperature setting from 200 to 450 °C.
+
+### How it is simplified
+
+- **Soldering**: pad temperature uses a first-order heating/cooling model. Solder wets above 217 °C and wets well at 237 °C or more. Joint quality depends on:
+  - flux;
+  - solder volume;
+  - heat time;
+  - whether the wire was stripped.
+- **Faults**: too much solder makes a bridge, too long at high temperature burns the pad, and an unstripped wire makes smoke and a cold joint.
+- **Multimeter**: readings come from net connectivity, not circuit solving. The voltages are fixed: battery 6.00 V, USB 5.00 V, 3V 3.30 V.
+- **Firmware**: a small Arduino-style interpreter runs in a Web Worker. It is not an ESP32-S3 emulator. The flash progress is cosmetic. The serial plotter shows the command and the servo angle.
+
+### Walkthrough
+
+Run these commands:
+
+```bash
+npm run build
+npx vite preview --port 4173 &
+CHROME=/usr/bin/google-chrome OUT=./e2e-shots node e2e/walk.mjs
+```
+
+- **Build mode**: place the parts, wire, try 22 AWG (it fails), strip at 24 AWG, show a tap with no feed, solder 7 joints, screw the servo, plug USB, flash, check that the servo angle changes.
+- **Repair mode**: inspect, find the faults with the meter, reflow VCC, wick GPIO6 and move the wire to GPIO5, add a ground wire, screw, flash, and wait for the "done" state.
+- Set `ONLY_REPAIR=1` to run repair mode only.
+
+The script uses `window.__wb` test hooks only to find where things are on the screen and to read state. All actions are real mouse and keyboard input.
