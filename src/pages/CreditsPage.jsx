@@ -38,6 +38,20 @@ const ROWS = [
     url: "https://polyhaven.com/a/wood_table_001",
     lic: "CC0 1.0（公共领域）",
   },
+  {
+    what: "零件库：开发板、传感器、显示屏、电机、连接器等 450 个（/parts、/assembly）",
+    file: "public/lib/*/ada-*.glb、public/lib/thumbs/ada-*.webp",
+    from: "Adafruit CAD Parts（STEP），转换为 GLB、减面、meshopt 压缩；缩略图由这些 GLB 渲染",
+    url: "https://github.com/adafruit/Adafruit_CAD_Parts",
+    lic: "MIT License · Copyright (c) 2016 Adafruit Industries",
+  },
+  {
+    what: "零件库：排针、JST 座、USB 座、LED、电阻、按键等封装 114 个（/parts、/assembly）",
+    file: "public/lib/*/kc-*.glb、public/lib/thumbs/kc-*.webp",
+    from: "KiCad packages3D（KiCad Libraries Team 及贡献者），转换为 GLB、减面；缩略图由这些 GLB 渲染",
+    url: "https://gitlab.com/kicad/libraries/kicad-packages3D",
+    lic: "CC BY-SA 4.0（附 KiCad 例外条款）；改编后的 GLB 同样以 CC BY-SA 4.0 发布",
+  },
 ];
 
 const PROCEDURAL = [
@@ -45,6 +59,7 @@ const PROCEDURAL = [
   "焊点形状（好焊点、虚焊、桥连、烧坏）、导线、绝缘皮、铜丝：代码生成",
   "开发板丝印 / 焊盘贴图、硅胶垫图案、烟雾贴图、文字标签：用 Canvas 在浏览器里画",
   "八触手机器人：代码生成",
+  "装配台的螺丝、螺母、铜柱（M2 / M2.5 / M3）、底板、杜邦线、触手、工具：src/assembly/procedural.js 代码生成，尺寸参照 ISO/DIN 公称值，未核实的标“估算”（CC0）",
 ];
 
 export default function CreditsPage() {
@@ -91,7 +106,7 @@ export default function CreditsPage() {
       </ul>
       <h2 className="mt-8 text-xl font-medium">代码库</h2>
       <p className="mt-2 leading-7 text-ink-soft">
-        React、three.js、@react-three/fiber、@react-three/drei、zustand、Tailwind CSS（均为 MIT 许可）。模型转换脚本用 occt-import-js（LGPL‑2.1，只在开发时运行，不打包进网页）、glTF‑Transform 和 meshoptimizer（MIT）。
+        React、three.js、@dimforge/rapier3d-compat（Apache-2.0，物理碰撞）、@react-three/fiber、@react-three/drei、zustand、Tailwind CSS（除注明外均为 MIT 许可）。模型转换脚本用 occt-import-js（LGPL‑2.1，只在开发时运行，不打包进网页）、glTF‑Transform 和 meshoptimizer（MIT）。
       </p>
       <Link to="/workbench" className="mt-8 inline-flex min-h-11 items-center border border-ink px-4 hover:bg-ink hover:text-paper-2">
         回到工作台

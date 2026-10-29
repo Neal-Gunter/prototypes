@@ -11,7 +11,7 @@ function navClass({ isActive }) {
 }
 
 // 这些页面是能交互的早期原型（不是纯概念图）
-const PROTO_PATHS = ["/workbench", "/assembly", "/parts", "/credits"];
+const PROTO_PATHS = ["/workbench", "/assembly", "/parts", "/electrics", "/credits"];
 
 export default function Layout() {
   const { pathname } = useLocation();
@@ -69,6 +69,9 @@ export default function Layout() {
                 </NavLink>
                 <NavLink to="/parts" className={navClass}>
                   零件库
+                </NavLink>
+                <NavLink to="/electrics" className={navClass}>
+                  电路实验
                 </NavLink>
                 <NavLink to="/credits" className={navClass}>
                   素材与许可
