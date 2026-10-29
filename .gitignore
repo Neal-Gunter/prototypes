@@ -4,3 +4,4 @@ dist
 *.local
 .vite
 e2e-shots/
+.tmp/
