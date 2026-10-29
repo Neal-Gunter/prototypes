@@ -61,6 +61,9 @@ export default function Layout() {
                 <NavLink to="/workbench" className={navClass}>
                   工作台
                 </NavLink>
+                <NavLink to="/credits" className={navClass}>
+                  素材与许可
+                </NavLink>
               </nav>
             </div>
           </header>

@@ -43,7 +43,7 @@ function Robot() {
     for (const id of servoIds) {
       const k = Number(id.replace("servo", "")) - 1;
       const a = sim.servoAngle[id];
-      if (a != null) drives[k] = THREE.MathUtils.degToRad(a - 90) * 0.6;
+      if (a != null) drives[k] = THREE.MathUtils.degToRad(a - 90) * 0.6 * (sim.servoDrive[id] ?? 1);
     }
     backend.step(dt, drives);
     const { bend } = backend.getPose();

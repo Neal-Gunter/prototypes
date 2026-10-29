@@ -1,9 +1,10 @@
 import { useEffect, useRef } from "react";
 import { DEFAULT_CODE, useBench } from "../store";
+import { sim } from "../sim";
 
 const STATUS = {
   idle: "未烧录",
-  compiling: "编译中…",
+  flashing: "烧录中…",
   running: "运行中",
   error: "出错",
   stopped: "已停止",
@@ -93,7 +94,7 @@ export function PinTable({ analysis }) {
             </tr>
           )}
           {entries.map(([pin, s]) => {
-            const servo = Object.entries(analysis.servoStatus).find(([id]) => analysis.netOf(`${id}.SIG`).some((p) => p.name === `GPIO${pin}`));
+            const servo = Object.entries(analysis.servoStatus).find(([id]) => analysis.topoNetOf(`${id}.SIG`).some((p) => p.gpio === Number(pin)));
             return (
               <tr key={pin}>
                 <td className="border-b border-line py-1">GPIO{pin}</td>
@@ -122,7 +123,8 @@ export function FirmwareControls() {
   const status = useBench((s) => s.fw.status);
   const error = useBench((s) => s.fw.error);
   const st = useBench.getState;
-  const running = status === "running" || status === "compiling";
+  const running = status === "running" || status === "flashing";
+  const flash = useBench((s) => s.fw.flash);
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
@@ -143,6 +145,17 @@ export function FirmwareControls() {
           状态：<span className={status === "running" ? "text-mask" : status === "error" ? "text-mark" : ""}>{STATUS[status]}</span>
         </span>
       </div>
+      {flash && (
+        <div data-testid="flash-progress" className="text-xs">
+          <div className="flex justify-between">
+            <span>{flash.stage}…</span>
+            <span className="tabular-nums">{Math.round(flash.pct)}%</span>
+          </div>
+          <div className="mt-1 h-2 bg-line">
+            <div className="h-2 bg-copper transition-[width]" style={{ width: `${flash.pct}%` }} />
+          </div>
+        </div>
+      )}
       {error && (
         <p role="alert" className="border-l-2 border-mark pl-2 text-xs text-mark">
           {error}
@@ -152,6 +165,71 @@ export function FirmwareControls() {
         简化：代码在网页里的 JS 解释器（Web Worker）中运行，只支持一小部分 Arduino 写法：Servo 的 attach / write / read、delay、millis、
         Serial.print / println、pinMode / digitalWrite、if / for / while、int / float 变量和数组、自定义函数。不是真实的 ESP32‑S3 仿真，也不会编译成机器码。
       </p>
+    </div>
+  );
+}
+
+// 串口绘图仪：舵机实际角度 vs 代码里的指令角度
+const COLORS = ["#e88a1a", "#6cc3ff", "#9be38a", "#ff6b8b", "#d6c36a", "#c48cff"];
+export function SerialPlotter() {
+  const ref = useRef();
+  const status = useBench((s) => s.fw.status);
+  useEffect(() => {
+    let raf;
+    const draw = () => {
+      raf = requestAnimationFrame(draw);
+      const c = ref.current;
+      if (!c) return;
+      const w = (c.width = c.clientWidth * 2);
+      const h = (c.height = c.clientHeight * 2);
+      const g = c.getContext("2d");
+      g.fillStyle = "#14120f";
+      g.fillRect(0, 0, w, h);
+      g.strokeStyle = "#2e2a24";
+      g.lineWidth = 1;
+      g.font = "18px monospace";
+      g.fillStyle = "#7d7366";
+      for (const v of [0, 45, 90, 135, 180]) {
+        const y = h - 10 - (v / 180) * (h - 20);
+        g.beginPath();
+        g.moveTo(40, y);
+        g.lineTo(w, y);
+        g.stroke();
+        g.fillText(`${v}°`, 2, y + 6);
+      }
+      const data = sim.plot;
+      if (data.length < 2) return;
+      const t1 = data[data.length - 1].t;
+      const t0 = t1 - 8;
+      sim.plotNames.forEach((name, k) => {
+        g.strokeStyle = COLORS[k % COLORS.length];
+        g.lineWidth = name.includes("指令") ? 2 : 3;
+        g.setLineDash(name.includes("指令") ? [8, 6] : []);
+        g.beginPath();
+        let first = true;
+        for (const d of data) {
+          if (d.t < t0 || d.values[name] == null) continue;
+          const x = 40 + ((d.t - t0) / 8) * (w - 44);
+          const y = h - 10 - (d.values[name] / 180) * (h - 20);
+          if (first) g.moveTo(x, y);
+          else g.lineTo(x, y);
+          first = false;
+        }
+        g.stroke();
+      });
+      g.setLineDash([]);
+      sim.plotNames.forEach((name, k) => {
+        g.fillStyle = COLORS[k % COLORS.length];
+        g.fillText(name, 50 + k * 190, 22);
+      });
+    };
+    draw();
+    return () => cancelAnimationFrame(raf);
+  }, [status]);
+  return (
+    <div>
+      <h3 className="text-xs font-medium text-ink-soft">串口绘图仪（最近 8 秒：实线 = 舵机实际角度，虚线 = 代码指令）</h3>
+      <canvas ref={ref} data-testid="plotter" className="mt-1 h-36 w-full border border-line" />
     </div>
   );
 }
