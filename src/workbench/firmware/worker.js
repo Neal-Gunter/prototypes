@@ -2,14 +2,22 @@
 import { createProgram, FwError } from "./interpreter";
 
 let timer = null;
+const inputs = { d: {}, a: {} };
 
 self.onmessage = (msg) => {
-  const { type, code, speed = 1 } = msg.data;
+  const { type, code, speed = 1, adcBits } = msg.data;
+  if (type === "input") {
+    // 页面算好的输入电平：{kind:'d'|'a', pin, value}
+    inputs[msg.data.kind || "d"][msg.data.pin] = msg.data.value;
+    return;
+  }
   if (type !== "run") return;
   let gen;
   const io = {
     emit: (ev) => self.postMessage(ev),
     now: () => performance.now(),
+    read: (kind, pin) => inputs[kind][pin] ?? null,
+    adcBits,
   };
   try {
     gen = createProgram(code, io).run();

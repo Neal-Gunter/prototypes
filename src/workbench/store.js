@@ -378,7 +378,9 @@ export const useBench = create((set, get) => ({
       T: sim.padT[pin] ?? AMBIENT,
       vol: j.vol || 0,
       flux: !!j.flux,
-      fluxLeft: j.flux ? 2.5 : 0,
+      fluxLeft: j.flux ? 3.0 : 0,
+      preFlux: !!j.flux, // 事先点了助焊剂：润湿更快、更不容易桥连、更耐久热
+      dryTime: 0,
       damage: j.damage || 0,
       hotTime: 0,
       fedHot: 0,
@@ -415,7 +417,8 @@ export const useBench = create((set, get) => ({
     sim.padT[o.pin] = o.T;
     let smoke = 0;
     if (o.flux && o.T > 170) {
-      o.fluxLeft -= dt;
+      // 松香在高温下挥发得更快（简化：300 °C 以上每高 100 °C 快一倍）
+      o.fluxLeft -= dt * (1 + Math.max(0, o.T - 300) / 100);
       smoke = 1;
       if (o.fluxLeft <= 0) o.flux = false;
     }
@@ -423,8 +426,8 @@ export const useBench = create((set, get) => ({
       if (o.T >= MELT) {
         o.vol += FEED_RATE * dt;
         o.fedHot += dt;
-        o.flux = true; // 焊锡丝里有松香芯
-        o.fluxLeft = Math.max(o.fluxLeft, 2.0);
+        o.flux = true; // 焊锡丝里有松香芯，但量很少：停止送锡后很快就烧完
+        o.fluxLeft = Math.max(o.fluxLeft, 0.8);
       } else {
         o.fedCold += dt;
         o.vol += FEED_RATE * 0.3 * dt; // 锡只在烙铁头上化开，滴到冷焊盘上成了一坨
@@ -434,7 +437,15 @@ export const useBench = create((set, get) => ({
         }
       }
     }
-    if (o.T >= WET_T && o.flux && o.vol > 0.1) o.hotTime += dt;
+    if (o.T >= WET_T && o.flux && o.vol > 0.1) o.hotTime += dt * (o.preFlux ? 1.6 : 1);
+    // 助焊剂烧完还继续加热：锡面氧化、发灰起皱
+    if (o.T >= WET_T && !o.flux && o.vol > 0.1) {
+      o.dryTime += dt;
+      if (o.dryTime > 0.6 && !o.warned.dry) {
+        o.warned.dry = true;
+        get().say("助焊剂烧完了，锡面开始氧化发灰：抬起烙铁，或者点一下助焊剂再焊", "warn");
+      }
+    }
     if (o.kind === "wick" && o.T >= MELT) {
       o.vol = Math.max(0, o.vol - 1.1 * dt);
       smoke = Math.max(smoke, 0.6);
@@ -551,7 +562,7 @@ export const useBench = create((set, get) => ({
     }
     if (o.insulated) {
       j.state = "cold";
-    } else if (j.vol > GOOD_VOL[1] && nbs.length) {
+    } else if (j.vol > GOOD_VOL[1] * (o.preFlux ? 1.3 : 1) && nbs.length) {
       clearBridge();
       const nb = nbs[0];
       j.state = "bridge";
@@ -561,8 +572,10 @@ export const useBench = create((set, get) => ({
       get().penalize("bridge");
     } else {
       clearBridge();
-      const wet = o.hotTime >= 0.35 && o.fedCold <= 0.35 * (o.fedHot + o.fedCold + 1e-6);
+      const coldOk = o.preFlux ? 0.6 : 0.35; // 有助焊剂时，少量“冷送锡”也能被重新润湿
+      const wet = o.hotTime >= 0.35 && o.dryTime < 1.0 && o.fedCold <= coldOk * (o.fedHot + o.fedCold + 1e-6);
       j.state = wet && j.vol >= GOOD_VOL[0] ? "good" : "cold";
+      o.oxidized = o.dryTime >= 1.0;
     }
     joints[o.pin] = j;
     finish();
@@ -574,6 +587,8 @@ export const useBench = create((set, get) => ({
       );
     else if (j.state === "bridge") get().say(`锡太多，${name} 和旁边的焊盘粘在一起了（桥连）。用吸锡带吸掉多余的锡`, "error");
     else if (o.insulated) get().say("虚焊：线头没剥皮，锡只裹住了绝缘皮", "error");
+    else if (o.oxidized)
+      get().say(`虚焊：助焊剂烧完后又加热了 ${o.dryTime.toFixed(1)} 秒，锡面氧化发灰（${name}）。点一下助焊剂再重焊`, "error");
     else if (o.fedHot + o.fedCold === 0 && !o.hotTime)
       get().say("没有助焊剂，重熔后锡面氧化发灰：先用助焊剂笔点一下，或者再送一点锡（锡丝里有松香）", "error");
     else if (j.vol < GOOD_VOL[0]) get().say(`锡太少，焊点没盖住焊盘：虚焊（${name}）`, "error");

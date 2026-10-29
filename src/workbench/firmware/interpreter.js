@@ -326,6 +326,9 @@ export function createProgram(src, io) {
   const scopes = [new Map()];
   let ops = 0;
   const startedAt = io.now();
+  const modes = {};
+  // ADC 默认位数：arduino-esp32 默认 12 位，arduino-pico 默认 10 位（由宿主传入）
+  let adcBits = io.adcBits || 12;
 
   const lookup = (name, line) => {
     for (let i = scopes.length - 1; i >= 0; i--) if (scopes[i].has(name)) return scopes[i].get(name);
@@ -588,10 +591,27 @@ export function createProgram(src, io) {
       case "delayMicroseconds": yield { delay: (Number(a[0]) || 0) / 1000 }; return 0;
       case "millis": return Math.floor(io.now() - startedAt);
       case "micros": return Math.floor((io.now() - startedAt) * 1000);
-      case "pinMode": need(e, 2, "pinMode(pin, mode)"); io.emit({ type: "pin", pin: Math.trunc(a[0]), mode: a[1] === 1 ? "OUTPUT" : "INPUT" }); return 0;
-      case "digitalWrite": need(e, 2, "digitalWrite(pin, v)"); io.emit({ type: "pin", pin: Math.trunc(a[0]), value: a[1] ? 1 : 0 }); return 0;
-      case "digitalRead": return 0;
-      case "analogRead": return 0;
+      case "pinMode": {
+        need(e, 2, "pinMode(pin, mode)");
+        const mode = a[1] === 1 ? "OUTPUT" : a[1] === 2 ? "INPUT_PULLUP" : "INPUT";
+        modes[Math.trunc(a[0])] = mode;
+        io.emit({ type: "pin", pin: Math.trunc(a[0]), mode, line: e.line });
+        return 0;
+      }
+      case "digitalWrite": need(e, 2, "digitalWrite(pin, v)"); io.emit({ type: "pin", pin: Math.trunc(a[0]), value: a[1] ? 1 : 0, line: e.line }); return 0;
+      // 输入由页面根据电路算好后发进来（简化：只有高/低和一个 0–1 的模拟量），没有就当悬空
+      case "digitalRead": {
+        need(e, 1, "digitalRead(pin)");
+        const pin = Math.trunc(a[0]);
+        const v = io.read ? io.read("d", pin, modes[pin] || "INPUT") : null;
+        return v == null ? (modes[pin] === "INPUT_PULLUP" ? 1 : 0) : v ? 1 : 0;
+      }
+      case "analogRead": {
+        need(e, 1, "analogRead(pin)");
+        const v = io.read ? io.read("a", Math.trunc(a[0])) : null;
+        return Math.round((v == null ? 0 : Math.min(1, Math.max(0, v))) * ((1 << adcBits) - 1));
+      }
+      case "analogReadResolution": need(e, 1, "analogReadResolution(bits)"); adcBits = Math.min(16, Math.max(1, Math.trunc(a[0]))); return 0;
       case "map": need(e, 5, "map()"); return Math.trunc(((a[0] - a[1]) * (a[4] - a[3])) / (a[2] - a[1]) + a[3]);
       case "constrain": need(e, 3, "constrain()"); return Math.min(Math.max(a[0], a[1]), a[2]);
       case "abs": return Math.abs(a[0]);

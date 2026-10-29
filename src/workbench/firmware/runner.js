@@ -15,3 +15,20 @@ export function stopFirmware() {
     worker = null;
   }
 }
+
+// 多块板子各跑一个 Worker（装配台用）
+export function createFirmware(onEvent) {
+  let w = null;
+  return {
+    start(code, opts = {}) {
+      this.stop();
+      w = new Worker(new URL("./worker.js", import.meta.url), { type: "module" });
+      w.onmessage = (m) => onEvent(m.data);
+      w.onerror = (e) => onEvent({ type: "error", msg: e.message || "Worker 出错", line: null, phase: "run" });
+      w.postMessage({ type: "run", code, adcBits: opts.adcBits });
+    },
+    input(kind, pin, value) { w?.postMessage({ type: "input", kind, pin, value }); },
+    stop() { if (w) { w.terminate(); w = null; } },
+    get running() { return !!w; },
+  };
+}

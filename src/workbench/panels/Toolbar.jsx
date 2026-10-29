@@ -217,7 +217,7 @@ export function SolderHud() {
         <span className="w-14 text-right tabular-nums">{Math.round(o.vol * 100)}%</span>
       </div>
       <div className="mt-1.5 flex justify-between text-ink-soft">
-        <span>助焊剂：{o.flux ? "有（在冒烟）" : "没有"}</span>
+        <span>助焊剂：{o.flux ? `有（还能撑 ${Math.max(0, o.fluxLeft).toFixed(1)} 秒${o.preFlux ? "，事先点过" : "，锡丝松香"}）` : o.dryTime > 0 ? `烧完了，已干烧 ${o.dryTime.toFixed(1)} 秒` : "没有"}</span>
         <span>熔点 {MELT} °C（SAC305）</span>
       </div>
     </div>
