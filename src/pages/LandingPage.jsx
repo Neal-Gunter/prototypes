@@ -108,11 +108,15 @@ export default function LandingPage() {
               一次看完
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-8 text-ink-soft">
+              新增：硬件工作台早期原型，可以在网页里摆放零件的 3D 简化模型、连线、焊接、写固件并看触手动起来（全部是简化仿真）。
               这是一个可点击的概念页面。路径是想法、仿真、装配：先写下想法，再看机械与物理（MuJoCo
               WASM）和 ESP32‑S3 怎样驱动舵机，然后按装配和焊接清单动手。
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link to="/example" className={primaryLinkClass()}>
+              <Link to="/workbench" className={primaryLinkClass()} data-testid="cta-workbench">
+                打开硬件工作台（早期原型）
+              </Link>
+              <Link to="/example" className={secondaryLinkClass()}>
                 看示例
               </Link>
               <a href="#waitlist" className={secondaryLinkClass()}>

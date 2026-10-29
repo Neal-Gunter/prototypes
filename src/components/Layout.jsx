@@ -23,7 +23,13 @@ export default function Layout() {
         跳到内容
       </a>
       <div className="sticky top-0 z-40 bg-ink px-4 py-2 text-center text-sm leading-6 text-paper-2">
-        <p lang="en">Concept mock, not a working product</p>
+        {pathname === "/workbench" ? (
+          <p>
+            早期原型，简化仿真 · <span lang="en">Early prototype, simplified simulation</span>
+          </p>
+        ) : (
+          <p lang="en">Concept mock, not a working product</p>
+        )}
       </div>
       <div className="relative flex flex-1 flex-col">
         <div
@@ -52,6 +58,9 @@ export default function Layout() {
                 <NavLink to="/example" className={navClass}>
                   示例
                 </NavLink>
+                <NavLink to="/workbench" className={navClass}>
+                  工作台
+                </NavLink>
               </nav>
             </div>
           </header>
@@ -62,7 +71,7 @@ export default function Layout() {
             <div className={`${containerClass} py-8 text-sm leading-6 text-ink-soft`}>
               <p>硬件验证 · 概念演示</p>
               <p className="mt-1 max-w-2xl">
-                页面不会加载 MuJoCo，也不会模拟 ESP32‑S3。等候名单里的邮箱和回答都不会发出去，也不会保存。
+                页面不会加载 MuJoCo，也不会模拟 ESP32‑S3：工作台里的固件由 JS 写的迷你解释器运行，物理是简化弹簧模型。等候名单里的邮箱和回答都不会发出去，也不会保存。
               </p>
             </div>
           </footer>
