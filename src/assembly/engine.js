@@ -29,6 +29,8 @@ const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 let uidSeq = 1;
 let bodySeq = 1;
 
+// 桌面、左、右、后、前围栏：从零件指向它们的方向
+const BENCH_N = [{ x: 0, y: -1, z: 0 }, { x: -1, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }, { x: 0, y: 0, z: -1 }, { x: 0, y: 0, z: 1 }];
 class Engine {
   constructor() {
     this.ready = false;
@@ -61,6 +63,7 @@ class Engine {
     const add = (hx, hy, hz, x, y, z) => {
       const c = this.world.createCollider(RAPIER.ColliderDesc.cuboid(hx, hy, hz).setTranslation(x, y, z).setFriction(0.8).setCollisionGroups(GROUPS.bench), fixed);
       this.colOwner.set(c.handle, "bench");
+      (this.benchCols ||= []).push(c);
     };
     add(BENCH.w / 2 + 5, 1, BENCH.d / 2 + 5, 0, -1, 0);
     add(0.5, 15, BENCH.d / 2, -BENCH.w / 2 - 0.5, 15, 0);
@@ -114,7 +117,20 @@ class Engine {
     const uid = opts.uid || `${def.id.replace(/[^a-z0-9]+/gi, "_").slice(0, 24)}#${uidSeq++}`;
     const part = { uid, def, body: null, rel: { p: new THREE.Vector3(), q: new THREE.Quaternion() }, state: { joints: {}, ...(opts.state || {}) }, label: opts.label };
     this.parts.set(uid, part);
+    // 出生点限制在桌面范围内
+    pose = { p: pose.p.clone(), q: pose.q };
+    pose.p.x = Math.max(-BENCH.w / 2 + 2, Math.min(BENCH.w / 2 - 2, pose.p.x));
+    pose.p.z = Math.max(-BENCH.d / 2 + 2, Math.min(BENCH.d / 2 - 2, pose.p.z));
     this.makeBody([uid], new Map([[uid, { p: pose.p.clone(), q: pose.q.clone() }]]), opts.sleep);
+    // 出生点和已有零件重叠就往上挪，直到不重叠（新零件从上方落下，不会一出现就穿模）
+    if (!opts.allowOverlap) {
+      const bid = part.body, bp = this.bodyPose(bid);
+      for (let k = 0; k < 150 && this.overlapAt(bid, bp.p, bp.q, new Set()); k++) bp.p.y += 0.2;
+      this.bodies.get(bid).rb.setTranslation({ x: bp.p.x, y: bp.p.y, z: bp.p.z }, true);
+      this.world.propagateModifiedBodyPositionsToColliders();
+      // 插脚等伸到桌面以下的部分：再往上抬到桌面之上
+      this.depenetrate(bid, 6);
+    }
     this.emit();
     return uid;
   }
@@ -298,7 +314,7 @@ class Engine {
     const bid = this.detach(group);
     const body = this.bodies.get(bid);
     const pose = this.bodyPose(bid);
-    const yaw = yawOf(pose.q);
+    const yaw = Math.round(yawOf(pose.q) / (Math.PI / 2)) * (Math.PI / 2); // 拿起来时摆正到最近的 90°（按 R 再转）
     body.rb.setGravityScale(0, true);
     body.rb.setDominanceGroup(0); // 和别的零件平等：能推开它们，也会被挡住
     body.rb.wakeUp();
@@ -364,8 +380,22 @@ class Engine {
     const err = d.target.clone().sub(grabW);
     const dt = this.world.timestep;
     const v = err.multiplyScalar(0.35 / dt);
-    const vmax = 150;
+    const vmax = 60;
     if (v.length() > vmax) v.setLength(vmax);
+    // 往下放：先沿竖直方向做一次形状扫掠（shape cast），碰到东西就停在接触面上，
+    // 不会一步把零件压进下面的零件、也不会把下面的东西压进桌子
+    if (v.y < 0) {
+      let toi = dt;
+      for (let i = 0; i < body.rb.numColliders(); i++) {
+        const c1 = body.rb.collider(i);
+        const hit = this.world.castShape(c1.translation(), c1.rotation(), { x: 0, y: v.y, z: 0 }, c1.shape, 0.001, dt, false, undefined, undefined, undefined, body.rb, (c) => {
+          const o = this.colOwner.get(c.handle);
+          return o !== "rope" && o !== "tool";
+        });
+        if (hit && hit.time_of_impact < toi) toi = hit.time_of_impact;
+      }
+      v.y *= toi / dt;
+    }
     body.rb.setLinvel({ x: v.x, y: v.y, z: v.z }, true);
     // 保持直立 + 目标朝向
     const qt = yawQ(d.yaw);
@@ -726,7 +756,17 @@ class Engine {
     while (this.acc >= this.world.timestep) {
       this.stepDrag();
       this.stepOps(this.world.timestep);
+      // 休眠刚体被叫醒的那一步，它和桌面（运动学刚体）之间还没有接触，会白白自由落体一步（实测压进桌面 0.4 mm）。
+      // 所以：这一步前睡着、这一步后醒了的刚体，把位置退回到步前、速度清零；下一步接触已经建立了。
+      const asleep = [];
+      for (const [bid, b] of this.bodies) if (b.rb.isSleeping() && this.drag?.bid !== bid) { const t = b.rb.translation(), r = b.rb.rotation(); asleep.push([b.rb, { x: t.x, y: t.y, z: t.z }, { x: r.x, y: r.y, z: r.z, w: r.w }]); }
       this.world.step();
+      for (const [rb, t, r] of asleep) if (!rb.isSleeping() && rb.translation().y < t.y) {
+        rb.setTranslation(t, false); rb.setRotation(r, false);
+        rb.setLinvel({ x: 0, y: 0, z: 0 }, false); rb.setAngvel({ x: 0, y: 0, z: 0 }, false);
+      }
+      if (asleep.length) this.world.propagateModifiedBodyPositionsToColliders();
+      this.dragDepenetrate();
       this.settleStep();
       this.acc -= this.world.timestep;
     }
@@ -734,7 +774,10 @@ class Engine {
     for (const b of this.bodies.values()) {
       const t = b.rb.translation();
       if (t.y < -5) {
-        b.rb.setTranslation({ x: 0, y: 5, z: 0 }, true);
+        // 拉回桌子中间上方，找一个不和别的零件重叠的高度
+        const q = q2t(b.rb.rotation()), p = new THREE.Vector3(0, 5, 0);
+        for (const bid of this.bodies.keys()) if (this.bodies.get(bid) === b) { for (let k = 0; k < 150 && this.overlapAt(bid, p, q, new Set()); k++) p.y += 0.5; break; }
+        b.rb.setTranslation({ x: p.x, y: p.y, z: p.z }, true);
         b.rb.setLinvel({ x: 0, y: 0, z: 0 }, true);
       }
     }
@@ -747,7 +790,8 @@ class Engine {
   settleStep() {
     // 每 4 步把所有刚体都检查一遍（含休眠的），重物压在桌面上的软接触下陷也一起推出来
     this.stepN = (this.stepN || 0) + 1;
-    if (this.stepN % 4 === 0) for (const bid of this.bodies.keys()) if (this.drag?.bid !== bid) this.depenetrate(bid, 2);
+    // 醒着的刚体每步都查（落下、碰撞的瞬间最容易压进去），睡着的每 4 步查一次
+    for (const [bid, b] of this.bodies) if (this.drag?.bid !== bid && (this.stepN % 4 === 0 || !b.rb.isSleeping())) this.depenetrate(bid, 2);
     if (!this.settling?.size) return;
     for (const [bid, t] of this.settling) {
       const left = t - this.world.timestep;
@@ -755,6 +799,52 @@ class Engine {
       else this.settling.set(bid, left);
       if (this.bodies.has(bid)) this.depenetrate(bid);
     }
+  }
+  // 拖拽时：被拖的零件压到的零件，用位置投影推开；推不开（被桌面/别的零件顶住）就把被拖的零件退回来
+  dragDepenetrate() {
+    const d = this.drag;
+    if (!d || !this.bodies.has(d.bid)) return;
+    const dragRb = this.bodies.get(d.bid).rb;
+    const lv = dragRb.linvel();
+    const hv = new THREE.Vector3(lv.x, 0, lv.z);
+    // 链式推开：被拖的零件推开碰到的零件，被推的零件再推开它碰到的（只水平推，往下推会压进桌面）
+    let front = [dragRb];
+    const seen = new Set([dragRb.handle]);
+    for (let depth = 0; depth < 4 && front.length; depth++) {
+      const next = [];
+      for (const rbA of front) {
+        for (let it = 0; it < 2; it++) {
+          const push = new Map();
+          for (let i = 0; i < rbA.numColliders(); i++) {
+            const c1 = rbA.collider(i);
+            this.world.contactPairsWith(c1, (c2) => {
+              const rb = c2.parent();
+              if (!rb || rb.handle === rbA.handle || rb.handle === dragRb.handle || !rb.isDynamic()) return;
+              if (this.colOwner.get(c2.handle) === "rope") return;
+              const sc = c1.contactCollider(c2, 0);
+              if (!sc || sc.distance > -0.002) return;
+              let n = new THREE.Vector3(sc.normal1.x, 0, sc.normal1.z);
+              // 被拖的零件直接碰到的：沿拖动方向推（像手推着走），而不是沿接触法线（法线朝上时会“骑”上去）
+              if (rbA === dragRb && hv.lengthSq() > 1e-4) n = hv.clone();
+              if (n.lengthSq() < 0.04 * (rbA === dragRb ? 0 : 1) || n.lengthSq() < 1e-8) return;
+              n.normalize().multiplyScalar(-sc.distance + 0.001);
+              const cur = push.get(rb);
+              if (!cur || n.lengthSq() > cur.lengthSq()) push.set(rb, n);
+            });
+          }
+          if (!push.size) break;
+          for (const [rb, n] of push) {
+            const t = rb.translation();
+            rb.setTranslation({ x: t.x + n.x, y: t.y, z: t.z + n.z }, true);
+            if (!seen.has(rb.handle)) { seen.add(rb.handle); next.push(rb); }
+          }
+          this.world.propagateModifiedBodyPositionsToColliders();
+        }
+      }
+      front = next;
+    }
+    // 推开之后还压着（被顶住、或从上往下压）：把被拖的零件退回来
+    this.depenetrate(d.bid, 3);
   }
   depenetrate(bid, iters = 6) {
     const body = this.bodies.get(bid);
@@ -764,17 +854,33 @@ class Engine {
       let worst = null;
       for (let i = 0; i < body.rb.numColliders(); i++) {
         const c1 = body.rb.collider(i);
+        if (c1.isSensor() || this.colOwner.get(c1.handle) === undefined) continue;
         this.world.contactPairsWith(c1, (c2) => {
           if (this.colOwner.get(c2.handle) === "rope") return;
           if (c2.parent()?.handle === body.rb.handle) return;
+          const o2 = this.colOwner.get(c2.handle);
+          if (o2 === "bench" || o2 === undefined) return; // 桌面下面单独查
           const sc = c1.contactCollider(c2, 0);
-          if (sc && sc.distance < -0.002 && (!worst || sc.distance < worst.distance)) worst = { distance: sc.distance, n: sc.normal1 };
+          if (sc && sc.distance < -0.002 && (!worst || sc.distance < worst.distance)) worst = { distance: sc.distance, n: sc.normal1, who: "bench" + c2.handle + "/" + c1.handle + (c1.isSensor() ? "S" : "") };
         });
+        // 桌面和围栏直接逐个算距离（刚醒来的刚体，接触对还没建立）
+        for (let k = 0; k < (this.benchCols || []).length; k++) {
+          const c2 = this.benchCols[k];
+          const g1 = c1.collisionGroups(), g2 = c2.collisionGroups();
+          if (!(((g1 >>> 16) & g2 & 0xffff) && ((g2 >>> 16) & g1 & 0xffff))) continue; // 本来就不和桌面碰的碰撞体（如插脚）
+          const sc0 = c1.contactCollider(c2, 0);
+          // 法线不用接触结果给的（实测符号不可靠），按桌面/四面围栏的朝向固定：总是往桌面里、往上推
+          const sc = sc0 && { distance: sc0.distance, normal1: BENCH_N[k] };
+          if (sc && sc.distance < -0.002 && (!worst || sc.distance < worst.distance)) worst = { distance: sc.distance, n: sc.normal1 };
+        }
       }
       if (!worst) break;
       const t = body.rb.translation();
       const d = worst.distance - 0.001;
       body.rb.setTranslation({ x: t.x + worst.n.x * d, y: t.y + worst.n.y * d, z: t.z + worst.n.z * d }, true);
+      // 速度里朝着对方的分量也清掉，不然下一步又压进去（位置推出来、速度还在累积）
+      const v = body.rb.linvel(), vn = v.x * worst.n.x + v.y * worst.n.y + v.z * worst.n.z;
+      if (vn > 0) body.rb.setLinvel({ x: v.x - vn * worst.n.x, y: v.y - vn * worst.n.y, z: v.z - vn * worst.n.z }, true);
       this.world.propagateModifiedBodyPositionsToColliders();
       moved++;
     }

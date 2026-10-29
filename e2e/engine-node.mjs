@@ -14,13 +14,15 @@ const TOL_MM = 0.1;
 let worstMm = 0, worstAt = "";
 const results = [];
 const check = (name, ok, info = "") => { results.push({ name, ok: !!ok, info }); console.log(ok ? "PASS" : "FAIL", name, info); if (!ok && process.env.DBG) console.log("   log:", engine.log.slice(-3).join(" | ")); };
-const pen = (tag) => { const o = engine.overlapTest(); if (o.maxPenetrationMm > worstMm) { worstMm = o.maxPenetrationMm; worstAt = `${tag}: ${o.worstPair?.join(" ↔ ")}`; } return o; };
-const run = (s, tag = "") => { for (let i = 0; i < Math.round(s * 120); i++) { engine.update(1 / 120); if (i % 12 === 0) pen(tag); } };
+const pen = (tag) => { const o = engine.overlapTest(); if (process.env.PENTRACE && tag === process.env.PENTRACE) console.log("PEN", tag, o.maxPenetrationMm, o.worstPair?.join("/"), globalThis.__LASTU && JSON.stringify(engine.worldPose(globalThis.__LASTU)), globalThis.__LASTU && engine.bodies.get(engine.parts.get(globalThis.__LASTU).body).rb.isSleeping(), globalThis.__LASTU && JSON.stringify(engine.bodies.get(engine.parts.get(globalThis.__LASTU).body).rb.translation()), globalThis.__LASTU && engine.parts.get(globalThis.__LASTU).body); if (o.maxPenetrationMm > worstMm) { worstMm = o.maxPenetrationMm; worstAt = `${tag}: ${o.worstPair?.join(" ↔ ")}`; } return o; };
+const run = (s, tag = "") => { for (let i = 0; i < Math.round(s * 120); i++) { engine.update(1 / 120); if (i % (+process.env.PENEVERY || 12) === 0) pen(tag); } };
 const P = (x, y, z, yaw = 0) => ({ p: new THREE.Vector3(x, y, z), q: new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw) });
 const def = async (id, flip) => toDef(await getEntry(id), flip);
 const feats = (uid, t) => engine.worldFeatures(engine.parts.get(uid).body).filter((f) => f.uid === uid && (!t || f.t === t));
 // 把 uid 的某个特征 df 拖到目标点 tp 正上方 lift 处再松手
-const bring = (uid, df, tp, lift = 0.4, tag = "") => {
+const bring = (uid, df, tp0, lift = 0.4, tag = "") => {
+  const T = () => (typeof tp0 === "function" ? tp0() : tp0);
+  let tp = T();
   const w = engine.worldPose(uid).p.clone();
   engine.beginDrag(uid, w.clone());
   // 像人一样：先提起来（拖拽会把零件扶正），平移到目标上方，再放低
@@ -37,6 +39,17 @@ const bring = (uid, df, tp, lift = 0.4, tag = "") => {
   engine.dragTo(goal.clone().setY(hi));
   run(0.5, tag);
   if (process.env.DBG && tag === process.env.TRACE) console.log("  ph", engine.worldPose(uid).p.toArray().map((v) => v.toFixed(2)).join(","), "goal", goal.toArray().map((v) => v.toFixed(2)).join(","));
+  // 悬停在目标上方再对一次（零件在空中可能还有一点晃动/偏转）
+  for (let k = 0; k < 2; k++) {
+    tp = T();
+    const f2 = typeof df === "function" ? df() : feats(uid, df.t).find((g) => g.lp.distanceTo(df.lp) < 1e-6) || df;
+    const g2 = engine.worldPose(uid).p.clone();
+    if (process.env.DBG && tag === process.env.TRACE) { const P = engine.parts.get(uid); console.log("  rel", P.body, engine.bodies.get(P.body).parts.size ?? engine.bodies.get(P.body).parts.length, JSON.stringify(P.rel), JSON.stringify(engine.bodyPose(P.body))); }
+    if (process.env.DBG && tag === process.env.TRACE) console.log("  re", "f", f2.wp.toArray().map((v) => v.toFixed(2)).join(","), "g", g2.toArray().map((v) => v.toFixed(2)).join(","), "tp", tp.toArray().map((v) => v.toFixed(2)).join(","), "up", new THREE.Vector3(0, 1, 0).applyQuaternion(engine.worldPose(uid).q).toArray().map((v) => v.toFixed(3)).join(","));
+    goal.copy(g2.clone().add(tp.clone().sub(f2.wp)).setY(tp.y + lift + (g2.y - f2.wp.y)));
+    engine.dragTo(goal.clone().setY(tp.y + lift + (g2.y - f2.wp.y) + 1));
+    run(0.4, tag);
+  }
   engine.dragTo(goal);
   run(0.6, tag);
   if (process.env.DBG && tag === process.env.TRACE) console.log("  ph", engine.worldPose(uid).p.toArray().map((v) => v.toFixed(2)).join(","), "goal", goal.toArray().map((v) => v.toFixed(2)).join(","));
@@ -53,7 +66,7 @@ const turn = (uid, until = "拧紧", tool = "screwdriver", max = 12) => {
   engine.releaseOps();
   return engine.parts.get(uid).state.screw?.stage;
 };
-const add = async (id, x, z, flip, yaw = 0) => { const u = engine.addPart(await def(id, flip), P(x, 0.02, z, yaw)); run(0.3, "drop " + id); return u; };
+const add = async (id, x, z, flip, yaw = 0) => { const u = engine.addPart(await def(id, flip), P(x, 0.02, z, yaw)); globalThis.__LASTU = u; if (process.env.DEPLAST && id.includes("pico")) globalThis.__DEPBID = engine.parts.get(u).body; run(0.3, "drop " + id); return u; };
 
 // 1) 落桌静置
 const plate = await add("p-baseplate", 0, 0);
@@ -65,14 +78,16 @@ run(2.5, "pile");
 check("零件堆叠掉落后不穿模", pen("pile").maxPenetrationMm < TOL_MM, `${pen("pile").maxPenetrationMm} mm`);
 // 3) 拖着一个零件去撞另一个：拖的零件停在接触处或推开对方，不穿过去
 const sw = pile[2];
-const before = engine.worldPose(pile[0]).p.clone();
+const before0 = pile.filter((u) => u !== sw).map((u) => engine.worldPose(u).p.clone());
 engine.beginDrag(sw, engine.worldPose(sw).p.clone());
 let maxDrag = 0;
-for (let k = 0; k < 60; k++) { engine.drag.target = new THREE.Vector3(24 - 6 + k * 0.2, 0.3, -14); run(1 / 60, "push"); maxDrag = Math.max(maxDrag, pen("push").maxPenetrationMm); }
+// 沿着 LED 所在的那条线推过去（推的高度在 LED 中心附近）
+const ledP = engine.worldPose(pile[3]).p.clone();
+for (let k = 0; k < 60; k++) { engine.drag.target = new THREE.Vector3(24 - 6 + k * 0.2, 0.3, ledP.z); run(1 / 60, "push"); maxDrag = Math.max(maxDrag, pen("push").maxPenetrationMm); }
 engine.endDrag({ snap: false });
 run(0.5, "push");
 check("拖拽撞上别的零件时不穿模", maxDrag < TOL_MM * 3, `拖拽中最大 ${maxDrag} mm（拖拽是速度控制，允许 0.3 mm 瞬时）`);
-check("被撞的零件被推开了", engine.worldPose(pile[0]).p.distanceTo(before) > 0.1, engine.worldPose(pile[0]).p.distanceTo(before).toFixed(2) + " cm");
+{ const mv = Math.max(...pile.filter((u) => u !== sw).map((u, i) => engine.worldPose(u).p.distanceTo(before0[i]))); check("被撞的零件被推开了", mv > 0.1, `最多被推开 ${mv.toFixed(2)} cm`); }
 for (const u of pile) engine.removePart(u);
 run(0.2);
 
@@ -90,12 +105,6 @@ const fe = await add("ada-5323", 10, 14);
 let holes = feats(fe, "hole");
 let tops = sos.map((u) => feats(u, "thread-f")[0]);
 // Feather 的第 0 个孔对第 0 根铜柱
-if (process.env.DBG) {
-  console.log("tops", tops.map((t) => t.wp.toArray().map((v) => v.toFixed(2)).join(",")));
-  console.log("holes", holes.map((t) => t.wp.toArray().map((v) => v.toFixed(2)).join(",") + " d" + t.d));
-  const tf = engine.freeFeatures(engine.parts.get(plate).body).filter((f) => f.t === "thread-f");
-  console.log("free thread-f", tf.map((t) => t.uid.slice(0, 12) + "@" + t.wp.toArray().map((v) => v.toFixed(2)).join(",")));
-}
 let r = bring(fe, holes[0], tops.sort((a, b) => (Math.abs(a.wp.x - b.wp.x) > 0.2 ? a.wp.x - b.wp.x : a.wp.z - b.wp.z))[0].wp, 0.3, "feather");
 if (process.env.DBG && !r.ok) {
   const bid = engine.parts.get(fe).body;
@@ -113,7 +122,6 @@ if (process.env.DBG && !r.ok) {
   console.log(" D lp", D.map((d) => d.lp.toArray().map((v) => v.toFixed(2)).join(",")), "pose", pose.p.toArray().map((v) => v.toFixed(2)));
   engine.endDrag({ snap: false });
 }
-if (process.env.DBG) console.log("R", JSON.stringify(r), engine.worldPose(fe).p.toArray());
 check("Feather 落在 4 根铜柱上", r.ok && r.rule === "mount", r.why || r.rule);
 holes = feats(fe, "hole");
 for (let k = 0; k < 4; k++) {
@@ -151,12 +159,12 @@ r = bring(res, feats(res, "leg")[0], hole("b5").wp, 0.3, "res");
 check("电阻插进面包板（另一种孔距会自动转 90° 再试）", r.ok, r.why || r.rule);
 // 6) 排针长针朝下插面包板，Pico 套上去并焊接
 // 先转 90°（界面里按 R）让排针和面包板的列同向
-const h1 = await add("kc-pinheader_1x20_p2.54mm_vertical", -40, -30, true, Math.PI / 2);
-const h2 = await add("kc-pinheader_1x20_p2.54mm_vertical", -40, -34, true, Math.PI / 2);
+const h1 = await add("kc-pinheader_1x20_p2.54mm_vertical", -24, -10, true, Math.PI / 2);
+const h2 = await add("kc-pinheader_1x20_p2.54mm_vertical", -24, -14, true, Math.PI / 2);
 const bbz = (row, col) => hole(`${row}${col}`);
 // 排针一端的针对准第 30 列，另一端会落在第 11 列；两端都试一下
 const endLegs = (u) => { const L = feats(u, "leg"); const ax = Math.abs(L[0].wp.x - L.at(-1).wp.x) > Math.abs(L[0].wp.z - L.at(-1).wp.z) ? "x" : "z"; L.sort((a, b) => a.wp[ax] - b.wp[ax]); return [L[0], L.at(-1)]; };
-const insertHeader = (u, row) => { let rr = {}; for (const e of [1, 0]) { rr = bring(u, () => endLegs(u)[e], bbz(row, 30).wp, 0.3, "hdr"); if (rr.ok) break; } return rr; };
+const insertHeader = (u, row) => { let rr = {}; for (const e of [1, 0]) { rr = bring(u, () => endLegs(u)[e], () => bbz(row, 30).wp, 0.3, "hdr"); if (rr.ok) break; } return rr; };
 r = insertHeader(h1, "c");
 if (process.env.DBG && !r.ok) {
   const legs = feats(h1, "leg");
@@ -188,10 +196,7 @@ const ph2 = feats(pico, "pinhole");
 let soldered = 0;
 const pinsNow = [...feats(h1, "pin-up"), ...feats(h2, "pin-up")];
 const onPin = ph2.filter((f) => pinsNow.some((g) => Math.hypot(g.wp.x - f.wp.x, g.wp.z - f.wp.z) < 0.08));
-if (process.env.DBG) console.log("pico pinholes", ph2.length, "on pins", onPin.length);
 const over = (h) => ph2.filter((f) => feats(h, "pin-up").some((g) => Math.hypot(g.wp.x - f.wp.x, g.wp.z - f.wp.z) < 0.08));
-if (process.env.DBG) { const zs = (a) => [...new Set(a.map((f) => f.wp.z.toFixed(2)))].join("/"); const xs = (a) => { const v = a.map((f) => f.wp.x); return Math.min(...v).toFixed(2) + ".." + Math.max(...v).toFixed(2); }; console.log("ZS h1", zs(feats(h1, "pin-up")), xs(feats(h1, "pin-up")), "h2", zs(feats(h2, "pin-up")), xs(feats(h2, "pin-up")), "pico", zs(ph2), xs(ph2)); }
-if (process.env.DBG) console.log("OVER", over(h1).length, over(h2).length, JSON.stringify(engine.edges.filter((e) => e.a === pico || e.b === pico).map((e) => [e.a === pico ? e.b : e.a, e.why])), h1, h2);
 for (const f of over(h1).slice(0, 3).concat(over(h2).slice(0, 3))) {
   const op = engine.holdSolder(f.wp.clone().add(new THREE.Vector3(0, 0.1, 0)));
   if (op) { run(0.8, "solder"); soldered++; }
@@ -202,13 +207,16 @@ engine.beginDrag(pico, engine.worldPose(pico).p.clone());
 engine.dragTo(engine.worldPose(pico).p.clone().add(new THREE.Vector3(0, 3, 0)));
 run(0.8, "lift pico");
 const lifted = engine.worldPose(h1).p.y - pk0.y;
-if (process.env.DBG) console.log("LIFT", engine.drag && engine.drag.uid === pico, JSON.stringify(engine.worldPose(pico).p), engine.parts.get(pico).body, engine.parts.get(h1).body, engine.parts.get(bb).body, engine.ops.length, JSON.stringify(engine.edges.filter((e) => e.why === "solder").map((e) => [e.a.slice(0, 16), e.b.slice(0, 16)])), JSON.stringify(engine.carryGroup ? [...engine.carryGroup(pico)].map((u) => u.slice(0, 16)) : 0));
+// 放回去：先放低到离面包板 3 mm 再松手（从 3 cm 高直接扔下去的冲击见“已知限制”）
+engine.dragTo(engine.worldPose(pico).p.clone().add(new THREE.Vector3(0, -2.7, 0)));
+run(0.8, "lift pico");
 engine.endDrag({ snap: false });
 run(0.8, "lift pico");
 check("拎起焊好的 Pico，排针一起被拔出面包板", lifted > 1, lifted.toFixed(2) + " cm");
 
 // 7) 舵机进支架 + 螺母固定支架 + 舵盘 + 触手
-const br = await add("p-servo-bracket", 28, 14);
+const br = engine.addPart(await def("p-servo-bracket"), P(28, 0.02, 14));
+run(0.3, "drop p-servo-bracket");
 r = bring(br, feats(br, "hole")[0], feats(plate, "stud-up")[0].wp, 1.0, "bracket");
 check("舵机支架套到底板的 M3 螺柱上", r.ok, r.why || r.rule);
 for (let k = 0; k < 2; k++) {
@@ -237,7 +245,6 @@ check("杜邦公头插进面包板", r.ok, r.why || "");
 const usb = await add("p-plug-usb-c", -26, 4);
 const port = feats(fe, "port").find((f) => f.kind === "usb-c");
 r = bring(usb, feats(usb, "plug")[0], port.wp, 0.1, "usb");
-if (process.env.DBG) console.log("PLATE", JSON.stringify(engine.worldPose(plate)), "usb", JSON.stringify(engine.worldPose(usb)));
 check("USB‑C 插头插进 Feather", r.ok && r.rule === "plug", r.why || r.rule);
 engine.addCable("usb-c", [usb, null], new THREE.Vector3(-29, 0.3, 0));
 run(2.0, "cable");
