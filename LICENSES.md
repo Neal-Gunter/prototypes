@@ -44,3 +44,23 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## 零件库 `public/lib/`（v4 新增）
+
+`public/lib/` 里的 564 个 GLB 由 `scripts/convert-library.mjs` 从下列开源 CAD 转换并简化（减面、meshopt 压缩），每个文件都小于 2 MB。每个零件的来源链接写在 `public/lib/catalog/<分类>.json` 的 `url` 字段里。
+
+| 来源 | 数量 | 许可证 | 文件 |
+|---|---|---|---|
+| Adafruit_CAD_Parts（https://github.com/adafruit/Adafruit_CAD_Parts） | 450 | MIT，Copyright (c) 2016 Adafruit Industries（全文见上） | `public/lib/*/ada-*.glb` |
+| KiCad packages3D（https://gitlab.com/kicad/libraries/kicad-packages3D） | 114 | CC BY-SA 4.0，附 KiCad 的设计例外条款 | `public/lib/*/kc-*.glb` |
+
+**相同方式共享（ShareAlike）说明：** `kc-*.glb` 是对 KiCad 3D 模型的改编（格式转换 + 减面）。这些改编文件作为一个集合再分发，KiCad 的设计例外不适用，所以它们**同样以 CC BY-SA 4.0 发布**，署名 “KiCad Libraries Team / KiCad packages3D 贡献者”。这条要求只针对这些 GLB 文件，不涉及本站其余代码。改动内容：STEP/WRL → GLB 转换、网格简化、材质合并、坐标单位换算。
+
+许可证全文：
+
+- `licenses/CC-BY-SA-4.0.txt`：CC BY-SA 4.0 法律文本（取自 creativecommons.org）
+- `licenses/KiCad-packages3D-LICENSE.md`：KiCad 库许可证及例外条款原文
+
+紧固件（螺丝、螺母、铜柱）、底板、面包板导线和工具都在 `src/assembly/procedural.js` 里用代码生成，尺寸参照 ISO/DIN 公称值；没有核实过的数值在界面上标“估算”。
+
+物理引擎：`@dimforge/rapier3d-compat`，Apache-2.0。
