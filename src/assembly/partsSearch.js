@@ -66,7 +66,9 @@ export function filterRows(rows, f) {
   const out = [];
   for (const r of rows) {
     if (f.cat && f.cat !== "all" && r.cat !== f.cat) continue;
-    if (f.kind && f.kind !== "all" && (f.kind === "real") !== r.real) continue;
+    if (f.kind === "best") { if (r.sup) continue; } // v21：隐藏已有真实 CAD 的近似件
+    else if (f.kind === "sup") { if (!r.sup) continue; }
+    else if (f.kind && f.kind !== "all" && (f.kind === "real") !== r.real) continue;
     if (f.iface && f.iface !== "all" && !(r.iface || []).includes(f.iface)) continue;
     if (f.lic && f.lic !== "all" && r.lic !== f.lic) continue;
     if (f.src && f.src !== "all" && r.src !== f.src) continue;

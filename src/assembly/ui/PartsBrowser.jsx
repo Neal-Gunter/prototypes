@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 
 import { filterRows, voltRange, SRC_ZH, LIC_ZH as LIC_SHORT, IFACE_ZH } from "../partsSearch.js";
 
-const LIC_ZH = { MIT: "MIT", "CC-BY-SA-4.0": "CC BY‑SA 4.0（KiCad 例外条款）", "CC-BY-4.0": "CC BY 4.0", CC0: "CC0（本项目程序生成）" };
+const LIC_ZH = { MIT: "MIT", "CC-BY-SA-4.0": "CC BY‑SA 4.0（KiCad 例外条款）", "CC-BY-4.0": "CC BY 4.0", "CC-BY-3.0": "CC BY 3.0（署名，作者见下）", CC0: "CC0（本项目程序生成）" };
 const fmt = (d) => (d ? `${d.x} × ${d.z} × ${d.y} mm` : "—");
 export function estMassG(e) {
   if (e.mass) return { g: e.mass, est: false };
@@ -35,7 +35,7 @@ export function useLibrary() {
       const volts = t.filter((x) => /V$/.test(x)).map((x) => parseFloat(x));
       return { id, name, name_zh, cat, catLabel: catLabel[cat], dims: { x: d[0], y: d[2], z: d[1] }, lic, src: src || (lic === "MIT" ? "ada" : "kicad"), iface: t.filter((x) => !/V$/.test(x)), vr: voltRange(volts.length ? volts : null), tags, real: true };
     });
-    const proc = PROCEDURAL.filter((d) => !d.notPlaceable).map((d) => ({ id: d.id, name: d.name, name_zh: d.name_zh, cat: d.cat, catLabel: catLabel[d.cat], dims: d.dims_mm, lic: "CC0", src: "proc", iface: d.iface || [], vr: voltRange(d.volt), tags: `${d.spec || ""} ${d.volt || ""} ${d.rating || ""}`, real: false }));
+    const proc = PROCEDURAL.filter((d) => !d.notPlaceable).map((d) => ({ id: d.id, name: d.name, name_zh: d.name_zh, cat: d.cat, catLabel: catLabel[d.cat], dims: d.dims_mm, lic: "CC0", src: "proc", iface: d.iface || [], vr: voltRange(d.volt), tags: `${d.spec || ""} ${d.volt || ""} ${d.rating || ""}`, real: false, sup: idx.replaced?.[d.id] }));
     return [...real, ...proc];
   }, [idx]);
   return { idx, rows };
@@ -114,6 +114,8 @@ export default function PartsBrowser({ onAdd, compact = false, onPick, favs: fav
           <option value="all">真实 CAD + 程序生成</option>
           <option value="real">只看真实 CAD 模型</option>
           <option value="proc">只看程序生成</option>
+          <option value="best">隐藏已有真实 CAD 的近似件</option>
+          <option value="sup">只看已被真实 CAD 替换的近似件</option>
         </select>
       </div>
       <p className="text-xs text-ink-soft" data-testid="parts-found">找到 {list.length} 个{list.length > limit ? `，显示前 ${limit} 个` : ""}。尺寸为 长 × 宽 × 高。接口 / 电压标签多数从名称推断（我的补充），以数据手册为准。</p>
@@ -123,8 +125,10 @@ export default function PartsBrowser({ onAdd, compact = false, onPick, favs: fav
             <Thumb id={r.id} real={r.real} />
             <button type="button" className="min-w-0 flex-1 text-left" onClick={() => pick(r.id)} data-testid={`pick-${r.id}`}>
               <span className="block truncate text-sm">{r.name_zh}</span>
+              {!r.real ? <span className="mr-1 inline-block border border-amber-700 px-1 text-[10px] text-amber-800" data-testid={`approx-${r.id}`}>近似形状（程序生成）</span> : null}
               <span className="block truncate text-xs text-ink-soft">{fmt(r.dims)} · {SRC_ZH[r.src] || r.src} · {LIC_SHORT[r.lic] || r.lic}{r.iface?.length ? ` · ${r.iface.map((i) => IFACE_ZH[i] || i).join("/")}` : ""}</span>
             </button>
+            {r.sup ? <button type="button" onClick={() => pick(r.sup)} className="shrink-0 border border-line px-1 text-[10px] underline" title="这个近似件已有真实 CAD 版本" data-testid={`sup-${r.id}`}>真实 CAD：{r.sup}</button> : null}
             <button type="button" onClick={() => favs.toggleFav(r.id)} aria-pressed={favs.fav.includes(r.id)} aria-label={favs.fav.includes(r.id) ? "取消收藏" : "收藏"} className="shrink-0 px-1 text-base" data-testid={`fav-${r.id}`}>{favs.fav.includes(r.id) ? "★" : "☆"}</button>
             {onCmp && (
               <label className="flex shrink-0 items-center gap-1 text-xs"><input type="checkbox" checked={!!cmp?.includes(r.id)} onChange={() => onCmp(r.id)} data-testid={`cmp-${r.id}`} />对比</label>
@@ -149,7 +153,9 @@ const loadGuide = () => (guideP ||= fetch(pub("/guides/electrics.json")).then((r
 export function PartDetail({ id }) {
   const [e, setE] = useState(null);
   const [used, setUsed] = useState(null);
+  const [sup, setSup] = useState(null);
   useEffect(() => { if (id) getEntry(id).then(setE).catch(() => setE(null)); }, [id]);
+  useEffect(() => { setSup(null); loadIndex().then((x) => setSup(x?.replaced?.[id] || null)).catch(() => {}); }, [id]);
   useEffect(() => {
     setUsed(null);
     loadGuide().then((g) => {
@@ -163,6 +169,7 @@ export function PartDetail({ id }) {
   return (
     <dl className="grid grid-cols-[6em_1fr] gap-x-2 gap-y-1 text-sm" data-testid="part-detail">
       <dt className="text-ink-soft">名称</dt><dd>{e.name_zh}{e.name && e.name !== e.name_zh ? <span className="text-ink-soft"> · {e.name}</span> : null}</dd>
+      <dt className="text-ink-soft">模型</dt><dd data-testid="model-kind">{e.glb ? (e.derived_from ? `真实 CAD（截面来自 ${e.derived_from}，只沿长度方向缩放到 ${Math.max(e.dims_mm.x, e.dims_mm.y, e.dims_mm.z)} mm）` : "真实 CAD（由来源 STEP 转换）") : <span className="text-amber-800">近似形状（程序生成）：外形按公开标准尺寸拼的简化几何，细节不真实{sup ? `；已有真实 CAD 版本：${sup}` : "；目前没找到许可清楚的真实 CAD"}</span>}</dd>
       <dt className="text-ink-soft">尺寸</dt><dd>{fmt(e.dims_mm)}<span className="text-ink-soft">（{e.dims_src}）</span></dd>
       <dt className="text-ink-soft">质量</dt><dd>{m.g} g{m.est ? <span className="text-ink-soft">（估算：碰撞盒体积 × 密度）</span> : null}</dd>
       <dt className="text-ink-soft">安装孔</dt><dd>{holes.length ? `${holes.length} 个${e.holes?.[0]?.d ? `，孔径 ${e.holes[0].d} mm` : ""}${e.holes_src ? `（${e.holes_src}）` : e.holes ? "（从 CAD 几何提取）" : ""}` : "无"}</dd>
