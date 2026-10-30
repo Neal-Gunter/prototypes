@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import * as THREE from "three";
 import { engine } from "../assembly/engine.js";
 import { getEntry, toDef } from "../assembly/catalog.js";
@@ -9,6 +9,7 @@ import PartsBrowser from "../assembly/ui/PartsBrowser.jsx";
 import ElecPanel from "../assembly/ui/ElecPanel.jsx";
 import { elec } from "../assembly/elecStore.js";
 import { PRESETS, buildFromList, parseList } from "../assembly/builder.js";
+import { makeGuide } from "../assembly/guide.js";
 
 export const ASM_SIMPLIFICATIONS = [
   "碰撞形状是若干个方块（从 CAD 包围盒和几何体里提取），不是逐三角形网格；圆柱、六角螺母等按方块近似",
@@ -45,6 +46,8 @@ export default function AssemblyPage() {
   const [listText, setListText] = useState(PRESETS.electrics.text);
   const [listErr, setListErr] = useState([]);
   const [params] = useSearchParams();
+  const nav = useNavigate();
+  const lastList = useRef(null);
   const vis = useRef({ kind: null, pos: new THREE.Vector3() });
   const stopRef = useRef(false);
   const tick = useRef(0);
@@ -82,6 +85,7 @@ export default function AssemblyPage() {
     for (const c of [...engine.cables]) engine.removeCable(c.id);
     for (const u of [...engine.parts.keys()]) if (engine.parts.has(u)) engine.removePart(u);
     elec.reset();
+    lastList.current = null;
     setProbes({});
     setPen(null);
   };
@@ -108,6 +112,7 @@ export default function AssemblyPage() {
     const fast = async (s) => { if (window.__asmSpeed) return driveRun(s); let k = Math.round(s * 120); while (k-- > 0) engine.update(1 / 120); await new Promise((r) => requestAnimationFrame(r)); };
     const r = await buildFromList(engine, text, { run: fast, say: (t) => setDemo({ text: `${title}：${t}` }), stop: () => stopRef.current });
     engine.extDrive = false;
+    lastList.current = { steps: r.steps, title, text };
     setListErr(r.fails);
     setDemo({ text: r.fails.length ? `${title}：完成，有 ${r.fails.length} 个问题（见右侧）` : `${title}：完成（${engine.parts.size} 个零件，${engine.cables.length} 根线）`, done: true });
     window.__asmBuilt = { fails: r.fails, parts: engine.parts.size, cables: engine.cables.length };
@@ -128,6 +133,15 @@ export default function AssemblyPage() {
     });
     engine.extDrive = false;
     setDemo({ text: ok ? "演示完成：全部步骤走的是同一套碰撞和装配规则" : "演示已停止", done: true });
+  };
+  // 把桌面上实际装好的样子导出成照着做的指南（存到本机浏览器，不上传）
+  const exportGuide = () => {
+    const L = lastList.current;
+    const b = elec.boards()[0];
+    const sketch = b ? elec.code[b] || elec.sketchFor(b) : "";
+    const g = makeGuide(engine, { steps: L?.steps || [], title: L?.title || "我桌面上的电路", listText: L?.text || "", sketch, fw: elec.fw });
+    localStorage.setItem("asm-guide", JSON.stringify(g));
+    nav("/assembly/guide?src=bench");
   };
   const pickTool = (k) => {
     setTool(k);
@@ -174,6 +188,7 @@ export default function AssemblyPage() {
             <button type="button" disabled={!ready || (demo && !demo.done)} onClick={() => buildList(listText)} className="min-h-8 border border-ink px-2 disabled:opacity-50" data-testid="list-build">照清单装配</button>
             <p className="mt-1 text-ink-soft">每行一件：面包板 / 板子 / 零件 / 跳线 / 导线 / 舵机 / USB，“#”后是注释。<Link to="/assembly/guide" className="underline">看装配指南格式</Link></p>
           </details>
+          <button type="button" disabled={!ready || !uids.length} onClick={exportGuide} className="mt-1 min-h-9 w-full border border-copper bg-white px-2 text-xs disabled:opacity-50" data-testid="guide-btn">生成装配指南（物料清单、接线表、步骤、.ino，可打印）</button>
           {listErr.length > 0 && <ul className="mt-1 list-disc pl-4 text-xs text-red-700" data-testid="list-errors">{listErr.slice(0, 8).map((e) => <li key={e}>{e}</li>)}</ul>}
         </fieldset>
         <div className={tab === "elec" ? "" : "hidden"}><ElecPanel probes={probes} setProbes={setProbes} tool={tool} setTool={pickTool} /></div>

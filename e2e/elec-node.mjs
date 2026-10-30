@@ -54,6 +54,17 @@ check("电位器转到 1/4：舵机转到约 45°（5V 供电、共地、GP16 �
 const ser = elec.fw[U1].serial;
 const raw = +(ser.match(/pot=(\d+)\s*$/) || [])[1];
 check("串口打印的 ADC 读数 ≈ 1023×0.25（Pico 10 位）", Math.abs(raw - 256) < 20, raw);
+// 装配指南：从台面实际状态生成，写一份默认指南给 /assembly/guide
+elec.pot(RV1, 0.5); elec.press(SW1, true); L = await sim(elec, 300);
+const G = X.makeGuide(engine, { steps: r.steps, title: X.PRESETS.electrics.zh, listText: X.PRESETS.electrics.text, sketch, fw: elec.fw });
+elec.press(SW1, false); L = await sim(elec, 200);
+fs.mkdirSync("public/guides", { recursive: true });
+fs.writeFileSync("public/guides/electrics.json", JSON.stringify(G, null, 1));
+const bomTxt = G.bom.map((b) => `${b.name}×${b.qty}`).join("，");
+check("指南物料清单：Pico、2 条 1×20 排针、电阻、LED、按键、电位器、舵机、杜邦线 9 根、USB 线", G.bom.find((b) => /pinheader_1x20/.test(b.id))?.qty === 2 && G.bom.find((b) => b.id === "cable:dupont-mm")?.qty === 9 && G.bom.find((b) => b.id === "cable:micro-usb")?.qty === 1 && G.bom.every((b) => b.qty > 0 && b.dims), bomTxt);
+const gp15 = G.nets.find((n) => /GP15$/.test(n.pin));
+check("指南接线表：GP15 → R1、GP14 → SW1、GP26 → RV1 滑片、GP16 → M1", gp15?.to.some((x) => /R1/.test(x)) && G.nets.find((n) => /GP14$/.test(n.pin))?.to.some((x) => /SW1/.test(x)) && G.nets.find((n) => /GP26$/.test(n.pin))?.to.some((x) => /RV1 滑片/.test(x)) && G.nets.find((n) => /GP16$/.test(n.pin))?.to.some((x) => /M1/.test(x)), G.nets.map((n) => `${n.pin}→${n.to.join("/")}`).join("；"));
+check("指南对照现实：3V3 模拟读数 3.30 V", G.real.some((x) => /3V3/.test(x.what) && /3\.30 V/.test(x.sim)), G.real.map((x) => `${x.what}=${x.sim}`).join("；"));
 const T = (ref, label) => { const u = refUid(ref); const pins = X.boardPins(engine.parts.get(u).def); return `${u}|p${pins.findIndex((p) => p?.label === label)}`; };
 const m = X.meter(L.cir, L.sol, T("U1", "3V3"), T("U1", "GND"), "V");
 check("万用表 DCV：3V3 对 GND ≈ 3.30 V", Math.abs(m.value - 3.3) < 0.05, m.text);

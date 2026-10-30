@@ -1,0 +1,119 @@
+// 装配指南：把台面上的装配“搬到现实”——物料清单、接线表、步骤、对照读数、固件下载。可直接打印。
+import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { SAFETY } from "../assembly/guide.js";
+
+const save = (name, text, type = "text/plain") => {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+const fmtTime = (iso) => new Date(iso).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour12: false }) + "（北京时间）";
+
+export default function GuidePage() {
+  const [params, setParams] = useSearchParams();
+  const [g, setG] = useState(null);
+  const [err, setErr] = useState(null);
+  const local = (() => { try { return JSON.parse(localStorage.getItem("asm-guide") || "null"); } catch { return null; } })();
+  const src = params.get("src") || (local ? "bench" : "default");
+  useEffect(() => {
+    document.title = "装配指南 · 硬件工作台";
+    if (src === "bench" && local) { setG(local); return; }
+    fetch("/guides/electrics.json").then((r) => r.json()).then(setG).catch((e) => setErr(String(e)));
+  }, [src]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (err) return <p className="p-8 text-red-700">指南加载失败：{err}</p>;
+  if (!g) return <p className="p-8 text-ink-soft">正在加载装配指南…</p>;
+  const pcs = g.bom.reduce((n, b) => n + b.qty, 0);
+  return (
+    <article className="guide mx-auto w-full max-w-4xl px-4 py-6 text-sm leading-6" data-testid="guide">
+      <div className="no-print mb-4 flex flex-wrap items-center gap-2">
+        <Link to="/assembly" className="underline">← 回装配台</Link>
+        <span className="text-ink-soft">来源：</span>
+        <button type="button" onClick={() => setParams({ src: "default" })} aria-pressed={src === "default"} className={`min-h-8 border px-2 ${src === "default" ? "border-ink bg-ink text-paper-2" : "border-line bg-white"}`}>默认电路练习</button>
+        <button type="button" disabled={!local} onClick={() => setParams({ src: "bench" })} aria-pressed={src === "bench"} className={`min-h-8 border px-2 disabled:opacity-40 ${src === "bench" ? "border-ink bg-ink text-paper-2" : "border-line bg-white"}`} title={local ? "" : "先在装配台点“生成装配指南”"}>我桌面上的电路</button>
+        <span className="flex-1" />
+        <button type="button" onClick={() => window.print()} className="min-h-8 border border-ink px-3" data-testid="guide-print">打印 / 存成 PDF</button>
+        {g.sketch && <button type="button" onClick={() => save("sketch.ino", g.sketch)} className="min-h-8 border border-ink bg-ink px-3 text-paper-2" data-testid="guide-ino">下载 .ino</button>}
+        {g.listText && <button type="button" onClick={() => save("装配清单.txt", g.listText)} className="min-h-8 border border-line bg-white px-3">下载清单</button>}
+      </div>
+
+      <header className="border-b border-line pb-3">
+        <p className="text-xs text-copper">早期原型，简化仿真 · 读数是模拟值，不是实测</p>
+        <h1 className="text-2xl font-medium">装配指南：{g.title}</h1>
+        <p className="text-ink-soft">生成于 {fmtTime(g.made)} · {g.bom.length} 种 / {pcs} 件物料 · {g.nets.length} 条接线 · 从装配台上实际装好的状态导出（同一套插接、焊接、碰撞规则）</p>
+      </header>
+
+      <section className="mt-5 break-inside-avoid">
+        <h2 className="text-lg font-medium">1. 物料清单（BOM）</h2>
+        <p className="text-xs text-ink-soft">尺寸取自 3D 模型的包围盒（长 × 宽 × 高），标“估算”的没有查到原始资料。链接是资料或模型来源，不是购买推荐，也不含价格。</p>
+        <table className="mt-2 w-full border-collapse text-left text-xs" data-testid="guide-bom">
+          <thead><tr className="border-b border-ink"><th className="py-1 pr-2">#</th><th className="pr-2">名称 / 规格</th><th className="pr-2">数量</th><th className="pr-2">位号</th><th className="pr-2">尺寸</th><th>资料</th></tr></thead>
+          <tbody>
+            {g.bom.map((b, i) => (
+              <tr key={b.id} className="border-b border-line align-top">
+                <td className="py-1 pr-2">{i + 1}</td>
+                <td className="pr-2"><span className="font-medium">{b.name}</span>{b.spec && <span className="block text-ink-soft">{b.spec}</span>}</td>
+                <td className="pr-2">{b.qty}</td>
+                <td className="pr-2">{b.refs.join(" ")}</td>
+                <td className="pr-2">{b.dims}{/估算/.test(b.dims_src || b.dims) && <span className="text-copper"> 估算</span>}</td>
+                <td>{b.links.map((l) => <a key={l.url} href={l.url} target="_blank" rel="noreferrer" className="mr-2 block break-all underline">{l.zh}</a>)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="mt-1 text-xs text-ink-soft">另外需要：电烙铁和烙铁架、焊锡丝、助焊剂、斜口钳、万用表、一台装好 Arduino IDE 的电脑（具体型号不限）。</p>
+      </section>
+
+      <section className="mt-6 break-inside-avoid">
+        <h2 className="text-lg font-medium">2. 接线表（开发板针脚 → 连到哪里）</h2>
+        <table className="mt-2 w-full border-collapse text-left text-xs" data-testid="guide-nets">
+          <thead><tr className="border-b border-ink"><th className="py-1 pr-2">开发板针脚</th><th className="pr-2">物理脚号</th><th className="pr-2">连到</th><th>模拟电压</th></tr></thead>
+          <tbody>
+            {g.nets.map((n, i) => (
+              <tr key={i} className="border-b border-line align-top"><td className="py-1 pr-2 font-mono">{n.pin}</td><td className="pr-2">{n.phys}</td><td className="pr-2">{n.to.join("，")}</td><td className="font-mono">{n.v == null ? "—" : `${n.v.toFixed(2)} V`}</td></tr>
+            ))}
+          </tbody>
+        </table>
+        {g.holes.length > 0 && <>
+          <h3 className="mt-4 font-medium">逐个零件插在哪个孔</h3>
+          <p className="text-xs text-ink-soft">面包板孔名：a–j 行 + 1–30 列；a–e 一组、f–j 一组，同一列的 5 个孔是通的。</p>
+          <table className="mt-1 w-full border-collapse text-left text-xs" data-testid="guide-holes">
+            <tbody>{g.holes.map((h, i) => <tr key={i} className="border-b border-line align-top"><td className="py-1 pr-2 font-mono">{h.ref}</td><td className="pr-2">{h.what}</td><td className="font-mono">{h.where}</td></tr>)}</tbody>
+          </table>
+        </>}
+      </section>
+
+      <section className="mt-6">
+        <h2 className="text-lg font-medium">3. 装配和焊接步骤</h2>
+        <ol className="mt-2 list-decimal pl-5" data-testid="guide-steps">
+          {g.steps.map((s, i) => <li key={i} className="mb-2 break-inside-avoid"><span className="font-medium">{s.t}</span>{s.solder && <span className="ml-1 border border-copper px-1 text-[10px] text-copper">焊接</span>}<br /><span className="text-ink-soft">{s.d}</span></li>)}
+        </ol>
+      </section>
+
+      <section className="mt-6 break-inside-avoid">
+        <h2 className="text-lg font-medium">4. 对照现实：用万用表量一量</h2>
+        <p className="text-xs text-ink-soft">左边是模拟算出来的值，右边是在实物上怎么量。差得很多，通常是接错孔、虚焊或零件规格不同；差一点是正常的（元件误差、USB 电压、万用表精度）。</p>
+        <table className="mt-2 w-full border-collapse text-left text-xs" data-testid="guide-real">
+          <thead><tr className="border-b border-ink"><th className="py-1 pr-2">量什么</th><th className="pr-2">模拟读数</th><th>实物上怎么量 / 正常范围</th></tr></thead>
+          <tbody>{g.real.map((r, i) => <tr key={i} className="border-b border-line align-top"><td className="py-1 pr-2">{r.what}</td><td className="pr-2 font-mono">{r.sim}</td><td>{r.how}</td></tr>)}</tbody>
+        </table>
+      </section>
+
+      {g.sketch && (
+        <section className="mt-6">
+          <h2 className="text-lg font-medium">5. 固件（Arduino 风格，按接线自动生成）</h2>
+          <pre className="mt-2 overflow-x-auto border border-line bg-white p-2 font-mono text-[11px] leading-4" data-testid="guide-code">{g.sketch}</pre>
+        </section>
+      )}
+
+      <section className="mt-6 break-inside-avoid border border-copper p-3" data-testid="guide-safety">
+        <h2 className="font-medium">安全提示</h2>
+        <p className="text-xs text-copper">{SAFETY[0]}</p>
+        <ul className="mt-1 list-disc pl-5 text-xs">{SAFETY.slice(1).map((s) => <li key={s}>{s}</li>)}</ul>
+      </section>
+      <p className="mt-4 text-xs text-ink-soft">本指南由早期原型自动生成，模拟做了简化（见装配台“这里简化了什么”）。动手前请以零件数据手册为准。</p>
+    </article>
+  );
+}

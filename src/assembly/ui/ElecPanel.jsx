@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { engine } from "../engine.js";
 import { elec } from "../elecStore.js";
 import { meter, termLabel } from "../netlist.js";
+import { makeGuide } from "../guide.js";
 
 const LV = { error: "border-red-700 bg-red-50", warn: "border-amber-500 bg-amber-50", info: "border-line bg-white", ok: "border-emerald-700 bg-emerald-50" };
 
@@ -11,6 +12,15 @@ export default function ElecPanel({ probes, setProbes, tool, setTool }) {
   const [board, setBoard] = useState(null);
   const [code, setCode] = useState("");
   const [mode, setMode] = useState("V");
+  const [realOpen, setRealOpen] = useState(false);
+  const [real, setReal] = useState([]);
+  useEffect(() => {
+    if (!realOpen) return;
+    const f = () => { try { setReal(makeGuide(engine, { fw: elec.fw }).real); } catch { setReal([]); } };
+    f();
+    const id = setInterval(f, 1000);
+    return () => clearInterval(id);
+  }, [realOpen]);
   useEffect(() => {
     const id = setInterval(() => { elec.tick(); force((n) => n + 1); }, 100);
     return () => clearInterval(id);
@@ -102,6 +112,16 @@ export default function ElecPanel({ probes, setProbes, tool, setTool }) {
         <p className="mt-1 border border-line bg-white px-2 py-1 font-mono text-base" data-testid="meter-reading">{reading ? reading.text : "—"}</p>
         {reading?.warn && <p className="text-xs text-amber-700">{reading.warn}</p>}
       </section>
+
+      <details open={realOpen} onToggle={(e) => setRealOpen(e.currentTarget.open)} className="border border-copper bg-white p-2" data-testid="real-panel">
+        <summary className="cursor-pointer font-medium">对照现实：实物上该量到多少</summary>
+        <p className="mt-1 text-xs text-ink-soft">照着做好实物后，用万用表量同样两点，和模拟读数对比。差很多：多半是接错孔、虚焊或零件规格不同。</p>
+        <ul className="mt-1 flex flex-col gap-1 text-xs">
+          {real.map((r) => <li key={r.what} className="border-l-4 border-copper px-2"><span className="font-medium">{r.what}</span>：模拟 <span className="font-mono">{r.sim}</span><span className="block text-ink-soft">{r.how}</span></li>)}
+          {!real.length && <li className="text-ink-soft">桌面上还没有可以对照的电路。</li>}
+        </ul>
+        {probes.red && probes.black && reading && <p className="mt-1 text-xs">表笔现在这两点：模拟 <span className="font-mono">{reading.text}</span>——实物上把表笔放在同样的两个针脚上量。</p>}
+      </details>
 
       <section>
         <p className="font-medium">电路检查</p>

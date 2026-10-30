@@ -81,7 +81,7 @@ export const SERVO_MIN_V = 4.5; // 估算：微型舵机常见工作电压 4.8�
 export const SHORT_A = 0.5;
 
 // 腿的语义：LED 腿 0 = 焊盘 1 = 阴极 K（KiCad 惯例），腿 1 = 阳极 A；电位器按 x 排序：两端 + 中间滑片
-function legNames(def) {
+export function legNames(def) {
   const k = elemKind(def);
   const legs = def.legs || [];
   if (k === "led") return legs.map((l) => (l.p[0] < 0 ? "K" : "A"));

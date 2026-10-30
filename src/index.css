@@ -73,3 +73,14 @@ input[type="range"] {
     scroll-behavior: auto;
   }
 }
+
+/* 装配指南打印：只留正文 */
+@media print {
+  body > div header:not(.guide header), footer, .no-print, .skip-link { display: none !important; }
+  body { background: #fff !important; }
+  .guide { max-width: none !important; padding: 0 !important; font-size: 11px; }
+  .guide a { color: inherit; }
+  .guide section { break-inside: auto; }
+  .guide tr, .guide li { break-inside: avoid; }
+  @page { margin: 14mm; }
+}

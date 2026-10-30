@@ -11,7 +11,7 @@ function navClass({ isActive }) {
 }
 
 // 这些页面是能交互的早期原型（不是纯概念图）
-const PROTO_PATHS = ["/workbench", "/assembly", "/parts", "/electrics", "/credits"];
+const PROTO_PATHS = ["/workbench", "/assembly", "/parts", "/credits"];
 
 export default function Layout() {
   const { pathname } = useLocation();
@@ -25,7 +25,7 @@ export default function Layout() {
       <a className="skip-link" href="#main">
         跳到内容
       </a>
-      <div className="sticky top-0 z-40 bg-ink px-4 py-2 text-center text-sm leading-6 text-paper-2">
+      <div className="no-print sticky top-0 z-40 bg-ink px-4 py-2 text-center text-sm leading-6 text-paper-2">
         {PROTO_PATHS.some((p) => pathname.startsWith(p)) ? (
           <p data-testid="banner">
             早期原型，简化仿真 · <span lang="en">Early prototype, simplified simulation</span>
@@ -37,9 +37,9 @@ export default function Layout() {
       <div className="relative flex flex-1 flex-col">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 left-0 hidden w-8 border-r border-mark md:block"
+          className="pointer-events-none absolute inset-y-0 left-0 hidden w-8 border-r border-mark md:block print:hidden"
         />
-        <div className="flex flex-1 flex-col md:pl-8">
+        <div className="flex flex-1 flex-col md:pl-8 print:pl-0">
           <header className="border-b border-line">
             <div
               className={`${containerClass} flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-3`}
