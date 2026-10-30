@@ -125,7 +125,15 @@ export async function buildOcto(engine, sim, { run, say } = {}) {
       via = [A.clone().add(V3(0, 0.9, 0)), A.clone().lerp(Bp, 0.3).setY(h), A.clone().lerp(Bp, 0.7).setY(h), Bp.clone().add(V3(0, 0.9, 0))];
     }
     const len = via.reduce((s, p, i) => s + (i ? p.distanceTo(via[i - 1]) : p.distanceTo(A)), 0) + via.at(-1).distanceTo(Bp);
-    engine.addCable(w.kind, [ua, ub], null, { endLocal: [la, lb], via, color: w.color, N: Math.max(6, Math.min(16, Math.round(len / 2.2))), meta: { a: w.a, b: [w.b[0], pin2], why: w.why, md: w.md } });
+    // 我的补充：舵机线在底板上扎成一束（扎带点 = 途经点），沿底板走到中心立柱再上到 PCA9685；机身走动时线不再甩圈
+    let ties;
+    if (w.kind === "octo-servo" && B.robot && roles.FRAME) {
+      const pts = [A, ...via, Bp], cum = [0];
+      for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + pts[i].distanceTo(pts[i - 1]));
+      const idx = via.length >= 5 ? [2, 3, 4] : [2];
+      ties = idx.map((i) => ({ at: cum[i] / cum.at(-1), uid: roles.FRAME }));
+    }
+    engine.addCable(w.kind, [ua, ub], null, { endLocal: [la, lb], via, ties, color: w.color, N: Math.max(6, Math.min(16, Math.round(len / 2.2))), meta: { a: w.a, b: [w.b[0], pin2], why: w.why, md: w.md } });
     if (++k % 6 === 0) await run?.(0.05);
   }
   // —— 舵机 → 画面（只改画面，不推动刚体） ——
@@ -153,7 +161,7 @@ export async function buildOcto(engine, sim, { run, say } = {}) {
     const q = rotY((-h * 180) / Math.PI); // 仿真 h>0 = 右转；three.js 绕 +y 正转 = 左转
     const p = base.p.clone().sub(OCTO_C).applyQuaternion(q).add(OCTO_C).add(V3(dx, 0, dz));
     p.y = base.p.y;
-    engine.teleport(roles.FRAME, p, q.clone().multiply(base.q));
+    engine.teleport(roles.FRAME, p, q.clone().multiply(base.q), true);
   };
   const apply = () => {
     moveBody();

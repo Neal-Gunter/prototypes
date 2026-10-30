@@ -17,7 +17,8 @@ const GROUPS = {
   tool: grp(G_TOOL, G_PART | G_ROPE),
 };
 export const BENCH = { w: 60, d: 40 };
-const V = (a) => new THREE.Vector3(a[0], a[1], a[2]);
+// 我的补充：也接受 Vector3 / {x,y,z}（之前传 Vector3 进来会变成 NaN，导线途经点 via 实际没生效）
+const V = (a) => (Array.isArray(a) ? new THREE.Vector3(a[0], a[1], a[2]) : new THREE.Vector3(a.x, a.y, a.z));
 const q2t = (q) => new THREE.Quaternion(q.x, q.y, q.z, q.w);
 const yawQ = (yaw) => new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
 function yawOf(q) {
@@ -160,8 +161,31 @@ class Engine {
     return uids;
   }
   // 直接把一个单独的刚体摆到某个位姿（导入/预设用；随后仍走 trySnap 的同一套装配规则和穿模检查）
-  teleport(uid, p, q) {
-    const b = this.bodies.get(this.parts.get(uid).body);
+  // carry（我的补充）：同时把两端都挂在这个刚体上的导线一起搬走（整体平移+旋转），免得导线被硬拽、甩成大圈
+  teleport(uid, pp, pq, carry = false) {
+    const part = this.parts.get(uid);
+    const b = this.bodies.get(part.body);
+    // p/q 是这个零件的世界位姿；刚体的原点是领头零件，要用零件在刚体里的相对位姿换算回去（我的补充：之前直接当刚体位姿用，机身会突然跳 10 cm 多）
+    const q = new THREE.Quaternion(pq.x, pq.y, pq.z, pq.w).multiply(part.rel.q.clone().invert()).normalize();
+    const p = V(pp).sub(part.rel.p.clone().applyQuaternion(q));
+    if (carry) {
+      const t0 = b.rb.translation(), r0 = b.rb.rotation();
+      const P0 = new THREE.Vector3(t0.x, t0.y, t0.z), Q0 = new THREE.Quaternion(r0.x, r0.y, r0.z, r0.w);
+      const dq = new THREE.Quaternion(q.x, q.y, q.z, q.w).multiply(Q0.clone().invert());
+      const onB = (u) => u && this.bodies.get(this.parts.get(u)?.body)?.rb === b.rb;
+      for (const c of this.cables) {
+        if (!c.endUids.every(onB)) continue;
+        for (const s of c.segs) {
+          const t = s.translation(), r = s.rotation();
+          const np = new THREE.Vector3(t.x, t.y, t.z).sub(P0).applyQuaternion(dq).add(V(p));
+          const nq = dq.clone().multiply(new THREE.Quaternion(r.x, r.y, r.z, r.w));
+          s.setTranslation({ x: np.x, y: np.y, z: np.z }, true);
+          s.setRotation({ x: nq.x, y: nq.y, z: nq.z, w: nq.w }, true);
+          s.setLinvel({ x: 0, y: 0, z: 0 }, true);
+          s.setAngvel({ x: 0, y: 0, z: 0 }, true);
+        }
+      }
+    }
     b.rb.setTranslation({ x: p.x, y: p.y, z: p.z }, true);
     b.rb.setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }, true);
     b.rb.setLinvel({ x: 0, y: 0, z: 0 }, true);
@@ -242,7 +266,7 @@ class Engine {
     const b = this.bodies.get(bid);
     if (!b) return;
     for (const list of b.colliders.values()) for (const { col } of list) this.colOwner.delete(col.handle);
-    for (const c of this.cables) for (const j of c.endJoints) if (j && (j.b1 === b.rb || j.b2 === b.rb)) j.dead = true;
+    for (const c of this.cables) for (const j of [...c.endJoints, ...(c.tieJoints || [])]) if (j && (j.b1 === b.rb || j.b2 === b.rb)) j.dead = true;
     this.world.removeRigidBody(b.rb);
     this.bodies.delete(bid);
   }
@@ -711,7 +735,16 @@ class Engine {
     if (!endUids[1]) {
       anchorBody = this.world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(B.x, B.y, B.z));
     }
-    const cable = { id, kind, spec, ends: endUids.filter(Boolean), endUids, segs, joints, segLen, N, r, len, endLocal, color: opts.color, meta: opts.meta, endJoints: [null, null], anchorBody, fixedEnd: fixedEnd?.clone() };
+    // ties（我的补充）：扎带——把第 i 段固定在某个零件上（world 给的点换成零件局部坐标），导线就沿底板走成一束
+    const ties = (opts.ties || []).map((t) => {
+      const i = Math.max(0, Math.min(N - 1, Math.round(t.at * N - 0.5)));
+      const sp = segs[i].translation(), pp = this.parts.get(t.uid);
+      if (!pp) return null;
+      const w = this.worldPose(t.uid);
+      const local = new THREE.Vector3(sp.x, sp.y, sp.z).sub(w.p).applyQuaternion(w.q.clone().invert());
+      return { i, uid: t.uid, local };
+    }).filter(Boolean);
+    const cable = { id, kind, spec, ends: endUids.filter(Boolean), endUids, segs, joints, segLen, N, r, len, endLocal, color: opts.color, meta: opts.meta, endJoints: [null, null], ties, tieJoints: [], anchorBody, fixedEnd: fixedEnd?.clone() };
     this.cables.push(cable);
     this.bindCableEnds(cable);
     this.emit();
@@ -750,10 +783,19 @@ class Engine {
       const joint = this.world.createImpulseJoint(jd, b2, seg, true);
       c.endJoints[k] = { joint, b1: b2, b2: seg };
     }
+    for (const j of c.tieJoints || []) if (j && !j.dead) try { this.world.removeImpulseJoint(j.joint, true); } catch {}
+    c.tieJoints = (c.ties || []).map((t) => {
+      const p = this.parts.get(t.uid), body = p && this.bodies.get(p.body);
+      if (!body) return null;
+      const lp = t.local.clone().applyQuaternion(p.rel.q).add(p.rel.p);
+      const joint = this.world.createImpulseJoint(R.JointData.spherical({ x: lp.x, y: lp.y, z: lp.z }, { x: 0, y: 0, z: 0 }), body.rb, c.segs[t.i], true);
+      return { joint, b1: body.rb, b2: c.segs[t.i], uid: t.uid };
+    });
   }
   rebindCables() {
     for (const c of this.cables) {
-      const stale = c.endJoints.some((j, k) => !j || j.dead || (c.endUids[k] && this.bodies.get(this.parts.get(c.endUids[k])?.body)?.rb !== j.b1));
+      const stale = c.endJoints.some((j, k) => !j || j.dead || (c.endUids[k] && this.bodies.get(this.parts.get(c.endUids[k])?.body)?.rb !== j.b1))
+        || (c.tieJoints || []).some((j) => j && (j.dead || this.bodies.get(this.parts.get(j.uid)?.body)?.rb !== j.b1));
       if (stale) this.bindCableEnds(c);
     }
   }
