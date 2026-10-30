@@ -10,8 +10,8 @@ import { V10_FW, V10_PINS, V10_COMPARE, V10_BOM, V10_SAFETY, V10_LIMITS, V10_BUI
 const fmtTime = (iso) => new Date(iso).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour12: false }) + "（北京时间）";
 const save = (name, text) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "text/plain" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
 const T = ({ head, rows, t }) => (
-  <table className="mt-2 w-full border-collapse text-xs" data-testid={t}><thead><tr>{head.map((h) => <th key={h} className="border border-line bg-paper-2 px-1 py-0.5 text-left">{h}</th>)}</tr></thead>
-    <tbody>{rows.map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j} className="border border-line px-1 py-0.5 align-top">{c}</td>)}</tr>)}</tbody></table>
+  <div className="mt-2 overflow-x-auto" role="region" aria-label="表格（手机上可左右滑动）" tabIndex={0}><table className="w-full border-collapse text-xs" style={{ minWidth: `${Math.min(40, head.length * 6)}rem` }} data-testid={t}><thead><tr>{head.map((h) => <th key={h} className="border border-line bg-paper-2 px-1 py-0.5 text-left">{h}</th>)}</tr></thead>
+    <tbody>{rows.map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j} className={`border border-line px-1 py-0.5 align-top ${(typeof c === "string" || typeof c === "number") && String(c).length <= 6 ? "whitespace-nowrap" : ""}`}>{c}</td>)}</tr>)}</tbody></table></div>
 );
 
 const TOC = [["s1", "1. 台面物料"], ["s2", "2. 价格（来自 md）"], ["s3", "3. 接线表"], ["s4", "4. 引脚表"], ["s5", "5. 对照现实"], ["s6", "6. 出处表"], ["s7", "7. md 问题清单"], ["s8", "8. md 原文固件"], ["plus", "9. 完善版改动表"], ["s10", "10. 完善版物料"], ["s11", "11. 完善版固件 + 下载"], ["s12", "12. 如何实际动手做"], ["v10", "13. v10 紧凑无线版（电池在身上）"], ["link", "14. 实物连接（v16）"]];
