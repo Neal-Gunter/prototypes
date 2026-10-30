@@ -129,6 +129,20 @@ export default function GuidePage() {
         <p className="mt-2 text-xs text-ink-soft">简化：球关节没有马达，限位是软的（硬扳能超出几度）；关节两侧那一对不互相碰撞；碰撞是凸包 / 方块（凹处被填平）；质量是体积 × 密度的估算；功能绑定只是标签，不做电路仿真；单位靠猜，猜错请手动改；贴图、动画忽略；Draco 压缩和引用外部文件的 glTF 不支持。</p>
       </section>
 
+      <section id="repair" className="mt-6 border border-line bg-white p-3" data-testid="guide-repair">
+        <h2 className="text-lg font-medium">维修关卡（v17，早期原型，简化仿真）</h2>
+        <p className="text-xs text-ink-soft">在 <Link className="underline" to="/repair">/repair</Link> 练习排查故障：客户描述 → 看现象 → 量电压 / 电阻 / 通断 → 找到根本原因 → 断电拔电池后再动烙铁 → 交付验收。读数来自仿真，不是实测；<b>不替代真实安全培训</b>。</p>
+        <ol className="mt-2 list-decimal pl-5 text-xs leading-5">
+          <li><b>先简单后复杂</b>：电池 / 电源 → 开关 / 插头 → 焊点 → 零件。量电压比换零件快。</li>
+          <li><b>断电再动手</b>：关开关不等于没电，电池还接着就还有电。带电焊接会被拦下并扣分。</li>
+          <li><b>量电阻要断电</b>：通电时电阻档读数不准，还可能伤表。</li>
+          <li><b>看清再换</b>：放大镜读色环和芯片丝印；换件按丝印的阻值、方向和型号。</li>
+          <li><b>细线压降</b>：线越细越长电阻越大（实心铜线 20 °C：22AWG 约 0.053 Ω/m，30AWG 约 0.339 Ω/m），舵机一起动就把电压拉低。</li>
+          <li><b>自己出题</b>：编辑器里选板子、挑故障、写提示；也能把装配台上的电路直接导入成关卡，导出 JSON 给别人玩。</li>
+        </ol>
+        <p className="mt-2 text-xs text-red-800">所有关卡都是低压直流。永远不要用表笔去碰 220 V 市电（插座、适配器里面、电源板的高压一侧）——那需要专门的培训和工具。</p>
+      </section>
+
       <section className="mt-6 break-inside-avoid border border-copper p-3" data-testid="guide-safety">
         <h2 className="font-medium">安全提示</h2>
         <p className="text-xs text-copper">{SAFETY[0]}</p>
