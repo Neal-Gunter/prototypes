@@ -45,7 +45,7 @@ export default function Layout() {
             <div
               className={`${containerClass} flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-3`}
             >
-              <NavLink to="/" end className="inline-flex min-h-11 items-center gap-2">
+              <NavLink to="/" end className="inline-flex min-h-11 shrink-0 items-center gap-2">
                 <span
                   aria-hidden="true"
                   className="inline-block size-2.5 rounded-full bg-copper"
@@ -55,7 +55,7 @@ export default function Layout() {
                   概念
                 </span>
               </NavLink>
-              <nav aria-label="页面" className="order-3 flex min-w-0 basis-full items-center overflow-x-auto [scrollbar-width:thin] xl:order-none xl:basis-auto" data-testid="main-nav">
+              <nav aria-label="页面" className="order-3 flex min-w-0 basis-full items-center overflow-x-auto [scrollbar-width:thin]" data-testid="main-nav">
                 <NavLink to="/" end className={navClass}>
                   首页
                 </NavLink>
@@ -84,7 +84,7 @@ export default function Layout() {
                   素材与许可
                 </NavLink>
               </nav>
-              <button type="button" onClick={() => window.dispatchEvent(new Event("open-palette"))} className="inline-flex min-h-9 items-center gap-1 border border-line px-2 text-xs text-ink-soft hover:text-ink" title="命令面板：跳到页面、零件、场景" data-testid="palette-btn">
+              <button type="button" onClick={() => window.dispatchEvent(new Event("open-palette"))} className="inline-flex min-h-9 shrink-0 items-center gap-1 whitespace-nowrap border border-line px-2 text-xs text-ink-soft hover:text-ink" title="命令面板：跳到页面、零件、场景" data-testid="palette-btn">
                 搜索跳转 <kbd className="hidden font-mono sm:inline">Ctrl/⌘ K</kbd>
               </button>
             </div>
