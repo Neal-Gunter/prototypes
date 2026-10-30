@@ -14,6 +14,7 @@ import { makeGuide } from "../assembly/guide.js";
 import OctoPanel, { octoDetach, octoSim } from "../assembly/ui/OctoPanel.jsx";
 import { octoGuide } from "../assembly/octopus/spec.js";
 import JointControls from "../modellab/ui/JointControls.jsx";
+import Tour from "../assembly/ui/Tour.jsx";
 // v11：上传模型（模型 + 功能图工程）放到台面上；v12：有关节时每个刚体组一个刚体 + 关节 / 舵机
 async function addCustomProject(project, bytes, opts = {}) {
   const { addCustomToBench } = await import("../modellab/benchArtic.js");
@@ -187,6 +188,7 @@ export default function AssemblyPage() {
 
   return (
     <section className="flex flex-col gap-3 px-3 py-3 lg:h-[calc(100vh-7.5rem)] lg:flex-row" data-testid="assembly">
+      <Tour setTab={setTab} />
       <aside className="flex min-h-0 flex-col gap-2 overflow-y-auto lg:w-80">
         <h1 className="text-xl font-medium">装配台 <span className="ml-1 border border-copper px-1.5 py-0.5 align-middle text-xs text-copper">早期原型，简化仿真</span></h1>
         <p className="text-xs leading-5 text-ink-soft">零件有真实尺寸（毫米），由 Rapier 刚体引擎做碰撞：零件不会互相穿过去，拖着的零件会被挡住或推开别的零件。</p>
@@ -269,6 +271,7 @@ export default function AssemblyPage() {
           <button type="button" onClick={play} disabled={!ready || (demo && !demo.done)} className="min-h-9 border border-ink px-3 hover:bg-ink hover:text-paper-2 disabled:opacity-50" data-testid="demo-btn">自动装配演示</button>
           <button type="button" onClick={() => { stopRef.current = true; }} className="min-h-9 border border-line bg-white px-3">停止</button>
           <button type="button" onClick={clear} className="min-h-9 border border-line bg-white px-3" data-testid="clear-btn">清空桌面</button>
+          <button type="button" onClick={() => window.dispatchEvent(new Event("open-tour"))} className="min-h-9 border border-line bg-white px-3" data-testid="tour-btn">新手导览</button>
         </div>
         <label className="flex items-center gap-2"><input type="checkbox" checked={debug} onChange={(e) => setDebug(e.target.checked)} data-testid="debug-toggle" />显示碰撞盒（调试）</label>
         {pen?.pair && pen.now > 0.01 && <p className="text-xs text-ink-soft">最深的一对：{pen.pair.join(" ↔ ")}</p>}

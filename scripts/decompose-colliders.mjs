@@ -15,6 +15,10 @@ const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies(
 const CHECK = process.argv.includes("--check");
 const MAXB = +(process.env.MAXB || 40);               // 每个零件最多几个长方体（Rapier 复合刚体）
 const RES = [64, 48, 40, 32, 24, 18, 14, 10, 8, 6, 4];
+const REFM = !!process.env.REFM;                      // v22：只重量（配合 --check），用细参考网格
+const TARGET = +(process.env.TARGET || 0);           // v22：目标最大外扩（mm），只对超标的大件生效
+const MAXB2 = +(process.env.MAXB2 || 300);            // v22：细分时每件最多几个长方体
+const RES_FINE = [8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 64, 72, 80, 96, 112, 128];
 const EXTRA = (process.env.IDS || "").split(",").filter(Boolean);
 const r3 = (v) => Math.round(v * 1000) / 1000;
 
@@ -87,21 +91,21 @@ function boxes(V, lo, hi) {
   return out;
 }
 const dBox = (p, b) => Math.hypot(...[0, 1, 2].map((i) => Math.max(b.mn[i] - p[i], 0, p[i] - b.mx[i])));
-function metrics(T, S, B, lo, hi, cell, fine) {
+function metrics(T, S, B, lo, hi, cell, fine, SR = S) {
   // 覆盖：表面点到碰撞体的距离
   let cov = 0; for (const p of S) { let d = Infinity; for (const b of B) { d = Math.min(d, dBox(p, b)); if (d === 0) break; } if (d > 0.001) cov++; }
   // 外扩：在每个长方体里均匀取点；不在细网格实体里的点，量到最近表面采样点的距离
   const grid = new Map(), g = cell; const key = (p) => p.map((v) => Math.floor(v / g)).join(",");
-  for (const p of S) { const kk = key(p); (grid.get(kk) || grid.set(kk, []).get(kk)).push(p); }
+  for (const p of SR) { const kk = key(p); (grid.get(kk) || grid.set(kk, []).get(kk)).push(p); }
   const near = (p) => { let d = Infinity; const c = p.map((v) => Math.floor(v / g)); for (let r = 1; r <= 3 && d === Infinity; r++) for (let a = -r; a <= r; a++) for (let b = -r; b <= r; b++) for (let e = -r; e <= r; e++) for (const q of grid.get(`${c[0] + a},${c[1] + b},${c[2] + e}`) || []) d = Math.min(d, Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2])); return d; };
   let exMax = 0, nOut = 0, nPts = 0; const ex = [];
   for (const b of B) { const m = 4; for (let i = 0; i < m; i++) for (let j = 0; j < m; j++) for (let l = 0; l < m; l++) {
     const p = [b.mn[0] + (b.mx[0] - b.mn[0]) * (i + 0.5) / m, b.mn[1] + (b.mx[1] - b.mn[1]) * (j + 0.5) / m, b.mn[2] + (b.mx[2] - b.mn[2]) * (l + 0.5) / m]; nPts++;
     const q = [0, 1, 2].map((t) => Math.min(fine.n[t] - 1, Math.max(0, Math.floor((p[t] - lo[t]) / fine.cell))));
     if (fine.solid(q[0], q[1], q[2])) continue; nOut++; const dd = near(p); ex.push(dd); exMax = Math.max(exMax, dd); } }
-  ex.sort((a, b) => a - b); const p99 = ex.length ? ex[Math.floor((ex.length - 1) * 0.99)] : 0;
+  ex.sort((a, b) => a - b); const p99 = ex.length ? ex[Math.floor((ex.length - 1) * 0.99)] : 0, p50 = ex.length ? ex[Math.floor((ex.length - 1) * 0.5)] : 0;
   let ov = 0; for (let i = 0; i < B.length; i++) for (let j = i + 1; j < B.length; j++) ov = Math.max(ov, ovl(c2(B[i]), c2(B[j])));
-  return { coverMiss: cov, nSurf: S.length, exMax, p99, outFrac: nOut / nPts, maxOverlap: ov };
+  return { coverMiss: cov, nSurf: S.length, exMax, p99, p50, outFrac: nOut / nPts, maxOverlap: ov };
 }
 const c2 = (b) => ({ c: b.mn.map((v, i) => (v + b.mx[i]) / 2), h: b.mn.map((v, i) => (b.mx[i] - v) / 2) });
 
@@ -115,26 +119,47 @@ for (const f of fs.readdirSync(META)) {
   const T = await tris(glb);
   const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
   for (const t of T) for (const p of t) for (let i = 0; i < 3; i++) { lo[i] = Math.min(lo[i], p[i]); hi[i] = Math.max(hi[i], p[i]); }
-  let best = null;
-  for (const R of RES) {
-    const cell = Math.max(...[0, 1, 2].map((i) => hi[i] - lo[i])) / R;
-    const S = samples(T, cell / 4); const F = voxel(S, lo, hi, 2 * R); const V = coarsen(F); const B = boxes(V, lo, hi);
-    if (B.length <= MAXB) { best = { R, cell: V.cell, S, B, F }; break; }
+  // v22：外扩用固定的细参考网格量（不随候选分辨率变粗；否则粗网格把薄板整块算成"实体"，外扩被低估成 0）
+  const RREF = +(process.env.RREF || 160), cref = Math.max(...[0, 1, 2].map((i) => hi[i] - lo[i])) / RREF;
+  const SREF = (TARGET || REFM) ? samples(T, cref / 2) : null, FREF = SREF ? voxel(SREF, lo, hi, RREF) : null;
+  const MET = (S, B, cell, F) => FREF ? metrics(T, S, B, lo, hi, cell, FREF, SREF) : metrics(T, S, B, lo, hi, cell, F);
+  let best = null, m = null;
+  let cur = null;
+  if (TARGET && !EXTRA.includes(id)) { // 先用细参考网格重量现有分解（v21 算法），已经 ≤ TARGET 的不动
+    for (const R of RES) { const cell = Math.max(...[0, 1, 2].map((i) => hi[i] - lo[i])) / R; const S = samples(T, cell / 4); const F = voxel(S, lo, hi, 2 * R); const V = coarsen(F); const B = boxes(V, lo, hi); if (B.length <= MAXB) { cur = MET(S, B, V.cell, F); break; } }
+    if (cur && cur.exMax * 10 <= TARGET) { report.push({ id, kept: true, exMax_mm: r3(cur.exMax * 10), p50_mm: r3(cur.p50 * 10), after: meta.colliders.length }); console.log(`${id}\t保持 v21：实测最大外扩 ${r3(cur.exMax * 10)} mm ≤ ${TARGET}`); if (!CHECK && meta.collider_decomp) { meta.collider_decomp.exMax_mm = r3(cur.exMax * 10); meta.collider_decomp.p50_mm = r3(cur.p50 * 10); meta.collider_decomp.p99_mm = r3(cur.p99 * 10); meta.collider_decomp.measured = "v22 细参考网格"; fs.writeFileSync(mf, JSON.stringify(meta, null, 1)); } continue; }
   }
-  const m = metrics(T, best.S, best.B, lo, hi, best.cell, best.F);
+  if (TARGET) {
+    // v22：大件细分——从粗到细试分辨率，取第一个"实测最大外扩 ≤ TARGET mm"且盒子数 ≤ MAXB2 的；都不行就取实测最小的
+    for (const R of RES_FINE) {
+      const cell = Math.max(...[0, 1, 2].map((i) => hi[i] - lo[i])) / R;
+      const S = samples(T, cell / 4); const F = voxel(S, lo, hi, 2 * R); const V = coarsen(F); const B = boxes(V, lo, hi);
+      if (B.length > MAXB2) break;
+      const mm = MET(S, B, V.cell, F);
+      if (!best || mm.exMax < m.exMax) { best = { R, cell: V.cell, S, B, F }; m = mm; }
+      if (mm.exMax * 10 <= TARGET) break;
+    }
+  } else {
+    for (const R of RES) {
+      const cell = Math.max(...[0, 1, 2].map((i) => hi[i] - lo[i])) / R;
+      const S = samples(T, cell / 4); const F = voxel(S, lo, hi, 2 * R); const V = coarsen(F); const B = boxes(V, lo, hi);
+      if (B.length <= MAXB) { best = { R, cell: V.cell, S, B, F }; break; }
+    }
+    m = MET(best.S, best.B, best.cell, best.F);
+  }
   const tol = best.cell * Math.sqrt(3);
   // 存 6 位小数（cm）：只保留 3 位时相邻盒子会因舍入叠进约 0.005 mm，大零件的交叠体积就到几十 mm³
   const r6 = (v) => Math.round(v * 1e6) / 1e6;
   const cols = best.B.map((b) => { const c = c2(b); return { c: c.c.map(r6), h: c.h.map((v) => r6(Math.max(1e-4, v))) }; });
   const vol = cols.reduce((s, c) => s + 8 * c.h[0] * c.h[1] * c.h[2], 0), bv = [0, 1, 2].reduce((s, i) => s * (hi[i] - lo[i]), 1);
-  const rec = { id, before: cs0.length, after: cols.length, res: best.R, cell_mm: r3(best.cell * 10), tol_mm: r3(tol * 10), exMax_mm: r3(m.exMax * 10), p99_mm: r3(m.p99 * 10), outFrac: r3(m.outFrac), coverMiss: m.coverMiss, nSurf: m.nSurf, maxOverlap_mm3: r3(m.maxOverlap * 1000), volRatio: r3(vol / bv),
+  const rec = { id, before: cs0.length, after: cols.length, res: best.R, cell_mm: r3(best.cell * 10), tol_mm: r3(tol * 10), exMax_mm: r3(m.exMax * 10), p99_mm: r3(m.p99 * 10), p50_mm: r3(m.p50 * 10), outFrac: r3(m.outFrac), coverMiss: m.coverMiss, nSurf: m.nSurf, maxOverlap_mm3: r3(m.maxOverlap * 1000), volRatio: r3(vol / bv),
     mesh_mm: [0, 1, 2].map((i) => r3((hi[i] - lo[i]) * 10)) };
   report.push(rec);
-  console.log(`${id}\t${rec.before}→${rec.after} 盒\t体素 ${rec.cell_mm} mm\t外扩 p99 ${rec.p99_mm} 最大 ${rec.exMax_mm} / 容差 ${rec.tol_mm} mm\t覆盖缺 ${rec.coverMiss}/${rec.nSurf}\t体积比 ${rec.volRatio}`);
+  console.log(`${id}\t${rec.before}→${rec.after} 盒\t体素 ${rec.cell_mm} mm\t外扩 中位 ${rec.p50_mm} p99 ${rec.p99_mm} 最大 ${rec.exMax_mm} / 容差 ${rec.tol_mm} mm\t覆盖缺 ${rec.coverMiss}/${rec.nSurf}\t体积比 ${rec.volRatio}`);
   if (!CHECK) {
     if (!meta.colliders_aabb) meta.colliders_aabb = meta.colliders;
     meta.colliders = cols;
-    meta.collider_decomp = { method: "体素化 + 贪心长方体（互不重叠的凸块）", res: best.R, cell_mm: rec.cell_mm, tol_mm: rec.tol_mm, exMax_mm: rec.exMax_mm, p99_mm: rec.p99_mm, n: cols.length };
+    meta.collider_decomp = { method: "体素化 + 贪心长方体（互不重叠的凸块）", res: best.R, cell_mm: rec.cell_mm, tol_mm: rec.tol_mm, exMax_mm: rec.exMax_mm, p99_mm: rec.p99_mm, p50_mm: rec.p50_mm, n: cols.length, ...(TARGET ? { target_mm: TARGET, v: 22, measured: "v22 细参考网格" } : {}) };
     fs.writeFileSync(mf, JSON.stringify(meta, null, 1));
   }
 }

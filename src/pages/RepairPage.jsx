@@ -25,8 +25,9 @@ export default function RepairPage() {
   const [tab, setTab] = useState(() => (new URLSearchParams(location.search).get("tab") === "editor" ? "editor" : "play"));
   const [customs, setCustoms] = useState(customList);
   const all = useMemo(() => [...SCENARIOS, ...customs], [customs]);
-  const [sid, setSid] = useState(SCENARIOS[0].id);
-  const [game, setGame] = useState(() => new Game(SCENARIOS[0]));
+  const s0 = SCENARIOS.find((s) => s.id === new URLSearchParams(location.search).get("s")) || SCENARIOS[0]; // v22：?s=关卡 id（命令面板跳转用）
+  const [sid, setSid] = useState(s0.id);
+  const [game, setGame] = useState(() => new Game(s0));
   const [, force] = useState(0);
   const rerender = () => force((n) => n + 1);
   const [sel, setSel] = useState(null);

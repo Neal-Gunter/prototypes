@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { containerClass } from "../container";
+import CommandPalette from "./CommandPalette.jsx";
 
 function navClass({ isActive }) {
   return `inline-flex min-h-11 items-center px-3 text-base ${
@@ -83,11 +84,15 @@ export default function Layout() {
                   素材与许可
                 </NavLink>
               </nav>
+              <button type="button" onClick={() => window.dispatchEvent(new Event("open-palette"))} className="inline-flex min-h-9 items-center gap-1 border border-line px-2 text-xs text-ink-soft hover:text-ink" title="命令面板：跳到页面、零件、场景" data-testid="palette-btn">
+                搜索跳转 <kbd className="font-mono">Ctrl/⌘ K</kbd>
+              </button>
             </div>
           </header>
           <main id="main" tabIndex={-1} className="flex-1 outline-none">
             <Outlet />
           </main>
+          <CommandPalette />
           <footer className="border-t border-line">
             <div className={`${containerClass} py-8 text-sm leading-6 text-ink-soft`}>
               <p>硬件验证 · 概念演示</p>

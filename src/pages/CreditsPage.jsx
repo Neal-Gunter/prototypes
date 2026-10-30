@@ -87,6 +87,13 @@ const ROWS = [
     url: "https://gitlab.com/kicad/libraries/kicad-symbols",
     lic: "CC BY-SA 4.0（附 KiCad 例外条款）；提取出的引脚表同样以 CC BY-SA 4.0 发布",
   },
+  {
+    what: "引脚物理位置（v22）：29 块板 / 模块每个焊盘 / 针脚在板上的坐标（mm）、孔径、间距；12 块没有许可干净 CAD 模型的板按封装生成板体（厚度估算）",
+    file: "public/pinouts/phys/*.json、src/assembly/fpBoards.gen.js",
+    from: "KiCad 官方封装库 kicad-footprints 提交 a337146e090931ad1176e20ed0b7100990fac5fa；KiCad packages3D 提交 8975715167d1a76f9b44be155ac02326f704cdbb（用来核对焊盘落在模型上）；Espressif KiCad Libraries 提交 dd76561812ab300351234ba6e0ec1295641796f0（ESP32 模组封装）；HC-SR04、L298N 模块的排针位置从 FreeCAD-library 模型上量出",
+    url: "https://gitlab.com/kicad/libraries/kicad-footprints",
+    lic: "CC BY-SA 4.0（附 KiCad 例外条款）；FreeCAD-library 部分 CC BY 3.0；提取出的坐标同样按原许可发布",
+  },
 ];
 
 const PROCEDURAL = [
