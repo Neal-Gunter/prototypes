@@ -123,7 +123,9 @@ for (const f of fs.readdirSync(META)) {
   }
   const m = metrics(T, best.S, best.B, lo, hi, best.cell, best.F);
   const tol = best.cell * Math.sqrt(3);
-  const cols = best.B.map((b) => { const c = c2(b); return { c: c.c.map(r3), h: c.h.map((v) => r3(Math.max(0.01, v))) }; });
+  // 存 6 位小数（cm）：只保留 3 位时相邻盒子会因舍入叠进约 0.005 mm，大零件的交叠体积就到几十 mm³
+  const r6 = (v) => Math.round(v * 1e6) / 1e6;
+  const cols = best.B.map((b) => { const c = c2(b); return { c: c.c.map(r6), h: c.h.map((v) => r6(Math.max(1e-4, v))) }; });
   const vol = cols.reduce((s, c) => s + 8 * c.h[0] * c.h[1] * c.h[2], 0), bv = [0, 1, 2].reduce((s, i) => s * (hi[i] - lo[i]), 1);
   const rec = { id, before: cs0.length, after: cols.length, res: best.R, cell_mm: r3(best.cell * 10), tol_mm: r3(tol * 10), exMax_mm: r3(m.exMax * 10), p99_mm: r3(m.p99 * 10), outFrac: r3(m.outFrac), coverMiss: m.coverMiss, nSurf: m.nSurf, maxOverlap_mm3: r3(m.maxOverlap * 1000), volRatio: r3(vol / bv),
     mesh_mm: [0, 1, 2].map((i) => r3((hi[i] - lo[i]) * 10)) };

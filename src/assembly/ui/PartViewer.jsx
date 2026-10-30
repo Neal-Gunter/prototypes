@@ -1,4 +1,4 @@
-// v20：零件 3D 预览 + 尺寸标尺叠加（单位 cm 场景，标注按 mm）。早期原型，简化仿真。
+// v20：零件 3D 预览 + 尺寸标尺叠加；v21：碰撞体调试叠加（线框盒 = 物理引擎实际使用的凸块）（单位 cm 场景，标注按 mm）。早期原型，简化仿真。
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Html, Line } from "@react-three/drei";
@@ -40,9 +40,21 @@ function Ruler({ d }) {
     </group>
   );
 }
+const BOX_EDGES = [[0, 1], [1, 3], [3, 2], [2, 0], [4, 5], [5, 7], [7, 6], [6, 4], [0, 4], [1, 5], [2, 6], [3, 7]];
+function ColliderOverlay({ cols }) {
+  // 每个碰撞盒 {c 中心, h 半边长}（cm）画 12 条边；颜色区分相邻块
+  const segs = useMemo(() => cols.map((b) => {
+    const v = [];
+    for (let i = 0; i < 8; i++) v.push([b.c[0] + (i & 1 ? 1 : -1) * b.h[0], b.c[1] + (i & 2 ? 1 : -1) * b.h[1], b.c[2] + (i & 4 ? 1 : -1) * b.h[2]]);
+    return BOX_EDGES.flatMap(([a, c]) => [v[a], v[c]]);
+  }), [cols]);
+  const pal = ["#dc2626", "#2563eb", "#16a34a", "#9333ea", "#ea580c", "#0891b2"];
+  return <group>{segs.map((pts, i) => <Line key={i} points={pts} segments color={pal[i % pal.length]} lineWidth={1.5} depthTest={false} transparent opacity={0.85} />)}</group>;
+}
 export default function PartViewer({ id }) {
   const [def, setDef] = useState(null);
   const [ruler, setRuler] = useState(true);
+  const [coll, setColl] = useState(false);
   useEffect(() => { setDef(null); if (id) getEntry(id).then((e) => setDef(e ? toDef(e) : null)).catch(() => setDef(null)); }, [id]);
   const d = def?.dims_mm;
   const cam = useMemo(() => { const m = d ? Math.max(d.x, d.y, d.z) / 10 : 5; return [m * 1.9, m * 1.5, m * 2.4]; }, [d]);
@@ -57,14 +69,26 @@ export default function PartViewer({ id }) {
             {def.kind === "glb" ? <Glb def={def} /> : <ProcMesh def={def} />}
           </Suspense>
           {ruler && <Ruler d={d} />}
+          {coll && <ColliderOverlay cols={def.colliders} />}
           <gridHelper args={[Math.ceil(Math.max(d.x, d.z) / 10) * 2 + 2, (Math.ceil(Math.max(d.x, d.z) / 10) * 2 + 2), "#cbd5e1", "#e2e8f0"]} />
           <OrbitControls makeDefault target={[0, d.y / 20, 0]} />
         </Canvas>
       </div>
       <div className="mt-1 flex items-center justify-between text-xs text-ink-soft">
         <span>网格 1 格 = 10 mm；刻度 {tickStep(Math.max(d.x, d.y, d.z))} mm</span>
-        <button type="button" onClick={() => setRuler((r) => !r)} aria-pressed={ruler} className="border border-line px-2 py-0.5" data-testid="ruler-toggle">{ruler ? "隐藏标尺" : "显示标尺"}</button>
+        <span className="flex gap-1">
+          <button type="button" onClick={() => setColl((r) => !r)} aria-pressed={coll} className="border border-line px-2 py-0.5" data-testid="collider-toggle">{coll ? "隐藏碰撞体" : "显示碰撞体"}</button>
+          <button type="button" onClick={() => setRuler((r) => !r)} aria-pressed={ruler} className="border border-line px-2 py-0.5" data-testid="ruler-toggle">{ruler ? "隐藏标尺" : "显示标尺"}</button>
+        </span>
       </div>
+      {coll && (
+        <p className="mt-1 text-[11px] leading-snug text-ink-soft" data-testid="collider-info">
+          碰撞体：{def.colliders.length} 个盒（物理引擎按这些凸块算碰撞）。
+          {def.collider_decomp
+            ? <>体素凸分解（构建时，我的补充）：体素 {def.collider_decomp.cell_mm} mm，盒子比可见网格最多外扩 {def.collider_decomp.exMax_mm} mm（容差 {def.collider_decomp.tol_mm} mm = 体素对角线），网格表面全部被覆盖。</>
+            : def.kind === "glb" ? <>由模型各部件的包围盒自动生成，可能比外形稍大（估算）。</> : <>程序生成零件，碰撞盒即外形（近似）。</>}
+        </p>
+      )}
     </div>
   );
 }

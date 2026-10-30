@@ -41,3 +41,6 @@ node scripts/adaptive-test.mjs >/dev/null || exit 1
 node scripts/parts-validate.mjs >/dev/null || exit 1
 OUT=${OUT:-/tmp/v20eng} node scripts/glb-load-test.mjs >/dev/null || exit 1
 node scripts/boost-avg-test.mjs >/dev/null || exit 1
+# v21：凸分解碰撞体（网格全覆盖 / 盒子互不重叠 / 外扩 ≤ 容差）+ 引擎里不穿模
+OUT=${OUT:-/tmp/v21coll} node scripts/collider-test.mjs >/dev/null || exit 1
+node e2e/collider-engine.mjs >/dev/null || exit 1
