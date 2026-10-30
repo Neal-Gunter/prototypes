@@ -59,7 +59,7 @@ export function buildTransient(b, { exp = "steady", run = false } = {}) {
       const fw = pr.fw || {};
       d.motionOk = true; d.vbatF = null;
       const aft = d.after;
-      d.after = (ctx) => { aft(ctx); if (!fw.vbatStop) return; const v = ctx.V(fw.vbatNet) - ctx.V(G); d.vbatF = d.vbatF == null ? v : d.vbatF + (v - d.vbatF) * Math.min(1, ctx.dt / 2e-3); if (d.motionOk && d.running && running(ctx.t) && d.vbatF < fw.vbatStop) { d.motionOk = false; ctx.log({ dev: p.ref, kind: "lowStop", v: d.vbatF }); } };
+      d.after = (ctx) => { aft(ctx); if (!fw.vbatStop) return; const v = ctx.V(fw.vbatNet) - ctx.V(G); if (fw.bootRead) { if (d.running && !d._wasRun) { d.vbatF = v; d.motionOk = v >= fw.vbatStop; if (!d.motionOk) ctx.log({ dev: p.ref, kind: "lowStop", v }); } d._wasRun = d.running; } d.vbatF = d.vbatF == null ? v : d.vbatF + (v - d.vbatF) * Math.min(1, ctx.dt / 2e-3); if (d.motionOk && d.running && running(ctx.t) && d.vbatF < fw.vbatStop) { d.motionOk = false; ctx.log({ dev: p.ref, kind: "lowStop", v: d.vbatF }); } };
       const dc0 = d.dc;
       d.dc = (ctx) => { dc0(ctx); if (fw.vbatStop) { const v = ctx.V(fw.vbatNet) - ctx.V(G); d.vbatF = v; d.motionOk = v >= fw.vbatStop; } };
       els.push((devs[p.ref] = theMcu = d));
