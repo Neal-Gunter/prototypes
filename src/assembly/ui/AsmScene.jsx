@@ -24,6 +24,8 @@ const MAT = {
   red: new THREE.MeshStandardMaterial({ color: "#c0392b", roughness: 0.6 }),
   yellow: new THREE.MeshStandardMaterial({ color: "#e2b524", roughness: 0.6 }),
   grey: new THREE.MeshStandardMaterial({ color: "#5b6168", roughness: 0.3 }),
+  green: new THREE.MeshStandardMaterial({ color: "#2f8f4e", roughness: 0.5 }),
+  brown: new THREE.MeshStandardMaterial({ color: "#8a5a32", roughness: 0.6 }),
   sel: new THREE.MeshBasicMaterial({ color: "#d9792b", wireframe: true }),
 };
 const PROC_MAT = { screw: "steel", nut: "steel", standoff: "brass", plate: "acrylic", breadboard: "white", bracket: "black", horn: "white", tentacle: "orange", dupont: "black", plug: "black", tool: "blue" };

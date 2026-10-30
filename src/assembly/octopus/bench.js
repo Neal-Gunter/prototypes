@@ -11,7 +11,7 @@ export const FAULTS = [
   { k: "phase0", zh: "步态参数不对：phase = 0（八条同步，原地抽动）", md: "采购清单 · 故障表“八个不同步 → 步态参数问题” / octopus_gait.h 注释" },
   { k: "i2caddr", zh: "只有部分通道有反应：第二块 PCA9685 地址冲突（方案 C 才有两块，这里只说明）", md: "采购清单 · 故障表“只有部分通道有反应”", textOnly: true },
   { k: "u1unset", zh: "6 V 降压模块没先调压就接舵机（补充，md 没写）", md: "补充：XL4015 出厂输出电压不确定" },
-  { k: "lowbat", zh: "电池快没电（6.3 V，低于 md 的 6.4 V 截止线）", md: "无线架构 §6 · 低于 6.4V 停运动" },
+  { k: "lowbat", zh: "电池快没电（md：6.3 V，低于 6.4 V 截止线；完善版：3S 9.4 V，低于 9.6 V）", md: "无线架构 §6 · 低于 6.4V 停运动；完善版阈值为我的补充（估算）" },
 ];
 export const PHASES = [
   { k: 0, zh: "阶段 0：先只跑通小智语音（不接舵机）", md: "README §7 阶段 0（半天）", roles: ["ESP", "MIC", "AMP", "SPK", "OLED"] },
@@ -23,10 +23,16 @@ export const PHASES = [
 ];
 const W = (a, b, kind, color, why, md) => ({ a, b, kind, color: COLORS[color] || color, why, md });
 
-export function benchSpec({ plan = "A", phase = 3, fault = "none" } = {}) {
+export const VARIANTS = [
+  { k: "md", zh: "md 原样", tip: "完全按 md 的接线、代码和数值（错的也照搬，方便对照）" },
+  { k: "plus", zh: "完善版（我的补充）", tip: "按数据手册和推理补齐 md 没写清楚 / 写错的地方，每一处都标“我的补充”" },
+];
+const PLUS = "我的补充";
+export function benchSpec({ plan = "A", phase = 3, fault = "none", variant = "md" } = {}) {
+  const plus = variant === "plus";
   const ph = PHASES.find((p) => p.k === phase) || PHASES[3];
   const nServo = ph.robot ? 8 : ph.servos || 0; // 方案 B 也是 8 条触手，每条 2 个舵机
-  const roles = ph.roles ? [...ph.roles] : ["ESP", "MIC", "AMP", "SPK", "OLED", "PCA", "BAT", "U1", "U2"];
+  const roles = ph.roles ? [...ph.roles] : ["ESP", "MIC", "AMP", "SPK", "OLED", "PCA", "BAT", "U1", "U2", ...(plus ? ["DIV"] : [])];
   const wires = [];
   const usb = phase === 0 || fault === "nognd" || fault === "vplus-esp";
   // —— 音频（README §4 接线表）——
@@ -68,6 +74,11 @@ export function benchSpec({ plan = "A", phase = 3, fault = "none" } = {}) {
     else wires.push(W(["ESP", "J1.21"], ["PCA", "T.V+"], "octo-dupont-30", "red", "（故障）ESP32 5V → PCA9685 V+", "反例"), W(["ESP", "J1.22"], ["PCA", "T.GND"], "octo-dupont-30", "black", "（故障）ESP32 GND → PCA9685 GND 端子", "反例"));
     if (!usb) wires.push(W(["U2", "OUT+"], ["ESP", "J1.21"], "octo-wire", "red", "5 V → ESP32 5V 脚", "README §4（md 写 VIN/5V；DevKitC‑1 丝印是 5V）"), W(["U2", "OUT-"], ["ESP", "J1.22"], "octo-wire", "black", "GND → ESP32 GND（共地）", "README §4"));
     if (fault !== "nognd") wires.push(W(["ESP", "J3.1"], ["PCA", "L.GND"], "octo-dupont-30", "black", "GND → PCA9685 GND（逻辑地，共地）", "README §4"));
+    if (plus) wires.push(
+      W(["BAT", "BAT+"], ["DIV", "IN"], "octo-dupont-20", "red", "电池 + → 分压板 IN（100k 上臂）", `${PLUS} · 替代 md 的 GPIO4 电池检测`),
+      W(["BAT", "BAT-"], ["DIV", "GND"], "octo-dupont-20", "black", "电池 − → 分压板 GND（22k 下臂）", PLUS),
+      W(["DIV", "OUT"], ["ESP", "J1.16"], "octo-dupont-20", "purple", "分压 OUT → GPIO10（ADC1_CH9）", `${PLUS} · GPIO4 已给麦克风 WS，GPIO1/2 留给采购清单第二批 I2C`),
+    );
   }
   const servos = [];
   const nSlots = plan === "B" && ph.robot ? 2 : 1;
@@ -81,8 +92,10 @@ export function benchSpec({ plan = "A", phase = 3, fault = "none" } = {}) {
   }
   const lowbat = fault === "lowbat";
   return {
-    plan, phase, fault, ph, roles, wires, servos, usb,
-    vbat: lowbat ? 6.3 : 7.4,
+    plan, phase, fault, variant, ph, roles, wires, servos, usb,
+    defs: plus ? { BAT: "p-octo-3s-pack" } : {},
+    plusHw: plus && plan === "A" && ph.robot ? { casters: true, pads: true, tipShare: 0.3 } : {},
+    vbat: plus ? (lowbat ? 9.4 : 11.1) : lowbat ? 6.3 : 7.4,
     caps: ph.robot ? servos.length : 0,
     u1Unset: fault === "u1unset",
     robot: !!ph.robot,

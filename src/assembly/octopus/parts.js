@@ -115,6 +115,38 @@ function battery() {
     octo: { pins, ties: [], volts: 7.4 },
   });
 }
+// ---------- 完善版（我的补充）：3S 18650 电池组（带 BMS） ----------
+// 18650 = 直径 18 mm、长 65 mm（型号命名即尺寸）；三节并排 + 保护板，外形为估算
+function pack3s() {
+  const c = box(-3.4, 3.4, 0, 1.85, -2.8, 2.8);
+  const cols = [c];
+  const prims = [];
+  for (const z of [-1.8, 0, 1.8]) prims.push({ k: "cyl", c: [0, 0.92, z], r: 0.9, h: 6.5, m: "green", ax: "x" });
+  prims.push(B(box(-3.4, 3.4, 0, 0.05, -2.8, 2.8), "black"), B(box(-2.5, 2.5, 1.85, 1.95, -1.0, 1.0), "blue"), B(box(3.4, 3.6, 0.5, 1.3, -0.6, 0.6), "red"));
+  const pins = { "BAT+": { p: [3.6, 1.0, -0.3], label: "红 +" }, "BAT-": { p: [3.6, 1.0, 0.3], label: "黑 −" } };
+  return base("p-octo-3s-pack", "3S 18650 电池组 11.1 V（带 BMS 保护板，我的补充）", "3S 18650 pack 11.1V with BMS", "power", cols, prims, {
+    dims_src: "18650 电芯 Φ18 × 65 mm；三节并排 + 保护板，外形约 68 × 56 × 19 mm（估算）",
+    spec: "3 节串联：满电 12.6 V、标称 11.1 V；BMS 管过充 / 过放 / 短路。台面低压截止 9.6 V（每节 3.2 V，估算），XL4015 输入在数据手册 8–36 V 范围内",
+    est: ["外形", "出线位置", "低压截止阈值"],
+    density: 2.2,
+    octo: { pins, ties: [], volts: 11.1 },
+  });
+}
+// ---------- 完善版（我的补充）：电池分压检测板 100k / 22k + 0.1 µF ----------
+function vdiv() {
+  const pcb = box(-1.0, 1.0, 0, 0.16, -0.7, 0.7);
+  const row = headerRow(["IN", "GND", "OUT"], -0.254, 0.45, "x", "");
+  const cols = [pcb, row.col];
+  const prims = [B(pcb, "green"), ...row.prims,
+    { k: "cyl", c: [-0.4, 0.28, -0.25], r: 0.09, h: 0.6, m: "brown", ax: "x" }, { k: "cyl", c: [0.4, 0.28, -0.25], r: 0.09, h: 0.6, m: "brown", ax: "x" }, B(box(-0.12, 0.12, 0.16, 0.36, -0.55, -0.4), "yellow")];
+  const pins = { IN: row.pins[1], GND: row.pins[2], OUT: row.pins[3] };
+  return base("p-octo-vdiv", "电池分压检测板（100k / 22k + 0.1 µF，我的补充）", "Battery divider 100k/22k + 0.1uF", "sensor", cols, prims, {
+    dims_src: "洞洞板 20 × 14 mm（估算）；分压比 22 / 122：12.6 V → 2.27 V，低于 ESP32‑S3 ADC 11 dB 衰减的校准量程 2900 mV（乐鑫文档）；0.1 µF 滤波按乐鑫原理图检查清单",
+    spec: "IN 接电池 +，GND 接电池 −，OUT 接 ESP32 GPIO10（ADC1_CH9）。静态电流约 12.6 V / 122 kΩ ≈ 0.1 mA",
+    est: ["外形"],
+    octo: { pins, ties: [] },
+  });
+}
 // ---------- 自制躯干骨架（本项目按 md “躯干约 10 cm” 设计） ----------
 export const FRAME = { R: 5, t: 0.3, postR: 2.6, postH: 4.5, deckY: 4.5, deckT: 0.3, hole: 2.2, deckOut: 3.6 };
 function frame() {
@@ -186,7 +218,7 @@ function armB() {
     density: 1.24,
   });
 }
-export const OCTO_PROCEDURAL = [devkit(), inmp441(), oled(), xl4015("6v"), xl4015("5v"), battery(), frame(), arm(), bracketB(), armB()];
+export const OCTO_PROCEDURAL = [devkit(), inmp441(), oled(), xl4015("6v"), xl4015("5v"), battery(), pack3s(), vdiv(), frame(), arm(), bracketB(), armB()];
 
 // ---------- 库里真实零件的引脚表（零件局部坐标，cm） ----------
 // PCA9685（ada-815）：两端各一排 6 针控制排针（GND OE SCL SDA VCC V+），16 路 × 3 排舵机排针，中间螺丝端子 V+ / GND。

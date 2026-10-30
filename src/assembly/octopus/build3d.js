@@ -18,16 +18,19 @@ export const BENCH_POS = {
   U1: { p: [-1, 0, -14], yaw: 0 },
   U2: { p: [-10, 0, -14], yaw: 0 },
   OLED: { p: [25, 0, -16.5], yaw: 0 },
-  PCA: { p: [0, 0, 10], yaw: 0 }, // 阶段 1–2 在桌上；阶段 3 起装在机身上层板
+  PCA: { p: [0, 0, 10], yaw: 0 },
+  DIV: { p: [-16, 0, 10], yaw: 0 }, // 完善版：电池分压板（我的补充） // 阶段 1–2 在桌上；阶段 3 起装在机身上层板
 };
-const DEF_OF = { ESP: "p-octo-devkitc1", PCA: "ada-815", MIC: "p-octo-inmp441", AMP: "ada-3006", SPK: "ada-3923", BAT: "p-octo-2s-lipo", U1: "p-octo-xl4015-6v", U2: "p-octo-xl4015-5v", OLED: "p-octo-oled096" };
+const DEF_OF = { DIV: "p-octo-vdiv", ESP: "p-octo-devkitc1", PCA: "ada-815", MIC: "p-octo-inmp441", AMP: "ada-3006", SPK: "ada-3923", BAT: "p-octo-2s-lipo", U1: "p-octo-xl4015-6v", U2: "p-octo-xl4015-5v", OLED: "p-octo-oled096" };
+// 机身在台面上爬 / 转的画面限制：导线 20–30 cm，机身离开原位最多 8 cm、转 ±45°（估算），超过就停在边上并提示“导线拉紧”。
+export const TETHER = { r: 8, h: Math.PI / 4 };
 const defCache = {};
 async function D(id) { return (defCache[id] ||= toDef(await getEntry(id))); }
 const servoLocal = { shaft: [0, 3.07, 0.52], lead: [0, 0.45, -1.2] };
 
 export async function buildOcto(engine, sim, { run, say } = {}) {
   const B = sim.bench, roles = {}, rotors = [];
-  const label = (r) => ({ ESP: "ESP32‑S3 开发板", PCA: "PCA9685 舵机驱动板", MIC: "INMP441 麦克风", AMP: "MAX98357A 功放", SPK: "喇叭", BAT: "2S 锂电池", U1: "降压 6 V（舵机）", U2: "降压 5 V（ESP32，补充）", OLED: "OLED" }[r] || r);
+  const label = (r) => ({ ESP: "ESP32‑S3 开发板", PCA: "PCA9685 舵机驱动板", MIC: "INMP441 麦克风", AMP: "MAX98357A 功放", SPK: "喇叭", BAT: B.variant === "plus" ? "3S 锂电组 11.1 V（我的补充）" : "2S 锂电池", DIV: "电池分压 100k/22k → GPIO10（我的补充）", U1: "降压 6 V（舵机）", U2: B.variant === "plus" ? "降压 5 V（ESP32，我的补充）" : "降压 5 V（ESP32，补充）", OLED: "OLED" }[r] || r);
   // ESP32 开发板 + 板上的真实 ESP32‑S3‑WROOM‑1 模组（同一个刚体）
   say?.("放主控：ESP32‑S3‑DevKitC‑1（模组用库里的 ESP32‑S3‑WROOM‑1 CAD）");
   {
@@ -38,10 +41,10 @@ export async function buildOcto(engine, sim, { run, say } = {}) {
     ], { why: "模组焊在开发板上" });
     roles.ESP = u0; roles.ESPMOD = u1;
   }
-  for (const r of ["MIC", "AMP", "SPK", "BAT", "U1", "U2", "OLED"]) {
+  for (const r of ["MIC", "AMP", "SPK", "BAT", "DIV", "U1", "U2", "OLED"]) {
     if (!B.roles.includes(r)) continue;
     const P = BENCH_POS[r];
-    roles[r] = engine.addPart(await D(DEF_OF[r]), { p: V3(...P.p), q: rotY(P.yaw) }, { label: label(r) });
+    roles[r] = engine.addPart(await D(B.defs?.[r] || DEF_OF[r]), { p: V3(...P.p), q: rotY(P.yaw) }, { label: label(r) });
   }
   const servoDef = await D("ada-1143");
   if (B.robot) {
@@ -133,7 +136,27 @@ export async function buildOcto(engine, sim, { run, say } = {}) {
     else rotors.push({ s, kind: "yaw", servo: roles[`S${s.arm}`], part: roles[`H${s.arm}`] });
   }
   const tmpQ = new THREE.Quaternion();
+  // —— 机身跟着仿真位姿走（俯视轨迹里的 x / z / 航向）：整个机身是一个刚体，直接摆位姿，导线两端跟着动 ——
+  const base = B.robot ? engine.worldPose(roles.FRAME) : null;
+  const motion = { clamped: false, last: null, dx: 0, dz: 0, h: 0 };
+  const moveBody = () => {
+    if (!base || !engine.parts.get(roles.FRAME)) return;
+    const P = sim.pose || { x: 0, z: 0, h: 0 };
+    let dx = P.x, dz = P.z, h = P.h;
+    const r = Math.hypot(dx, dz), clR = r > TETHER.r, clH = Math.abs(h) > TETHER.h;
+    if (clR) { dx *= TETHER.r / r; dz *= TETHER.r / r; }
+    if (clH) h = Math.sign(h) * TETHER.h;
+    motion.clamped = clR || clH; motion.dx = dx; motion.dz = dz; motion.h = h;
+    const key = `${dx.toFixed(4)},${dz.toFixed(4)},${h.toFixed(4)}`;
+    if (key === motion.last) return;
+    motion.last = key;
+    const q = rotY((-h * 180) / Math.PI); // 仿真 h>0 = 右转；three.js 绕 +y 正转 = 左转
+    const p = base.p.clone().sub(OCTO_C).applyQuaternion(q).add(OCTO_C).add(V3(dx, 0, dz));
+    p.y = base.p.y;
+    engine.teleport(roles.FRAME, p, q.clone().multiply(base.q));
+  };
   const apply = () => {
+    moveBody();
     for (const r of rotors) {
       if (r.kind === "yaw") {
         const p = engine.parts.get(r.part); if (!p) continue;
@@ -162,5 +185,5 @@ export async function buildOcto(engine, sim, { run, say } = {}) {
     }
   };
   apply();
-  return { roles, rotors, apply };
+  return { roles, rotors, apply, motion };
 }

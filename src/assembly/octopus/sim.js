@@ -2,7 +2,7 @@
 // 所有物理参数都是估算，UI 上统一标“估算”。
 import { benchSpec } from "./bench.js";
 import { evaluate } from "./circuit.js";
-import { Runtime, Pca9685Dev, fixesAll, Gait } from "./firmware.js";
+import { Runtime, Pca9685Dev, fixesAll, fixesPlus, Gait } from "./firmware.js";
 import { ARM } from "./parts.js";
 
 export const EST = {
@@ -11,6 +11,7 @@ export const EST = {
   current: "电流：保持 0.01 A，运动 0.12 + 0.45·(速度/最高速) A，堵转 0.7 A（估算）",
   frame: "只有 10–30 ms 周期（33–100 Hz）的 PWM 舵机才认（模拟舵机估算）",
   friction: "桌面摩擦：最小耗散的库仑摩擦模型；方案 A 机身底板贴桌，触手只分到约 15% 重量（估算）",
+  plusA: "完善版 A（我的补充）：底板下 3 个万向珠（滚动阻力系数约 0.02）、调高度让触手尖分担约 30% 重量 + 触手尖单向鳞片脚垫（向后滑 0.45、向前滑 0.15）——全部估算",
   gap: "相邻触手最小夹角：方案 A 12°（按触手根部宽度）；方案 B 40°（侧躺的俯仰舵机比触手宽得多）——都是估算",
 };
 const L_TIP = ARM.len, R_SHAFT = 3.8, GAP = 12;
@@ -20,7 +21,7 @@ function rng(seed) { let s = seed >>> 0 || 1; return () => ((s = (s * 1664525 + 
 const wrap = (d) => ((d % 360) + 540) % 360 - 180;
 
 export class OctoSim {
-  constructor(o = {}) { this.o = { plan: "A", phase: 3, fault: "none", mode: "ino", F: fixesAll(false), seed: 7, tipShare: 0.15, ...o }; this.rebuild(); }
+  constructor(o = {}) { this.o = { plan: "A", phase: 3, fault: "none", mode: "ino", variant: "md", seed: 7, tipShare: 0.15, ...o }; if (!this.o.F) this.o.F = this.o.variant === "plus" ? fixesPlus() : fixesAll(false); this.rebuild(); }
   set(o) { Object.assign(this.o, o); this.rebuild(); }
   rebuild() {
     const o = this.o;
@@ -31,7 +32,7 @@ export class OctoSim {
     this.servos = this.bench.servos.map((s) => ({ ...s, chN: +s.ch.slice(2), ang: 72 + this.r() * 36, w: 0, cmd: null, us: 0, I: 0, stall: false, buzz: false, collide: false }));
     this.res = evaluate(this.bench, { servoI: 0, micSpkCm: o.micSpkCm });
     this.espOn = false; this.offFor = 1e9; this.boots = 0; this.scenarioDone = false;
-    this.rt = this.bench.phase === 0 ? null : new Runtime({ F: o.F, mode: o.mode, plan: o.plan, skipPrescale: o.fault === "pwm200", i2cWrite: (addr, reg, data) => this.i2c(addr, reg, data) });
+    this.rt = this.bench.phase === 0 ? null : new Runtime({ F: o.F, mode: o.mode, plan: o.plan, skipPrescale: o.fault === "pwm200", i2cWrite: (addr, reg, data) => this.i2c(addr, reg, data), adcMv: (gpio) => this.adcMv(gpio) });
     this.step(0.001);
   }
   i2c(addr, reg, data) {
@@ -40,6 +41,12 @@ export class OctoSim {
     if (!R.pcaLogic || !R.i2cWired) return 2;
     this.dev.write(reg, data, this.rt.now);
     return 0;
+  }
+  // 模拟 analogReadMilliVolts：只有接了分压（DIV.OUT → GPIO10）才有读数
+  adcMv(gpio) {
+    const R = this.res.rails;
+    if (gpio !== 10 || !R.battSense || !R.espOn) return 0;
+    return Math.min(2900, ((R.vbat * 22) / 122) * 1000 + (this.r() - 0.5) * 20);
   }
   ev(t) { this.events.push({ t: +this.t.toFixed(2), zh: t }); if (this.events.length > 60) this.events.shift(); }
   send(line) { if (this.rt && this.espOn) this.rt.send(line); else this.ev("ESP32 没在运行，指令没发出去"); }
@@ -124,8 +131,11 @@ export class OctoSim {
       if (!lifted) cont.push({ p, v });
     }
     let Nb, Nt;
-    if (o.plan === "B" && cont.length >= 3) { Nb = 0; Nt = 1 / cont.length; } else { const sh = o.plan === "B" ? 0.5 : o.tipShare; Nb = 1 - sh; Nt = cont.length ? sh / cont.length : 0; }
-    const mu = 0.45, mub = 0.3, rho = 2.5, eps = 0.05;
+    if (o.plan === "B" && cont.length >= 3) { Nb = 0; Nt = 1 / cont.length; } else { const sh = o.plan === "B" ? 0.5 : this.bench.plusHw?.tipShare ?? o.tipShare; Nb = 1 - sh; Nt = cont.length ? sh / cont.length : 0; }
+    const hw = this.bench.plusHw || {};
+    const mu = 0.45, mub = hw.casters ? 0.02 : 0.3, rho = 2.5, eps = 0.05;
+    // 单向鳞片脚垫：滑动方向朝机身后方（+z）时摩擦高、朝前时低（平滑过渡，估算）
+    const muOf = (sx, sz) => (hw.pads ? 0.15 + 0.3 * 0.5 * (1 + Math.tanh((4 * sz) / Math.max(eps, Math.hypot(sx, sz)))) : mu);
     let V = [0, 0], om = 0;
     for (let it = 0; it < 16; it++) {
       // 加权最小二乘（IRLS）近似最小耗散
@@ -133,7 +143,7 @@ export class OctoSim {
       const add = (w, row, rhs) => { for (let i = 0; i < 3; i++) { b[i] += w * row[i] * rhs; for (let j = 0; j < 3; j++) A[i][j] += w * row[i] * row[j]; } };
       for (const c of cont) {
         const sx = V[0] - om * c.p[1] + c.v[0], sz = V[1] + om * c.p[0] + c.v[1];
-        const w = (mu * Nt) / Math.max(eps, Math.hypot(sx, sz));
+        const w = (muOf(sx, sz) * Nt) / Math.max(eps, Math.hypot(sx, sz));
         add(w, [1, 0, -c.p[1]], -c.v[0]); add(w, [0, 1, c.p[0]], -c.v[1]);
       }
       const wb = (mub * Nb) / Math.max(eps, Math.hypot(V[0], V[1])), wr = (mub * Nb * rho) / Math.max(eps / 10, Math.abs(om) * rho);

@@ -19,14 +19,25 @@ export const FIX_LIST = [
   { k: "home", zh: "HOME / MCP home 先停步态再 SoftHome（原样 HOME 时步态还在跑；MCP 的 home 实际调的是 Rest）", md: "body_firmware_A.ino · handleCommand() / octopus_mcp.cpp" },
   { k: "steps", zh: "MCP crawl 的 steps 生效：走够步数自动停（原样 steps 被忽略，一直走到 15 s 超时）", md: "octopus_mcp.cpp · crawl" },
   { k: "limit", zh: "每路加软件限位 90°±55°，相邻触手不打架（md 第 8 节建议 SetTrim / SetLimit，但代码里没调用）", md: "README §8 / octopus_bus.h · SetLimit()" },
+  // —— 完善版（我的补充）：md 没写清楚 / 写错、需要改硬件或改设计的部分 ——
+  { k: "gait2", plus: true, zh: "我的补充 · 镜像步态：左右两舷反向扫（cos(安装角) 加权），直行时转矩抵消；A 靠单向脚垫、差速转弯；B 默认 phase 0（同步划水：撑地推、抬起收），原地转时八条同向扫", md: "octopus_gait.h · Yaw()（md 的 CPG 八条同向扫，台面里 B 原地转、A 只蹭）" },
+  { k: "antiCollide", plus: true, zh: "我的补充 · 邻臂防撞软限位：每帧检查相邻两条的夹角，小于机械间隙（A 12°、B 40°，按 3D 结构估算）+3° 余量就两边各退一半", md: "md 无（README §8 只说“相邻触手打架”）" },
+  { k: "speed", plus: true, zh: "我的补充 · MCP speed 夹到 ≥ 834 ms/周期（≤ 1.2 Hz，md 自己写的舵机跟得上的上限）", md: "octopus_mcp.cpp · hz = 1000 / speed" },
+  { k: "batt", plus: true, zh: "我的补充 · 电池检测改到 GPIO10（ADC1_CH9，避开麦克风 WS 的 GPIO4 和采购清单第二批 I2C 的 GPIO1/2），100k/22k 分压，3S 低于 9.6 V 停运动、回到 10.2 V 才恢复（估算阈值）", md: "body_firmware_A.ino BATTERY_PIN 4 / 无线架构 §6" },
+  { k: "relax", plus: true, zh: "我的补充 · Rest 回到中位 1 s 后把 PWM 设成 FULL OFF（舵机不再出力、不再耗电），下次动作前重新写出", md: "octopus_body.h · Rest()（原样舵机一直出力）" },
+  { k: "pcaWake", plus: true, zh: "我的补充 · PCA9685 退出 SLEEP 后等 500 µs 再写 RESTART（NXP 数据手册：振荡器最长 500 µs 稳定）。仿真不模拟时序，只在固件里改", md: "octopus_bus.h · Pca9685::Init()" },
 ];
-export const fixesAll = (on) => Object.fromEntries(FIX_LIST.map((f) => [f.k, !!on]));
+export const fixesAll = (on) => Object.fromEntries(FIX_LIST.map((f) => [f.k, !!on && !f.plus]));
+export const fixesPlus = () => Object.fromEntries(FIX_LIST.map((f) => [f.k, true]));
+// 完善版默认步态（我的补充，估算，台面里调出来的）：A 沿用 md 的环形波；B 改成同步划水
+export const plusGait = (plan) => (plan === "B" ? { freq_hz: 0.6, yaw_amp_deg: 15, lift_amp_deg: 25, phase_deg: 0, duty: 0.5 } : { freq_hz: 0.6, yaw_amp_deg: 30, lift_amp_deg: 20, phase_deg: 45, duty: 0.6 });
+export const MIN_GAP = { A: 12, B: 40 }; // 相邻触手机械间隙（°，按 3D 结构估算）
 
 // ---------------- octopus_gait.h ----------------
 export const kArmCount = 8;
 export const defaultGait = () => ({ freq_hz: 0.6, yaw_amp_deg: 38, lift_amp_deg: 20, phase_deg: 45, duty: 0.65 });
 export class Gait {
-  constructor(F) { this.F = F; this.params_ = defaultGait(); this.phase_ = 0; this.steer_ = 0; this.throttle_ = 1; }
+  constructor(F) { this.F = F; this.params_ = defaultGait(); this.phase_ = 0; this.steer_ = 0; this.throttle_ = 1; this.spinTurn = false; }
   SetParams(p) { this.params_ = { ...p }; }
   Params() { return this.params_; }
   Tick(dt) {
@@ -41,7 +52,15 @@ export class Gait {
   Yaw(arm) {
     const p = this.Phase01(arm), d = clamp(this.params_.duty, 0.05, 0.95);
     const tri = p < d ? 1 - 2 * (p / d) : -1 + 2 * ((p - d) / (1 - d));
+    if (this.F.gait2) return tri * this.params_.yaw_amp_deg * this.Sweep(arm) * this.throttle_;
     return tri * this.params_.yaw_amp_deg * this.Gain(arm) * this.throttle_;
+  }
+  // 我的补充：左右舷镜像扫动。直行时左右两边反向扫（推力左右抵消转矩、合成向前）。
+  // 转弯：B（能抬腿）按 steer 把八条往同一个方向扫 = 原地转；A（只有偏航）一侧减小摆幅 = 差速转弯。结果夹在 [-1, 1]，摆幅不会超过设定值。
+  Sweep(arm) {
+    const c = Math.cos((Gait.MountAngle(arm) * Math.PI) / 180), s = this.steer_;
+    if (this.spinTurn) return clamp((1 - Math.abs(s)) * c - s, -1, 1);
+    return clamp(c * (1 - s * Math.sign(c)), -1, 1);
   }
   Lift(arm) {
     const p = this.Phase01(arm), d = clamp(this.params_.duty, 0.05, 0.95);
@@ -119,6 +138,8 @@ export class OctopusBody {
     this.bank_.SetMaxRate(300);
     if (this.F.limit) for (let c = 0; c < this.channels_; c++) this.bank_.SetLimit(c, 35, 145);
     if (this.F.softHome) for (let c = 0; c < 48; c++) this.bank_.last_written_[c] = NaN;
+    this.gait_.spinTurn = rig === "kDual16";
+    if (this.F.gait2) this.gait_.SetParams(plusGait(this.rt.plan));
     return true;
   }
   *SoftHome() {
@@ -143,10 +164,18 @@ export class OctopusBody {
   }
   Start() { if (this.running_) return; this.running_ = true; this.rt.spawn("octo_motion", this.TaskLoop()); }
   *TaskLoop() { while (this.running_) { this.Step(0.02); yield 20; } }
-  SetVelocity(t, s) { this.gait_.SetThrottle(t); this.gait_.SetSteer(s); this.mode_ = "gait"; }
+  // 我的补充：Rest 到位 1 s 后 FULL OFF（LEDn_OFF_H bit4）；任何新动作前把 last_written_ 置成 NaN （1e9）让它重新写出
+  Relax(dt) {
+    if (!this.F.relax) return;
+    if (this.mode_ !== "idle" || this.wantRelax !== true) { this.idleT = 0; if (this.relaxed_ && this.mode_ !== "idle") { this.relaxed_ = false; for (let c = 0; c < 48; c++) this.bank_.last_written_[c] = 1e9; } return; }
+    let still = true; for (let i = 0; i < this.channels_; i++) if (Math.abs(this.bank_.present_[i] - this.bank_.target_[i]) > 0.01) still = false;
+    this.idleT = still ? (this.idleT || 0) + dt : 0;
+    if (this.idleT >= 1 && !this.relaxed_) { this.relaxed_ = true; for (let i = 0; i < this.channels_; i++) this.boards_[Math.floor(i / 16)].SetRaw(i % 16, 0, 0x1000); this.rt.log("Rest：PWM 全部 FULL OFF（舵机放松，我的补充）"); }
+  }
+  SetVelocity(t, s) { this.gait_.SetThrottle(t); this.gait_.SetSteer(s); this.mode_ = "gait"; this.wantRelax = false; }
   SetGaitParams(p) { this.gait_.SetParams(p); }
   GaitParamsSnapshot() { return { ...this.gait_.Params() }; }
-  Rest() { this.mode_ = "idle"; this.crawlCycles = null; this.ReleaseHard(); }
+  Rest() { this.mode_ = "idle"; this.crawlCycles = null; this.wantRelax = true; this.ReleaseHard(); }
   WaveOnce(arm) { this.mode_ = "idle"; this.wave_arm_ = arm % kArmCount; this.wave_timer_ = 0; this.mode_ = "wave"; }
   Pulse(times, period = 0.6) { this.mode_ = "pulse"; this.pulse_left_ = times; this.pulse_period_ = period; this.pulse_timer_ = 0; }
   Step(dt) {
@@ -154,6 +183,9 @@ export class OctopusBody {
     else if (this.mode_ === "wave") this.StepWave(dt);
     else if (this.mode_ === "pulse") this.StepPulse(dt);
     else this.StepIdle(dt);
+    if (this.mode_ !== "idle") this.wantRelax = false;
+    this.Relax(dt);
+    if (this.relaxed_) return; // 放松状态不再写 PWM
     this.bank_.Tick(dt);
   }
   ReleaseHard() {
@@ -170,7 +202,9 @@ export class OctopusBody {
     const before = this.gait_.phase_;
     this.gait_.Tick(dt);
     if (this.crawlCycles != null && this.gait_.phase_ < before) { if (--this.crawlCycles <= 0) { this.crawlCycles = null; this.mode_ = "idle"; this.bank_.ReleaseAll(); return; } }
-    for (let a = 0; a < kArmCount; a++) this.WriteArm(a, this.gait_.Yaw(a), this.gait_.Lift(a));
+    const yaw = Array.from({ length: kArmCount }, (_, a) => this.gait_.Yaw(a));
+    if (this.F.antiCollide) AntiCollide(yaw, MIN_GAP[this.rt.plan] + 3);
+    for (let a = 0; a < kArmCount; a++) this.WriteArm(a, yaw[a], this.gait_.Lift(a));
   }
   StepWave(dt) {
     this.gait_.Reset();
@@ -194,9 +228,19 @@ export class OctopusBody {
   StepIdle() { this.gait_.Reset(); for (let a = 0; a < kArmCount; a++) this.WriteArm(a, 0, 0); }
 }
 
+// 我的补充：相邻两条触手的夹角 = 45° − yaw[i+1] + yaw[i]（同一个约定见 sim.js），小于 gmin 就两边各退一半；迭代几轮收敛
+export function AntiCollide(yaw, gmin) {
+  for (let it = 0; it < 40; it++) for (let a = 0; a < kArmCount; a++) {
+    const b = (a + 1) % kArmCount, gap = 45 - yaw[b] + yaw[a];
+    if (gap < gmin) { const f = (gmin - gap) / 2; yaw[a] += f; yaw[b] -= f; }
+  }
+  return yaw;
+}
+
 // ---------------- 运行时（调度器 + Arduino 外设替身） ----------------
 export class Runtime {
-  constructor({ F, i2cWrite, log, skipPrescale = false, mode = "ino", plan = "A" }) {
+  constructor({ F, i2cWrite, log, skipPrescale = false, mode = "ino", plan = "A", adcMv = null }) {
+    this.adcMv = adcMv || (() => 0); this.vbat = null; this.lowBatt = false;
     this.F = F; this.i2cWrite = i2cWrite; this.logFn = log || (() => {}); this.skipPrescale = skipPrescale; this.mode = mode; this.plan = plan;
     this.now = 0; this.tasks = []; this.lines = []; this.out = []; this.body = new OctopusBody(this); this.lastCmdMs = 0; this.halted = null; this.boots = 0;
   }
@@ -218,6 +262,7 @@ export class Runtime {
     }
     yield* this.body.SoftHome();
     this.body.Start();
+    if (this.F.batt) this.spawn("batt", this.battTask());
     this.log(this.F.compile ? "BLE 串口已广播：OctoBrain（模拟）" : "SerialBT.begin(\"OctoBrain\")（原样在 S3 上编译不过；这里假设已改好，按模拟串口继续）");
     this.log("Octopus body ready. BT name = OctoBrain");
     this.lastCmdMs = this.millis();
@@ -233,9 +278,22 @@ export class Runtime {
     if (!this.body.Init(this.plan === "B" ? RIG.kDual16 : rig, this.i2cWrite)) { this.log("PCA9685 初始化失败"); this.halted = "PCA9685 初始化失败"; while (true) yield 1000; }
     yield* this.body.SoftHome();
     this.body.Start();
+    if (this.F.batt) this.spawn("batt", this.battTask());
     this.log("小智固件（模拟）：已注册 self.octopus.action / self.octopus.set_gait");
     this.mcpReady = true;
     while (true) yield 50;
+  }
+  // 我的补充：GPIO10 电池检测。analogReadMilliVolts（11 dB 衰减，校准后 0–2900 mV）× (100k+22k)/22k，16 次平均，9.6 V 停、10.2 V 恢复（估算）
+  *battTask() {
+    const K = 122 / 22, CUT = 9.6, RESUME = 10.2;
+    while (true) {
+      let mv = 0; for (let i = 0; i < 16; i++) mv += Math.min(2900, Math.max(0, this.adcMv(10)));
+      const v = (mv / 16 / 1000) * K;
+      this.vbat = v;
+      if (!this.lowBatt && v < CUT) { this.lowBatt = true; this.body.Rest(); this.log(`电池 ${v.toFixed(2)} V < ${CUT} V：停止运动，请充电（我的补充）`); }
+      else if (this.lowBatt && v > RESUME) { this.lowBatt = false; this.log(`电池回到 ${v.toFixed(2)} V，恢复接受指令`); }
+      yield 500;
+    }
   }
   send(line) { this.lines.push(line); }
   *handleCommand(s0) {
@@ -244,6 +302,7 @@ export class Runtime {
     this.log("> " + s);
     const b = this.body;
     if (s === "STOP" || s === "REST") { b.Rest(); return; }
+    if (this.lowBatt && !s.startsWith("GAIT")) { this.log("电池电压低，忽略动作指令（我的补充）"); return; }
     if (s === "GO" || s === "WALK" || s === "FWD") { b.SetVelocity(1, 0); return; }
     if (s === "LEFT" || s === "TURNL") { b.SetVelocity(1, -1); return; }
     if (s === "RIGHT" || s === "TURNR") { b.SetVelocity(1, 1); return; }
@@ -286,7 +345,8 @@ export class Runtime {
     if (tool !== "self.octopus.action") return "未知工具: " + tool;
     const action = args.action ?? "crawl";
     const steps = clamp(args.steps ?? 3, 1, 100), dir = clamp(args.direction ?? 0, -100, 100), speed = clamp(args.speed ?? 1000, 300, 3000), arm = clamp(args.arm ?? 0, 0, 7);
-    const hz = 1000 / (speed > 0 ? speed : 1000);
+    if (this.lowBatt && action !== "rest") return "电池电压低，请先充电";
+    const hz = 1000 / (this.F.speed ? Math.max(834, speed) : speed > 0 ? speed : 1000);
     if (action === "crawl") { const p = b.GaitParamsSnapshot(); p.freq_hz = hz; b.SetGaitParams(p); b.SetVelocity(1, (dir / 100) * 0.6); if (this.F.steps) b.crawlCycles = steps; return "开始爬行"; }
     if (action === "wave") { b.WaveOnce(arm); return "挥手"; }
     if (action === "pulse") { b.Pulse(steps); return "脉冲收缩"; }

@@ -3,8 +3,9 @@ import { useEffect, useRef, useState } from "react";
 import { engine } from "../engine.js";
 import { OctoSim, EST } from "../octopus/sim.js";
 import { FAULTS, PHASES } from "../octopus/bench.js";
-import { FIX_LIST, fixesAll, Gait } from "../octopus/firmware.js";
-import { buildOcto } from "../octopus/build3d.js";
+import { FIX_LIST, fixesAll, fixesPlus, Gait } from "../octopus/firmware.js";
+import { VARIANTS } from "../octopus/bench.js";
+import { buildOcto, OCTO_C, TETHER } from "../octopus/build3d.js";
 import { parseNL } from "../octopus/nl.js";
 
 let detach = null;
@@ -12,6 +13,20 @@ export function octoDetach() { detach?.(); detach = null; }
 export const octoSim = new OctoSim({ plan: "A", phase: 3 });
 
 const fx = (v, d) => (typeof v === "number" && isFinite(v) ? v.toFixed(d) : "—");
+// 镜头预设（cm）：机身会爬，机身相关的镜头跟着机身走
+export const CAMS = [
+  { k: "overview", zh: "总览", pos: [2, 42, 52], tgt: [0, 0, 0] },
+  { k: "top", zh: "俯视", pos: [0, 58, 0.01], tgt: [0, 0, 0], body: true },
+  { k: "body", zh: "机身特写", pos: [12, 13, 16], tgt: [0, 3, 0], body: true },
+  { k: "side", zh: "触手侧面", pos: [24, 4.5, 0], tgt: [0, 2, 0], body: true },
+  { k: "wires", zh: "接线台面", pos: [-12, 28, 26], tgt: [-12, 0, 2] },
+];
+export function setCam(k, motion) {
+  const c = CAMS.find((x) => x.k === k); if (!c || !window.__asmCam) return false;
+  const o = c.body ? [OCTO_C.x + (motion?.dx || 0), 0, OCTO_C.z + (motion?.dz || 0)] : [0, 0, 0];
+  window.__asmCam(c.pos.map((v, i) => v + o[i]), c.tgt.map((v, i) => v + o[i]));
+  return true;
+}
 const Btn = ({ children, on, dis, t, cls = "", submit }) => <button type={submit ? "submit" : "button"} disabled={dis} onClick={on} data-testid={t} className={`min-h-8 border border-line bg-white px-2 text-xs disabled:opacity-40 ${cls}`}>{children}</button>;
 
 function TopView({ snap, plan }) {
@@ -47,6 +62,7 @@ function TopView({ snap, plan }) {
 
 export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }) {
   const [plan, setPlan] = useState("A");
+  const [variant, setVariant] = useState("md");
   const [phase, setPhase] = useState(3);
   const [fault, setFault] = useState("none");
   const [mode, setMode] = useState("ino");
@@ -73,13 +89,14 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
     try { return await build1(o); } finally { lock.current = false; setBuilding(false); }
   }
   async function build1(o = {}) {
-    const cfg = { plan, phase, fault, mode, F, ...o };
-    setPlan(cfg.plan); setPhase(cfg.phase); setFault(cfg.fault); setMode(cfg.mode); setF(cfg.F);
+    const cfg = { plan, phase, fault, mode, variant, F, ...o };
+    if (o.variant && !o.F) cfg.F = o.variant === "plus" ? fixesPlus() : fixesAll(true);
+    setVariant(cfg.variant); setPlan(cfg.plan); setPhase(cfg.phase); setFault(cfg.fault); setMode(cfg.mode); setF(cfg.F);
     octoDetach();
     clear();
     await new Promise((r) => setTimeout(r, 120));
-    octoSim.set({ plan: cfg.plan, phase: cfg.phase, fault: cfg.fault, mode: cfg.mode, F: cfg.F });
-    const title = `小智八爪鱼 方案${cfg.plan}`;
+    octoSim.set({ plan: cfg.plan, phase: cfg.phase, fault: cfg.fault, mode: cfg.mode, variant: cfg.variant, F: cfg.F });
+    const title = `小智八爪鱼 方案${cfg.plan}${cfg.variant === "plus" ? " · 完善版（我的补充）" : ""}`;
     setDemo({ text: `${title}…`, i: 0 });
     engine.extDrive = true;
     const h = await buildOcto(engine, octoSim, { run, say: (t) => setDemo({ text: `${title}：${t}` }) });
@@ -93,10 +110,11 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
     setBuilt(true);
     setSnap(octoSim.snapshot());
     setDemo({ text: `${title}：装好了（${engine.parts.size} 个零件，${engine.cables.length} 根线；${PHASES.find((p) => p.k === cfg.phase).zh}）`, done: true });
-    window.__octoBuilt = { plan: cfg.plan, phase: cfg.phase, fault: cfg.fault, parts: engine.parts.size, cables: engine.cables.length };
+    setTimeout(() => setCam(cfg.plan === "B" ? "body" : "body", h.motion), 50);
+    window.__octoBuilt = { variant: cfg.variant, plan: cfg.plan, phase: cfg.phase, fault: cfg.fault, parts: engine.parts.size, cables: engine.cables.length };
     return window.__octoBuilt;
   }
-  useEffect(() => { window.__octo = { build, sim: octoSim, nl: (t) => talk(t) }; });
+  useEffect(() => { window.__octo = { build, sim: octoSim, nl: (t) => talk(t), cam: (k) => setCam(k, handle.current?.motion), motion: () => ({ ...(handle.current?.motion || {}) }) }; });
 
   const send = (s) => { octoSim.send(s); setSnap(octoSim.snapshot()); };
   const mcp = (tool, args) => { const r = octoSim.mcp(tool, args); setSnap(octoSim.snapshot()); return r; };
@@ -114,13 +132,20 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
   const R = snap?.rails;
   const ph = PHASES.find((p) => p.k === phase);
   const noBody = phase === 0;
+  const B3 = !!octoSim.bench.robot;
   return (
     <div className="flex flex-col gap-3 text-xs" data-testid="octo-panel">
+      <p className="rounded bg-amber-50 px-1 text-amber-800">早期原型，简化仿真</p>
       <p className="leading-5 text-ink-soft">照你给的 md（octopus-ai）复刻：零件、接线、供电、固件都按文档；文档没写的标“文档未写”，数字是推出来的标“估算”。语音、大模型、WiFi / 蓝牙都是<b className="text-ink">模拟</b>。</p>
       <fieldset className="flex flex-col gap-1">
         <legend className="font-medium">预设</legend>
-        <Btn t="octo-preset-A" dis={!ready || busy || building} on={() => build({ plan: "A", phase: 3, fault: "none" })} cls="text-left">小智八爪鱼 方案A（8 个 MG90S，只摆不抬）</Btn>
-        <Btn t="octo-preset-B" dis={!ready || busy || building} on={() => build({ plan: "B", phase: 3, fault: "none" })} cls="text-left">小智八爪鱼 方案B（16 个 MG90S，每条摆 + 抬）</Btn>
+        <span className="text-ink-soft">md 原样（照文档，固件修正可开关）</span>
+        <Btn t="octo-preset-A" dis={!ready || busy || building} on={() => build({ plan: "A", phase: 3, fault: "none", variant: "md" })} cls="text-left">小智八爪鱼 方案A（8 个 MG90S，只摆不抬）</Btn>
+        <Btn t="octo-preset-B" dis={!ready || busy || building} on={() => build({ plan: "B", phase: 3, fault: "none", variant: "md" })} cls="text-left">小智八爪鱼 方案B（16 个 MG90S，每条摆 + 抬）</Btn>
+        <span className="mt-1 text-copper">完善版（我的补充）：md 问题清单里的每一条都改了，改动见指南的“完善版改动表”</span>
+        <Btn t="octo-preset-A-plus" dis={!ready || busy || building} on={() => build({ plan: "A", phase: 3, fault: "none", variant: "plus" })} cls="border-copper text-left">方案A · 完善版（我的补充：3S 电池、镜像步态、万向球脚，能直行和转弯）</Btn>
+        <Btn t="octo-preset-B-plus" dis={!ready || busy || building} on={() => build({ plan: "B", phase: 3, fault: "none", variant: "plus" })} cls="border-copper text-left">方案B · 完善版（我的补充：防撞、同步划水、原地转圈）</Btn>
+        {variant === "plus" && <p className="text-copper" data-testid="octo-variant-tip">{VARIANTS.find((v) => v.k === "plus")?.tip}</p>}
         <label className="mt-1">按 md 的阶段装：
           <select value={phase} onChange={(e) => setPhase(+e.target.value)} className="ml-1 w-full border border-line bg-white" data-testid="octo-phase">{PHASES.map((p) => <option key={p.k} value={p.k}>{p.zh}</option>)}</select>
         </label>
@@ -135,10 +160,10 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
         </div>
         <details>
           <summary className="cursor-pointer">固件修正（{Object.values(F).filter(Boolean).length}/{FIX_LIST.length} 项打开；全关 = md 原样）</summary>
-          <div className="mt-1 flex gap-1"><Btn on={() => setF(fixesAll(true))} t="octo-fix-all">全部修正</Btn><Btn on={() => setF(fixesAll(false))} t="octo-fix-none">全部原样（md 代码）</Btn></div>
-          {FIX_LIST.map((f) => <label key={f.k} className="mt-1 flex gap-1 leading-4"><input type="checkbox" checked={!!F[f.k]} onChange={(e) => setF({ ...F, [f.k]: e.target.checked })} /><span>{f.zh}<span className="text-ink-soft">（{f.md}）</span></span></label>)}
+          <div className="mt-1 flex flex-wrap gap-1"><Btn on={() => setF(fixesAll(true))} t="octo-fix-all">全部修正（md 的 bug）</Btn><Btn on={() => setF(fixesPlus())} t="octo-fix-plus">再加上我的补充</Btn><Btn on={() => setF(fixesAll(false))} t="octo-fix-none">全部原样（md 代码）</Btn></div>
+          {FIX_LIST.map((f) => <label key={f.k} className={`mt-1 flex gap-1 leading-4 ${f.plus ? "text-copper" : ""}`}><input type="checkbox" checked={!!F[f.k]} onChange={(e) => setF({ ...F, [f.k]: e.target.checked })} /><span>{f.zh}<span className="text-ink-soft">（{f.md}）</span></span></label>)}
         </details>
-        <Btn t="octo-build" dis={!ready || busy || building} on={() => build()} cls="border-ink">按上面的设置重新装（方案{plan}）</Btn>
+        <Btn t="octo-build" dis={!ready || busy || building} on={() => build()} cls="border-ink">按上面的设置重新装（方案{plan}{variant === "plus" ? " · 完善版" : ""}）</Btn>
       </fieldset>
       {built && snap && <>
         <fieldset data-testid="octo-power">
@@ -186,6 +211,8 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
           </form>
         </fieldset>}
         {!noBody && <TopView snap={snap} plan={plan} />}
+        {built && <div className="flex flex-wrap items-center gap-1" data-testid="octo-cams"><span>镜头：</span>{CAMS.map((c) => <Btn key={c.k} t={`cam-${c.k}`} on={() => setCam(c.k, handle.current?.motion)}>{c.zh}</Btn>)}</div>}
+        {built && B3 && handle.current?.motion?.clamped && <p className="text-amber-700" data-testid="octo-tether">导线拉紧：3D 机身最多离开原位 {TETHER.r} cm、转 ±{Math.round((TETHER.h * 180) / Math.PI)}°（估算，按 20–30 cm 杜邦线），之后的位移只在俯视轨迹里继续算。</p>}
         {!noBody && <details open>
           <summary className="cursor-pointer font-medium">通道监视（PCA9685 → 舵机）</summary>
           <table className="mt-1 w-full font-mono text-[10px]" data-testid="octo-channels"><thead><tr className="text-ink-soft"><th>通道</th><th>舵机</th><th>脉宽 µs</th><th>指令°</th><th>实际°</th><th>A</th><th /></tr></thead><tbody>

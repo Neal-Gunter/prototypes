@@ -4,10 +4,24 @@ import BUS from "./md/octopus_bus.h?raw";
 import GAIT from "./md/octopus_gait.h?raw";
 import BODY from "./md/octopus_body.h?raw";
 import MCP from "./md/octopus_mcp.cpp?raw";
+// 完善版（我的补充）固件 + 完善版文档
+import P_INO from "./plus/octopus_plus/octopus_plus.ino?raw";
+import P_BUS from "./plus/octopus_plus/octopus_bus.h?raw";
+import P_GAIT from "./plus/octopus_plus/octopus_gait.h?raw";
+import P_BODY from "./plus/octopus_plus/octopus_body.h?raw";
+import P_BATT from "./plus/octopus_plus/octopus_batt.h?raw";
+import P_MCP from "./plus/xiaozhi/octopus_mcp.cpp?raw";
+import P_MD from "./plus/小智八爪鱼-完善版.md?raw";
 import { FAULTS, PHASES } from "./bench.js";
 import { FIX_LIST } from "./firmware.js";
 import { DEVKIT_J1, DEVKIT_J3 } from "./parts.js";
+export { MD_ISSUES, PLUS_CHANGES, PLUS_BOM } from "./issues.js";
 
+// 我的补充：完善版文件（下载名带文件夹，Arduino 工程文件夹必须叫 octopus_plus）
+export const PLUS_SOURCES = {
+  "octopus_plus/octopus_plus.ino": P_INO, "octopus_plus/octopus_gait.h": P_GAIT, "octopus_plus/octopus_bus.h": P_BUS,
+  "octopus_plus/octopus_body.h": P_BODY, "octopus_plus/octopus_batt.h": P_BATT, "xiaozhi/octopus_mcp.cpp": P_MCP, "小智八爪鱼-完善版.md": P_MD,
+};
 export const MD_SOURCES = { "body_firmware_A.ino": INO, "octopus_bus.h": BUS, "octopus_gait.h": GAIT, "octopus_body.h": BODY, "octopus_mcp.cpp": MCP };
 
 // —— md 里的价格（原样抄，不改不补）——
@@ -80,38 +94,6 @@ export const TRACE = [
   ["麦克风和喇叭 ≥ 5 cm", "README §8"],
 ];
 
-// —— 你的 md 里我觉得不对 / 不清楚的地方 ——
-export const MD_ISSUES = [
-  "“方案 A”有两个意思：README 里是 8 舵机入门版；手机控制指南 / 无线架构里是“手动蓝牙控制”。而 body_firmware_A.ino 写的是 kDual16（16 舵机）。台面：方案 A = 8 舵机，固件修正项“rig8”把它改成 kSingle8。",
-  "README §1 / §5 对 xiaozhi-esp32-pet、MT3608 升压的说法前后不一致（§5 建议照抄它的 BSP，但本方案是降压供电）。",
-  "采购清单第二批用 GPIO1/2 做 I2C、5 V 6 A 适配器供舵机；README / .ino 用 GPIO8/9、6 V 电池。台面按 README。",
-  "无线版（手机大脑）去掉了板上音频，但 README 的接线仍然有麦克风 / 功放；.ino 完全没用麦克风、功放、OLED。台面阶段 0 单独跑语音（模拟），阶段 3 起这些件只是接着。",
-  "一块 XL4015 只有一路输出，做不到同时 6 V 和 5 V；台面加了第二块（补充）。",
-  "XL4015 标称输入 8–36 V，2S 电池 6.4–8.4 V 大部分时间低于下限（台面给出警告）。",
-  "kSingle8 下 WaveOnce / Pulse 只写俯仰（lift），8 舵机版本挥手和脉冲收缩没有任何动作。",
-  "MCP：home 实际调用 Rest；steps 参数被忽略；speed 300–3000 ms 换成频率最高 3.3 Hz，超过 md 自己写的 1.2 Hz 上限。",
-  "ESP32-S3 没有经典蓝牙，BluetoothSerial 编译不过（要换 BLE UART，无线架构 §10 才是 BLE）。",
-  "octopus_body.h 的 Pca9685 boards_[3] 需要默认构造函数，但 Pca9685 只有带参构造，编译不过。",
-  "last_written_ 初值全是 0，SoftHome 第一轮 Tick 就把所有通道同时写出，“分时上电”没有生效；README 说峰值 2.3→1.3 A，无线架构又说“平均 3~5A 峰值”，两个数对不上。",
-  "GAIT 指令先 toUpperCase() 再找小写的 f= / yaw= …，永远匹配不上，等于调不了参。",
-  "Lateriality() 用 sin(安装角) 区分左右，实际区分的是前后，LEFT / RIGHT 转不了弯；转弯增益 1.85 × 38° ≈ 70°，超过相邻触手 45° 的间隔。",
-  "脉宽范围 150–600（0.73–2.93 ms）：90° 对应 1.83 ms，MG90S 常见 1.5 ms 中位，中位会偏约 30°。",
-  "HOME / Rest 在 loop 里直接动 bank_，和运动任务同时写，存在竞争。",
-  "ReleaseHard() 在 loop 里连 Tick 20 次 = 瞬间跳回中位；Rest 也没有真正关 PWM（舵机仍然出力）。",
-  "GPIO4 同时被写成麦克风 WS 和（无线架构里的）电池电压检测，冲突。",
-  "“TP4056×2”给 2S 串联电池充电是危险的（TP4056 是单节充电芯片，串联充会过充）；采购清单后面也说了“别用普通单芯充”。",
-  "MG90S 价格前后不一致：¥12（README）、¥5~8/个（采购清单）、12 个 ¥60~95。",
-  "README 合计“约 ¥350”与逐项相加（¥367，按舵机单价算）不一致。",
-  "方案 A 的电源示意也写“16 路舵机”。",
-  "md 写“ESP32 的 VIN/5V 引脚”，DevKitC-1 丝印是“5V”，没有 VIN。",
-  "PCA9685 从 SLEEP 唤醒后要等 ≥500 µs 才能开 RESTART，代码里没写等待（台面的固件替身照原样，不报错）。",
-  "很多细节文档没写：麦克风 / 功放 / OLED 的供电脚、L/R 脚、PCA9685 的 OE 脚、电池接口、开关、保险丝、电容的具体接法。台面上这些都标“文档未写”。",
-  "无线架构里“立创实战派”一处是乱码（“立��实战派”）。",
-  "AUTO_REST：15 s 没有新指令就自动停，所以 GO 之后不发指令它只会爬 15 s（这是特性，不是 bug，但手机控制指南没提）。",
-  "（台面模型推测，估算，需要实物验证）md 的 CPG 里八条触手往同一个方向摆、相位按安装角递增：在台面的摩擦模型里，方案 B 主要是原地转圈、方案 A 只是“蹭”，并不是向前爬。",
-  "（估算）方案 B 按 10 cm 躯干装 16 个 MG90S，俯仰舵机侧躺时相邻两条之间只剩约 5° 的相对摆动空间，md 默认 38° 摆幅会互相顶住。",
-];
-
 export function octoGuide(sim, engine) {
   const B = sim.bench;
   const bom = [];
@@ -129,12 +111,13 @@ export function octoGuide(sim, engine) {
   }
   else {
     const zh = { ESP: "ESP32‑S3‑DevKitC‑1（程序生成，估算）", PCA: "PCA9685 16 路（Adafruit 815 CAD）", MIC: "INMP441（程序生成，估算）", AMP: "MAX98357A（Adafruit 3006 CAD）", SPK: "喇叭（Adafruit 3923 CAD）", BAT: "2S 7.4 V 锂电池（程序生成，估算）", U1: "XL4015 降压 6 V（程序生成，估算）", U2: "XL4015 降压 5 V（补充，程序生成）", OLED: "0.96\" OLED（程序生成，估算）" };
+    if (sim.o.variant === "plus") Object.assign(zh, { BAT: "3S 锂电组 11.1 V（我的补充，程序生成，估算）", U2: "XL4015 降压 5 V（我的补充，程序生成）", DIV: "电池分压 100k/22k → GPIO10（我的补充）" });
     for (const r of B.roles) bom.push({ id: r, zh: zh[r] || r, n: 1, real: ["PCA", "AMP", "SPK"].includes(r) });
     if (B.servos.length) bom.push({ id: "ada-1143", zh: "MG90S 舵机（Adafruit 1143 CAD）", n: B.servos.length, real: true });
     if (B.caps) bom.push({ id: "cap", zh: "220µF 电解电容（KiCad CAD）", n: B.caps, real: true });
   }
   return {
-    title: `小智八爪鱼 方案${B.plan}`, plan: B.plan, phase: B.phase, phaseZh: PHASES.find((p) => p.k === B.phase)?.zh, fault: FAULTS.find((f) => f.k === B.fault)?.zh,
+    title: `小智八爪鱼 方案${B.plan}${sim.o.variant === "plus" ? " · 完善版（我的补充）" : ""}`, plan: B.plan, variant: sim.o.variant || "md", phase: B.phase, phaseZh: PHASES.find((p) => p.k === B.phase)?.zh, fault: FAULTS.find((f) => f.k === B.fault)?.zh,
     fixes: FIX_LIST.filter((f) => sim.o.F[f.k]).map((f) => f.zh), mode: sim.o.mode,
     created: new Date().toISOString(),
     bom, wires: B.wires.map((w) => ({ a: w.a.join(" "), b: w.b.join(" "), why: w.why, md: w.md, kind: w.kind })),

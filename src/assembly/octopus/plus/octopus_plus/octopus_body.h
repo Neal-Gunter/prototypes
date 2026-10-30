@@ -1,0 +1,319 @@
+#pragma once
+// OctopusBody（完善版）：步态发生器 + 舵机总线 + 50 Hz 运动任务。基于 md 的 octopus_body.h，改动处标「我的补充」。
+//
+// 我的补充：所有指令（走 / 停 / 挥手 / 回中位 / 调参）都通过 FreeRTOS 队列交给运动任务，
+// 只有运动任务写舵机，loop()、BLE 回调、MCP 回调都不再直接动 bank_（md 里存在两边同时写的竞争）。
+
+#include <cmath>
+#include <cstdint>
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
+#include "esp_log.h"
+
+#include "octopus_gait.h"
+#include "octopus_bus.h"
+
+namespace octo {
+
+enum class RigType {
+    kSingle8,   // 方案 A：8 路，每条触手 1 个偏航舵机
+    kDual16,    // 方案 B：16 路，每条触手 偏航 + 俯仰
+    kTendon24,  // md 方案 C（完善版未改动、未验证）
+};
+
+inline int ChannelsFor(RigType rig) {
+    switch (rig) {
+        case RigType::kSingle8:  return 8;
+        case RigType::kDual16:   return 16;
+        case RigType::kTendon24: return 24;
+    }
+    return 8;
+}
+
+inline int ChannelOf(RigType rig, int arm, int slot) {
+    switch (rig) {
+        case RigType::kSingle8:  return arm;
+        case RigType::kDual16:   return arm * 2 + slot;
+        case RigType::kTendon24: return arm * 3 + slot;
+    }
+    return arm;
+}
+
+class OctopusBody {
+public:
+    static constexpr const char* kTag = "OctopusBody";
+
+    // 我的补充：相邻触手机械间隙（°，按 3D 结构估算，需实物验证）
+    static constexpr float kMinGapA = 12.0f;
+    static constexpr float kMinGapB = 40.0f;
+
+    ~OctopusBody() { Stop(); }
+
+    bool Init(RigType rig, void* i2c_ctx, Pca9685::WriteFn write_fn) {
+        rig_ = rig;
+        channels_ = ChannelsFor(rig);
+        board_count_ = (channels_ + 15) / 16;
+
+        for (int i = 0; i < board_count_; i++) {
+            boards_[i] = Pca9685(static_cast<uint8_t>(Pca9685::kBaseAddr + i));
+            if (!boards_[i].Init(i2c_ctx, write_fn, 50.0f)) {
+                ESP_LOGE(kTag, "PCA9685 #%d (0x%02X) init failed", i, Pca9685::kBaseAddr + i);
+                return false;
+            }
+        }
+
+        bank_.Bind(boards_, board_count_);
+        bank_.Begin(channels_, kHome);
+        bank_.SetMaxRate(300.0f);
+        // 我的补充：每路软件限位 90°±55°（md §8 提到 SetLimit 但代码没调用）
+        for (int i = 0; i < channels_; i++) bank_.SetLimit(i, kHome - 55.0f, kHome + 55.0f);
+
+        // 我的补充：完善版默认步态（估算，台面里调出来的）
+        GaitParams p;
+        if (rig_ == RigType::kDual16) {
+            p.freq_hz = 0.6f; p.yaw_amp_deg = 15.0f; p.lift_amp_deg = 25.0f; p.phase_deg = 0.0f; p.duty = 0.5f;
+        } else {
+            p.freq_hz = 0.6f; p.yaw_amp_deg = 30.0f; p.lift_amp_deg = 20.0f; p.phase_deg = 45.0f; p.duty = 0.6f;
+        }
+        gait_.SetParams(p);
+        gait_.SetSpinTurn(rig_ == RigType::kDual16);
+
+        queue_ = xQueueCreate(8, sizeof(Cmd));
+        return queue_ != nullptr;
+    }
+
+    // 我的补充：真正逐路上电。每路直接写到中位并 Arm，路与路之间隔 150 ms（舵机上电位置未知，只能错开）。
+    // 只在 Start() 之前调用；运动任务跑起来之后用 Home()。
+    void SoftHomeBlocking() {
+        for (int i = 0; i < channels_; i++) {
+            bank_.SetTarget(i, kHome);
+            bank_.ArmNow(i);
+            vTaskDelay(pdMS_TO_TICKS(150));
+        }
+    }
+
+    void Start() {
+        if (task_) return;
+        running_ = true;
+        xTaskCreatePinnedToCore(&OctopusBody::TaskEntry, "octo_motion", 4096, this, 6, &task_, 0);
+    }
+
+    void Stop() {
+        if (!task_) return;
+        running_ = false;
+        vTaskDelay(pdMS_TO_TICKS(100));   // 任务自己退出并删除
+        task_ = nullptr;
+    }
+
+    // ---------- 运动指令（线程安全：只入队） ----------
+    void SetVelocity(float throttle, float steer, int cycles = 0) { Post({CmdType::kGait, throttle, steer, cycles, {}}); }
+    void Rest()                 { Post({CmdType::kRest, 0, 0, 0, {}}); }
+    void Home()                 { Post({CmdType::kHome, 0, 0, 0, {}}); }
+    void WaveOnce(int arm)      { Post({CmdType::kWave, 0, 0, arm, {}}); }
+    void Pulse(int times)       { Post({CmdType::kPulse, 0, 0, times, {}}); }
+    void SetGaitParams(const GaitParams& p) { Post({CmdType::kParams, 0, 0, 0, p}); }
+
+    // 读快照只读 Params()，不写（float 读写在 ESP32 上是原子的）
+    GaitParams GaitParamsSnapshot() const { return gait_.Params(); }
+
+    RigType Rig() const { return rig_; }
+    int Channels() const { return channels_; }
+    bool Relaxed() const { return bank_.Relaxed(); }
+
+private:
+    enum class Mode { kIdle, kGait, kWave, kPulse, kHoming };
+    enum class CmdType { kGait, kRest, kHome, kWave, kPulse, kParams };
+    struct Cmd {
+        CmdType type;
+        float throttle;
+        float steer;
+        int n;            // gait：周期数（0 = 不限）；wave：触手号；pulse：次数
+        GaitParams params;
+    };
+
+    static constexpr float kHome = 90.0f;
+
+    void Post(const Cmd& c) { if (queue_) xQueueSend(queue_, &c, pdMS_TO_TICKS(20)); }
+
+    static void TaskEntry(void* arg) { static_cast<OctopusBody*>(arg)->TaskLoop(); }
+
+    void TaskLoop() {
+        const TickType_t period = pdMS_TO_TICKS(20);  // 50 Hz
+        TickType_t last = xTaskGetTickCount();
+        while (running_) {
+            Cmd c;
+            while (xQueueReceive(queue_, &c, 0) == pdTRUE) Apply(c);
+            Step(0.02f);
+            vTaskDelayUntil(&last, period);
+        }
+        bank_.ReleaseAll();
+        vTaskDelete(nullptr);
+    }
+
+    void Apply(const Cmd& c) {
+        switch (c.type) {
+            case CmdType::kGait:
+                gait_.SetThrottle(c.throttle);
+                gait_.SetSteer(c.steer);
+                cycles_left_ = c.n;
+                cycle_mark_ = gait_.Cycles();
+                Enter(Mode::kGait);
+                break;
+            case CmdType::kRest:
+                Enter(Mode::kIdle);
+                want_relax_ = true;
+                bank_.ReleaseAll();               // 我的补充：只改目标，由限速慢慢回中位
+                break;
+            case CmdType::kHome:
+                Enter(Mode::kHoming);              // 我的补充：先停步态，再一路一路回中位
+                home_idx_ = 0;
+                home_timer_ = 0.0f;
+                break;
+            case CmdType::kWave:
+                gait_.Reset();
+                wave_arm_ = ((c.n % kArmCount) + kArmCount) % kArmCount;
+                wave_timer_ = 0.0f;
+                Enter(Mode::kWave);
+                break;
+            case CmdType::kPulse:
+                pulse_left_ = c.n < 1 ? 1 : c.n;
+                pulse_timer_ = 0.0f;
+                Enter(Mode::kPulse);
+                break;
+            case CmdType::kParams:
+                gait_.SetParams(c.params);
+                break;
+        }
+    }
+
+    void Enter(Mode m) {
+        mode_ = m;
+        if (m != Mode::kIdle) { want_relax_ = false; idle_t_ = 0.0f; bank_.Wake(); }
+    }
+
+    void Step(float dt) {
+        switch (mode_) {
+            case Mode::kGait:   StepGait(dt);   break;
+            case Mode::kWave:   StepWave(dt);   break;
+            case Mode::kPulse:  StepPulse(dt);  break;
+            case Mode::kHoming: StepHoming(dt); break;
+            case Mode::kIdle:
+            default:            StepIdle();     break;
+        }
+        RelaxCheck(dt);
+        bank_.Tick(dt);
+    }
+
+    // 我的补充：Rest 之后全部到位、静止 1 s → FULL OFF
+    void RelaxCheck(float dt) {
+        if (mode_ != Mode::kIdle || !want_relax_ || bank_.Relaxed()) { idle_t_ = 0.0f; return; }
+        idle_t_ = bank_.Settled() ? idle_t_ + dt : 0.0f;
+        if (idle_t_ >= 1.0f) { bank_.Relax(); ESP_LOGI(kTag, "relaxed (FULL OFF)"); }
+    }
+
+    void WriteArm(int arm, float yaw_deg, float lift_deg) {
+        arm %= kArmCount;
+        if (rig_ == RigType::kSingle8) {
+            bank_.SetTarget(ChannelOf(rig_, arm, 0), kHome + yaw_deg);
+        } else if (rig_ == RigType::kDual16) {
+            bank_.SetTarget(ChannelOf(rig_, arm, 0), kHome + yaw_deg);
+            bank_.SetTarget(ChannelOf(rig_, arm, 1), kHome + lift_deg);
+        } else {
+            float phi = yaw_deg * static_cast<float>(M_PI) / 180.0f;
+            float curve = 0.25f + lift_deg / 90.0f;
+            for (int j = 0; j < 3; j++) {
+                float theta = 2.0f * static_cast<float>(M_PI) * j / 3.0f;
+                bank_.SetTarget(ChannelOf(rig_, arm, j), kHome + std::cos(phi - theta) * curve * 30.0f);
+            }
+        }
+    }
+
+    void StepGait(float dt) {
+        gait_.Tick(dt);
+        // 我的补充：MCP steps → 走够周期数自动 Rest
+        if (cycles_left_ > 0 && gait_.Cycles() - cycle_mark_ >= static_cast<uint32_t>(cycles_left_)) {
+            cycles_left_ = 0;
+            Apply({CmdType::kRest, 0, 0, 0, {}});
+            return;
+        }
+        float yaw[kArmCount];
+        for (int a = 0; a < kArmCount; a++) yaw[a] = gait_.Yaw(a);
+        // 我的补充：邻臂防撞
+        AntiCollide(yaw, (rig_ == RigType::kDual16 ? kMinGapB : kMinGapA) + 3.0f);
+        for (int a = 0; a < kArmCount; a++) WriteArm(a, yaw[a], gait_.Lift(a));
+    }
+
+    void StepWave(float dt) {
+        wave_timer_ += dt;
+        const float dur = 1.2f;
+        if (wave_timer_ >= dur) { mode_ = Mode::kIdle; return; }
+        float k = wave_timer_ / dur;
+        float env = std::sin(k * static_cast<float>(M_PI));
+        for (int a = 0; a < kArmCount; a++) {
+            if (rig_ == RigType::kSingle8) {
+                // 我的补充：8 舵机版用偏航来回摆表示挥手
+                WriteArm(a, a == wave_arm_ ? env * 40.0f * std::sin(k * 6.0f * static_cast<float>(M_PI)) : 0.0f, 0.0f);
+            } else {
+                WriteArm(a, 0.0f, a == wave_arm_ ? env * 45.0f : 0.0f);
+            }
+        }
+    }
+
+    void StepPulse(float dt) {
+        pulse_timer_ += dt;
+        if (pulse_timer_ >= pulse_period_) {
+            pulse_timer_ = 0.0f;
+            if (--pulse_left_ <= 0) { mode_ = Mode::kIdle; return; }
+        }
+        float k = pulse_timer_ / pulse_period_;
+        float curl = std::sin(k * static_cast<float>(M_PI)) * 40.0f;
+        for (int a = 0; a < kArmCount; a++) {
+            if (rig_ == RigType::kSingle8) WriteArm(a, (a % 2 ? 1.0f : -1.0f) * curl * 0.6f, 0.0f);  // 我的补充
+            else WriteArm(a, 0.0f, curl);
+        }
+    }
+
+    // 我的补充：运动任务里的逐路回中位（每 150 ms 一路）
+    void StepHoming(float dt) {
+        gait_.Reset();
+        home_timer_ -= dt;
+        if (home_timer_ > 0.0f) return;
+        if (home_idx_ >= channels_) { mode_ = Mode::kIdle; return; }
+        bank_.SetTarget(home_idx_++, kHome);
+        home_timer_ = 0.15f;
+    }
+
+    void StepIdle() {
+        gait_.Reset();
+        for (int a = 0; a < kArmCount; a++) WriteArm(a, 0.0f, 0.0f);
+    }
+
+    RigType rig_ = RigType::kSingle8;
+    int channels_ = 8;
+    int board_count_ = 1;
+
+    Pca9685 boards_[3];     // 需要 Pca9685 默认构造（我的补充）
+    ServoBank bank_;
+    Gait gait_;
+
+    QueueHandle_t queue_ = nullptr;
+    Mode mode_ = Mode::kIdle;
+    TaskHandle_t task_ = nullptr;
+    volatile bool running_ = false;
+
+    bool want_relax_ = false;
+    float idle_t_ = 0.0f;
+    int cycles_left_ = 0;
+    uint32_t cycle_mark_ = 0;
+    int home_idx_ = 0;
+    float home_timer_ = 0.0f;
+    int wave_arm_ = 0;
+    float wave_timer_ = 0.0f;
+    int pulse_left_ = 0;
+    float pulse_period_ = 0.6f;
+    float pulse_timer_ = 0.0f;
+};
+
+}  // namespace octo
