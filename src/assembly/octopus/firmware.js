@@ -205,10 +205,16 @@ export class OctopusBody {
   RelaxNow() { this.mode_ = "idle"; this.crawlCycles = null; this.wantRelax = false; if (!this.relaxed_) { this.relaxed_ = true; for (let i = 0; i < this.channels_; i++) this.boards_[Math.floor(i / 16)].SetRaw(i % 16, 0, 0x1000); this.rt.log("低电：PWM 立刻全部停掉（舵机放松，我的补充）"); } }
   WaveOnce(arm) { this.mode_ = "idle"; this.wave_arm_ = arm % kArmCount; this.wave_timer_ = 0; this.mode_ = "wave"; }
   Pulse(times, period = 0.6) { this.mode_ = "pulse"; this.pulse_left_ = times; this.pulse_period_ = period; this.pulse_timer_ = 0; }
+  // v16（octopus_body.h SetPose / ApplyTrim / ModeCode 的 JS 孪生，我的补充）
+  SetPose(deg) { this.pose_ = Array.from({ length: 16 }, (_, i) => deg[i] || 0); this.gait_.Reset(); this.mode_ = "pose"; this.wantRelax = false; }
+  ApplyTrim(ch, c, lo, hi) { if (ch < 0 || ch >= this.channels_) return; c = clamp(c, -20, 20); lo = clamp(lo, -55, 0); hi = clamp(hi, 0, 55); this.bank_.SetTrim(ch, c); this.bank_.SetLimit(ch, 90 + c + lo, 90 + c + hi); }
+  ModeCode() { return { idle: 0, gait: 1, wave: 2, pulse: 3, pose: 5 }[this.mode_] ?? 0; }
+  Angle(ch) { return this.bank_.Present(ch) - 90 - this.bank_.trim_[ch]; }
   Step(dt) {
     if (this.mode_ === "gait") this.StepGait(dt);
     else if (this.mode_ === "wave") this.StepWave(dt);
     else if (this.mode_ === "pulse") this.StepPulse(dt);
+    else if (this.mode_ === "pose") { this.gait_.Reset(); for (let i = 0; i < this.channels_ && i < 16; i++) this.bank_.SetTarget(i, 90 + this.pose_[i]); }
     else this.StepIdle(dt);
     if (this.mode_ !== "idle") this.wantRelax = false;
     this.Relax(dt);

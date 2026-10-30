@@ -218,6 +218,8 @@ public:
     bool Relaxed() const { return relaxed_; }
 
     float Present(int ch) const { return Valid(ch) ? present_[ch] : 0.0f; }
+    float Trim(int ch) const { return Valid(ch) ? trim_[ch] : 0.0f; }   // v16 我的补充：遥测要换算成“相对校准中位”的角度
+    float MaxRate() const { return max_rate_; }
     int Channels() const { return channels_; }
 
 private:

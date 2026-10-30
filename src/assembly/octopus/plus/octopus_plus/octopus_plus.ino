@@ -19,6 +19,9 @@
  *   GAIT f=0.6 yaw=30 lift=20 phase=45 duty=0.6 press=20   现场调步态（大小写都行；press 只对 B 有用）
  *   BATT               回报电池电压
  * 15 s 没收到指令会自动 REST（md 的安全特性，保留）；想一直走，App 每 5 s 重发一次 GO。
+ *
+ * v16 我的补充：以 '@' 开头的行是 OCTL/1 协议帧（台面「实物连接」面板用，带序号和 CRC，见 octopus_link.h）。
+ *   会话中 1.5 s 收不到帧 → 自动 REST；BLE 断开 → 自动 REST；ESTOP → 立刻停 PWM。上面的文本指令照常能用。
  */
 
 // —— 我的补充：编译开关，选方案。8 = 方案 A（kSingle8），16 = 方案 B（kDual16）——
@@ -48,6 +51,8 @@
 #include "octopus_bus.h"
 #include "octopus_body.h"
 #include "octopus_batt.h"
+#include "octopus_link.h"   // v16 我的补充
+#include <esp_system.h>
 #ifdef OCTO_CTRL_CUSTOM
 #include "octopus_imu.h"   // v14：MPU-6050（有 octopus_ctrl_custom.h 才编进来）
 octo::Mpu6050 imu;
@@ -66,30 +71,46 @@ static bool ImuRead(void* ctx, octo::ImuSample& s) { return static_cast<octo::Mp
 
 octo::OctopusBody body;
 octo::Battery batt;
+octo::Link octoLink;            // v16
+volatile bool bleDropped = false;   // v16：BLE 回调只置位，loop() 里处理
 
 BLECharacteristic* txChar = nullptr;
 volatile bool bleConnected = false;
 QueueHandle_t lineQueue = nullptr;     // 我的补充：BLE 回调只把整行塞进队列，loop() 里解析
 
-struct Line { char s[64]; };
+struct Line { char s[OCTL_MAX_LINE + 8]; };   // v16：OCTL/1 一行最长 160
 
 String usbLine;
 uint32_t lastCmdMs = 0;
 uint32_t lastBattMs = 0;
 const uint32_t AUTO_REST_MS = 15000;   // md：15 s 没指令自动待机
 
-void reply(const String& s) {
-  Serial.println(s);
-  if (bleConnected && txChar) {
-    txChar->setValue((uint8_t*)s.c_str(), s.length());
+// v16 我的补充：BLE 默认 MTU 23 → 每次 notify 最多 20 字节，长行分段发，主机按 '\n' 拼回整行
+void bleSend(const char* p, size_t n) {
+  if (!bleConnected || !txChar) return;
+  for (size_t i = 0; i < n; i += 20) {
+    const size_t k = (n - i) < 20 ? (n - i) : 20;
+    txChar->setValue((uint8_t*)(p + i), k);
     txChar->notify();
   }
+}
+
+void sendLine(const char* line, size_t n) {   // v16：协议帧（已带 '\n'）
+  Serial.write(reinterpret_cast<const uint8_t*>(line), n);
+  bleSend(line, n);
+}
+
+void reply(const String& s) {
+  Serial.println(s);
+  String t = s + "\n";   // v16：BLE 也补换行，分段后主机才能断行
+  bleSend(t.c_str(), t.length());
 }
 
 class ServerCb : public BLEServerCallbacks {
   void onConnect(BLEServer*) override { bleConnected = true; }
   void onDisconnect(BLEServer* srv) override {
     bleConnected = false;
+    bleDropped = true;   // v16
     srv->getAdvertising()->start();   // 断开后继续广播
   }
 };
@@ -101,10 +122,10 @@ class RxCb : public BLECharacteristicCallbacks {
     for (size_t i = 0; i < v.length(); i++) {
       char ch = v[i];
       if (ch == '\n' || ch == '\r') { push(); }
-      else if (buf.length() < 63) buf += ch;
+      else if (buf.length() < OCTL_MAX_LINE + 1) buf += ch;
     }
-    // 很多 App 发送时不带换行：一次 write 当一行
-    push();
+    // 很多 App 发送时不带换行：一次 write 当一行（v16：'@' 协议帧会被分成多次 write，等换行）
+    if (!buf.startsWith("@")) push();
   }
   void push() {
     if (!buf.length()) return;
@@ -171,24 +192,35 @@ void setup() {
   else Serial.println("IMU not found (WHO_AM_I) - open loop");
 #endif
   body.Start();
+  octoLink.Begin(&body, &batt, sendLine, OCTO_V10 ? 10 : 20);   // v16
 
   setupBle();
   reply(String(OCTO_V10 ? "Octopus ready (v10 wireless)" : "Octopus ready (plus)") + ". BLE name = OctoBrain, rig = " + String(OCTO_RIG));
   if (batt.Low()) reply("LOW BATTERY " + String(batt.Volts(), 2) + " V - charge first");   // 我的补充：开机就低电
   lastCmdMs = millis();
+  octoLink.Boot(static_cast<int>(esp_reset_reason()));   // v16：主机靠这一帧发现板子复位过（比如欠压）
 }
 
 void handleCommand(String s);
 
+// v16：协议帧给 link，其余走老的文本指令
+void handleLine(const char* s) {
+  if (octoLink.Handle(s, millis())) { lastCmdMs = millis(); return; }
+  handleCommand(String(s));
+}
+
 void loop() {
   Line l;
-  while (xQueueReceive(lineQueue, &l, 0) == pdTRUE) handleCommand(String(l.s));
+  while (xQueueReceive(lineQueue, &l, 0) == pdTRUE) handleLine(l.s);
 
   while (Serial.available()) {
     char c = Serial.read();
-    if (c == '\n' || c == '\r') { if (usbLine.length()) { handleCommand(usbLine); usbLine = ""; } }
-    else if (usbLine.length() < 63) usbLine += c;
+    if (c == '\n' || c == '\r') { if (usbLine.length()) { handleLine(usbLine.c_str()); usbLine = ""; } }
+    else if (usbLine.length() < OCTL_MAX_LINE + 1) usbLine += c;
   }
+
+  if (bleDropped) { bleDropped = false; octoLink.OnDisconnect(); }   // v16
+  octoLink.Tick(millis());
 
   if (millis() - lastCmdMs > AUTO_REST_MS) {
     body.Rest();
@@ -206,6 +238,7 @@ void loop() {
         body.Rest();
 #endif
         reply("LOW BATTERY " + String(batt.Volts(), 2) + " V - stopped");
+        octoLink.Event(3, batt.Volts());   // v16
       }
       else reply("battery OK " + String(batt.Volts(), 2) + " V");
     }

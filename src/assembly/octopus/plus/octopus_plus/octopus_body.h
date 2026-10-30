@@ -27,6 +27,12 @@
 #ifdef OCTO_CTRL_CUSTOM
 #include "octopus_ctrl.h"
 #endif
+// v16 我的补充：台面「实物连接 · 校准」导出的每路中位 / 限位（有这个文件就用它）
+#if defined(__has_include)
+#if __has_include("octopus_trim_custom.h")
+#include "octopus_trim_custom.h"
+#endif
+#endif
 
 namespace octo {
 
@@ -103,6 +109,10 @@ public:
 #endif
         // 我的补充：每路软件限位 90°±55°（md §8 提到 SetLimit 但代码没调用）
         for (int i = 0; i < channels_; i++) bank_.SetLimit(i, kHome - 55.0f, kHome + 55.0f);
+#ifdef OCTO_TRIM_CUSTOM
+        // v16 我的补充：校准表（中位偏移 ±20°，限位相对校准中位、最多 ±55°）
+        for (int i = 0; i < channels_ && i < trim_custom::kChannels; i++) ApplyTrim(i, trim_custom::kCenter[i], trim_custom::kMin[i], trim_custom::kMax[i]);
+#endif
 
         // 我的补充：完善版默认步态（估算，台面里调出来的）
         GaitParams p;
@@ -142,14 +152,43 @@ public:
     }
 
     // ---------- 运动指令（线程安全：只入队） ----------
-    void SetVelocity(float throttle, float steer, int cycles = 0) { Post({CmdType::kGait, throttle, steer, cycles, {}}); }
-    void Rest()                 { Post({CmdType::kRest, 0, 0, 0, {}}); }
+    void SetVelocity(float throttle, float steer, int cycles = 0) { Post({CmdType::kGait, throttle, steer, cycles, {}, {}}); }
+    void Rest()                 { Post({CmdType::kRest, 0, 0, 0, {}, {}}); }
     // 我的补充 · v10 低电：不回中位，立刻停 PWM（舵机放松、不再耗电）。回中位时 8 个舵机一起动的电流会把快没电的单节电池拉到 QT Py 欠压复位（仿真估算）
-    void RelaxNow()             { Post({CmdType::kRelax, 0, 0, 0, {}}); }
-    void Home()                 { Post({CmdType::kHome, 0, 0, 0, {}}); }
-    void WaveOnce(int arm)      { Post({CmdType::kWave, 0, 0, arm, {}}); }
-    void Pulse(int times)       { Post({CmdType::kPulse, 0, 0, times, {}}); }
-    void SetGaitParams(const GaitParams& p) { Post({CmdType::kParams, 0, 0, 0, p}); }
+    void RelaxNow()             { Post({CmdType::kRelax, 0, 0, 0, {}, {}}); }
+    void Home()                 { Post({CmdType::kHome, 0, 0, 0, {}, {}}); }
+    void WaveOnce(int arm)      { Post({CmdType::kWave, 0, 0, arm, {}, {}}); }
+    void Pulse(int times)       { Post({CmdType::kPulse, 0, 0, times, {}, {}}); }
+    void SetGaitParams(const GaitParams& p) { Post({CmdType::kParams, 0, 0, 0, p, {}}); }
+
+    // ---------- v16 我的补充：实物连接（OCTL/1）用 ----------
+    static constexpr int kPoseMax = 16;
+    // 每路相对中位的角度（°）；超出 ±55 会再被限位夹住
+    void SetPose(const float* deg, int n) {
+        Cmd c{CmdType::kPose, 0, 0, n, {}, {}};
+        for (int i = 0; i < kPoseMax; i++) c.v[i] = (i < n) ? deg[i] : 0.0f;
+        Post(c);
+    }
+    void SetRate(float dps) { Cmd c{CmdType::kRate, dps, 0, 0, {}, {}}; Post(c); }
+    void SetTrimLimit(int ch, float center, float lo, float hi) {
+        Cmd c{CmdType::kTrim, 0, 0, ch, {}, {}};
+        c.v[0] = center; c.v[1] = lo; c.v[2] = hi;
+        Post(c);
+    }
+    // 遥测（别的任务只读 float / int，ESP32 上读写是原子的）
+    float Angle(int ch) const { return bank_.Present(ch) - kHome - bank_.Trim(ch); }   // 指令角（限速后），不是实测角：普通舵机没有位置反馈
+    int ModeCode() const { return static_cast<int>(mode_); }   // 0 停 1 走 2 挥手 3 收缩 4 回中位 5 摆姿势
+    float RateNow() const { return bank_.MaxRate(); }
+    bool Tilt(float& roll, float& pitch) const {
+#ifdef OCTO_CTRL_CUSTOM
+        if (!imu_ok_) return false;
+        roll = tilt_roll_; pitch = tilt_pitch_;
+        return true;
+#else
+        (void)roll; (void)pitch;
+        return false;
+#endif
+    }
 
     // 读快照只读 Params()，不写（float 读写在 ESP32 上是原子的）
     GaitParams GaitParamsSnapshot() const { return gait_.Params(); }
@@ -159,14 +198,15 @@ public:
     bool Relaxed() const { return bank_.Relaxed(); }
 
 private:
-    enum class Mode { kIdle, kGait, kWave, kPulse, kHoming };
-    enum class CmdType { kGait, kRest, kHome, kWave, kPulse, kParams, kRelax };
+    enum class Mode { kIdle, kGait, kWave, kPulse, kHoming, kPose };
+    enum class CmdType { kGait, kRest, kHome, kWave, kPulse, kParams, kRelax, kPose, kRate, kTrim };
     struct Cmd {
         CmdType type;
         float throttle;
         float steer;
-        int n;            // gait：周期数（0 = 不限）；wave：触手号；pulse：次数
+        int n;            // gait：周期数（0 = 不限）；wave：触手号；pulse：次数；pose：路数；trim：通道
         GaitParams params;
+        float v[kPoseMax]; // v16：pose 每路角度；trim：中位 / 下限 / 上限
     };
 
     static constexpr float kHome = 90.0f;
@@ -232,7 +272,40 @@ private:
             case CmdType::kParams:
                 gait_.SetParams(c.params);
                 break;
+            case CmdType::kPose:   // v16
+                for (int i = 0; i < kPoseMax; i++) pose_[i] = (i < c.n) ? c.v[i] : 0.0f;
+                gait_.Reset();
+                Enter(Mode::kPose);
+                break;
+            case CmdType::kRate: {  // v16：上限 = OCTO_LINK_RATE_MAX（默认 240 °/s ≈ 舵机标称速度的 80%）
+                float r = c.throttle;
+                if (r > kLinkRateMax) r = kLinkRateMax;
+                if (r < 30.0f) r = 30.0f;
+                bank_.SetMaxRate(r);
+                break;
+            }
+            case CmdType::kTrim:
+                ApplyTrim(c.n, c.v[0], c.v[1], c.v[2]);
+                break;
         }
+    }
+
+#ifndef OCTO_LINK_RATE_MAX
+#define OCTO_LINK_RATE_MAX 240.0f
+#endif
+    static constexpr float kLinkRateMax = OCTO_LINK_RATE_MAX;
+
+    // v16：中位偏移夹到 ±20°，限位相对校准中位、夹到 [−55, 0] / [0, 55]
+    void ApplyTrim(int ch, float center, float lo, float hi) {
+        if (ch < 0 || ch >= channels_) return;
+        if (center > 20.0f) center = 20.0f;
+        if (center < -20.0f) center = -20.0f;
+        if (lo < -55.0f) lo = -55.0f;
+        if (lo > 0.0f) lo = 0.0f;
+        if (hi > 55.0f) hi = 55.0f;
+        if (hi < 0.0f) hi = 0.0f;
+        bank_.SetTrim(ch, center);
+        bank_.SetLimit(ch, kHome + center + lo, kHome + center + hi);
     }
 
     void Enter(Mode m) {
@@ -241,7 +314,19 @@ private:
     }
 
     void Step(float dt) {
+#ifdef OCTO_CTRL_CUSTOM
+        // v16：每拍都读 IMU（不只是走路时），遥测才有倾角；StepGait 复用这一拍的读数
+        imu_ok_ = imu_fn_ && imu_fn_(imu_ctx_, imu_s_);
+        if (imu_ok_) {
+            const float k = 180.0f / static_cast<float>(M_PI);
+            const float r = std::atan2(imu_s_.acc[1], imu_s_.acc[2]) * k;
+            const float p = std::atan2(-imu_s_.acc[0], std::sqrt(imu_s_.acc[1] * imu_s_.acc[1] + imu_s_.acc[2] * imu_s_.acc[2])) * k;
+            tilt_roll_ += 0.2f * (r - tilt_roll_);
+            tilt_pitch_ += 0.2f * (p - tilt_pitch_);
+        }
+#endif
         switch (mode_) {
+            case Mode::kPose:   StepPose();     break;
             case Mode::kGait:   StepGait(dt);   break;
             case Mode::kWave:   StepWave(dt);   break;
             case Mode::kPulse:  StepPulse(dt);  break;
@@ -282,7 +367,7 @@ private:
         // 我的补充：MCP steps → 走够周期数自动 Rest
         if (cycles_left_ > 0 && gait_.Cycles() - cycle_mark_ >= static_cast<uint32_t>(cycles_left_)) {
             cycles_left_ = 0;
-            Apply({CmdType::kRest, 0, 0, 0, {}});
+            Apply({CmdType::kRest, 0, 0, 0, {}, {}});
             return;
         }
         float yaw[kArmCount];
@@ -290,9 +375,8 @@ private:
         for (int a = 0; a < kArmCount; a++) { sc[a] = 1.0f; off[a] = 0.0f; }
 #ifdef OCTO_CTRL_CUSTOM
         {   // v14：闭环（和台面 JS 孪生同式）
-            ImuSample s;
-            if (imu_fn_ && imu_fn_(imu_ctx_, s)) {
-                const TiltController::Out o = ctrl_.Step(s, dt);
+            if (imu_ok_) {
+                const TiltController::Out o = ctrl_.Step(imu_s_, dt);
                 for (int a = 0; a < kArmCount; a++) { sc[a] = o.sc[a]; off[a] = o.off[a]; }
             }
         }
@@ -352,6 +436,12 @@ private:
         home_timer_ = 0.15f;
     }
 
+    // v16：摆姿势（每路相对中位的角度，限速由 bank_ 负责）
+    void StepPose() {
+        gait_.Reset();
+        for (int i = 0; i < channels_ && i < kPoseMax; i++) bank_.SetTarget(i, kHome + pose_[i]);
+    }
+
     void StepIdle() {
         gait_.Reset();
         for (int a = 0; a < kArmCount; a++) WriteArm(a, 0.0f, 0.0f);
@@ -377,7 +467,11 @@ private:
     TiltController ctrl_;           // v14
     ImuReadFn imu_fn_ = nullptr;
     void* imu_ctx_ = nullptr;
+    ImuSample imu_s_{};             // v16
+    bool imu_ok_ = false;
+    float tilt_roll_ = 0.0f, tilt_pitch_ = 0.0f;
 #endif
+    float pose_[kPoseMax] = {};     // v16
     int cycles_left_ = 0;
     uint32_t cycle_mark_ = 0;
     int home_idx_ = 0;
