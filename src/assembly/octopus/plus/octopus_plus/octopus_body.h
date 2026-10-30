@@ -96,7 +96,11 @@ public:
 
         bank_.Bind(boards_, board_count_);
         bank_.Begin(channels_, kHome);
+#ifdef OCTO_SERVO_RATE_DPS
+        bank_.SetMaxRate(OCTO_SERVO_RATE_DPS);  // v15：步态头文件里给的上限（例如 240 °/s = 80%）
+#else
         bank_.SetMaxRate(300.0f);
+#endif
         // 我的补充：每路软件限位 90°±55°（md §8 提到 SetLimit 但代码没调用）
         for (int i = 0; i < channels_; i++) bank_.SetLimit(i, kHome - 55.0f, kHome + 55.0f);
 

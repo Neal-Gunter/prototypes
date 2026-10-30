@@ -24,3 +24,5 @@ node scripts/gait-test.mjs || exit 1
 node scripts/search-test.mjs || exit 1
 node scripts/v14-test.mjs || exit 1
 node scripts/ctrl-test.mjs || exit 1
+# v15：多工况鲁棒搜索 + 横坡侧滑补偿（定向小轮 / 路径保持）+ 评估池 + 240 °/s 限速
+node scripts/v15-test.mjs || exit 1

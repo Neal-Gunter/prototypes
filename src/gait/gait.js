@@ -50,7 +50,7 @@ export function sanitizeGait(g, n) {
 }
 // —— 固件导出：生成 octopus_gait_custom.h（C++17 constexpr 数组，和上面 jointValue 同一个公式） ——
 const WAVE_ID = { sine: 0, tri: 1, square: 2, saw: 3 };
-export function toFirmwareHeader(g, { source = "台面步态编辑器", stamp = "" } = {}) {
+export function toFirmwareHeader(g, { source = "台面步态编辑器", stamp = "", servoRate = null } = {}) {
   const J = g.joints.slice(0, 8), f = (x) => `${(+x).toFixed(4)}f`;
   const arr = (k, fmt = f) => `{${J.map((q) => fmt(q[k])).join(", ")}}`;
   return `#pragma once
@@ -59,7 +59,7 @@ export function toFirmwareHeader(g, { source = "台面步态编辑器", stamp = 
 // 放进 octopus_plus/ 目录即可：octopus_body.h 用 __has_include 检测到它就定义 OCTO_GAIT_CUSTOM，GO 时用这张表代替默认步态。
 // 之后照样经过 AntiCollide、软件限位 90±55°、SetMaxRate 300 °/s。LEFT / RIGHT 按左右舷把一侧摆幅缩小（同默认步态的差速转弯）。
 #define OCTO_GAIT_CUSTOM 1
-#include <cmath>
+${servoRate ? `#define OCTO_SERVO_RATE_DPS ${(+servoRate).toFixed(1)}f // v15：舵机角速度上限（300 °/s 的 ${Math.round((servoRate / 300) * 100)}%，给机械留余量）\n` : ""}#include <cmath>
 namespace octo { namespace custom_gait {
 // 波形：0 正弦 1 三角 2 方波 3 锯齿
 static constexpr int   kWave[8]   = {${J.map((q) => WAVE_ID[q.wave] ?? 0).join(", ")}};

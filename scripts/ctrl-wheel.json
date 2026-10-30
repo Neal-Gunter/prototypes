@@ -1,0 +1,18 @@
+{
+ "kpH": 0.04,
+ "kdH": 0.004,
+ "kpT": 0,
+ "kdT": 0,
+ "uMax": 0.5,
+ "offMax": 15,
+ "turnSign": 1,
+ "alpha": 0.98,
+ "adapt": false,
+ "flipT": 1,
+ "flipDeg": 2,
+ "slopeFlipDeg": 0,
+ "crab": 0,
+ "kPath": 2,
+ "kiPath": 0.5,
+ "pathMax": 30
+}

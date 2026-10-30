@@ -156,7 +156,7 @@ export class OctopusBody {
     }
     this.bank_.Bind(this.boards_, n);
     this.bank_.Begin(this.channels_, 90);
-    this.bank_.SetMaxRate(300);
+    this.bank_.SetMaxRate(this.rt.servoRate || 300); // v15：rt.servoRate = 步态头文件里的 OCTO_SERVO_RATE_DPS
     if (this.F.limit) for (let c = 0; c < this.channels_; c++) this.bank_.SetLimit(c, 35, 145);
     if (this.F.softHome) for (let c = 0; c < 48; c++) this.bank_.last_written_[c] = NaN;
     this.gait_.spinTurn = rig === "kDual16";
