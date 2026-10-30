@@ -60,6 +60,13 @@ async function parseGltf(bytes, ext, warnings) {
   const gltf = await new Promise((res, rej) => loader.parse(data, "", res, (e) => rej(e)));
   const used = gltf.parser?.json?.extensionsUsed || [];
   if (used.includes("KHR_draco_mesh_compression")) throw new UserError("这个 GLB 用了 Draco 压缩：解码器要联网下载，这里不支持。请导出未压缩或 meshopt 压缩的 GLB");
+  // GLTFLoader 会把节点名里的空格、点、斜杠换成下划线：用原始 JSON 里的名字（中文零件名、型号里的点）
+  const nodesJ = gltf.parser?.json?.nodes || [];
+  gltf.scene.traverse((o) => {
+    const a = gltf.parser?.associations?.get(o);
+    const nm = a && a.nodes !== undefined ? nodesJ[a.nodes]?.name : null;
+    if (typeof nm === "string" && nm) o.name = nm.slice(0, 120);
+  });
   return gltf.scene;
 }
 

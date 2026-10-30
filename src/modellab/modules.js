@@ -26,13 +26,13 @@ export function autoSplit(meshes, { maxModules = 64 } = {}) {
   if (meshes.length > 1) {
     const depthMax = Math.max(...meshes.map((m) => m.path.length));
     for (let d = 0; d <= depthMax; d++) {
-      const keyOf = (m) => (m.path.length > d ? m.path.slice(0, d + 1).join("/") : `#${m.id}`);
+      const keyOf = (m) => (m.path.length > d ? m.path.slice(0, d + 1).join("\u0001") : `#${m.id}`);
       const groups = new Map();
       for (const m of meshes) { const k = keyOf(m); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(m); }
       if (groups.size >= 2 && groups.size <= maxModules) {
         const named = [...groups.keys()].filter((k) => !k.startsWith("#")).length;
         if (named === 0 && groups.size === meshes.length && d < depthMax) continue;
-        return { how: named ? `按第 ${d + 1} 层组名分成 ${groups.size} 个模块` : `每个网格一个模块（${groups.size} 个）`, modules: [...groups.entries()].map(([k, ms], i) => mkModule(k.startsWith("#") ? ms[0].name : k.split("/").pop() || `模块 ${i + 1}`, ms.map((m) => m.id), i)) };
+        return { how: named ? `按第 ${d + 1} 层组名分成 ${groups.size} 个模块` : `每个网格一个模块（${groups.size} 个）`, modules: [...groups.entries()].map(([k, ms], i) => mkModule(k.startsWith("#") ? ms[0].name : k.split("\u0001").pop() || `模块 ${i + 1}`, ms.map((m) => m.id), i)) };
       }
     }
     if (meshes.length <= maxModules) return { how: `每个网格一个模块（${meshes.length} 个）`, modules: meshes.map((m, i) => mkModule(m.name, [m.id], i)) };

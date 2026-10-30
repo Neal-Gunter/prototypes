@@ -8,6 +8,7 @@ const AssemblyPage = lazy(() => import("./pages/AssemblyPage"));
 const PartsPage = lazy(() => import("./pages/PartsPage"));
 const GuidePage = lazy(() => import("./pages/GuidePage"));
 const OctoGuidePage = lazy(() => import("./pages/OctoGuidePage"));
+const ModelLabPage = lazy(() => import("./pages/ModelLabPage"));
 import NotFoundPage from "./pages/NotFoundPage";
 import CreditsPage from "./pages/CreditsPage";
 
@@ -55,6 +56,14 @@ export default function App() {
             element={
               <Suspense fallback={<p className="p-8 text-ink-soft">正在加载八爪鱼指南…</p>}>
                 <OctoGuidePage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/assembly/model"
+            element={
+              <Suspense fallback={<p className="p-8 text-ink-soft">正在加载模型 + 功能图…</p>}>
+                <ModelLabPage />
               </Suspense>
             }
           />

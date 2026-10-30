@@ -12,6 +12,15 @@ import { PRESETS, buildFromList, parseList } from "../assembly/builder.js";
 import { makeGuide } from "../assembly/guide.js";
 import OctoPanel, { octoDetach, octoSim } from "../assembly/ui/OctoPanel.jsx";
 import { octoGuide } from "../assembly/octopus/spec.js";
+// v11：上传模型（模型 + 功能图工程）放到台面上
+async function addCustomProject(project, bytes, { x = 0, z = 0, y = 1 } = {}) {
+  const { engineFromProject } = await import("../modellab/workspace.js");
+  const key = `${project.id}-${Date.now().toString(36)}`;
+  const { defs } = await engineFromProject(project, bytes, key);
+  if (!defs.length) throw new Error("这个工程没有可用的模块");
+  const uids = engine.addAssembly(defs.map((d) => ({ def: d, p: new THREE.Vector3(x, y, z), q: new THREE.Quaternion(), label: d.name_zh })), { why: `上传模型“${project.name}”（各模块固定在一起）` });
+  return { uids, defs };
+}
 
 export const ASM_SIMPLIFICATIONS = [
   "碰撞形状是若干个方块（从 CAD 包围盒和几何体里提取），不是逐三角形网格；圆柱、六角螺母等按方块近似",
@@ -49,6 +58,7 @@ export default function AssemblyPage() {
   const [probes, setProbes] = useState({});
   const [listText, setListText] = useState(PRESETS.electrics.text);
   const [listErr, setListErr] = useState([]);
+  const [customMsg, setCustomMsg] = useState(null);
   const [params] = useSearchParams();
   const nav = useNavigate();
   const lastList = useRef(null);
@@ -67,6 +77,20 @@ export default function AssemblyPage() {
       setUids([...engine.parts.keys()]);
       setReady(true);
       window.__asm = { engine, overlapTest: () => engine.overlapTest(), snapshot: () => engine.snapshot(), build: (t) => buildList(t), addAt: async (id, x, z, y = 0.02) => engine.addPart(toDef(await getEntry(id)), { p: new THREE.Vector3(x, y, z), q: new THREE.Quaternion() }) };
+      window.__asm.addCustom = addCustomProject;
+      const cu = params.get("custom");
+      if (cu) {
+        (async () => {
+          try {
+            let pj, bytes;
+            if (cu === "demo") { const { loadBuiltinDemo } = await import("../modellab/demo.js"); const d = await loadBuiltinDemo(); pj = d.project; bytes = d.assets.model; }
+            else { const { loadProject } = await import("../modellab/idb.js"); const r = await loadProject(cu); if (!r?.model) throw new Error("本机浏览器里找不到这个工程（或它没有模型）"); pj = r.project; bytes = r.model; }
+            const { uids } = await addCustomProject(pj, bytes);
+            setCustomMsg({ ok: true, text: `已放入上传模型“${pj.name}”：${uids.length} 个模块组成一个刚体，参与碰撞、不穿模（凸包 / 方块近似）`, id: cu });
+            window.__asmCustom = { parts: uids.length, name: pj.name };
+          } catch (e) { setCustomMsg({ ok: false, text: "上传模型放不进来：" + (e?.message || e) }); window.__asmCustom = { error: String(e?.message || e) }; }
+        })();
+      }
       const sc = params.get("scene");
       if (sc && PRESETS[sc]) { setTab("elec"); buildList(PRESETS[sc].text, PRESETS[sc].zh); }
       if (sc === "octo") setTab("octo");
@@ -161,6 +185,11 @@ export default function AssemblyPage() {
         <h1 className="text-xl font-medium">装配台 <span className="ml-1 border border-copper px-1.5 py-0.5 align-middle text-xs text-copper">早期原型，简化仿真</span></h1>
         <p className="text-xs leading-5 text-ink-soft">零件有真实尺寸（毫米），由 Rapier 刚体引擎做碰撞：零件不会互相穿过去，拖着的零件会被挡住或推开别的零件。</p>
         <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={flip} onChange={(e) => setFlip(e.target.checked)} />排针翻面放（长针朝下，用来插面包板）</label>
+        <div className="border border-line bg-white p-2 text-xs leading-5">
+          <Link to="/assembly/model" className="font-medium underline">上传自己的 3D 模型 + 功能图 →</Link>
+          <span className="text-ink-soft">（拆模块、绑定功能，再放到这里做碰撞）</span>
+          {customMsg && <p data-testid="custom-msg" className={customMsg.ok ? "mt-1" : "mt-1 text-mark"}>{customMsg.text}{customMsg.id && <> · <Link className="underline" to={customMsg.id === "demo" ? "/assembly/model?demo" : `/assembly/model?p=${encodeURIComponent(customMsg.id)}`}>回去编辑</Link></>}</p>}
+        </div>
         <PartsBrowser compact onAdd={add} onPick={setSel} />
         <Link to="/parts" className="text-xs underline">打开完整零件库（看尺寸、孔位、许可）</Link>
       </aside>

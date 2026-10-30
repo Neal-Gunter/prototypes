@@ -1,0 +1,735 @@
+{
+ "schema": "proto-modellab/1",
+ "id": "builtin-octo-v10",
+ "builtin": true,
+ "name": "内置示例：v10 八爪鱼（模块 ↔ 功能图）",
+ "updated": 0,
+ "notes": "模型从装配台的 v10 预设导出（零件尺寸来自零件库，标“估算”的除外）；功能图是本项目自制的示意图，不是原理图。 质量用 v10 质量表（舵机、电池、QT Py、升压板、开关是商品页数字；骨架含 3 个万向珠、触手、导线、充电板、分压板和电容是估算）。",
+ "model": {
+  "file": "octo-v10.glb",
+  "builtin": "demo/octo-v10.glb",
+  "units": "m",
+  "scale": 1,
+  "upAxis": "y",
+  "unitWhy": "导出时就是米（glTF 规范）",
+  "split": "auto"
+ },
+ "modules": [
+  {
+   "id": "d00",
+   "name": "v10 紧凑骨架",
+   "color": "#c9c2b0",
+   "meshes": [
+    "m0",
+    "m1",
+    "m2",
+    "m3",
+    "m4",
+    "m5"
+   ],
+   "collider": "hull",
+   "material": "pla",
+   "massG": 31,
+   "hidden": false
+  },
+  {
+   "id": "d01",
+   "name": "0 号触手舵机 SG51R",
+   "color": "#2f6fd6",
+   "meshes": [
+    "m6",
+    "m7",
+    "m8",
+    "m9",
+    "m10"
+   ],
+   "collider": "hull",
+   "material": "pla",
+   "massG": 5,
+   "hidden": false
+  },
+  {
+   "id": "d02",
+   "name": "0 号短触手",
+   "color": "#e07a2b",
+   "meshes": [
+    "m11",
+    "m12",
+    "m13",
+    "m14",
+    "m15",
+    "m16"
+   ],
+   "collider": "hull",
+   "material": "pla",
+   "massG": 1.5,
+   "hidden": false
+  },
+  {
+   "id": "d03",
+   "name": "1 号触手舵机 SG51R",
+   "color": "#2f6fd6",
+   "meshes": [
+    "m17",
+    "m18",
+    "m19",
+    "m20",
+    "m21"
+   ],
+   "collider": "hull",
+   "material": "pla",
+   "massG": 5,
+   "hidden": false
+  },
+  {
+   "id": "d04",
+   "name": "1 号短触手",
+   "color": "#e07a2b",
+   "meshes": [
+    "m22",
+    "m23",
+    "m24",
+    "m25",
+    "m26",
+    "m27"
+   ],
+   "collider": "hull",
+   "material": "pla",
+   "massG": 1.5,
+   "hidden": false
+  },
+  {
+   "id": "d05",
+   "name": "2 号触手舵机 SG51R",
+   "color": "#2f6fd6",
+   "meshes": [
+    "m28",
+    "m29",
+    "m30",
+    "m31",
+    "m32"
+   ],
+   "collider": "hull",
+   "material": "pla",
+   "massG": 5,
+   "hidden": false
+  },
+  {
+   "id": "d06",
+   "name": "2 号短触手",
+   "color": "#e07a2b",
+   "meshes": [
+    "m33",
+    "m34",
+    "m35",
+    "m36",
+    "m37",
+    "m38"
+   ],
+   "collider": "hull",
+   "material": "pla",
+   "massG": 1.5,
+   "hidden": false
+  },
+  {
+   "id": "d07",
+   "name": "3 号触手舵机 SG51R",
+   "color": "#2f6fd6",
+   "meshes": [
+    "m39",
+    "m40",
+    "m41",
+    "m42",
+    "m43"
+   ],
+   "collider": "hull",
+   "material": "pla",
+   "massG": 5,
+   "hidden": false
+  },
+  {
+   "id": "d08",
+   "name": "3 号短触手",
+   "color": "#e07a2b",
+   "meshes": [
+    "m44",
+    "m45",
+    "m46",
+    "m47",
+    "m48",
+    "m49"
+   ],
+   "collider": "hull",
+   "material": "pla",
+   "massG": 1.5,
+   "hidden": false
+  },
+  {
+   "id": "d09",
+   "name": "4 号触手舵机 SG51R",
+   "color": "#2f6fd6",
+   "meshes": [
+    "m50",
+    "m51",
+    "m52",
+    "m53",
+    "m54"
+   ],
+   "collider": "hull",
+   "material": "pla",
+   "massG": 5,
+   "hidden": false
+  },
+  {
+   "id": "d10",
+   "name": "4 号短触手",
+   "color": "#e07a2b",
+   "meshes": [
+    "m55",
+    "m56",
+    "m57",
+    "m58",
+    "m59",
+    "m60"
+   ],
+   "collider": "hull",
+   "material": "pla",
+   "massG": 1.5,
+   "hidden": false
+  },
+  {
+   "id": "d11",
+   "name": "5 号触手舵机 SG51R",
+   "color": "#2f6fd6",
+   "meshes": [
+    "m61",
+    "m62",
+    "m63",
+    "m64",
+    "m65"
+   ],
+   "collider": "hull",
+   "material": "pla",
+   "massG": 5,
+   "hidden": false
+  },
+  {
+   "id": "d12",
+   "name": "5 号短触手",
+   "color": "#e07a2b",
+   "meshes": [
+    "m66",
+    "m67",
+    "m68",
+    "m69",
+    "m70",
+    "m71"
+   ],
+   "collider": "hull",
+   "material": "pla",
+   "massG": 1.5,
+   "hidden": false
+  },
+  {
+   "id": "d13",
+   "name": "6 号触手舵机 SG51R",
+   "color": "#2f6fd6",
+   "meshes": [
+    "m72",
+    "m73",
+    "m74",
+    "m75",
+    "m76"
+   ],
+   "collider": "hull",
+   "material": "pla",
+   "massG": 5,
+   "hidden": false
+  },
+  {
+   "id": "d14",
+   "name": "6 号短触手",
+   "color": "#e07a2b",
+   "meshes": [
+    "m77",
+    "m78",
+    "m79",
+    "m80",
+    "m81",
+    "m82"
+   ],
+   "collider": "hull",
+   "material": "pla",
+   "massG": 1.5,
+   "hidden": false
+  },
+  {
+   "id": "d15",
+   "name": "7 号触手舵机 SG51R",
+   "color": "#2f6fd6",
+   "meshes": [
+    "m83",
+    "m84",
+    "m85",
+    "m86",
+    "m87"
+   ],
+   "collider": "hull",
+   "material": "pla",
+   "massG": 5,
+   "hidden": false
+  },
+  {
+   "id": "d16",
+   "name": "7 号短触手",
+   "color": "#e07a2b",
+   "meshes": [
+    "m88",
+    "m89",
+    "m90",
+    "m91",
+    "m92",
+    "m93"
+   ],
+   "collider": "hull",
+   "material": "pla",
+   "massG": 1.5,
+   "hidden": false
+  },
+  {
+   "id": "d17",
+   "name": "QT Py ESP32‑S3（Adafruit 5426）",
+   "color": "#2f8f4e",
+   "meshes": [
+    "m94",
+    "m95",
+    "m96",
+    "m97"
+   ],
+   "collider": "hull",
+   "material": "pcb",
+   "massG": 1.2,
+   "hidden": false
+  },
+  {
+   "id": "d18",
+   "name": "1200 mAh 单节 LiPo（Adafruit 258）",
+   "color": "#5b6168",
+   "meshes": [
+    "m98",
+    "m99",
+    "m100",
+    "m101"
+   ],
+   "collider": "hull",
+   "material": "mixed",
+   "massG": 23,
+   "hidden": false
+  },
+  {
+   "id": "d19",
+   "name": "USB‑C LiPo 充电板（Adafruit 4410）",
+   "color": "#5b6168",
+   "meshes": [
+    "m102",
+    "m103",
+    "m104"
+   ],
+   "collider": "hull",
+   "material": "mixed",
+   "massG": 2,
+   "hidden": false
+  },
+  {
+   "id": "d20",
+   "name": "MiniBoost 5.2 V #1（Adafruit 4654）",
+   "color": "#d23a2f",
+   "meshes": [
+    "m105",
+    "m106",
+    "m107"
+   ],
+   "collider": "hull",
+   "material": "pcb",
+   "massG": 1,
+   "hidden": false
+  },
+  {
+   "id": "d21",
+   "name": "MiniBoost 5.2 V #2（Adafruit 4654）",
+   "color": "#d23a2f",
+   "meshes": [
+    "m108",
+    "m109",
+    "m110"
+   ],
+   "collider": "hull",
+   "material": "pcb",
+   "massG": 1,
+   "hidden": false
+  },
+  {
+   "id": "d22",
+   "name": "拨动开关（Adafruit 805）",
+   "color": "#7a4a2a",
+   "meshes": [
+    "m111"
+   ],
+   "collider": "hull",
+   "material": "pcb",
+   "massG": 0.07,
+   "hidden": false
+  },
+  {
+   "id": "d23",
+   "name": "1S 分压板 100k/100k（我的补充）",
+   "color": "#1f9aa6",
+   "meshes": [
+    "m112",
+    "m113",
+    "m114",
+    "m115"
+   ],
+   "collider": "hull",
+   "material": "pcb",
+   "massG": 0.7,
+   "hidden": false
+  },
+  {
+   "id": "d24",
+   "name": "电容（升压 1 输出）",
+   "color": "#e0b322",
+   "meshes": [
+    "m116",
+    "m117",
+    "m118",
+    "m119"
+   ],
+   "collider": "hull",
+   "material": "pcb",
+   "massG": 0.4,
+   "hidden": false
+  },
+  {
+   "id": "d25",
+   "name": "电容（升压 2 输出）",
+   "color": "#e0b322",
+   "meshes": [
+    "m120",
+    "m121",
+    "m122",
+    "m123"
+   ],
+   "collider": "hull",
+   "material": "pcb",
+   "massG": 0.4,
+   "hidden": false
+  },
+  {
+   "id": "d26",
+   "name": "导线（35 根）",
+   "color": "#c2477d",
+   "meshes": [
+    "m124",
+    "m125",
+    "m126",
+    "m127",
+    "m128",
+    "m129",
+    "m130",
+    "m131",
+    "m132",
+    "m133",
+    "m134",
+    "m135",
+    "m136",
+    "m137",
+    "m138",
+    "m139",
+    "m140",
+    "m141",
+    "m142",
+    "m143",
+    "m144",
+    "m145",
+    "m146",
+    "m147",
+    "m148",
+    "m149",
+    "m150",
+    "m151",
+    "m152",
+    "m153",
+    "m154",
+    "m155",
+    "m156",
+    "m157",
+    "m158"
+   ],
+   "collider": "hull",
+   "material": "copper",
+   "massG": 4,
+   "hidden": false
+  }
+ ],
+ "functions": [
+  {
+   "id": "f-bat",
+   "name": "电池与充电",
+   "kind": "供电",
+   "color": "#5b6168",
+   "regions": [
+    {
+     "x": 0.03333333333333333,
+     "y": 0.11842105263157894,
+     "w": 0.25,
+     "h": 0.19736842105263158
+    }
+   ],
+   "pins": [
+    {
+     "label": "BAT+",
+     "signal": "3.0–4.2 V（1S）"
+    },
+    {
+     "label": "USB‑C",
+     "signal": "5 V，只在充电时插"
+    }
+   ],
+   "modules": [
+    "d18",
+    "d19",
+    "d22"
+   ],
+   "note": "1S 1200 mAh → 拨动开关 → 两个升压板；充电板只在充电时接 USB‑C"
+  },
+  {
+   "id": "f-bst",
+   "name": "5.2 V 升压 ×2",
+   "kind": "供电",
+   "color": "#d23a2f",
+   "regions": [
+    {
+     "x": 0.36666666666666664,
+     "y": 0.11842105263157894,
+     "w": 0.26666666666666666,
+     "h": 0.19736842105263158
+    }
+   ],
+   "pins": [
+    {
+     "label": "BST1 OUT",
+     "signal": "→ 0–3 号舵机"
+    },
+    {
+     "label": "BST2 OUT",
+     "signal": "→ 4–7 号舵机"
+    }
+   ],
+   "modules": [
+    "d20",
+    "d21",
+    "d24",
+    "d25"
+   ],
+   "note": "每个升压板带 4 个舵机，输出端各一颗电容"
+  },
+  {
+   "id": "f-ctl",
+   "name": "主控（QT Py ESP32‑S3）",
+   "kind": "控制",
+   "color": "#2f8f4e",
+   "regions": [
+    {
+     "x": 0.36666666666666664,
+     "y": 0.4342105263157895,
+     "w": 0.26666666666666666,
+     "h": 0.19736842105263158
+    }
+   ],
+   "pins": [
+    {
+     "label": "S0 PWM",
+     "signal": "A0 / GPIO18"
+    },
+    {
+     "label": "S1 PWM",
+     "signal": "A1 / GPIO17"
+    },
+    {
+     "label": "S2 PWM",
+     "signal": "A2 / GPIO9"
+    },
+    {
+     "label": "S3 PWM",
+     "signal": "SDA / GPIO7"
+    },
+    {
+     "label": "S4 PWM",
+     "signal": "SCL / GPIO6"
+    },
+    {
+     "label": "S5 PWM",
+     "signal": "TX / GPIO5"
+    },
+    {
+     "label": "S6 PWM",
+     "signal": "RX / GPIO16"
+    },
+    {
+     "label": "S7 PWM",
+     "signal": "SCK / GPIO36"
+    }
+   ],
+   "modules": [
+    "d17"
+   ],
+   "note": "直接用 LEDC 出 8 路 50 Hz PWM"
+  },
+  {
+   "id": "f-ble",
+   "name": "无线通信（BLE）",
+   "kind": "通信",
+   "color": "#8a4fbf",
+   "regions": [
+    {
+     "x": 0.7166666666666667,
+     "y": 0.4342105263157895,
+     "w": 0.25,
+     "h": 0.19736842105263158
+    }
+   ],
+   "pins": [
+    {
+     "label": "BLE",
+     "signal": "手机 → QT Py（模拟）"
+    }
+   ],
+   "modules": [
+    "d17"
+   ],
+   "note": "和主控是同一块板：一个模块可以属于多个功能"
+  },
+  {
+   "id": "f-sense",
+   "name": "电池电压检测",
+   "kind": "传感",
+   "color": "#1f9aa6",
+   "regions": [
+    {
+     "x": 0.03333333333333333,
+     "y": 0.4342105263157895,
+     "w": 0.25,
+     "h": 0.19736842105263158
+    }
+   ],
+   "pins": [
+    {
+     "label": "VBAT/2",
+     "signal": "A3 / GPIO8"
+    }
+   ],
+   "modules": [
+    "d23"
+   ],
+   "note": "100k/100k 分压，3.55 V 停运动、3.75 V 恢复（估算阈值）"
+  },
+  {
+   "id": "f-drv",
+   "name": "8 路舵机驱动",
+   "kind": "驱动",
+   "color": "#2f6fd6",
+   "regions": [
+    {
+     "x": 0.36666666666666664,
+     "y": 0.7368421052631579,
+     "w": 0.26666666666666666,
+     "h": 0.19736842105263158
+    }
+   ],
+   "pins": [],
+   "modules": [
+    "d01",
+    "d03",
+    "d05",
+    "d07",
+    "d09",
+    "d11",
+    "d13",
+    "d15"
+   ],
+   "note": "SG51R ×8，橙线 PWM / 红线 V+ / 棕线 GND"
+  },
+  {
+   "id": "f-arm",
+   "name": "触手（执行）",
+   "kind": "执行",
+   "color": "#e07a2b",
+   "regions": [
+    {
+     "x": 0.7166666666666667,
+     "y": 0.7368421052631579,
+     "w": 0.25,
+     "h": 0.19736842105263158
+    }
+   ],
+   "pins": [],
+   "modules": [
+    "d02",
+    "d04",
+    "d06",
+    "d08",
+    "d10",
+    "d12",
+    "d14",
+    "d16"
+   ],
+   "note": "每个舵机带一条短触手"
+  },
+  {
+   "id": "f-frame",
+   "name": "结构（骨架 + 上层板）",
+   "kind": "结构",
+   "color": "#a89a7a",
+   "regions": [
+    {
+     "x": 0.03333333333333333,
+     "y": 0.7368421052631579,
+     "w": 0.25,
+     "h": 0.09210526315789473
+    }
+   ],
+   "pins": [],
+   "modules": [
+    "d00"
+   ],
+   "note": ""
+  },
+  {
+   "id": "f-wire",
+   "name": "导线",
+   "kind": "连接",
+   "color": "#c2477d",
+   "regions": [
+    {
+     "x": 0.03333333333333333,
+     "y": 0.8552631578947368,
+     "w": 0.25,
+     "h": 0.07894736842105263
+    }
+   ],
+   "pins": [],
+   "modules": [
+    "d26"
+   ],
+   "note": "35 根，3D 里合成一个模块（碰撞用凸包，比真实导线胖）"
+  }
+ ],
+ "diagram": {
+  "file": "octo-v10-functions.svg",
+  "builtin": "demo/octo-v10-functions.svg",
+  "mime": "image/svg+xml",
+  "w": 1200,
+  "h": 760
+ }
+}

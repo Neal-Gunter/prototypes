@@ -67,6 +67,9 @@ export default function Layout() {
                 <NavLink to="/assembly" className={navClass}>
                   装配台
                 </NavLink>
+                <NavLink to="/assembly/model" className={navClass}>
+                  模型 + 功能图
+                </NavLink>
                 <NavLink to="/parts" className={navClass}>
                   零件库
                 </NavLink>

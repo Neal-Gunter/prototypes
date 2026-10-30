@@ -3,6 +3,7 @@ import { Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
+import { getModuleGeom } from "../../modellab/registry.js";
 import { engine, BENCH } from "../engine.js";
 import { PROC_BY_ID } from "../procedural.js";
 import { elec } from "../elecStore.js";
@@ -100,6 +101,13 @@ function Glb({ def }) {
   const H = def.dims_mm.y / 10;
   return def.flip ? <group position={[0, H, 0]} rotation={[Math.PI, 0, 0]}><primitive object={obj} /></group> : <primitive object={obj} />;
 }
+// v11：用户上传的模型模块（几何体在浏览器内存里，见 modellab/registry.js）
+function CustomMesh({ def }) {
+  const g = getModuleGeom(def.custom.key, def.custom.module);
+  const mat = useMemo(() => new THREE.MeshStandardMaterial({ color: def.custom.color || "#9aa3ad", roughness: 0.6, metalness: 0.1 }), [def.custom.color]);
+  if (!g) return <Boxes cols={def.colliders} mat="white" />;
+  return <mesh geometry={g.geom} material={mat} castShadow receiveShadow />;
+}
 const _q = new THREE.Quaternion(), _p = new THREE.Vector3();
 function Part({ uid, onDown }) {
   const ref = useRef();
@@ -140,6 +148,8 @@ function Part({ uid, onDown }) {
     <group ref={ref} onPointerDown={(e) => onDown(e, uid)} name={uid}>
       {def.kind === "glb" ? (
         <Suspense fallback={<Boxes cols={def.colliders} mat="white" />}><Glb def={def} /></Suspense>
+      ) : def.kind === "custom" ? (
+        <CustomMesh def={def} />
       ) : (
         <ProcMesh def={def} />
       )}
@@ -181,7 +191,7 @@ function Cables() {
       else { g.children[i].geometry.dispose(); g.children[i].geometry = geo; g.children[i].material = matFor(col); }
     });
   });
-  return <group ref={group} />;
+  return <group ref={group} name="cables" />;
 }
 // 万用表表笔：红 / 黑小锥
 function Probes({ probes }) {
@@ -324,6 +334,12 @@ function Loop({ onTick }) {
   useFrame((_, dt) => { if (!engine.extDrive) engine.update(Math.min(dt, 1 / 30)); onTick?.(); });
   return null;
 }
+// 调试 / 导出用：把 three 场景挂到 window（只读引用，v11 用它导出内置示例的 GLB）
+function SceneHook() {
+  const { scene } = useThree();
+  useEffect(() => { window.__asmScene = scene; return () => { if (window.__asmScene === scene) window.__asmScene = null; }; }, [scene]);
+  return null;
+}
 export default function AsmScene({ uids, tool, debug, flux, vis, onTick, onSelect, probes, onProbe }) {
   const toolRef = useRef(tool);
   toolRef.current = tool;
@@ -332,6 +348,7 @@ export default function AsmScene({ uids, tool, debug, flux, vis, onTick, onSelec
   const controls = useRef();
   return (
     <Canvas shadows camera={{ position: [0, 30, 33], fov: 40, near: 0.1, far: 400 }} gl={{ preserveDrawingBuffer: true }} data-testid="asm-canvas">
+      <SceneHook />
       <color attach="background" args={["#e9e4da"]} />
       <hemisphereLight args={["#ffffff", "#8a7a66", 0.9]} />
       <directionalLight position={[20, 40, 15]} intensity={1.6} castShadow shadow-mapSize={[1024, 1024]} shadow-bias={-0.0004} shadow-normalBias={0.03} shadow-camera-left={-35} shadow-camera-right={35} shadow-camera-top={25} shadow-camera-bottom={-25} />

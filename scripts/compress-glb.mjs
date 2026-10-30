@@ -1,0 +1,10 @@
+import { NodeIO } from "@gltf-transform/core";
+import { EXTMeshoptCompression, KHRMeshQuantization } from "@gltf-transform/extensions";
+import { weld, meshopt, prune } from "@gltf-transform/functions";
+import { MeshoptEncoder, MeshoptDecoder } from "meshoptimizer";
+await MeshoptEncoder.ready; await MeshoptDecoder.ready;
+const io = new NodeIO().registerExtensions([EXTMeshoptCompression, KHRMeshQuantization]).registerDependencies({ "meshopt.encoder": MeshoptEncoder, "meshopt.decoder": MeshoptDecoder });
+const doc = await io.read(process.argv[2]);
+doc.getRoot().getAsset().generator = "prototypes v11: v10 octopus exported from the assembly bench";
+await doc.transform(weld(), prune({ keepLeaves: true }), meshopt({ encoder: MeshoptEncoder, level: "medium" }));
+await io.write(process.argv[3], doc);
