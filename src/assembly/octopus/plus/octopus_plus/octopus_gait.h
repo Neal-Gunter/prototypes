@@ -23,7 +23,7 @@ struct ArmChannels {
 
 struct GaitParams {
     float freq_hz       = 0.6f;   // 步频，0.3 稳一点，超过 1.2 舵机会跟不上（md）
-    float yaw_amp_deg   = 30.0f;  // 我的补充：A 默认 30°（md 38°）；B 由 OctopusBody 改成 15°（防碰撞，估算）
+    float yaw_amp_deg   = 30.0f;  // 我的补充：A 默认 30°（md 38°）；B 由 OctopusBody 改成 20°（v8；相邻差最大 0.71×20≈14°，45−14=31° > 间隙 16+3，估算）
     float lift_amp_deg  = 20.0f;
     float phase_deg     = 45.0f;  // 0=同步划水 45=环形波 180=交替
     float duty          = 0.6f;   // 我的补充：A 0.6 / B 0.5（md 0.65）
@@ -106,7 +106,7 @@ private:
 };
 
 // 我的补充：相邻触手防碰撞。相邻两条的夹角 = 45° − yaw[i+1] + yaw[i]，
-// 小于 gmin（机械间隙 + 3° 余量；A 12°、B 40°，按 3D 结构估算）就两边各退一半，迭代收敛。
+// 小于 gmin（机械间隙 + 3° 余量；A 12°、B 16°；B 为 v8 在 3D 碰撞体上实测 13° + 余量）就两边各退一半，迭代收敛。
 inline void AntiCollide(float* yaw, float gmin) {
     for (int it = 0; it < 40; it++) {
         for (int a = 0; a < kArmCount; a++) {

@@ -47,7 +47,7 @@ public:
 
     // 我的补充：相邻触手机械间隙（°，按 3D 结构估算，需实物验证）
     static constexpr float kMinGapA = 12.0f;
-    static constexpr float kMinGapB = 40.0f;
+    static constexpr float kMinGapB = 16.0f;
 
     ~OctopusBody() { Stop(); }
 
@@ -73,7 +73,7 @@ public:
         // 我的补充：完善版默认步态（估算，台面里调出来的）
         GaitParams p;
         if (rig_ == RigType::kDual16) {
-            p.freq_hz = 0.6f; p.yaw_amp_deg = 15.0f; p.lift_amp_deg = 25.0f; p.phase_deg = 0.0f; p.duty = 0.5f;
+            p.freq_hz = 0.6f; p.yaw_amp_deg = 20.0f; p.lift_amp_deg = 25.0f; p.phase_deg = 0.0f; p.duty = 0.5f;
         } else {
             p.freq_hz = 0.6f; p.yaw_amp_deg = 30.0f; p.lift_amp_deg = 20.0f; p.phase_deg = 45.0f; p.duty = 0.6f;
         }

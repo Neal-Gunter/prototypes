@@ -21,7 +21,7 @@ export const FIX_LIST = [
   { k: "limit", zh: "每路加软件限位 90°±55°，相邻触手不打架（md 第 8 节建议 SetTrim / SetLimit，但代码里没调用）", md: "README §8 / octopus_bus.h · SetLimit()" },
   // —— 完善版（我的补充）：md 没写清楚 / 写错、需要改硬件或改设计的部分 ——
   { k: "gait2", plus: true, zh: "我的补充 · 镜像步态：左右两舷反向扫（cos(安装角) 加权），直行时转矩抵消；A 靠单向脚垫、差速转弯；B 默认 phase 0（同步划水：撑地推、抬起收），原地转时八条同向扫", md: "octopus_gait.h · Yaw()（md 的 CPG 八条同向扫，台面里 B 原地转、A 只蹭）" },
-  { k: "antiCollide", plus: true, zh: "我的补充 · 邻臂防撞软限位：每帧检查相邻两条的夹角，小于机械间隙（A 12°、B 40°，按 3D 结构估算）+3° 余量就两边各退一半", md: "md 无（README §8 只说“相邻触手打架”）" },
+  { k: "antiCollide", plus: true, zh: "我的补充 · 邻臂防撞软限位：每帧检查相邻两条的夹角，小于机械间隙（A 12°、B 16°；B 为 v8 在 3D 碰撞体上实测 13° + 余量）+3° 余量就两边各退一半", md: "md 无（README §8 只说“相邻触手打架”）" },
   { k: "speed", plus: true, zh: "我的补充 · MCP speed 夹到 ≥ 834 ms/周期（≤ 1.2 Hz，md 自己写的舵机跟得上的上限）", md: "octopus_mcp.cpp · hz = 1000 / speed" },
   { k: "batt", plus: true, zh: "我的补充 · 电池检测改到 GPIO10（ADC1_CH9，避开麦克风 WS 的 GPIO4 和采购清单第二批 I2C 的 GPIO1/2），100k/22k 分压，3S 低于 9.6 V 停运动、回到 10.2 V 才恢复（估算阈值）", md: "body_firmware_A.ino BATTERY_PIN 4 / 无线架构 §6" },
   { k: "relax", plus: true, zh: "我的补充 · Rest 回到中位 1 s 后把 PWM 设成 FULL OFF（舵机不再出力、不再耗电），下次动作前重新写出", md: "octopus_body.h · Rest()（原样舵机一直出力）" },
@@ -30,8 +30,8 @@ export const FIX_LIST = [
 export const fixesAll = (on) => Object.fromEntries(FIX_LIST.map((f) => [f.k, !!on && !f.plus]));
 export const fixesPlus = () => Object.fromEntries(FIX_LIST.map((f) => [f.k, true]));
 // 完善版默认步态（我的补充，估算，台面里调出来的）：A 沿用 md 的环形波；B 改成同步划水
-export const plusGait = (plan) => (plan === "B" ? { freq_hz: 0.6, yaw_amp_deg: 15, lift_amp_deg: 25, phase_deg: 0, duty: 0.5 } : { freq_hz: 0.6, yaw_amp_deg: 30, lift_amp_deg: 20, phase_deg: 45, duty: 0.6 });
-export const MIN_GAP = { A: 12, B: 40 }; // 相邻触手机械间隙（°，按 3D 结构估算）
+export const plusGait = (plan) => (plan === "B" ? { freq_hz: 0.6, yaw_amp_deg: 20, lift_amp_deg: 25, phase_deg: 0, duty: 0.5 } : { freq_hz: 0.6, yaw_amp_deg: 30, lift_amp_deg: 20, phase_deg: 45, duty: 0.6 });
+export const MIN_GAP = { A: 12, B: 16 }; // 相邻触手机械间隙（°）。B：v8 在 3D 碰撞体上实测相邻模块 13° 才接触，+3° 余量 = 16（v7 估算 40 过于保守）
 
 // ---------------- octopus_gait.h ----------------
 export const kArmCount = 8;

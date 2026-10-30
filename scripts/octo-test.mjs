@@ -55,7 +55,7 @@ let r = go({ plan: "A" }, "GO"); ok(r.dz < -5 && Math.abs(r.dx) < 3 && r.col ===
 ok(r.t.res.errCount === 0 && r.t.res.checks.every((c) => c.ok), "plus A all checks ok " + JSON.stringify(r.t.res.checks.filter((c) => !c.ok).map((c) => c.zh)));
 r = go({ plan: "A" }, "LEFT"); ok(r.dh < -20 && r.dx < 0, `plus A LEFT turns left dh=${r.dh.toFixed(0)} dx=${r.dx.toFixed(1)}`);
 r = go({ plan: "A" }, "RIGHT"); ok(r.dh > 20 && r.dx > 0, `plus A RIGHT turns right dh=${r.dh.toFixed(0)}`);
-r = go({ plan: "B" }, "GO"); ok(r.dz < -1 && r.col === 0, `plus B crawls forward dz=${r.dz.toFixed(1)} col=${r.col}`);
+r = go({ plan: "B" }, "GO"); ok(r.dz < -10 && Math.abs(r.dx) < 2 && r.col === 0, `plus B crawls forward (v8 ≥1 cm/s) dz=${r.dz.toFixed(1)} col=${r.col}`);
 r = go({ plan: "B" }, "LEFT"); ok(r.dh < -45 && Math.hypot(r.dx, r.dz) < 2 && r.col === 0, `plus B LEFT spins in place dh=${r.dh.toFixed(0)}`);
 ok(r.t.peakI < 5, "plus B peak current < XL4015 5 A: " + r.t.peakI.toFixed(2));
 r = go({ plan: "A" }, "GAIT F=0.8 YAW=25"); ok(Math.abs(r.t.rt.body.GaitParamsSnapshot().freq_hz - 0.8) < 1e-9 && r.t.rt.body.GaitParamsSnapshot().yaw_amp_deg === 25, "plus GAIT parse");
