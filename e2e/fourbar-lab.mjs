@@ -1,0 +1,42 @@
+// v13：模型实验室里的四连杆示例（闭环）。用法：npx vite preview --port 4173 & ; node e2e/fourbar-lab.mjs（BASE / OUT / SHOTS=0 可改）
+import { chromium } from "playwright";
+import fs from "node:fs";
+import { FOURBAR as F, fourbarPoints } from "../scripts/lib/linkage.mjs";
+const BASE = process.env.BASE || "http://localhost:4173", OUT = process.env.OUT || "/workspace/proto-site/v13", SHOT = process.env.SHOTS !== "0";
+fs.mkdirSync(OUT, { recursive: true });
+let pass = 0, fail = 0, n = 20;
+const ok = (c, zh, extra = "") => { (c ? pass++ : fail++); console.log(c ? "✓" : "✗", zh, extra); };
+const b = await chromium.launch({ executablePath: "/usr/bin/google-chrome", args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
+const p = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage(); const errs = [];
+p.on("pageerror", (e) => errs.push(String(e)));
+const L = (f, a) => p.evaluate(f, a), wait = (ms) => p.waitForTimeout(ms);
+const shot = async (s) => { if (SHOT) await p.screenshot({ path: `${OUT}/${String(++n).padStart(2, "0")}-${s}.png` }); };
+const val = (id) => L((id) => window.__labSim?.value(id), id);
+const D = Math.PI / 180, P0 = fourbarPoints(F.theta0);
+const analytic = (qc) => { const P = fourbarPoints(F.theta0 - qc * D); return ((((P0.phi - P.phi) / D + 180) % 360) + 360) % 360 - 180; };
+await p.goto(`${BASE}/assembly/model?demo=fourbar`);
+await p.waitForFunction(() => window.__lab?.meshes > 0 && !window.__lab.busy, null, { timeout: 90000 }); await wait(1200);
+let s = await L(() => window.__lab);
+ok(s.groups.n === 4 && s.groups.joints === 4 && s.groups.loops === 1 && !s.groups.errors.length, "四连杆：4 个刚体、4 个关节、1 个闭环", JSON.stringify(s.groups));
+ok(s.mob?.dof === 1 && s.mob.planar === 1 && s.mob.redundant === 3, "自由度面板：平面公式 M=1，旋量秩 1 个自由度、3 个冗余", JSON.stringify(s.mob));
+const mtxt = await p.locator("[data-testid=mobility]").innerText();
+ok(/1 个闭环/.test(mtxt) && /只按当前姿态/.test(mtxt), "页面上显示自由度检查和“只按当前姿态”的说明");
+ok(/闭环/.test(await p.locator("[data-testid=joint-j-cb]").innerText()), "闭环关节按钮标“闭环”");
+await L(() => document.querySelector("[data-testid=joints-panel]").scrollIntoView({ block: "start", behavior: "instant" }));
+await shot("fourbar-mobility");
+await p.click("[data-testid=sim-toggle]"); await p.waitForFunction(() => window.__labSim, null, { timeout: 30000 }); await wait(600);
+const errs2 = [];
+for (const t of [120, -120, 160]) {
+  await p.locator("[data-testid=slider-j-crank]").fill(String(t)); await wait(2600);
+  const qc = await val("j-crank"), qr = await val("j-rocker");
+  errs2.push([t, +qc.toFixed(1), +qr.toFixed(2), +analytic(qc).toFixed(2)]);
+}
+ok(errs2.every(([t, qc, qr, a]) => Math.abs(qc - t) < 3 && Math.abs(qr - a) < 2), "浏览器里拖曲柄：摇杆角和解析解差 < 2°", JSON.stringify(errs2));
+await L(() => document.querySelector("[data-testid=viewer]").scrollIntoView({ block: "center", behavior: "instant" })); await wait(400);
+await shot("fourbar-running");
+const pen = await L(() => window.__labSim.pen());
+ok(pen.mm < 0.3, "运行中不穿模", JSON.stringify(pen));
+ok(!errs.length, "没有页面错误", errs.join(" | "));
+await b.close();
+console.log(`\n四连杆 e2e：${pass} 通过，${fail} 失败`);
+process.exit(fail ? 1 : 0);

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="620" viewBox="0 0 1000 620">
+<rect width="1000" height="620" fill="#fff"/>
+<text x="40" y="56" font-size="26" font-family="sans-serif" font-weight="bold">四连杆（曲柄摇杆）· 功能图（示意）</text>
+<text x="960" y="56" font-size="15" font-family="sans-serif" text-anchor="end" fill="#666">本项目自制 CC0 · 早期原型，简化仿真</text>
+<rect x="40" y="110" width="280" height="140" rx="12" fill="#dfe8fb" stroke="#333" stroke-width="2"/><text x="180" y="154" font-size="22" text-anchor="middle" font-family="sans-serif" font-weight="bold">曲柄转动（输入）</text><text x="180" y="184" font-size="15" text-anchor="middle" fill="#444" font-family="sans-serif">电机 · 关节：曲柄转轴</text><text x="180" y="206" font-size="15" text-anchor="middle" fill="#444" font-family="sans-serif">−170° ~ +170°</text>
+<rect x="360" y="110" width="280" height="140" rx="12" fill="#fde2df" stroke="#333" stroke-width="2"/><text x="500" y="154" font-size="22" text-anchor="middle" font-family="sans-serif" font-weight="bold">摇杆摆动（输出）</text><text x="500" y="184" font-size="15" text-anchor="middle" fill="#444" font-family="sans-serif">被动 · 摇杆转轴</text><text x="500" y="206" font-size="15" text-anchor="middle" fill="#444" font-family="sans-serif">摆角由杆长决定</text>
+<rect x="680" y="110" width="280" height="140" rx="12" fill="#fbf1d2" stroke="#333" stroke-width="2"/><text x="820" y="154" font-size="22" text-anchor="middle" font-family="sans-serif" font-weight="bold">闭环</text><text x="820" y="184" font-size="15" text-anchor="middle" fill="#444" font-family="sans-serif">连杆两头都连着</text><text x="820" y="206" font-size="15" text-anchor="middle" fill="#444" font-family="sans-serif">1 个自由度</text>
+<rect x="40" y="330" width="280" height="110" rx="12" fill="#f1ede4" stroke="#333" stroke-width="2"/><text x="180" y="374" font-size="22" text-anchor="middle" font-family="sans-serif" font-weight="bold">机架</text><text x="180" y="404" font-size="15" text-anchor="middle" fill="#444" font-family="sans-serif">固定在地面上</text>
+<text x="40" y="540" font-size="15" font-family="sans-serif" fill="#555">机架 80 · 曲柄 20 · 连杆 70 · 摇杆 60 mm（Grashof：最短 + 最长 ≤ 其余两杆之和，曲柄能整周转）</text>
+</svg>

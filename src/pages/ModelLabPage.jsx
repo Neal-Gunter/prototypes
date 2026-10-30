@@ -11,7 +11,7 @@ import { deleteProject, listProjects, loadProject, saveProject } from "../modell
 import { loadDiagramFile, pdfPageToPng } from "../modellab/diagram.js";
 import { loadBuiltinDemo } from "../modellab/demo.js";
 import JointControls from "../modellab/ui/JointControls.jsx";
-import { JOINT_TYPES, DRIVES, addBlock, axisToRaw, benchToRaw, buildGroups, createLabWorld, effLimits, jointToBench, labPenetration, newJoint, unitOf } from "../modellab/artic.js";
+import { JOINT_TYPES, DRIVES, addBlock, axisToRaw, benchToRaw, buildGroups, mobility, createLabWorld, effLimits, jointToBench, labPenetration, newJoint, unitOf } from "../modellab/artic.js";
 import { LIMITS, MODEL_EXT, extOf, mb } from "../modellab/limits.js";
 
 export const LAB_SIMPLIFICATIONS = [
@@ -22,7 +22,7 @@ export const LAB_SIMPLIFICATIONS = [
   "关节（v12）：转动 / 滑动用 Rapier 原生关节和原生限位（软约束：用超过堵转的力硬扳时可能超出几度）；球关节没有马达，摆角限位是自写的软限位；固定关节把两块并成一个刚体",
   "关节两侧的两块之间不算碰撞（铰接处本来就贴在一起，否则一动就互相顶开）；其他任意两块之间、和地面 / 测试方块之间都正常碰撞、有摩擦",
   "舵机：MG90S / SG51R 的堵转扭矩、空载速度、质量取 datasheet（4.8 V / 6 V；SG51R 只有 4.8 V 数据，没外推）；马达刚度、阻尼、转子惯量、“负载%”是估算；不模拟电流、发热、齿轮间隙、死区",
-  "一块只能挂在一个父关节上（树形结构，不支持闭环连杆）；关节点 / 轴存在原始模型坐标里，换单位 / 缩放 / 朝上时跟着模型走",
+  "闭环连杆（v13）：一块挂两个父关节就成环（四连杆、曲柄滑块、平行连杆），多出来的关节在 Rapier 里是额外的冲量约束，迭代求解，会有很小的漂移（四连杆示例 < 0.01 mm）；自由度用 Grübler 公式 + 当前姿态的旋量矩阵秩估，只对当前姿态成立，奇异位置可能判断不准（我的补充）；关节点 / 轴存在原始模型坐标里，换单位 / 缩放 / 朝上时跟着模型走",
   "质量 = 体积 × 材料密度（估算）：闭合网格用真实体积，不闭合用凸包体积（偏大）；3D 打印件按实心算；可以直接填实测质量",
   "功能图热点是矩形框；功能 ↔ 模块绑定和引脚标注只是标签，不做电路仿真（八爪鱼示例的电路仿真在装配台的“八爪鱼”页）",
   "自动拆分按组名 / 网格；“按连通块拆”按顶点位置焊接后找连通块，相互接触但不共用顶点的零件不会被合并",
@@ -206,6 +206,7 @@ export default function ModelLabPage() {
   }, [project?.functions, an, explode, visible, X, simOn, mode]);
   // v12：刚体分组（显示关节错误）和仿真世界（关节 / 模块 / 碰撞体 / 固定底座变了就重建）
   const groups = useMemo(() => (project ? buildGroups(project) : null), [project?.joints, project?.modules]);
+  const mob = useMemo(() => { try { return groups && X ? mobility(project, groups, X.M) : null; } catch { return null; } }, [groups, X]);
   const simKey = project && X ? JSON.stringify([project.joints, project.modules.map((m) => [m.id, m.meshes, m.collider, m.material, m.massG]), project.sim, project.model.units, project.model.scale, project.model.upAxis]) : "";
   useEffect(() => {
     if (!simOn || !X || !an.size) { setLab(null); return; }
@@ -230,7 +231,7 @@ export default function ModelLabPage() {
 
   // 测试钩子
   useEffect(() => {
-    window.__lab = { project, hl: [...hl], hlFns: [...hlFns], visible: [...visible], selMods: [...selMods], selFn, selMeshes: [...selMeshes], mode, isolate, explode, offsets: offsets.size, size: X ? X.sizeMm.toArray() : null, mass: totalMass, busy, err, meshes: parsed?.meshes.length || 0, simOn, sim: !!lab, jd, selJoint, groups: groups ? { n: groups.groups.length, joints: groups.joints.length, errors: groups.errors } : null, blocks };
+    window.__lab = { project, hl: [...hl], hlFns: [...hlFns], visible: [...visible], selMods: [...selMods], selFn, selMeshes: [...selMeshes], mode, isolate, explode, offsets: offsets.size, size: X ? X.sizeMm.toArray() : null, mass: totalMass, busy, err, meshes: parsed?.meshes.length || 0, simOn, sim: !!lab, jd, selJoint, groups: groups ? { n: groups.groups.length, joints: groups.joints.length, errors: groups.errors, loops: groups.loops } : null, mob: mob ? { dof: mob.dof, grubler: mob.grubler, planar: mob.grublerPlanar, redundant: mob.redundant, locked: mob.locked, msgs: mob.msgs.map((m) => m.lvl + ":" + m.t) } : null, blocks };
     window.__labSim = lab ? { lab, core: lab.core, target: (id, v) => lab.core.setTarget(id, v), value: (id) => lab.core.value(id), stats: () => lab.core.stats(), pen: () => labPenetration(lab), playing: () => lab.core.playing(), block: (i = 0) => { const b = lab.blocks[i]; if (!b) return null; const t = b.rb.translation(); return [t.x, t.y, t.z]; } } : null;
   });
 
@@ -433,7 +434,8 @@ export default function ModelLabPage() {
           <button className={btn} data-testid="add-joint-num" disabled={mods.length < 2} onClick={() => { const pa = selMods.size === 2 ? [...selMods] : [mods[0].id, mods[1].id]; const c = an.get(pa[1])?.center || new THREE.Vector3(); setMode("view"); addJointAt(pa[0], pa[1], c.toArray(), null); }}>+ 用数字加（{selMods.size === 2 ? "选中的两块" : "前两块"}，再改数）</button>
         </div>
         {groups?.errors.length > 0 && <ul className="mt-1 text-xs text-mark" data-testid="joint-errors">{groups.errors.map((e) => <li key={e}>⚠ {e}</li>)}</ul>}
-        {js.length > 0 && <ul className="mt-1 flex flex-wrap gap-1 text-xs">{js.map((j) => <li key={j.id}><button data-testid={`joint-${j.id}`} className={(selJoint === j.id ? btnOn : btn)} onClick={() => setSelJoint(selJoint === j.id ? null : j.id)}>{j.name} · {JOINT_TYPES[j.type].slice(0, 2)}</button></li>)}</ul>}
+        {mob?.msgs.length > 0 && <ul className="mt-1 border border-line bg-white p-1 text-xs" data-testid="mobility">{mob.msgs.map((m) => <li key={m.t} className={m.lvl === "err" ? "font-medium text-mark" : m.lvl === "warn" ? "text-[#9a5b00]" : "text-ink-soft"}>{m.lvl === "err" ? "⛔ " : m.lvl === "warn" ? "⚠ " : "ⓘ "}{m.t}</li>)}<li className="text-ink-soft">自由度检查（我的补充）：只按当前姿态算，奇异位置可能不准</li></ul>}
+        {js.length > 0 && <ul className="mt-1 flex flex-wrap gap-1 text-xs">{js.map((j) => <li key={j.id}><button data-testid={`joint-${j.id}`} className={(selJoint === j.id ? btnOn : btn)} onClick={() => setSelJoint(selJoint === j.id ? null : j.id)}>{j.name} · {JOINT_TYPES[j.type].slice(0, 2)}{groups?.joints.find((e) => e.j.id === j.id)?.loop ? " · 闭环" : ""}</button></li>)}</ul>}
         {Ed()}
         {lab && <div className="mt-2"><JointControls core={lab.core} project={project} pen={() => labPenetration(lab)} onSavePose={savePose} /></div>}
         {lab && project.poses.length > 0 && TimelineEd()}
@@ -491,6 +493,7 @@ export default function ModelLabPage() {
         <button className={btn} onClick={newBlank}>新建</button>
         <button className={btn} data-testid="load-demo" onClick={() => openDemo("octo")}>内置示例：八爪鱼</button>
         <button className={btn} data-testid="load-demo-arm" onClick={() => openDemo("arm")}>内置示例：机械臂</button>
+        <button className={btn} data-testid="load-demo-fourbar" onClick={() => openDemo("fourbar")}>内置示例：四连杆</button>
         <label className={btn + " inline-flex cursor-pointer items-center"}>导入工程 .zip<input data-testid="import-input" type="file" accept=".zip,application/zip" className="sr-only" onChange={(e) => { onImport(e.target.files[0]); e.target.value = ""; }} /></label>
         <button className={btn} data-testid="export" disabled={!project} onClick={onExport}>导出工程 .zip</button>
         <button className={btn} data-testid="to-bench" disabled={!parsed || !project?.modules.length} onClick={toBench}>放到装配台 →</button>
@@ -515,7 +518,7 @@ export default function ModelLabPage() {
       {!project && !busy && (
         <div className="mt-6 border border-dashed border-line bg-paper-2 p-6 text-sm">
           <p className="font-medium">还没有打开工程。</p>
-          <p className="mt-1">上传自己的 3D 模型（会按组名 / 网格自动拆成模块）和一张功能图（框图、原理图截图、PDF 某页），把“功能”框在图上，再绑定到模型的模块。也可以先看看 <button className="underline" onClick={() => openDemo("octo")}>内置的八爪鱼示例</button>，或带关节的 <button className="underline" onClick={() => openDemo("arm")}>2 自由度机械臂</button>。</p>
+          <p className="mt-1">上传自己的 3D 模型（会按组名 / 网格自动拆成模块）和一张功能图（框图、原理图截图、PDF 某页），把“功能”框在图上，再绑定到模型的模块。也可以先看看 <button className="underline" onClick={() => openDemo("octo")}>内置的八爪鱼示例</button>，或带关节的 <button className="underline" onClick={() => openDemo("arm")}>2 自由度机械臂</button>、闭环的 <button className="underline" onClick={() => openDemo("fourbar")}>四连杆</button>。</p>
         </div>
       )}
 

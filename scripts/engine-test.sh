@@ -17,3 +17,5 @@ node e2e/modellab-engine.mjs || exit 1
 # v12：关节 / 舵机 / 关节带动碰撞 / 工程往返
 node scripts/artic-test.mjs || exit 1
 node e2e/artic-bench.mjs || exit 1
+# v13：闭环连杆（四连杆 / 曲柄滑块 / 平行四边形 / 锁死）
+node scripts/loop-test.mjs || exit 1

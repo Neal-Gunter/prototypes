@@ -39,6 +39,11 @@ export function effLimits(j) {
 export const clampVal = (j, v) => { const L = effLimits(j); return j.type === "ball" ? 0 : Math.min(L.max, Math.max(L.min, v)); };
 
 // ---- 刚体分组 ----
+// v13（我的补充）：支持闭环连杆（四连杆、曲柄滑块、平行连杆）。
+// 1) 固定关节两端并成一个刚体组；不是任何活动关节“子模块”的组都并进根（底座）。
+// 2) 从根出发按关节顺序做生成树：树上的关节 = 普通关节；多出来的关节 = “闭环关节”（loop: true），
+//    Rapier 冲量关节本来就允许成环，所以它照样建成一个关节约束，只是在自由度分析里多算一个闭环。
+// 3) 连不到底座、自己成环的那一团：报错并去掉一个关节。
 export function buildGroups(project) {
   const mods = project.modules.filter((m) => m.meshes.length).map((m) => m.id);
   const idx = new Map(mods.map((m, i) => [m, i]));
@@ -54,42 +59,145 @@ export function buildGroups(project) {
     const uni = (a, b) => { a = find(a); b = find(b); if (a !== b) uf[b] = a; };
     for (const j of joints) if (j.type === "fixed") uni(idx.get(j.parent), idx.get(j.child));
     const moving = joints.filter(isMoving);
-    const childOf = new Map();
     let bad = null;
+    const isChild = new Set();
     for (const j of moving) {
       const gc = find(idx.get(j.child)), gp = find(idx.get(j.parent));
       if (gc === gp) { bad = [j, `“${j.name}”：两端已经被固定关节连成同一个刚体，已忽略`]; break; }
-      if (childOf.has(gc)) { bad = [j, `“${j.name}”：子模块那一块已经有父关节“${childOf.get(gc).name}”（一块只能挂在一个关节上），已忽略`]; break; }
-      childOf.set(gc, j);
+      isChild.add(gc);
     }
     if (!bad) {
-      // 不是任何活动关节子模块的块 → 并成根
       const keys = [...new Set(mods.map((_, i) => find(i)))];
-      const roots = keys.filter((k) => !childOf.has(k));
-      if (!roots.length && keys.length) { bad = [moving[moving.length - 1], `“${moving[moving.length - 1].name}”：关节连成了环（没有底座），已忽略`]; }
+      let roots = keys.filter((k) => !isChild.has(k));
+      if (!roots.length && keys.length && moving.length) {
+        roots = [find(idx.get(moving[0].parent))];
+        warnings.push(`没有“不挂在任何关节下面”的模块：把“${moving[0].parent}”所在的那块当底座（我的补充）`);
+      }
+      for (const r of roots.slice(1)) uni(roots[0], r);
+      const rootK = find(roots[0] ?? 0);
+      // 生成树（按关节顺序，BFS）
+      const seen = new Set([rootK]), tree = new Set();
+      let grew = true;
+      while (grew) {
+        grew = false;
+        for (const j of moving) {
+          if (tree.has(j)) continue;
+          const gp = find(idx.get(j.parent)), gc = find(idx.get(j.child));
+          if (seen.has(gp) && !seen.has(gc)) { seen.add(gc); tree.add(j); grew = true; }
+          else if (seen.has(gc) && !seen.has(gp)) { seen.add(gp); tree.add(j); grew = true; }
+        }
+      }
+      const stray = moving.find((j) => !seen.has(find(idx.get(j.parent))) || !seen.has(find(idx.get(j.child))));
+      if (stray) bad = [stray, `“${stray.name}”：这几块只和彼此连成了环、没有连到底座，已忽略这个关节`];
       else {
-        for (const r of roots.slice(1)) uni(roots[0], r);
-        // 环检查：从每个子块往上走必须走到根
-        const rootK = find(roots[0] ?? 0);
-        for (const [gc, j] of childOf) {
-          let g = gc, n = 0;
-          while (find(g) !== rootK && n++ <= keys.length) { const pj = childOf.get(find(g)); if (!pj) break; g = find(idx.get(pj.parent)); }
-          if (find(g) !== rootK) { bad = [j, `“${j.name}”：关节连成了环，已忽略`]; break; }
-        }
-        if (!bad) {
-          const order = [rootK, ...[...new Set(mods.map((_, i) => find(i)))].filter((k) => k !== rootK)];
-          const gi = new Map(order.map((k, i) => [k, i]));
-          const groups = order.map((k, i) => ({ i, root: i === 0, mods: mods.filter((_, m) => find(m) === k) }));
-          const groupOf = new Map(mods.map((m, i) => [m, gi.get(find(i))]));
-          const mj = moving.map((j) => ({ j, gp: groupOf.get(j.parent), gc: groupOf.get(j.child) }));
-          return { groups, groupOf, joints: mj, errors, warnings, fixedCount: joints.length - moving.length };
-        }
+        const order = [rootK, ...[...new Set(mods.map((_, i) => find(i)))].filter((k) => k !== rootK)];
+        const gi = new Map(order.map((k, i) => [k, i]));
+        const groups = order.map((k, i) => ({ i, root: i === 0, mods: mods.filter((_, m) => find(m) === k) }));
+        const groupOf = new Map(mods.map((m, i) => [m, gi.get(find(i))]));
+        const mj = moving.map((j) => ({ j, gp: groupOf.get(j.parent), gc: groupOf.get(j.child), loop: !tree.has(j) }));
+        // 树上每个组的“上一个关节”（往根走），给闭环找路径用
+        const up = new Map();
+        for (const e of mj) if (!e.loop) { const ds = depthOf(e, mj); up.set(ds.far, { e, near: ds.near }); }
+        const loops = mj.filter((e) => e.loop).length;
+        for (const e of mj) if (e.loop) warnings.push(`“${e.j.name}”是闭环关节（第 ${mj.filter((x) => x.loop).indexOf(e) + 1} 个环）：两端已经通过别的关节连着，Rapier 把它当成额外约束一起解`);
+        return { groups, groupOf, joints: mj, errors, warnings, fixedCount: joints.length - moving.length, loops, up };
       }
     }
     errors.push(bad[1]);
     joints = joints.filter((j) => j !== bad[0]);
   }
   throw new Error("buildGroups: too many rounds");
+}
+// 树边：哪一端离根近（BFS 顺序里先出现的那端）
+function depthOf(e, mj) {
+  const d = new Map([[0, 0]]);
+  let grew = true;
+  while (grew) { grew = false; for (const x of mj) { if (x.loop) continue; if (d.has(x.gp) && !d.has(x.gc)) { d.set(x.gc, d.get(x.gp) + 1); grew = true; } else if (d.has(x.gc) && !d.has(x.gp)) { d.set(x.gp, d.get(x.gc) + 1); grew = true; } } }
+  return (d.get(e.gp) ?? 0) <= (d.get(e.gc) ?? 0) ? { near: e.gp, far: e.gc } : { near: e.gc, far: e.gp };
+}
+
+// ---- v13：自由度分析（我的补充，老实说只是“瞬时”的） ----
+// 三种算法一起给：空间 Grübler–Kutzbach 公式、平面机构公式（所有转轴平行时）、按当前姿态的旋量矩阵秩。
+// 前两种只数零件和关节，不看几何；第三种看几何，但只在当前这个姿态成立（奇异位置会不一样）。
+export function mobility(project, G, M) {
+  const mj = G.joints, n = G.groups.length;
+  const f = (e) => (e.j.type === "ball" ? 3 : 1);
+  const sumF = mj.reduce((s, e) => s + f(e), 0);
+  const grubler = 6 * (n - 1) - mj.reduce((s, e) => s + 6 - f(e), 0);
+  const geo = mj.map((e) => jointToBench(e.j, M));
+  // 平面：没有球关节，所有转轴互相平行，滑轨方向都垂直于转轴
+  const rev = mj.map((e, i) => [e, geo[i]]).filter(([e]) => e.j.type === "revolute");
+  const nrm = rev[0]?.[1].axis;
+  let planar = !!nrm && !mj.some((e) => e.j.type === "ball");
+  if (planar) for (const [e, g] of mj.map((e, i) => [e, geo[i]])) {
+    if (e.j.type === "revolute" && Math.abs(Math.abs(g.axis.dot(nrm)) - 1) > 1e-3) planar = false;
+    if (e.j.type === "prismatic" && Math.abs(g.axis.dot(nrm)) > 1e-3) planar = false;
+  }
+  const grublerPlanar = planar ? 3 * (n - 1) - mj.reduce((s, e) => s + 3 - f(e), 0) : null;
+  // 旋量：每个关节自由度一列（ω, v），v 用特征长度归一化
+  let Lc = 1;
+  for (const g of geo) Lc = Math.max(Lc, g.p.length());
+  const cols = []; // {e, k, tw:[6]}
+  mj.forEach((e, i) => {
+    const { p, axis } = geo[i];
+    const ax = e.j.type === "ball" ? [new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1)] : [axis];
+    for (const a of ax) {
+      if (e.j.type === "prismatic") cols.push({ e, tw: [0, 0, 0, a.x, a.y, a.z] });
+      else { const v = new THREE.Vector3().crossVectors(p, a).divideScalar(Lc); cols.push({ e, tw: [a.x, a.y, a.z, v.x, v.y, v.z] }); }
+    }
+  });
+  // 每个闭环：闭环关节 + 树上从 gc 到 gp 的路径。约束：路径上（带方向）的旋量之和 − 闭环关节旋量 = 0
+  const pathToRoot = (g) => { const out = []; let n2 = 0; while (g !== 0 && n2++ < 999) { const u = G.up.get(g); if (!u) break; out.push(u.e); g = u.near; } return out; };
+  const rows = [];
+  for (const e of mj.filter((x) => x.loop)) {
+    const pa = pathToRoot(e.gp), pc = pathToRoot(e.gc);
+    const shared = new Set(pa.filter((x) => pc.includes(x)));
+    // 旋量方向：沿“从根往外”走时，关节的父端在近根一侧 → +1，否则 −1
+    const sgn = (x) => (G.up.get(x.gc)?.e === x ? 1 : -1);
+    const coef = new Map();
+    for (const x of pc) if (!shared.has(x)) coef.set(x, (coef.get(x) || 0) + sgn(x));
+    for (const x of pa) if (!shared.has(x)) coef.set(x, (coef.get(x) || 0) - sgn(x));
+    coef.set(e, (coef.get(e) || 0) - 1);
+    for (let r = 0; r < 6; r++) rows.push(cols.map((c) => (coef.get(c.e) || 0) * c.tw[r]));
+  }
+  const rank = matRank(rows, cols.length);
+  const dof = cols.length - rank;
+  const redundant = rows.length - rank;
+  // 被锁死的关节：e_i 落在约束的行空间里 = 这个关节的速度被强制为 0
+  const locked = [];
+  if (rows.length) mj.forEach((e) => {
+    if (e.j.type === "ball") return;
+    const ci = cols.findIndex((c) => c.e === e);
+    const r2 = matRank([...rows, cols.map((_, k) => (k === ci ? 1 : 0))], cols.length);
+    if (r2 === rank) locked.push(e.j.name);
+  });
+  const driven = mj.filter((e) => e.j.type !== "ball" && driveParams(e.j).on).length;
+  const loopJ = new Set();
+  for (const e of mj.filter((x) => x.loop)) { loopJ.add(e); for (const x of [...pathToRoot(e.gp), ...pathToRoot(e.gc)]) loopJ.add(x); }
+  const msgs = [];
+  if (G.loops) {
+    msgs.push({ lvl: "info", t: `${G.loops} 个闭环；空间公式 M = ${grubler}${planar ? `，平面公式 M = ${grublerPlanar}` : ""}；按当前姿态的旋量秩：自由度 ${dof}、冗余约束 ${redundant}` });
+    if (dof === 0) msgs.push({ lvl: "err", t: `机构锁死：自由度 0，关节动不了（${locked.join("、") || "全部"}）。检查轴线 / 杆长是不是画对了` });
+    else if (locked.length) msgs.push({ lvl: "warn", t: `这些关节被闭环锁死、动不了：${locked.join("、")}` });
+    if (redundant > 0) msgs.push({ lvl: planar ? "info" : "warn", t: planar ? `平面机构在三维里有 ${redundant} 个冗余约束（正常现象：转轴必须严格平行，实物要靠加工精度 / 间隙；Rapier 迭代求解能处理，但会有一点抖动 / 漂移）` : `过约束：有 ${redundant} 个冗余约束且不是平面机构，实物很可能装不上或卡死；仿真里关节会互相拉扯` });
+    if (planar && grublerPlanar != null && dof !== grublerPlanar) msgs.push({ lvl: "warn", t: `平面公式说 M = ${grublerPlanar}，但按当前几何是 ${dof}：几何特殊（比如三根等长平行的曲柄）或处在奇异位置（比如杆共线），换个姿态再看` });
+    const drivenLoop = [...loopJ].filter((x) => x.j.type !== "ball" && driveParams(x.j).on).length;
+    if (drivenLoop > dof && dof > 0) msgs.push({ lvl: "warn", t: `过驱动：环里有 ${drivenLoop} 个带马达的关节，但只有 ${dof} 个自由度，马达会互相顶（只给 ${dof} 个关节配驱动，其余选“无驱动”）` });
+  }
+  return { n, sumF, grubler, planar, grublerPlanar, dof, rank, redundant, loops: G.loops, locked, driven, msgs, ok: !G.loops || dof > 0 };
+}
+function matRank(rows, nc) {
+  const A = rows.map((r) => r.slice());
+  let rank = 0;
+  for (let c = 0; c < nc && rank < A.length; c++) {
+    let piv = rank, best = 0;
+    for (let r = rank; r < A.length; r++) if (Math.abs(A[r][c]) > best) { best = Math.abs(A[r][c]); piv = r; }
+    if (best < 1e-7) continue;
+    [A[rank], A[piv]] = [A[piv], A[rank]];
+    for (let r = 0; r < A.length; r++) if (r !== rank) { const k = A[r][c] / A[rank][c]; if (k) for (let q = c; q < nc; q++) A[r][q] -= k * A[rank][q]; }
+    rank++;
+  }
+  return rank;
 }
 
 // 原始坐标 → 台面坐标（cm）
