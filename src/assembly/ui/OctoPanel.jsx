@@ -16,6 +16,7 @@ import { runGait } from "../../gait/octo-measure.js";
 import GaitSearch from "../../gait/GaitSearch.jsx";
 import CtrlPanel from "../../gait/CtrlPanel.jsx";
 import SlipPanel from "./SlipPanel.jsx";
+import LinkPanel from "../../link/LinkPanel.jsx";
 import { OCTO_CTRL, SimImu, toCtrlHeader } from "../../gait/ctrl.js";
 
 let detach = null;
@@ -336,6 +337,7 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
         {snap.events.length > 0 && <ul className="text-[11px] text-ink-soft">{snap.events.slice(-5).map((e, i) => <li key={i}>{e.t}s {e.zh}</li>)}</ul>}
         <p className="text-ink-soft">{EST.friction}。{variant === "v10" ? V10_EST.gap : isB ? EST.gap : ""}</p>
       </>}
+      <LinkPanel />
       <Btn t="octo-guide" dis={!built} on={onExport} cls="border-copper">生成八爪鱼装配指南（md 原文 .ino、引脚表、对照现实、出处表、价格）</Btn>
     </div>
   );
