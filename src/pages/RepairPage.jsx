@@ -3,6 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Game, TOOLS, BIN, ACTIONS, HINT_COST, MODE_ZH, label } from "../repair/game.js";
 import { meter } from "../repair/board.js";
 import { SCENARIOS, STAR } from "../repair/scenarios.js";
+import { SCOPE_SCENARIOS } from "../repair/scopeScenarios.js";
+import ScopePanel, { defaultScope, captureOpts, CH_COLOR } from "../repair/ui/ScopePanel.jsx";
 import { LS_KEY } from "../repair/editor.js";
 import BoardView from "../repair/ui/BoardView.jsx";
 import RepairEditor from "../repair/ui/RepairEditor.jsx";
@@ -11,7 +13,10 @@ const PROG_KEY = "repair.progress.v1";
 const btn = "min-h-9 border border-line bg-white px-2.5 text-sm hover:border-copper disabled:opacity-40";
 const btnOn = "min-h-9 border border-copper bg-copper px-2.5 text-sm text-white";
 const loadJSON = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
-const TOOL_ORDER = ["hand", "meter", "tweezers", "iron", "braid", "magnifier"];
+const TOOL_ORDER = ["hand", "meter", "tweezers", "iron", "braid", "magnifier", "scope", "crimper"];
+const TPL_ZH = { led: "LED 夜灯", psu: "稳压模块", sensor: "传感器", octo: "八爪鱼 v10", rig: "三板台架" };
+// 板上可以夹探头的节点：测试点的网络优先，其次是其它网络（地除外）
+export function scopeNodes(b) { const out = []; const add = (n) => { if (n && !out.includes(n) && !/^GND$/.test(n) && !/:/.test(n)) out.push(n); }; (b.testpoints || []).forEach((t) => add(t.net)); b.parts.forEach((p) => Object.values(p.pins || {}).forEach(add)); return out; }
 
 function customList() { return loadJSON(LS_KEY, []).map((s) => ({ ...s, custom: true })); }
 
@@ -36,11 +41,15 @@ export default function RepairPage() {
   const [progress, setProgress] = useState(() => loadJSON(PROG_KEY, {}));
   const [report, setReport] = useState(null);
   const logRef = useRef(null);
+  const [td, setTd] = useState(false); // 时域模式：显示示波器
+  const initScope = (sc, b) => { const n = scopeNodes(b); const s0 = defaultScope(sc.scopeStart || n.slice(0, 2)); return s0; };
+  const [scope, setScope] = useState(() => initScope(SCENARIOS[0], game.board));
+  const scopeRef = useRef(scope); scopeRef.current = scope;
 
   const setScenario = useCallback((id) => {
-    const sc = [...SCENARIOS, ...customList()].find((s) => s.id === id);
+    const sc = [...SCENARIOS, ...SCOPE_SCENARIOS, ...customList()].find((s) => s.id === id);
     if (!sc) return;
-    setSid(id); setGame(new Game(sc)); setSel(null); setSide("front"); setRot(0); setZoom(1); setPan([0, 0]); setHintsShown([]); setReport(null); setFlash(null); setNextProbe("red");
+    setSid(id); const g = new Game(sc); setGame(g); setScope(initScope(sc, g.board)); if (sc.scope) setTd(true); setSel(null); setSide("front"); setRot(0); setZoom(1); setPan([0, 0]); setHintsShown([]); setReport(null); setFlash(null); setNextProbe("red");
   }, []);
 
   const act = useCallback((a) => {
@@ -56,16 +65,26 @@ export default function RepairPage() {
     return r;
   }, [game]);
 
+  const doCapture = useCallback((over) => {
+    const s0 = { ...scopeRef.current, ...(over || {}) };
+    setScope({ ...s0, busy: true });
+    setTimeout(() => { const r = act({ a: "scope", ...captureOpts(s0) }); setScope((x) => ({ ...x, ...(over || {}), busy: false, cap: r.ok ? r.cap : x.cap })); }, 20);
+  }, [act]);
   const probeTarget = (t) => (t.type === "pin" ? { ref: t.ref, pin: t.pin } : t.type === "tp" ? { net: t.net, tp: t.tp } : t.type === "pad" ? { net: t.net } : null);
   const pick = useCallback((t) => {
     setSel(t);
     const pr = probeTarget(t);
     if (game.tool === "meter" && pr) { act({ a: "probe", [nextProbe]: pr, mode: game.mode }); setNextProbe((n) => (n === "red" ? "black" : "red")); return; }
+    if (game.tool === "scope" && pr) {
+      const node = pr.net || game.board.parts.find((p) => p.ref === pr.ref)?.pins?.[pr.pin];
+      if (node) { setTd(true); setScope((x) => { const i = x.active; const chans = x.chans.map((c, j) => (j === i ? { ...c, node, on: true } : c)); return { ...x, chans, active: (i + 1) % 4 }; }); }
+      return;
+    }
     if (game.tool === "magnifier" && (t.ref || t.id)) { act({ a: "inspect", ref: t.ref || t.id, mag: 3 }); return; }
     if (t.type === "cover") { act({ a: "cover", id: t.id }); return; }
   }, [game, act, nextProbe]);
 
-  useEffect(() => { window.__repair = { get game() { return game; }, act, pick, setScenario, setTool: (k) => { game.tool = k; rerender(); }, setSide }; }, [game, act, pick, setScenario]);
+  useEffect(() => { window.__repair = { get game() { return game; }, get scope() { return scopeRef.current; }, setScope: (p) => setScope((x) => ({ ...x, ...p })), capture: doCapture, act, pick, setScenario, setTool: (k) => { game.tool = k; rerender(); }, setSide }; }, [game, act, pick, setScenario, doCapture]);
   useEffect(() => {
     const k = (e) => { if (e.target.closest?.("input,textarea,select")) return; const t = TOOL_ORDER.find((x) => TOOLS[x].key === e.key); if (t) { game.tool = t; rerender(); } };
     window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k);
@@ -96,7 +115,7 @@ export default function RepairPage() {
       </div>
       {tab === "editor" ? (
         <RepairEditor onSaved={() => setCustoms(customList())} onPlay={(id) => { setCustoms(customList()); setTab("play"); setTimeout(() => setScenario(id), 0); }} />
-      ) : (
+      ) : (<>
       <div className="grid gap-3 lg:grid-cols-[230px_1fr_330px]">
         {/* 关卡列表 */}
         <aside className="space-y-1" data-testid="scenario-list">
@@ -104,7 +123,15 @@ export default function RepairPage() {
             <button key={s.id} type="button" onClick={() => setScenario(s.id)} data-testid={`sc-${s.id}`}
               className={`block w-full border px-2 py-1.5 text-left text-sm ${s.id === sid ? "border-copper bg-[#fbf3ea]" : "border-line bg-white hover:border-copper"}`}>
               <div className="flex justify-between"><span>{s.custom ? "自制" : i + 1}. {s.title}</span><span className="text-xs text-ink-soft">{progress[s.id] ? "★".repeat(progress[s.id]) : ""}</span></div>
-              <div className="text-xs text-ink-soft">难度 {STAR(s.stars || 1)} · {s.template === "bench" || s.board ? "自制板" : { led: "LED 夜灯", psu: "稳压模块", sensor: "传感器", octo: "八爪鱼 v10" }[s.template]}</div>
+              <div className="text-xs text-ink-soft">难度 {STAR(s.stars || 1)} · {s.template === "bench" || s.board ? "自制板" : TPL_ZH[s.template]}</div>
+            </button>
+          ))}
+          <h3 className="pt-2 text-sm font-medium">示波器关卡（v18，时域仿真）</h3>
+          {SCOPE_SCENARIOS.map((s, i) => (
+            <button key={s.id} type="button" onClick={() => setScenario(s.id)} data-testid={`scope-sc-${s.id}`}
+              className={`block w-full border px-2 py-1.5 text-left text-sm ${s.id === sid ? "border-copper bg-[#fbf3ea]" : "border-line bg-white hover:border-copper"}`}>
+              <div className="flex justify-between"><span>S{i + 1}. {s.title}</span><span className="text-xs text-ink-soft">{progress[s.id] ? "★".repeat(progress[s.id]) : ""}</span></div>
+              <div className="text-xs text-ink-soft">难度 {STAR(s.stars || 1)} · {TPL_ZH[s.template]}</div>
             </button>
           ))}
           <p className="pt-2 text-xs text-ink-soft">星星：3 星 = 90 分以上。提示扣 {HINT_COST.join(" / ")} 分；带电焊接 / 改线扣 15 分。工时都是估算。</p>
@@ -125,8 +152,9 @@ export default function RepairPage() {
             <button type="button" className={btn} onClick={() => setRot((r) => (r + 90) % 360)} data-testid="rotate">旋转 90°</button>
             <button type="button" className={btn} onClick={() => setZoom((z) => Math.min(6, z * 1.5))} data-testid="zoom-in">放大</button>
             <button type="button" className={btn} onClick={() => { setZoom(1); setPan([0, 0]); }}>复位视图</button>
+            <button type="button" className={td ? btnOn : btn} onClick={() => setTd((v) => !v)} disabled={!!sc.scope} data-testid="td-toggle" title="时域模式：打开示波器，看电压随时间怎么变">{td ? "时域（示波器）已开" : "时域模式"}</button>
           </div>
-          <BoardView board={b} obs={o} side={side} rot={rot} zoom={zoom} setZoom={setZoom} pan={pan} setPan={setPan} loupe={game.tool === "magnifier"} running={game.running} onPick={pick} selected={sel} probes={{ red: game.red, black: game.black }} />
+          <BoardView board={b} obs={o} side={side} rot={rot} zoom={zoom} setZoom={setZoom} pan={pan} setPan={setPan} loupe={game.tool === "magnifier"} running={game.running} onPick={pick} selected={sel} probes={{ red: game.red, black: game.black }} scopeProbes={td ? scope.chans.map((c, i) => (c.on && c.node ? { net: c.node, color: CH_COLOR[i], label: `CH${i + 1}` } : null)).filter(Boolean) : []} />
           <div className="flex flex-wrap items-center gap-1 text-sm">
             <button type="button" className={game.power ? btnOn : btn} onClick={() => act({ a: "power", on: !game.power })} data-testid="power">{game.power ? "● 已通电（点击断电）" : "○ 已断电（点击通电）"}</button>
             {hasRun && <button type="button" className={game.running ? btnOn : btn} onClick={() => act({ a: "run", on: !game.running })} data-testid="run" disabled={!game.power}>{game.running ? "停止运行测试" : "运行测试（舵机动起来）"}</button>}
@@ -142,7 +170,7 @@ export default function RepairPage() {
           </div>
           {flash && <p className={`border px-2 py-1 text-sm ${flash.bad ? "border-red-300 bg-red-50 text-red-800" : "border-line bg-white"}`} data-testid="flash">{flash.text}</p>}
           {hintsShown.length > 0 && <ol className="list-decimal border border-amber-300 bg-amber-50 py-1 pl-6 pr-2 text-sm" data-testid="hints">{hintsShown.map((h) => <li key={h}>{h}</li>)}</ol>}
-          {report && <ReportCard r={report} onNext={() => { const i = all.findIndex((s) => s.id === sid); if (all[i + 1]) setScenario(all[i + 1].id); }} />}
+          {report && <ReportCard r={report} onNext={() => { const L = sc.scope ? SCOPE_SCENARIOS : all; const i = L.findIndex((s) => s.id === sid); if (L[i + 1]) setScenario(L[i + 1].id); }} />}
         </main>
 
         {/* 右栏：选中对象、万用表、状态、记录 */}
@@ -168,13 +196,15 @@ export default function RepairPage() {
               {selPart?.kind === "dcin" && <A a={{ a: "fixPolarity", ref: selPart.ref }}>换成极性正确的线</A>}
               {sel?.type === "short" && <><A a={{ a: "wick", id: sel.id }}>吸锡</A><A a={{ a: "removeWire", id: sel.id }}>拆飞线</A></>}
               {sel?.type === "trace" && <A a={{ a: "jumper", trace: sel.id, item: "wire-30" }}>30AWG 飞线跨过去</A>}
-              {sel?.type === "wire" && Object.entries(BIN).filter(([, v]) => v.kind === "wire").map(([k, v]) => <A key={k} a={{ a: "rewire", id: sel.id, item: k }}>换成 {v.zh}</A>)}
+              {sel?.type === "wire" && b.wires.find((w) => w.id === sel.id)?.cable && <A a={{ a: "recrimp", id: sel.id }}>重新压端子</A>}
+              {selPart?.kind === "servo" && <A a={{ a: "swapServo", ref: selPart.ref }}>换一个舵机</A>}
+              {sel?.type === "wire" && !b.wires.find((w) => w.id === sel.id)?.cable && Object.entries(BIN).filter(([, v]) => v.kind === "wire").map(([k, v]) => <A key={k} a={{ a: "rewire", id: sel.id, item: k }}>换成 {v.zh}</A>)}
             </div>
             {selPart && selPart.state.present === false && (
               <div className="mt-2 border-t border-line pt-2" data-testid="bin">
                 <p className="mb-1 font-medium">零件箱（装错有后果）</p>
                 <div className="flex flex-wrap gap-1">{binFor.map(([k, v]) => <button key={k} type="button" className={item === k ? btnOn : btn} onClick={() => setItem(k)} data-testid={`bin-${k}`}>{v.zh}</button>)}</div>
-                {["led", "diode"].includes(selPart.kind) && <div className="mt-1 flex gap-1"><button type="button" className={orient === 1 ? btnOn : btn} onClick={() => setOrient(1)}>按丝印方向</button><button type="button" className={orient === -1 ? btnOn : btn} onClick={() => setOrient(-1)} data-testid="orient-rev">反着装</button></div>}
+                {(["led", "diode"].includes(selPart.kind) || (selPart.kind === "cap" && BIN[item]?.polar)) && <div className="mt-1 flex gap-1"><button type="button" className={orient === 1 ? btnOn : btn} onClick={() => setOrient(1)} data-testid="orient-ok">按丝印方向{selPart.kind === "cap" ? "（负极条对着 − 号）" : ""}</button><button type="button" className={orient === -1 ? btnOn : btn} onClick={() => setOrient(-1)} data-testid="orient-rev">反着装</button></div>}
                 <div className="mt-1"><A a={{ a: "place", ref: selPart.ref, item: binFor.some(([k]) => k === item) ? item : binFor[0]?.[0], orient }} disabled={!binFor.length}>焊上</A></div>
               </div>
             )}
@@ -208,7 +238,9 @@ export default function RepairPage() {
             </ol>
           </section>
         </aside>
-      </div>)}
+      </div>
+      {td && <div className="mt-3"><ScopePanel s={scope} set={setScope} nodes={scopeNodes(b)} onCapture={() => doCapture()} running={game.running} /></div>}
+      </>)}
     </div>
   );
 }

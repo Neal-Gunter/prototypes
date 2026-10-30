@@ -309,7 +309,7 @@ export class Game {
     if (exp === "power") { this.power = true; this.running = !!opts.run; }
     if (exp === "run") { if (!this.power) return { ok: false, text: "先通电" }; this.running = true; }
     const run = exp === "steady" ? this.running : !!(opts.run ?? exp === "run");
-    const covered = (opts.chans || []).find((c) => { const p = c.ref && partOf(this.board, c.ref); const cv = p?.cover && this.board.covers.find((x) => x.id === p.cover); return cv?.on; });
+    const covered = (opts.chans || []).find((c) => { const p = c && c.ref && partOf(this.board, c.ref); const cv = p?.cover && this.board.covers.find((x) => x.id === p.cover); return cv?.on; });
     if (covered) return { ok: false, text: `${covered.ref} 被外壳挡住了，探头夹不上去` };
     const cap = capture(this.board, { ...opts, exp, run });
     this.settle(); this.markPowered();

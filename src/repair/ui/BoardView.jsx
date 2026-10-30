@@ -2,12 +2,12 @@
 import { useMemo, useRef, useState } from "react";
 import { padsOf } from "../boards.js";
 
-const FILL = { res: "#d9c7a3", led: "#f3d9d9", diode: "#444", ldo: "#333", boost: "#2d4a6b", mcu: "#24303d", sensor: "#3a3a3a", conn: "#f1f1ee", sw: "#777", bat: "#3c5d3c", dcin: "#222", servo: "#3c4f7a", load: "#bbb" };
+const FILL = { res: "#d9c7a3", led: "#f3d9d9", diode: "#444", ldo: "#333", boost: "#2d4a6b", mcu: "#24303d", sensor: "#3a3a3a", conn: "#f1f1ee", sw: "#777", bat: "#3c5d3c", dcin: "#222", servo: "#3c4f7a", load: "#bbb", cap: "#2f4f8f", asensor: "#3a3a3a" };
 const LEDC = { 亮: "#ff3b30", 很暗: "#ff9c94", 一闪一闪: "#ff6b60" };
 
 function pt(e, svg) { const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); }
 
-export default function BoardView({ board, obs, side, rot, zoom, setZoom, pan, setPan, loupe, running, onPick, selected, probes, height = 460 }) {
+export default function BoardView({ board, obs, side, rot, zoom, setZoom, pan, setPan, loupe, running, onPick, selected, probes, scopeProbes = [], height = 460 }) {
   const svgRef = useRef(null);
   const [mouse, setMouse] = useState(null);
   const drag = useRef(null);
@@ -29,7 +29,10 @@ export default function BoardView({ board, obs, side, rot, zoom, setZoom, pan, s
 
   const content = (
     <g transform={`rotate(${rot} ${W / 2} ${H / 2})`}>
-      <rect x={0} y={0} width={W} height={H} rx={2} fill={side === "back" ? "#1f5b3a" : "#2b6e47"} stroke="#173d28" strokeWidth={0.6} />
+      {board.zones ? <>
+        <rect x={0} y={0} width={W} height={H} rx={2} fill="#2a2d30" stroke="#111" strokeWidth={0.4} data-testid="bench-mat" />
+        {board.zones.map((z) => { const zx = side === "back" ? W - z.x - z.w : z.x; return <g key={z.id} data-testid={`zone-${z.id}`}><rect x={zx} y={z.y} width={z.w} height={z.h} rx={1.5} fill={side === "back" ? "#1f5b3a" : "#2b6e47"} stroke="#173d28" strokeWidth={0.6} /><text x={zx + 1.5} y={z.y + z.h - 1.5} fontSize={2.4} fill="#cfe8d6">{z.zh}</text></g>; })}
+      </> : <rect x={0} y={0} width={W} height={H} rx={2} fill={side === "back" ? "#1f5b3a" : "#2b6e47"} stroke="#173d28" strokeWidth={0.6} />}
       <text x={side === "back" ? W - 2 : 2} y={H - 1.5} fontSize={2.4} fill="#cfe8d6" textAnchor={side === "back" ? "end" : "start"}>{board.name} · {side === "back" ? "背面（焊点 / 走线）" : "正面（零件）"}</text>
       {/* 走线（两面都画，背面更清楚） */}
       {board.traces.map((t) => { const pts = t.pts || [netXY(t.a), netXY(t.b)]; const d = pts.map((p, i) => `${i ? "L" : "M"}${mx(p[0])},${p[1]}`).join(" "); return (
@@ -82,7 +85,7 @@ export default function BoardView({ board, obs, side, rot, zoom, setZoom, pan, s
       {/* 线（两面都能看到） */}
       {board.wires.map((w) => { const a = netXY(w.a), b = netXY(w.b, a); const mid = [(mx(a[0]) + mx(b[0])) / 2, (a[1] + b[1]) / 2 - 4]; return (
         <g key={w.id} onClick={click({ type: "wire", id: w.id })} style={{ cursor: "pointer" }} data-testid={`wire-${w.id}`}>
-          <path d={`M${mx(a[0])},${a[1]} Q${mid[0]},${mid[1]} ${mx(b[0])},${b[1]}`} stroke={/BAT-|-$/.test(w.a) ? "#222" : w.id.startsWith("JW") ? "#e0e050" : "#d42"} strokeWidth={w.state.awg >= 28 ? 0.45 : 1.1} fill="none" />
+          <path d={`M${mx(a[0])},${a[1]} Q${mid[0]},${mid[1]} ${mx(b[0])},${b[1]}`} stroke={w.color || (/BAT-|-$/.test(w.a) ? "#222" : w.id.startsWith("JW") ? "#e0e050" : "#d42")} strokeWidth={w.cable ? (w.state.awg >= 28 ? 0.7 : 1.4) : w.state.awg >= 28 ? 0.45 : 1.1} fill="none" strokeDasharray={w.state.cut ? "2 1.5" : undefined} />
           <path d={`M${mx(a[0])},${a[1]} Q${mid[0]},${mid[1]} ${mx(b[0])},${b[1]}`} stroke={isSel({ type: "wire", id: w.id }) ? "#f6c945" : "transparent"} strokeWidth={3} fill="none" strokeOpacity={0.5} />
         </g>); })}
       {/* 锡桥 / 飞线短路 */}
@@ -105,6 +108,8 @@ export default function BoardView({ board, obs, side, rot, zoom, setZoom, pan, s
             <text x={c.x + c.w / 2} y={c.y + c.h / 2} fontSize={2.4} fill="#fff" textAnchor="middle">{c.zh}（点一下拆）</text></>
             : <rect x={c.x} y={c.y} width={c.w} height={c.h} rx={1.5} fill="none" stroke="#ccc" strokeWidth={0.3} strokeDasharray="1 1" />}
         </g>))}
+      {/* 示波器探头（钩子 + 通道颜色；地夹都在板子的地上） */}
+      {scopeProbes.map((sp, i) => { const xy = netXY(sp.net); return xy && <g key={sp.label} pointerEvents="none" data-testid={`scope-probe-${i + 1}`}><line x1={mx(xy[0])} y1={xy[1]} x2={mx(xy[0]) + 3 + i} y2={xy[1] - 6 - i} stroke={sp.color} strokeWidth={0.9} /><circle cx={mx(xy[0])} cy={xy[1]} r={1.1} fill="none" stroke={sp.color} strokeWidth={0.5} /><text x={mx(xy[0]) + 3 + i} y={xy[1] - 6.5 - i} fontSize={2} fill={sp.color}>{sp.label}</text></g>; })}
       {/* 表笔 */}
       {[["red", "#e11"], ["black", "#111"]].map(([k, col]) => { const xy = probeAt(probes?.[k]); return xy && <g key={k} pointerEvents="none"><line x1={mx(xy[0])} y1={xy[1]} x2={mx(xy[0]) + (k === "red" ? 4 : -4)} y2={xy[1] - 7} stroke={col} strokeWidth={1} /><circle cx={mx(xy[0])} cy={xy[1]} r={0.9} fill={col} stroke="#fff" strokeWidth={0.25} /></g>; })}
     </g>
