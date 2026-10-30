@@ -1,0 +1,51 @@
+// v12：带关节的上传工程放到装配台引擎里（和台面其他零件同一个 Rapier 世界）：机械臂推方块、八爪鱼摆触手、拆掉零件后关节断开
+import fs from "node:fs";
+import * as THREE from "three";
+globalThis.fetch = async () => ({ ok: false, json: async () => [] });
+const { engine } = await import("../.tmp/eng-bundle.mjs");
+const { addCustomToBench } = await import("../src/modellab/benchArtic.js");
+const { sanitize } = await import("../src/modellab/project.js");
+await engine.init();
+let pass = 0, fail = 0;
+const ok = (c, m) => { if (c) { pass++; console.log("PASS", m); } else { fail++; console.log("FAIL", m); } };
+const ab = (f) => { const b = fs.readFileSync(f); return b.buffer.slice(b.byteOffset, b.byteOffset + b.length); };
+const run = (s) => { let worst = 0, pair = null; for (let i = 0; i < Math.round(s * 120); i++) { engine.update(1 / 120); if (i % 6 === 0) { const o = engine.overlapTest(); if (o.maxPenetrationMm > worst) { worst = o.maxPenetrationMm; pair = o.worstPair; } } } return { worst, pair }; };
+
+const arm = sanitize(JSON.parse(fs.readFileSync("public/demo/arm2dof.project.json", "utf8")));
+const A = await addCustomToBench(engine, arm, ab("public/demo/arm2dof.obj"), { x: -8, z: 0 });
+ok(A.core && A.core.J.size === 2 && A.G.groups.length === 3, `机械臂上台：3 个刚体、2 个舵机关节（${A.uids.length} 个模块）`);
+let r = run(0.8);
+ok(r.worst < 0.1, `静置 0.8 s 最大穿模 ${r.worst} mm（关节两侧那一对不算，因为本来就连在一起）`);
+const bp = new THREE.Vector3(...arm.sim.block).applyMatrix4(A.X.M).add(A.core.frame.p);
+const blockDef = { id: "test-cube-2cm", name_zh: "测试方块 2 cm（PLA）", cat: "test", density: 1.24, friction: 0.5, colliders: [{ c: [0, 0, 0], h: [1, 1, 1], m: 9.9 }], dims_mm: { x: 20, y: 20, z: 20 }, anchors: [] };
+const bu = engine.addPart(blockDef, { p: new THREE.Vector3(bp.x, 1.02, bp.z), q: new THREE.Quaternion() });
+r = run(0.5);
+const p0 = engine.worldPose(bu).p.clone();
+A.core.playTimeline(arm);
+r = run(5.0);
+const p1 = engine.worldPose(bu).p;
+ok(Math.hypot(p1.x - p0.x, p1.z - p0.z) > 1, `播放时间轴：推板把方块推走 ${Math.hypot(p1.x - p0.x, p1.z - p0.z).toFixed(2)} cm`);
+ok(r.worst < 0.1, `推的过程中最大穿模 ${r.worst} mm < 0.1 mm${r.pair ? "（" + r.pair.join("↔") + "）" : ""}`);
+const base = engine.bodies.get(engine.parts.get(A.uids[0]).body).rb.translation();
+ok(Math.abs(base.x - A.core.frame.p.x) < 0.05 && Math.abs(base.z - A.core.frame.p.z) < 0.05, "固定底座：底座没被反作用力推走");
+A.core.setTarget("j-yaw", 45);
+run(0.6);
+ok(Math.abs(A.core.value("j-yaw") - 45) < 2.5, `台面上偏航到 45°（${A.core.value("j-yaw").toFixed(2)}°）`);
+
+const octo = sanitize(JSON.parse(fs.readFileSync("public/demo/octo-v10.project.json", "utf8")));
+const O = await addCustomToBench(engine, octo, ab("public/demo/octo-v10.glb"), { x: 14, z: 2 });
+ok(O.core && O.core.J.size === 8, "八爪鱼上台：8 个偏航关节");
+r = run(1.0);
+ok(r.worst < 0.1, `八爪鱼落到台面上，最大穿模 ${r.worst} mm`);
+O.core.playFunction(octo.functions.find((f) => f.id === "f-arm"));
+r = run(3.4);
+const vmax = Math.max(...[...O.core.J.keys()].map((k) => Math.abs(O.core.value(k))));
+ok(r.worst < 0.1, `摆触手时最大穿模 ${r.worst} mm${r.pair ? "（" + r.pair.join("↔") + "）" : ""}`);
+ok(vmax < 56, `播完时各触手偏航 ≤ ${vmax.toFixed(1)}°（在 ±55° 限位内）`);
+// 拆掉一个模块：刚体重建，关节断开 → alive() = false，不报错
+engine.removePart(O.uids[O.uids.length - 1]);
+run(0.2);
+ok(O.core.alive() === false && /断开/.test(O.core.lost), `拆掉一块之后：${O.core.lost}`);
+ok(A.core.alive(), "机械臂不受影响");
+console.log(`artic-bench: ${pass} 通过, ${fail} 失败`);
+process.exit(fail ? 1 : 0);

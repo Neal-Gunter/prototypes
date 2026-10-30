@@ -68,6 +68,7 @@ class Engine {
     this.version = 0;
     this.log = [];
     this.history = []; // 装配步骤记录（导出装配指南用）
+    this.noContact = new Set(); // v12：关节连着的刚体对（"h1:h2"）
   }
   async init() {
     if (this.ready) return;
@@ -179,6 +180,34 @@ class Engine {
     this.emit();
     return uids;
   }
+  // v12：带关节的上传模型——每个刚体组一个刚体（组内零件用 fasten 边连起来），组和组之间由调用方加 Rapier 关节。
+  // groups: [[{def,p,q,label,state}...], ...]；整套一起往上抬到不和台面上别的东西重叠为止（组和组之间本来就贴着，不算）
+  addArticulated(groups, opts = {}) {
+    const uidsByGroup = [], bids = [];
+    for (const items of groups) {
+      const uids = [], poses = new Map();
+      for (const it of items) {
+        const uid = it.uid || `${it.def.id.replace(/[^a-z0-9]+/gi, "_").slice(0, 24)}#${uidSeq++}`;
+        this.parts.set(uid, { uid, def: it.def, body: null, rel: { p: new THREE.Vector3(), q: new THREE.Quaternion() }, state: { joints: {}, ...(it.state || {}) }, label: it.label });
+        poses.set(uid, { p: it.p.clone(), q: (it.q || new THREE.Quaternion()).clone() });
+        uids.push(uid);
+      }
+      for (let i = 1; i < uids.length; i++) this.link(uids[i], uids[0], "fasten", opts.why || "上传模型：同一刚体组");
+      bids.push(this.makeBody(uids, poses, opts.sleep));
+      uidsByGroup.push(uids);
+    }
+    const all = new Set(uidsByGroup.flat());
+    let dy = 0;
+    const hit = () => bids.some((bid) => { const bp = this.bodyPose(bid); bp.p.y += dy; return this.overlapAt(bid, bp.p, bp.q, all); });
+    for (let k = 0; k < 150 && hit(); k++) dy += 0.2;
+    if (dy) for (const bid of bids) { const rb = this.bodies.get(bid).rb, t = rb.translation(); rb.setTranslation({ x: t.x, y: t.y + dy, z: t.z }, true); }
+    this.world.propagateModifiedBodyPositionsToColliders();
+    this.emit();
+    return { uidsByGroup, bids };
+  }
+  // 关节连着的两个刚体之间不算碰撞 / 穿模（Rapier 里已经用 setContactsEnabled(false) 关掉了它们的接触）
+  addNoContact(rb1, rb2) { this.noContact.add(rb1.handle < rb2.handle ? `${rb1.handle}:${rb2.handle}` : `${rb2.handle}:${rb1.handle}`); }
+  jointed(h1, h2) { return this.noContact.size > 0 && this.noContact.has(h1 < h2 ? `${h1}:${h2}` : `${h2}:${h1}`); }
   // 直接把一个单独的刚体摆到某个位姿（导入/预设用；随后仍走 trySnap 的同一套装配规则和穿模检查）
   // carry（我的补充）：同时把两端都挂在这个刚体上的导线一起搬走（整体平移+旋转），免得导线被硬拽、甩成大圈
   teleport(uid, pp, pq, carry = false) {
@@ -289,6 +318,7 @@ class Engine {
     if (!b) return;
     for (const list of b.colliders.values()) for (const { col } of list) this.colOwner.delete(col.handle);
     for (const c of this.cables) for (const j of [...c.endJoints, ...(c.tieJoints || [])]) if (j && (j.b1 === b.rb || j.b2 === b.rb)) j.dead = true;
+    for (const k of [...this.noContact]) if (k.split(":").includes(String(b.rb.handle))) this.noContact.delete(k);
     this.world.removeRigidBody(b.rb);
     this.bodies.delete(bid);
   }
@@ -657,6 +687,7 @@ class Engine {
           }
           if (!o || o === "rope" || o === "tool") return true;
           if (body.parts.has(o) || allowed.has(o)) return true;
+          if (this.jointed(body.rb.handle, col.parent()?.handle)) return true;
           hitUid = o;
           return false;
         }, undefined, GROUPS.part, undefined, body.rb);
@@ -956,6 +987,7 @@ class Engine {
             this.world.contactPairsWith(c1, (c2) => {
               const rb = c2.parent();
               if (!rb || rb.handle === rbA.handle || rb.handle === dragRb.handle || !rb.isDynamic()) return;
+              if (this.jointed(rbA.handle, rb.handle)) return;
               if (this.colOwner.get(c2.handle) === "rope") return;
               const sc = c1.contactCollider(c2, 0);
               if (!sc || sc.distance > -0.002) return;
@@ -994,6 +1026,7 @@ class Engine {
         this.world.contactPairsWith(c1, (c2) => {
           if (this.colOwner.get(c2.handle) === "rope") return;
           if (c2.parent()?.handle === body.rb.handle) return;
+          if (this.jointed(body.rb.handle, c2.parent()?.handle)) return;
           const o2 = this.colOwner.get(c2.handle);
           if (o2 === "bench" || o2 === undefined) return; // 桌面下面单独查
           const sc = c1.contactCollider(c2, 0);
@@ -1037,6 +1070,7 @@ class Engine {
         const o2 = this.colOwner.get(c2.handle);
         if (!includeRopes && o2 === "rope") return;
         if (c1.handle > c2.handle && o2 !== "bench") return;
+        if (this.jointed(c1.parent()?.handle, c2.parent()?.handle)) return;
         // 线头的头两段和它自己连着的插头/零件挨在一起是正常的（线是从插头里出来的）
         const rs = this.ropeSeg?.get(o1 === "rope" ? c1.handle : o2 === "rope" ? c2.handle : -1);
         if (rs && (rs.i <= 1 || rs.i >= rs.N - 2) && this.cables.find((c) => c.id === rs.id)?.ends.includes(o1 === "rope" ? o2 : o1)) return;

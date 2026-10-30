@@ -125,7 +125,9 @@ export class ArticCore {
     if (fixTo) {
       const rb = rbOf(0), t = rb.translation(), r = rb.rotation();
       // 把底座“拧”在桌面/地面上：一个固定关节（我的补充：相当于用螺丝固定）
-      const jd = R.JointData.fixed({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0, w: 1 }, plain(t), plainQ(r));
+      const ft = t3(fixTo.translation()), fq = q4(fixTo.rotation());
+      const a2 = t3(t).sub(ft).applyQuaternion(fq.clone().invert()), q2 = fq.clone().invert().multiply(q4(r));
+      const jd = R.JointData.fixed({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0, w: 1 }, plain(a2), plainQ(q2));
       jd.limitsEnabled = false;
       this.baseFix = world.createImpulseJoint(jd, rb, fixTo, true);
     }
@@ -215,6 +217,7 @@ export class ArticCore {
       const sp = fromSim(st.j, st.dp.speed) * dt;
       const d = st.target - st.cmd;
       st.cmd += Math.abs(d) <= sp ? d : Math.sign(d) * sp;
+      if (Math.abs(d) > 1e-6) { this.rbOf(st.gc)?.wakeUp(); this.rbOf(st.gp)?.wakeUp(); }
       st.joint.configureMotorPosition(toSim(st.j, st.cmd), st.k, 0.08 * st.k);
     }
   }
