@@ -15,6 +15,9 @@ export const DEFAULT_CTRL = { kpH: 0.04, kdH: 0.004, kpT: 0, kdT: 0, uMax: 0.5, 
 // 八爪鱼的默认（我的补充）：横坡换号打开（见 TiltCtrl 注释）；倾斜项默认关（八爪鱼趴在万向珠上，倾角本来就很小）
 // v14：adapt 打开——坡道换号规则是用同步划桨标定的，换成 v14 搜索步态时符号会反；自适应翻号兜底（见 v14-test）
 export const OCTO_CTRL = { ...DEFAULT_CTRL, slopeFlipDeg: 1.5, adapt: true };
+// v15（我的补充）：配“定向小轮”支点时的推荐：换号规则关掉（它是按万向珠标定的，定向轮上转向不反），路径保持 PI 打开（需外部横向定位，仿真用真值）
+export const OCTO_CTRL_WHEEL = { ...OCTO_CTRL, slopeFlipDeg: 0, adapt: false, kPath: 2, kiPath: 0.5 };
+export const OCTO_CTRL_WHEEL_IMU = { ...OCTO_CTRL, slopeFlipDeg: 0, adapt: false }; // 只用 IMU（没有外部定位）
 // 通用模型（四足等）的默认：先只开倾斜（航向的转向符号因模型而异，要先点“标定转向符号”）
 export const LAB_CTRL = { ...DEFAULT_CTRL, kpH: 0, kdH: 0, kpT: 0.5, kdT: 0.02 };
 
@@ -130,6 +133,12 @@ static constexpr float kSlopeFlipDeg = ${f(o.slopeFlipDeg)}; // 横滚超过这�
 static constexpr bool kAdapt = ${o.adapt ? "true" : "false"};     // 自适应转向符号（控制量饱和且误差变大 → 翻号）
 static constexpr float kFlipT = ${f(o.flipT)};   // 饱和多少秒才判断
 static constexpr float kFlipDeg = ${f(o.flipDeg)}; // 误差又变大多少度才翻
+// v15：航向设定值（我的补充）
+static constexpr float kCrab = ${f(o.crab || 0)};    // 蟹行前馈：设定值 += kCrab × 横滚（°/°）
+static constexpr float kKPath = ${f(o.kPath || 0)};  // 路径保持 P：每 1 cm 横向偏移 → 设定值偏 kKPath°（要 SetLateral 喂外部定位）
+static constexpr float kKiPath = ${f(o.kiPath || 0)}; // 路径保持 I
+static constexpr float kPathMax = ${f(o.pathMax ?? 30)}; // 设定值偏转上限（°）
 }}  // namespace octo::ctrl_cfg
+#define OCTO_CTRL_V15 1
 `;
 }

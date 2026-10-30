@@ -58,6 +58,8 @@ const groups = (member, filter) => (member << 16) | filter;
 let rapierReady = null;
 export class LocoPhys {
   // 浏览器和 node 都能用：先 init Rapier（只做一次），再建
+  // v15：现场换支点（台面上的下拉框用）；只改摩擦系数和侧向冲量开关，几何不变
+  setCaster(kind) { this.casterKind = CASTERS[kind] ? kind : "ball"; this.casterN = null; for (const c of this.casters) c.setFriction(CASTERS[this.casterKind].mu(this.mu)); return this.casterKind; }
   static async create(sim, opts) { await (rapierReady ||= RAPIER.init()); return new LocoPhys(RAPIER, sim, opts); }
   // R = 已 init 的 RAPIER；sim = OctoSim；c = 机身中心在世界里的位置（cm，y = 桌面）
   constructor(R, sim, { c = [0, 0, 0], mu = 0.5, dt = 1 / 240, tanOff = 1.52, pad = [0.15, 0.45], massScale = 1, trimDeg = null, slope = null, caster = null } = {}) {

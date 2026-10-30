@@ -1,7 +1,7 @@
 // v14：台面里的“自动步态搜索”面板（八爪鱼和模型实验室共用）。真正的计算在 Web Worker 里（search.worker.js → search-job.js），
 // 主线程只画进度。同一个种子 + 同一组设置 → 同一个结果（物理和随机数都是确定的、离线的）。
 import { useEffect, useRef, useState } from "react";
-import { OBJECTIVES } from "./search.js";
+import { OBJECTIVES, RATE_CAP, SERVO_RATE_MAX } from "./search.js";
 import { curvePath, gaitPeriod } from "./gait.js";
 
 const B = ({ children, on, dis, t, cls = "" }) => <button type="button" disabled={dis} onClick={on} data-testid={t} className={`min-h-7 border border-line bg-white px-2 text-xs disabled:opacity-40 ${cls}`}>{children}</button>;
@@ -41,6 +41,11 @@ export default function GaitSearch({ kind, makeJob, onApply, onPreview, exports 
   const [multiMu, setMultiMu] = useState(false);
   const [robust, setRobust] = useState(true);
   const [sym, setSym] = useState(true);
+  // v15：Worker 池（线程数 = navigator.hardwareConcurrency）、留出工况复评、支点类型（只对八爪鱼）
+  const hc = typeof navigator !== "undefined" ? Math.max(1, navigator.hardwareConcurrency || 1) : 1;
+  const [usePool, setUsePool] = useState(hc > 1);
+  const [heldOut, setHeldOut] = useState(true);
+  const [caster, setCaster] = useState("ball");
   const [st, setSt] = useState(null); // {running, gen, evals, hist, best, sec, robust, done, err}
   const wk = useRef(null), killT = useRef(null);
   useEffect(() => () => { wk.current?.terminate(); clearTimeout(killT.current); }, []);
@@ -49,8 +54,10 @@ export default function GaitSearch({ kind, makeJob, onApply, onPreview, exports 
   function start() {
     wk.current?.terminate();
     const W = new Worker(new URL("./search.worker.js", import.meta.url), { type: "module" }); wk.current = W;
-    const job = { kind, weights, seed: +seed || 1, maxEvals: cap, maxSec, mus: multiMu ? [0.3, 0.5, 0.8] : [0.5], robust, symmetric: sym, ...makeJob() };
-    setSt({ running: true, gen: 0, evals: 0, hist: [], best: null, sec: 0, job: { weights, seed: job.seed, cap, mus: job.mus } });
+    const isR = obj === "robust";
+    const job = { kind, objective: obj, weights, seed: +seed || 1, maxEvals: cap, maxSec, mus: multiMu ? [0.3, 0.5, 0.8] : [0.5], robust, symmetric: sym, pool: usePool ? hc : 1,
+      heldOut: isR && heldOut, hw: kind === "octo" && caster !== "ball" ? { caster } : null, ...makeJob() };
+    setSt({ running: true, gen: 0, evals: 0, hist: [], best: null, sec: 0, t0: performance.now(), job: { weights, seed: job.seed, cap, mus: job.mus, pool: job.pool, objective: obj, caster: kind === "octo" ? caster : null, conds: isR ? 6 : job.mus.length } });
     W.onmessage = (e) => {
       const m = e.data;
       if (m.type === "gen") setSt((s) => ({ ...s, gen: m.gen, evals: m.evals, sec: m.sec, hist: m.hist, best: m.best }));
@@ -71,7 +78,7 @@ export default function GaitSearch({ kind, makeJob, onApply, onPreview, exports 
   const download = (o) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([o.text], { type: o.mime || "text/plain" })); a.download = o.name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
   return (
     <fieldset className="flex flex-col gap-1 border border-line bg-white p-2 text-xs" data-testid={`${tid}-panel`}>
-      <legend className="font-medium">自动步态搜索（v14 · sep-CMA-ES，后台 Worker）· 早期原型，简化仿真</legend>
+      <legend className="font-medium">自动步态搜索（v15 · sep-CMA-ES，后台 Worker 池）· 早期原型，简化仿真</legend>
       <div className="flex flex-wrap items-center gap-1">
         <label>目标<select value={obj} onChange={(e) => setObj(e.target.value)} data-testid={`${tid}-obj`} className="ml-0.5 border border-line bg-white">{Object.entries(OBJECTIVES).map(([k, o]) => <option key={k} value={k}>{o.zh}</option>)}</select></label>
         <label>种子<input type="number" min="1" value={seed} onChange={(e) => setSeed(Math.max(1, Math.round(+e.target.value) || 1))} data-testid={`${tid}-seed`} className="ml-0.5 w-12 border border-line px-0.5 font-mono" /></label>
@@ -82,19 +89,23 @@ export default function GaitSearch({ kind, makeJob, onApply, onPreview, exports 
       <div className="flex flex-wrap items-center gap-2">
         <label className="flex items-center gap-0.5"><input type="checkbox" checked={multiMu} onChange={(e) => setMultiMu(e.target.checked)} data-testid={`${tid}-multimu`} />每个候选在 μ 0.3 / 0.5 / 0.8 上取平均（防过拟合，慢 3 倍）</label>
         <label className="flex items-center gap-0.5"><input type="checkbox" checked={robust} onChange={(e) => setRobust(e.target.checked)} data-testid={`${tid}-robust`} />搜完做鲁棒性复评</label>
+        <label className="flex items-center gap-0.5"><input type="checkbox" checked={usePool} onChange={(e) => setUsePool(e.target.checked)} data-testid={`${tid}-pool`} />Worker 池并行（{hc} 线程 = 本机 hardwareConcurrency，v15）</label>
+        {obj === "robust" && <label className="flex items-center gap-0.5"><input type="checkbox" checked={heldOut} onChange={(e) => setHeldOut(e.target.checked)} data-testid={`${tid}-heldout`} />复评用“留出工况”（11 个，和训练不重叠）</label>}
+        {kind === "octo" && <label>支点<select value={caster} onChange={(e) => setCaster(e.target.value)} data-testid={`${tid}-caster`} className="ml-0.5 border border-line bg-white"><option value="wheel">定向小轮（v15 推荐，估算）</option><option value="ball">万向珠（v14）</option></select></label>}
         {kind === "octo" && <label className="flex items-center gap-0.5"><input type="checkbox" checked={sym} onChange={(e) => setSym(e.target.checked)} data-testid={`${tid}-sym`} />左右对称（21 维；不勾 = 33 维）</label>}
       </div>
+      {obj === "robust" && <p className="text-ink-soft" data-testid={`${tid}-robust-note`}>多工况鲁棒（v15，我的补充）：每个候选在 6 个训练工况上评（μ 0.35 / 0.7、质量 ×0.9 / ×1.15 + 零位误差种子、横坡 1.5° 左 / 右），分数 = ½ 平均 + ½ 最差 − {f(weights.drift, 1)}×最差工况的 (|侧漂| + 0.2×|航向|)/时长；舵机角速度硬限 {RATE_CAP} °/s（= {SERVO_RATE_MAX} 的 80 %）。慢 6 倍，建议开 Worker 池。</p>}
       <p className="text-ink-soft">打分 = {f(weights.speed, 1)}×速度 − {f(weights.straight, 1)}×(|侧漂| + 0.2×|航向变化|)/时长 − {f(weights.stable, 1)}×(最大倾角/10 + 质心出界) − {f(weights.energy, 1)}×焦耳每 10 cm − 碰撞 − 超 300 °/s。起点 = 编辑器里当前的步态（搜出来的结果不会比起点差）。</p>
       <div className="flex flex-wrap items-center gap-1">
         <B t={`${tid}-start`} dis={st?.running} on={start} cls="border-copper">开始搜索</B>
         <B t={`${tid}-cancel`} dis={!st?.running} on={cancel}>取消</B>
-        {st && <span data-testid={`${tid}-status`}>{st.err ? `出错：${st.err}` : st.running ? (st.robustP ? `鲁棒性复评 ${st.robustP[0]}/${st.robustP[1]}…` : `第 ${st.gen} 代 · 已评 ${st.evals}/${st.job.cap} 次 · ${f(st.sec, 0)} s`) : st.cancelled ? "已取消（Worker 已结束）" : d ? `完成：${d.evals} 次评估、${f(d.sec, 0)} s，${d.stopped}` : ""}</span>}
+        {st && <span data-testid={`${tid}-status`}>{st.err ? `出错：${st.err}` : st.running ? (st.robustP ? `鲁棒性复评 ${st.robustP[0]}/${st.robustP[1]}…` : `第 ${st.gen} 代 · 已评 ${st.evals}/${st.job.cap} 次 · ${f(st.sec, 0)} s · ${f(eps(st.evals, st.job.conds, st.sec), 2)} 次仿真/s`) : st.cancelled ? "已取消（Worker 已结束）" : d ? `完成：${d.evals} 次评估（× ${st.job.conds} 工况）、${f(d.sec, 0)} s，${f(eps(d.evals, st.job.conds, d.sec), 2)} 次仿真/s（${st.job.pool} 线程），${d.stopped}` : ""}</span>}
       </div>
       <Chart hist={st?.hist} tid={tid} />
       {best && <>
         <Preview g={best.g} tid={tid} />
-        <table className="w-full font-mono text-[11px]" data-testid={`${tid}-best`}><thead><tr className="text-ink-soft"><th className="text-left">μ 0.5</th><th className="text-right">起点</th><th className="text-right">至今最好</th></tr></thead><tbody>
-          {[["分数", "score", 3], ["速度 cm/s", "speed", 3], ["侧向漂移 cm", "dx", 2], ["航向变化 °", "dh", 1], ["最大倾角 °", "tiltMax", 2], ["能量 J", "energyJ", 2]].map(([zh, k, n]) => <tr key={k}><td>{zh}</td><td className="text-right">{k === "score" ? f(d?.base?.score ?? st.hist?.[0]?.best, n) : f(d?.base?.r?.[k], n)}</td><td className="text-right" data-testid={`${tid}-best-${k}`}>{k === "score" ? f(best.score, n) : f(best.r?.[k], n)}</td></tr>)}
+        <table className="w-full font-mono text-[11px]" data-testid={`${tid}-best`}><thead><tr className="text-ink-soft"><th className="text-left">{st.job.objective === "robust" ? "训练工况 1（μ 0.35）" : "μ 0.5"}</th><th className="text-right">起点</th><th className="text-right">至今最好</th></tr></thead><tbody>
+          {[["分数", "score", 3], ["速度 cm/s", "speed", 3], ["侧向漂移 cm", "dx", 2], ["航向变化 °", "dh", 1], ["最大倾角 °", "tiltMax", 2], ["能量 J", "energyJ", 2], ["最大角速度 °/s", "maxRate", 0]].map(([zh, k, n]) => <tr key={k}><td>{zh}</td><td className="text-right">{k === "score" ? f(d?.base?.score ?? st.hist?.[0]?.best, n) : k === "maxRate" ? f(d?.base?.maxRate, n) : f(d?.base?.r?.[k], n)}</td><td className="text-right" data-testid={`${tid}-best-${k}`}>{k === "score" ? f(best.score, n) : k === "maxRate" ? f(best.maxRate, n) : f(best.r?.[k], n)}</td></tr>)}
         </tbody></table>
         <div className="flex flex-wrap items-center gap-1">
           {onPreview && <B t={`${tid}-preview-run`} on={() => onPreview(best.g)}>在台面上预览</B>}
@@ -108,11 +119,12 @@ export default function GaitSearch({ kind, makeJob, onApply, onPreview, exports 
     </fieldset>
   );
 }
+const eps = (n, c, sec) => (sec > 0 ? (n * (c || 1)) / sec : null);
 const strip = (x) => (x ? { speedMin: x.speedMin, speedMean: x.speedMean, driftMax: x.driftMax, driftMean: x.driftMean, rows: x.rows.map((r) => ({ tag: r.tag, speed: r.speed, dx: r.dx, dh: r.dh })) } : null);
 function RobustTable({ rb, tid }) {
   return (
     <div data-testid={`${tid}-robust-table`}>
-      <p className="font-medium">鲁棒性复评（防过拟合）：μ 0.3 / 0.5 / 0.8、机身质量 ×0.9 / ×1.1、5 个随机种子（每个关节 ±2° 装配零位误差 + 0–1 s 起步延迟，估算）</p>
+      <p className="font-medium">{rb.heldOut ? "留出工况复评（v15：11 个工况，μ / 质量 / 坡度 / 种子都没在训练里出现过）" : "鲁棒性复评（防过拟合）：μ 0.3 / 0.5 / 0.8、机身质量 ×0.9 / ×1.1、5 个随机种子（每个关节 ±2° 装配零位误差 + 0–1 s 起步延迟，估算）"}</p>
       <table className="w-full font-mono text-[11px]"><thead><tr className="text-ink-soft"><th className="text-left">工况</th><th className="text-right">起点 速度 / 侧漂</th><th className="text-right">搜索结果 速度 / 侧漂</th></tr></thead><tbody>
         {rb.best.rows.map((r, i) => <tr key={i}><td>{r.tag}</td><td className="text-right">{f(rb.base.rows[i]?.speed, 3)} / {f(rb.base.rows[i]?.dx, 2)}</td><td className="text-right">{f(r.speed, 3)} / {f(r.dx, 2)}</td></tr>)}
         <tr className="font-semibold"><td>最差速度 / 平均速度</td><td className="text-right">{f(rb.base.speedMin, 3)} / {f(rb.base.speedMean, 3)}</td><td className="text-right" data-testid={`${tid}-robust-best`}>{f(rb.best.speedMin, 3)} / {f(rb.best.speedMean, 3)}</td></tr>

@@ -15,6 +15,7 @@ import { octoRowGait, octoV14Gait } from "../../gait/octo-best.js";
 import { runGait } from "../../gait/octo-measure.js";
 import GaitSearch from "../../gait/GaitSearch.jsx";
 import CtrlPanel from "../../gait/CtrlPanel.jsx";
+import SlipPanel from "./SlipPanel.jsx";
 import { OCTO_CTRL, SimImu, toCtrlHeader } from "../../gait/ctrl.js";
 
 let detach = null;
@@ -90,7 +91,7 @@ function OctoGait({ variant, plan, mu, send }) {
   const [on, setOn] = useState(false);
   const run = (x) => { octoSim.rt?.body?.SetCustomGait(sanitizeGait(x, 8)); setOn(true); send("GO"); };
   const hdr = (x) => ({ name: "octopus_gait_custom.h", text: toFirmwareHeader(sanitizeGait(x, 8), { stamp: new Date().toISOString().slice(0, 10) }) });
-  const measure1 = async (o) => { const r = await runGait({ gait: sanitizeGait(g, 8), sec: 15, mu: mu ?? 0.5, variant, plan, ...o }); try { r.lp?.world?.free(); } catch { /* 已释放 */ } return { speed: r.speed, dx: r.dx, dh: r.dh, tiltGMax: r.tiltGMax ?? r.tiltMax, tiltGAvg: r.tiltGAvg ?? r.tiltAvg }; };
+  const measure1 = async (o) => { const r = await runGait({ gait: sanitizeGait(g, 8), sec: o.sec || 15, mu: mu ?? 0.5, variant, plan, ...o }); try { r.lp?.world?.free(); } catch { /* 已释放 */ } return { speed: r.speed, dx: r.dx, dh: r.dh, tiltGMax: r.tiltGMax ?? r.tiltMax, tiltGAvg: r.tiltGAvg ?? r.tiltAvg }; };
   return <>
   <GaitEditor gait={g} setGait={setG} presets={OCTO_PRESETS} rateLimit={300} tid="octo-gait"
     time={on ? octoSim.rt?.body?.custom_t_ ?? null : null}
@@ -118,6 +119,7 @@ function OctoGait({ variant, plan, mu, send }) {
     }}
     exports={[{ k: "h", zh: "导出 octopus_ctrl_custom.h", make: (c) => ({ name: "octopus_ctrl_custom.h", text: toCtrlHeader(c) }) }]}
     note="八爪鱼的倾斜靠底下 3 个万向球撑着、自己倾不了多少，所以这里主要调航向：IMU 测到偏航就把偏向那一侧的划桨幅度减小（只减不增，不会超限速）。横坡上万向球会往下滚，侧漂基本拦不住（简化仿真的诚实结论）；横坡上转向符号会反过来，固件按横滚角自动切换（仿真经验规则，估算）。实机需要加一块 MPU-6050（我的补充）。" />
+  <SlipPanel measure={(o) => measure1(o)} onCaster={(k) => octoSim.phys?.setCaster?.(k)} />
   </>;
 }
 function LocoBox({ L, mu, setMu }) {

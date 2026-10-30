@@ -13,7 +13,9 @@ class TiltController {
 public:
     struct Out { float sc[kArmCount]; float off[kArmCount]; float u; float roll_deg; bool slope_mode; };
 
-    void Reset() { init_ = false; yaw0_set_ = false; slope_mode_ = false; prev_ok_ = false; yaw_ = 0.0f; sign_ = 1.0f; sat_ = false; }
+    // v15：外部测到的横向偏移（cm，右为正）；valid = false 时路径保持不起作用（只剩航向保持）
+    void SetLateral(float cm, bool valid = true) { lat_ = cm; lat_ok_ = valid; }
+    void Reset() { i_lat_ = 0.0f; lat_ok_ = false; init_ = false; yaw0_set_ = false; slope_mode_ = false; prev_ok_ = false; yaw_ = 0.0f; sign_ = 1.0f; sat_ = false; }
 
     // dt 秒；返回每条触手的摆幅倍数 sc（只减不增）和偏航偏置 off（°）
     Out Step(const ImuSample& s, float dt) {
@@ -28,7 +30,16 @@ public:
         }
         yaw_ += s.gyro[2] * k * dt;
         if (!yaw0_set_) { yaw0_ = yaw_; yaw0_set_ = true; }
-        const float eH = yaw0_ - yaw_;   // 机身右转 → yaw 变小 → eH > 0 → 往左修
+        // v15（我的补充）：航向设定值 = 起步航向 + 蟹行前馈（kCrab × 横滚）+ 路径保持 PI（横向偏移由外部给：SetLateral，光流 / 摄像头 / UWB）
+        float sp = 0.0f;
+#ifdef OCTO_CTRL_V15
+        sp += kCrab * roll_;
+        if (lat_ok_ && (kKPath != 0.0f || kKiPath != 0.0f)) {
+            i_lat_ += lat_ * dt;
+            sp += Clamp(kKPath * lat_ + kKiPath * i_lat_, -kPathMax, kPathMax) * k;
+        }
+#endif
+        const float eH = yaw0_ + sp - yaw_;   // 机身右转 → yaw 变小 → eH > 0 → 往左修
         float u = Clamp(kKpH * eH / k - kKdH * s.gyro[2], -kUMax, kUMax) * sign_;
         // 坡道换号（仿真经验规则，估算）：横滚超过 kSlopeFlipDeg 时转向符号取反（滞回 0.6 倍）
         const float roll_deg = std::fabs(roll_ / k);
@@ -64,6 +75,7 @@ private:
     static float Clamp(float v, float a, float b) { return v < a ? a : (v > b ? b : v); }
     bool init_ = false, yaw0_set_ = false, slope_mode_ = false, prev_ok_ = false, sat_ = false;
     float sign_ = 1.0f, sat_t_ = 0.0f, sat_e_ = 0.0f;
+    float lat_ = 0.0f, i_lat_ = 0.0f; bool lat_ok_ = false;
     float roll_ = 0.0f, pitch_ = 0.0f, yaw_ = 0.0f, yaw0_ = 0.0f, prev_up_[2] = {0.0f, 0.0f};
 };
 

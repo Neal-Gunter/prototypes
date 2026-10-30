@@ -289,7 +289,32 @@ function mpu6050() {
     octo: { pins, ties: [["QT1", "QT2"]] },
   });
 }
-export const OCTO_PROCEDURAL = [devkit(), inmp441(), oled(), xl4015("6v"), xl4015("5v"), battery(), pack3s(), vdiv(), frame(), arm(), bracketB(), armB(), frameV10(), armV10(), vdiv1s(), mpu6050()];
+// ---------- v15（我的补充）：机身底下支点的两个选配件。没有找到可引用的 datasheet，外形尺寸全部是估算 ----------
+// 横坡上原来的万向珠会整机往下滚（仿真 3° 横坡 10 s 侧漂 36 cm）；定向小轮只沿机身前后滚、侧向靠轮缘摩擦拦住（仿真 8 cm，见 v15 README）
+function casterWheel() {
+  const plate = box(-0.6, 0.6, 0.85, 1.0, -0.5, 0.5), forkL = box(-0.6, -0.45, 0.35, 0.85, -0.25, 0.25), forkR = box(0.45, 0.6, 0.35, 0.85, -0.25, 0.25);
+  const wheel = box(-0.15, 0.15, 0, 0.8, -0.4, 0.4);
+  const cols = [plate, forkL, forkR, wheel];
+  const prims = [B(plate, "white"), B(forkL, "white"), B(forkR, "white"), { k: "cyl", c: [0, 0.4, 0], r: 0.4, h: 0.3, m: "black", ax: "x" }];
+  return base("p-octo-caster-wheel", "定向小轮（不转向，只沿前后滚，v15 选配，我的补充）", "Fixed mini caster wheel Ø8 mm (estimated)", "mech", cols, prims, {
+    dims_src: "全部估算：轮 Ø8 × 3 mm（橡胶包边）、支架 12 × 10 × 10 mm；替换原来的 3 个万向珠，安装高度保持凸出底板 0.3 cm 不变",
+    spec: "仿真里：前后方向滚动阻力 0.02、侧向摩擦 0.5（估算，按桌面 μ 缩放；用显式库仑冲量近似各向异性摩擦）。轮子方向必须和机身前后对齐，装歪会让机身边走边转",
+    est: ["全部尺寸", "摩擦系数"],
+    mass: 0.002,
+  });
+}
+function casterBallLock() {
+  const cup = box(-0.6, 0.6, 0.3, 1.0, -0.6, 0.6), screw = box(-0.1, 0.1, 1.0, 1.25, -0.1, 0.1);
+  const cols = [cup];
+  const prims = [B(cup, "alum"), { k: "cyl", c: [0, 0.3, 0], r: 0.4, h: 0.3, m: "steel", ax: "y" }, B(screw, "black")];
+  return base("p-octo-caster-lock", "万向珠 + M2 顶丝锁死（v15 对照件，我的补充）", "Ball caster with M2 set screw lock (estimated)", "mech", cols, prims, {
+    dims_src: "全部估算：珠 Ø8 mm、座 12 × 12 × 7 mm、M2 顶丝",
+    spec: "锁死后珠子不转，钢珠在木桌上滑：摩擦约 0.3（估算）。仿真结论：前后也一样被拦住，八爪鱼完全走不动（0 cm/s）——所以只当对照，不推荐",
+    est: ["全部尺寸", "摩擦系数"],
+    mass: 0.003,
+  });
+}
+export const OCTO_PROCEDURAL = [casterWheel(), casterBallLock(), devkit(), inmp441(), oled(), xl4015("6v"), xl4015("5v"), battery(), pack3s(), vdiv(), frame(), arm(), bracketB(), armB(), frameV10(), armV10(), vdiv1s(), mpu6050()];
 
 // ---------- 库里真实零件的引脚表（零件局部坐标，cm） ----------
 // PCA9685（ada-815）：两端各一排 6 针控制排针（GND OE SCL SDA VCC V+），16 路 × 3 排舵机排针，中间螺丝端子 V+ / GND。
