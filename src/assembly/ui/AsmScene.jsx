@@ -51,27 +51,38 @@ function PinMarker() {
 }
 // 测试 / 导览用：某个零件某个引脚在屏幕上的位置
 function PinHook() {
-  const { camera, gl } = useThree();
+  const { camera, gl, scene } = useThree();
   useEffect(() => {
+    const rc = new THREE.Raycaster();
+    const toScreen = (w) => { const v = w.clone().project(camera); const r = gl.domElement.getBoundingClientRect(); return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height, ndc: v }; };
+    // 指针放在这个屏幕点时，射线是否先打到该零件、并且 pinAt 选中的正是这个引脚
+    const hits = (uid, k, sp) => {
+      rc.setFromCamera({ x: sp.ndc.x, y: sp.ndc.y }, camera);
+      const h = rc.intersectObjects(scene.children, true).find((i) => i.object.visible && !(i.object.material?.depthTest === false));
+      if (!h) return false; let o = h.object; while (o && o.name !== uid) o = o.parent; if (!o) return false;
+      return pinAt(uid, h.point)?.k === k;
+    };
     window.__pinScreen = (uid, k) => {
       const P = engine.parts.get(uid); if (!P) return null;
       const f = engine.worldFeatures(P.body).find((f) => f.uid === uid && ((f.t === "pinhole" && "p" + f.i === k) || (f.t === "pad" && "s" + f.i === k) || ((f.t === "pin-up" || f.t === "leg") && "l" + f.i === k)));
-      if (!f) return null; const w = f.wp.clone(); if (f.t === "pad") { // 贴片焊盘在底面：从上面悬停 → 投到零件顶面，并往零件中心收一点（邮票孔焊盘在边缘）
-        w.y += (P.def.dims_mm?.y || 3) / 10 - 0.02;
-        // 沿零件自身坐标里"离边最近"的那根轴往里收 1 mm，避免跑到相邻焊盘
+      if (!f) return null;
+      const cands = [f.wp.clone()];
+      if (f.t === "pad") { // 贴片焊盘在底面：从上面悬停 → 投到零件顶面，并往零件中心收一点（邮票孔焊盘在边缘）
         const q = engine.worldPose(uid).q, qi = new THREE.Quaternion().copy(q).invert();
         const all = engine.worldFeatures(P.body).filter((g) => g.uid === uid && g.t === "pad").map((g) => g.wp.clone().applyQuaternion(qi));
         const lo = all.reduce((a, v) => a.min(v), all[0].clone()), hi = all.reduce((a, v) => a.max(v), all[0].clone());
         const c = lo.clone().add(hi).multiplyScalar(0.5), hx = (hi.x - lo.x) / 2 || 1, hz = (hi.z - lo.z) / 2 || 1;
         const l = f.wp.clone().applyQuaternion(qi), ox = (l.x - c.x) / hx, oz = (l.z - c.z) / hz;
-        const n = Math.abs(ox) >= Math.abs(oz) ? new THREE.Vector3(-Math.sign(ox), 0, 0) : new THREE.Vector3(0, 0, -Math.sign(oz));
-        w.add(n.applyQuaternion(q).multiplyScalar(0.1));
+        const n = (Math.abs(ox) >= Math.abs(oz) ? new THREE.Vector3(-Math.sign(ox), 0, 0) : new THREE.Vector3(0, 0, -Math.sign(oz))).applyQuaternion(q);
+        const top = (P.def.dims_mm?.y || 3) / 10 - 0.02;
+        for (const dy of [top, top / 2, 0.02]) for (const dn of [0.1, 0.18, 0.05, 0]) cands.push(f.wp.clone().add(new THREE.Vector3(0, dy, 0)).add(n.clone().multiplyScalar(dn)));
       }
-      const v = w.project(camera); const r = gl.domElement.getBoundingClientRect();
-      return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height };
+      const sps = cands.map(toScreen);
+      const good = sps.find((sp) => hits(uid, k, sp)) || sps[f.t === "pad" ? 1 : 0];
+      return { x: good.x, y: good.y, checked: sps.some((sp) => hits(uid, k, sp)) };
     };
     return () => { delete window.__pinScreen; };
-  }, [camera, gl]);
+  }, [camera, gl, scene]);
   return null;
 }
 function Part({ uid, onDown }) {
