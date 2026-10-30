@@ -73,7 +73,7 @@ export default function OctoGuidePage() {
       <p className="text-xs text-ink-soft">{PLUS_BOM.total}</p>
 
       <h2 className="mt-6 text-lg font-medium text-copper">11. 完善版固件 + 文档下载（我的补充）</h2>
-      <p className="text-xs text-ink-soft">octopus_plus 文件夹（.ino + 4 个头文件）已用 arduino-cli 1.5.1 + esp32 核心 3.3.12 按 ESP32S3 Dev Module 编译通过（OCTO_RIG 8 / 16），未上实物。xiaozhi/octopus_mcp.cpp 依赖 xiaozhi-esp32 工程，未编译。</p>
+      <p className="text-xs text-ink-soft">octopus_plus 文件夹（.ino + 4 个头文件）v8（2026-10-30）用免费的 arduino-cli 1.5.1 + esp32 核心 3.3.12 按 ESP32S3 Dev Module 重新编译通过：OCTO_RIG 8 / 16 均为程序 620 776 B（47%）、全局变量 30 720 B（9%），我们的文件 0 个 warning；未上实物。xiaozhi/octopus_mcp.cpp 只做了<b>桩编译</b>（上游 mcp_server.h @ addb1ed + 空实现 McpServer，通过、0 warning），不等于在小智工程里真编译。md 原样的 body_firmware_A.ino 在 ESP32‑S3 上编译失败（无经典蓝牙 BluetoothSerial；OctopusBody / Pca9685 缺无参构造）。复现：scripts/fw-compile.sh。</p>
       <div className="mt-2 flex flex-wrap gap-1 text-xs">{Object.keys(PLUS_SOURCES).map((k) => <button key={k} type="button" onClick={() => setPfile(k)} className={`border px-2 py-0.5 ${pfile === k ? "border-copper bg-copper text-paper-2" : "border-line bg-white"}`}>{k}</button>)}
         <button type="button" onClick={() => save(pfile.split("/").pop(), PLUS_SOURCES[pfile])} className="border border-copper px-2 py-0.5" data-testid="og-plus-save">下载 {pfile.split("/").pop()}</button>
         <button type="button" onClick={() => Object.keys(PLUS_SOURCES).forEach((k, i) => setTimeout(() => save(k.split("/").pop(), PLUS_SOURCES[k]), i * 300))} className="border border-copper px-2 py-0.5" data-testid="og-plus-save-all">全部下载（{Object.keys(PLUS_SOURCES).length} 个文件）</button></div>
