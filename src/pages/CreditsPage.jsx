@@ -94,9 +94,18 @@ const ROWS = [
     url: "https://gitlab.com/kicad/libraries/kicad-footprints",
     lic: "CC BY-SA 4.0（附 KiCad 例外条款）；FreeCAD-library 部分 CC BY 3.0；提取出的坐标同样按原许可发布",
   },
+  {
+    what: "贴片转接板（v23）：13 种贴片封装（SOIC-8/16、TSSOP-16、SSOP-24、QFN-16/32、LQFP-32/48、SOT-23/-5/-6、0603、0805）的焊盘位置和尺寸，用来生成转接板上的焊盘和放片对位",
+    file: "src/assembly/breakouts.gen.js（scripts/build-breakouts.mjs 生成）",
+    from: "KiCad 官方封装库 kicad-footprints 提交 a337146e090931ad1176e20ed0b7100990fac5fa（Package_SO / Package_DFN_QFN / Package_QFP / Package_TO_SOT_SMD / Resistor_SMD）",
+    url: "https://gitlab.com/kicad/libraries/kicad-footprints",
+    lic: "CC BY-SA 4.0（附 KiCad 例外条款）；提取出的焊盘坐标同样按原许可发布",
+  },
 ];
 
 const PROCEDURAL = [
+  "贴片转接板（v23，我的补充）：板体、2.54 mm 排针、走线、丝印按焊盘图和 2.54 mm 栅格用代码生成，CC0；板子外形尺寸是常见转接板的估算，不对应某个具体厂家",
+  "凸包碰撞体（v23）：用 three.js 的 ConvexHull（MIT）从已有的长方体碰撞体收紧到真实网格点上再合并，数据随零件元数据发布，不引入新素材",
   "小智八爪鱼（v6）：ESP32‑S3‑DevKitC‑1 板、INMP441、0.96\" OLED、XL4015 ×2、2S 锂电池、躯干骨架、触手、俯仰支架：按数据手册 / 你的 md 尺寸用代码生成，未核实的标“估算”；md 原文 9 个文件是你自己提供的资料，原样收录",
   "烙铁、烙铁架、焊锡丝、助焊笔、吸锡带、吸锡器、螺丝刀、剥线钳、万用表、USB‑C 线：用 three.js 基本几何体在代码里生成",
   "焊点形状（好焊点、虚焊、桥连、烧坏）、导线、绝缘皮、铜丝：代码生成",
