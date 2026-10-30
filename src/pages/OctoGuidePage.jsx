@@ -1,3 +1,4 @@
+import "../lib/three-base";
 // 八爪鱼装配指南：台面实际摆的物料（不含价格）+ md 原价（标“来自你的 md”）+ 接线 + 引脚表 + 对照现实 + 出处 + md 问题 + md 原文固件。
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";

@@ -1,3 +1,4 @@
+import "../lib/three-base";
 // v11 模型 + 功能图：上传 3D 模型和功能图，拆模块、标功能、互相绑定，双向高亮，隔离 / 爆炸，放到装配台做碰撞
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";

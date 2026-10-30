@@ -1,3 +1,4 @@
+import "../lib/three-base";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { Link } from "react-router-dom";

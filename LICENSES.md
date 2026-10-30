@@ -85,7 +85,7 @@ v5 新增的程序零件（同样是本项目自制、CC0）：
 | FreeCAD-library（https://github.com/FreeCAD/FreeCAD-library） | 141（81 个真实 STEP + 60 个型材长度变体） | CC BY 3.0（README 写明全部零件 CC-BY 3.0，归属各自作者） | 各零件作者（据 git 提交记录，逐个列在 `licenses/FreeCAD-library-AUTHORS.md` 和 catalog 的 `author` 字段） | `fc-*.glb` |
 | 本项目程序生成（`src/assembly/procedural*.js`） | 525 | CC0 | — | 代码 |
 
-改动内容（所有 CAD 来源相同）：STEP/WRL → GLB 转换、网格减面、材质合并、单位换算、meshopt 压缩，另由 GLB 渲染 256 px 缩略图（`public/lib/thumbs/*.webp`，许可证随原模型）。CC BY-SA 来源的改编 GLB 同样以 CC BY-SA 4.0 发布；CC BY 4.0 的 SparkFun 模型保留署名。FreeCAD-library 的 CC BY 3.0 模型保留每个零件的作者署名，改编 GLB 同样以 CC BY 3.0 发布；型材长度变体由真实截面只沿长度缩放（我的补充）。许可证全文：`licenses/CC-BY-3.0.txt`、`licenses/CC-BY-4.0.txt`、`licenses/CC-BY-SA-4.0.txt`、`licenses/KiCad-packages3D-LICENSE.md`、`licenses/Espressif-kicad-libraries-LICENSE.md`、`licenses/Seeed-OPL-LICENSE.txt`。
+改动内容（所有 CAD 来源相同）：STEP/WRL → GLB 转换、网格减面、材质合并、单位换算、meshopt 压缩，另由 GLB 渲染 256 px 缩略图（`public/lib/thumbs/*.webp`，许可证随原模型）。CC BY-SA 来源的改编 GLB 同样以 CC BY-SA 4.0 发布；CC BY 4.0 的 SparkFun 模型保留署名。FreeCAD-library 的 CC BY 3.0 模型保留每个零件的作者署名，改编 GLB 同样以 CC BY 3.0 发布；型材长度变体由真实截面只沿长度缩放（我的补充）。v21：34 个真实 CAD 零件的碰撞体在构建时由各自的 GLB 体素化后拆成互不重叠的长方体（`scripts/decompose-colliders.mjs`，派生数据，许可证随原模型）；ada-4444（PyPortal Titano）和 ada-5036（RGB 点阵）用更高三角形上限重新转换，补回之前减面时丢掉的薄片（许可证不变，MIT）。许可证全文：`licenses/CC-BY-3.0.txt`、`licenses/CC-BY-4.0.txt`、`licenses/CC-BY-SA-4.0.txt`、`licenses/KiCad-packages3D-LICENSE.md`、`licenses/Espressif-kicad-libraries-LICENSE.md`、`licenses/Seeed-OPL-LICENSE.txt`。
 
 按分类 / 来源：
 

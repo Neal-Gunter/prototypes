@@ -1,3 +1,4 @@
+import "../lib/three-base";
 // 维修关卡：拿到一块“坏板子”，看、量、拆、焊、换，修好后交付验收。早期原型，简化仿真。
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Game, TOOLS, BIN, ACTIONS, HINT_COST, MODE_ZH, label } from "../repair/game.js";

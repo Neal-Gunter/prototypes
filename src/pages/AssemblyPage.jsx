@@ -1,3 +1,4 @@
+import "../lib/three-base";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import * as THREE from "three";

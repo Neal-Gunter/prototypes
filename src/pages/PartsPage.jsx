@@ -1,3 +1,4 @@
+import "../lib/three-base";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { pub } from "../lib/base";
 import { Link, useSearchParams } from "react-router-dom";

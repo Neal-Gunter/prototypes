@@ -1,3 +1,4 @@
+import "../lib/three-base";
 // 装配指南：把台面上的装配“搬到现实”——物料清单、接线表、步骤、对照读数、固件下载。可直接打印。
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -182,6 +183,7 @@ export default function GuidePage() {
           <li><b>用在哪里</b>：零件在本指南物料清单里出现时，点链接直接跳到那一行。</li>
         </ol>
         <p className="mt-2 text-xs text-ink-soft">限制（我的补充）：这不是市面上的全部零件，只收许可干净、允许商用的模型；电机、舵机、轴承、型材多数是按标准或常见规格生成的外形，没核实的尺寸标“估算”；接口和电压标签大多从名称推断，质量多为<b>估算</b>；以实物和数据手册为准。不显示价格。</p>
+        <p className="mt-2 text-xs text-ink-soft" data-testid="guide-v21">v21 更新：零件库现在 3081 个（真实 CAD 2556 + 程序生成 525），其中 81 个原来是近似形状的舵机、电机、轴承、带轮、型材换成了 FreeCAD-library 的真实模型（CC BY 3.0，逐件署名）；仍为近似的在列表里标“近似形状（程序生成）”。新增 <Link className="underline" to="/pinouts">引脚表</Link>（29 块板 / 模块，每块有来源），电路检查会报“输出冲突”和 3.3 V / 5 V“电平不匹配”。3D 预览可以“显示碰撞体”：34 个真实件的碰撞体改成互不重叠的凸块，比外形最多大 1 个体素对角线（每个零件写明数值，估算精度）。</p>
       </section>
       <section className="mt-6 break-inside-avoid border border-copper p-3" data-testid="guide-safety">
         <h2 className="font-medium">安全提示</h2>

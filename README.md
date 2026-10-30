@@ -23,7 +23,8 @@ npm run preview
 - `/` — pitch, flow (想法 → 仿真 → 装配), three feature cards, who-it's-for strip, waitlist form
 - `/workbench` — **hardware workbench, early prototype, simplified simulation** (see below)
 - `/assembly` — **assembly bench (v4), early prototype, simplified simulation**: Rapier collisions, standoffs/screws/nuts M2/M2.5/M3, base plate, headers, JST/Dupont/USB plugs, breadboard, servo bracket + horn + tentacle, automated demo
-- `/parts` — parts library (v20): 2940 parts = 2415 open-source CAD (Adafruit MIT, KiCad / Espressif / Seeed CC BY-SA 4.0, SparkFun CC BY 4.0) + 525 procedural standard parts (CC0); real mm sizes, thumbnails, licence per part, no prices; search / filters / favourites / compare / size ruler / used-in
+- `/pinouts` — per-pin tables (v21): 29 boards / modules, 789 pins, source URL per board, 3V3 / 5V logic; unverified pins marked 估算
+- `/parts` — parts library (v20, 3081 parts in v21): 2940 parts = 2415 open-source CAD (Adafruit MIT, KiCad / Espressif / Seeed CC BY-SA 4.0, SparkFun CC BY 4.0) + 525 procedural standard parts (CC0); real mm sizes, thumbnails, licence per part, no prices; search / filters / favourites / compare / size ruler / used-in
 - `/electrics` — now redirects to `/assembly?scene=electrics` (v5: one bench for assembly + circuit)
 - `/assembly/guide` — printable assembly guide (BOM, wiring table, breadboard holes, steps, `.ino`, 对照现实 readings, safety notes); `?src=default|bench`
 - `/repair` — **维修关卡（v17）**：12 个由易到难的维修场景 + 关卡编辑器（早期原型，简化仿真）
@@ -172,6 +173,16 @@ The script uses `window.__wb` test hooks only to find where things are on the sc
   - 触手的 3D 刚体固定，舵机转动只改画面姿态；位移和转向在俯视图里用摩擦模型估算。
   - 电流是估算值。
   - 只做直流层面的电压、电流检查。
+
+## v21：真实 CAD 替换近似件 + 引脚表与引脚冲突 / 电平检查 + 碰撞体凸分解 + 首屏预算（早期原型，简化仿真）
+
+- **真实 CAD 替换（FreeCAD-library，CC BY 3.0，逐件署名）**：零件库 3081 个（真实 CAD 2556 + 程序生成 525）。运动 / 机械类替换情况（替换 / 仍为近似）：舵机 2 / 6，舵盘 1 / 0，步进电机 4 / 14，直流电机 3 / 11，轴承与直线轴承 7 / 21，光轴 0 / 18，齿轮 0 / 40，同步带轮 1 / 9，型材 / 角码 / T 螺母 63 / 25，无刷电机 0 / 11；合计替换 81、仍近似 155，另新增 21 个真实件。没找到许可干净的真实模型的件保留程序生成，列表里标“近似形状（程序生成）”，有真实版本的会给出“真实 CAD：…”链接。
+- **引脚表**（`/pinouts`，零件详情里有“引脚表”链接）：29 块板 / 模块、789 个引脚，每块写来源 URL（KiCad 符号库 CC BY-SA 4.0、官方数据手册 / 引脚图）；引脚功能分类是我的补充（自动分类），L298N 模块的排针顺序是估算。电路检查新增：两个输出接在一起 → “输出冲突”；3.3 V 引脚被推到 > VDD + 0.3 V → “电平不匹配”；没用的引脚直接接 GND → 只提醒。`NOBUNDLE=1 node scripts/pinout-test.mjs`（18/0）。只有 Pico、Pico W、Feather S3 在台面上有物理引脚映射。
+- **碰撞体凸分解**（`scripts/decompose-colliders.mjs`，构建时）：原来 34 个真实件的自动碰撞盒在同一刚体里互相重叠；现在按 GLB 体素化（内部空腔按 2 倍细网格判断）、贪心合并成互不重叠的长方体（每件 ≤ 40 个，每个都是凸块）。实测：网格顶点 349,967 个 100% 落在碰撞体内（0.01 mm）；盒子两两不重叠（深度 < 0.001 mm）；碰撞体比可见网格最多外扩 = 体素对角线以内（逐件写在 catalog 的 `collider_decomp`，中位容差 3.06 mm，最大 12.2 mm——大件如 100 mm 大按钮体素 7 mm）。ada-4444 / ada-5036 尺寸警告已修好（重新转换补回薄片，包围盒和 CAD 一致）。零件库 3D 预览加了“显示碰撞体”线框。
+  - `node scripts/collider-test.mjs`：覆盖 / 不重叠 / 外扩 ≤ 容差。`node e2e/collider-engine.mjs`（45/0）：34 件单独落桌、小件落到 4 个凸分解件顶面、按尺寸分 7 组叠落；静止后最大穿透 0.061 mm（阈值 0.1 mm）；掉落撞击瞬间峰值 16 mm，几帧内被推开，不计入判定。都加进了 `scripts/engine-test.sh`。
+  - `parts-validate` 现在对真实件也严格检查“碰撞盒体积和 ≤ 包围盒 × 1.05”（16/0）。
+- **首屏**：three.js 不再打进首页入口包（`src/lib/three-base.js` 由 3D 页面懒加载引入）。入口 JS + CSS 从约 200 KB 降到 101 KB gzip（预算 150 KB），/parts 另外按需 194 KB gzip（预算 900 KB），首页和 /parts 都不加载 Rapier / Worker：`node scripts/load-budget.mjs`。限速 1.6 Mbit/s 的首屏测试在 `e2e/v21-bench.mjs`。
+- **限制（我的补充）**：碰撞体是体素长方体，精度取决于体素大小（大件外扩可到 1 个体素对角线）；几克的贴片件压在很重的大件下会被压进 2–3 mm（旧 AABB 碰撞盒同样 2.3 mm，是求解器质量比问题）；GT2 带轮齿数未核实；NEMA23 长度含轴；2060 / 2080 型材没有真实来源；型材长度变体由真实截面沿长度缩放；ada-4444 / 5036 缩略图没重新渲染。
 
 ## v20：零件库扩充到 2940 个 + 零件浏览器升级 + 升压平均值模型（早期原型，简化仿真）
 
