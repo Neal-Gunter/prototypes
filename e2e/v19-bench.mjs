@@ -14,7 +14,7 @@ const ctx = await b.newContext({ viewport: { width: 1440, height: 900 }, ...(SHO
 const p = await ctx.newPage(); const errs = [];
 p.on("pageerror", (e) => errs.push(String(e)));
 const L = (f, a) => p.evaluate(f, a), wait = (ms) => p.waitForTimeout(ms);
-const shot = async (s, t) => { if (!SHOT) return; const f = `${OUT}/${String(++n).padStart(2, "0")}-${s}.png`; if (t) { await p.locator(`[data-testid=${t}]`).scrollIntoViewIfNeeded(); await p.locator(`[data-testid=${t}]`).screenshot({ path: f, style: ".no-print.sticky { visibility: hidden !important; }" }); } else await p.screenshot({ path: f }); };
+const shot = async (s, t) => { if (!SHOT) return; const f = `${OUT}/${String(++n).padStart(2, "0")}-${s}.png`; if (t) { const L = p.locator(`[data-testid=${t}]`); const bb = await L.boundingBox(); const tall = bb && bb.height > 860; if (tall) { await p.setViewportSize({ width: 1440, height: Math.ceil(bb.height) + 120 }); await wait(400); } await L.scrollIntoViewIfNeeded(); await L.screenshot({ path: f, style: ".no-print.sticky { visibility: hidden !important; }" }); if (tall) { await p.setViewportSize({ width: 1440, height: 900 }); await wait(200); } } else await p.screenshot({ path: f }); };
 const click = (t) => p.click(`[data-testid=${t}]`);
 const txt = (t) => p.locator(`[data-testid=${t}]`).innerText();
 const bs = () => L(() => window.__benchScope && { ...window.__benchScope, cap: window.__benchScope.cap && { meas: window.__benchScope.cap.meas, dev: window.__benchScope.cap.dev, stats: window.__benchScope.cap.stats, ms: window.__benchScope.cap.ms, events: window.__benchScope.cap.allEvents.length } });
