@@ -76,7 +76,7 @@ ok((await T("rework-flywire").count()) === nfly - 1, `点“飞线补救”：�
 
 // 4) 英文界面切换
 await p.goto(BASE + "/assembly"); await p.waitForFunction(() => window.__asm, null, { timeout: 60000 }); await wait(800);
-ok((await T("lang-toggle").innerText()).trim() === "EN" && (await p.evaluate(() => document.documentElement.lang)) === "zh-CN", "默认中文（html lang = zh-CN），页头有 EN 按钮");
+ok((await T("lang-toggle").innerText()).trim() === "EN" && (await p.evaluate(() => document.documentElement.lang)) === "zh-Hans", "默认中文（html lang = zh-Hans），页头有 EN 按钮");
 await T("lang-toggle").click(); await wait(400);
 const nav = await T("main-nav").innerText();
 ok(/Assembly bench/.test(nav) && /Parts library/.test(nav) && !/装配台/.test(nav), "切到英文：导航变英文", nav.replace(/\n/g, " · "));

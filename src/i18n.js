@@ -6,7 +6,7 @@ export const LANG_KEY = "ui-lang";
 const read = () => { try { return localStorage.getItem(LANG_KEY) === "en" ? "en" : "zh"; } catch { return "zh"; } };
 let lang = typeof window === "undefined" ? "zh" : read();
 const subs = new Set();
-const applyDoc = () => { if (typeof document !== "undefined") document.documentElement.lang = lang === "en" ? "en" : "zh-CN"; };
+const applyDoc = () => { if (typeof document !== "undefined") document.documentElement.lang = lang === "en" ? "en" : "zh-Hans"; };
 applyDoc();
 export function getLang() { return lang; }
 export function setLang(l) {

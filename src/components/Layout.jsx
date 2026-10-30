@@ -32,10 +32,10 @@ export default function Layout() {
       <div className="no-print sticky top-0 z-40 bg-ink px-4 py-2 text-center text-sm leading-6 text-paper-2">
         {PROTO_PATHS.some((p) => pathname.startsWith(p)) ? (
           <p data-testid="banner">
-            {en ? <>Early prototype, simplified simulation<span className="hidden sm:inline"> · <span lang="zh-CN">早期原型，简化仿真</span></span></> : <>早期原型，简化仿真<span className="hidden sm:inline"> · <span lang="en">Early prototype, simplified simulation</span></span></>}
+            {en ? <>Early prototype, simplified simulation<span className="hidden sm:inline"> · <span lang="zh-Hans">早期原型，简化仿真</span></span></> : <>早期原型，简化仿真<span className="hidden sm:inline"> · <span lang="en">Early prototype, simplified simulation</span></span></>}
           </p>
         ) : (
-          <p data-testid="banner">{en ? <>Concept demo, not a finished product<span className="hidden sm:inline"> · <span lang="zh-CN">概念演示，不是成品</span></span></> : <>概念演示，不是成品<span className="hidden sm:inline"> · <span lang="en">Concept demo, not a finished product</span></span></>}</p>
+          <p data-testid="banner">{en ? <>Concept demo, not a finished product<span className="hidden sm:inline"> · <span lang="zh-Hans">概念演示，不是成品</span></span></> : <>概念演示，不是成品<span className="hidden sm:inline"> · <span lang="en">Concept demo, not a finished product</span></span></>}</p>
         )}
       </div>
       <div className="relative flex flex-1 flex-col">
