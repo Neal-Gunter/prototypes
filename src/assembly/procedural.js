@@ -329,7 +329,11 @@ function dupont(gender, n = 1) {
 function plug(kind) {
   // 舌片截面按规范（Type‑C 8.25×2.4 mm，Micro‑B 6.85×1.8 mm）；包胶外壳估算
   const P = {
-    "usb-c": { zh: "USB‑C 线插头", tw: 8.25, th: 2.4, tl: 6.6, bw: 12, bh: 6.5, bl: 20, src: "舌片 8.25×2.4 mm（USB Type‑C 规范）；外壳估算" },
+    "octo-dupont-20": { zh: "杜邦线 20 cm（八爪鱼台面）", ends: [null, null], len: 20, r: 0.07 },
+  "octo-dupont-30": { zh: "杜邦线 30 cm（md：20~30 cm 把主控放体外）", ends: [null, null], len: 30, r: 0.07 },
+  "octo-wire": { zh: "硅胶电源线（估算 20 AWG）", ends: [null, null], len: 20, r: 0.09, est: true },
+  "octo-servo": { zh: "舵机引线（棕 GND / 红 V+ / 橙 PWM）", ends: [null, null], len: 25, r: 0.12, est: true },
+  "usb-c": { zh: "USB‑C 线插头", tw: 8.25, th: 2.4, tl: 6.6, bw: 12, bh: 6.5, bl: 20, src: "舌片 8.25×2.4 mm（USB Type‑C 规范）；外壳估算" },
     "micro-usb": { zh: "Micro‑USB 线插头", tw: 6.85, th: 1.8, tl: 5.5, bw: 10.5, bh: 6, bl: 18, src: "舌片 6.85×1.8 mm（USB Micro‑B 规范）；外壳估算" },
     "jst-ph2": { zh: "JST‑PH 2P 电池插头", tw: 6.0, th: 4.5, tl: 6.0, bw: 6.0, bh: 4.5, bl: 0.01, src: "估算（PHR‑2 外壳）" },
   }[kind];
@@ -492,6 +496,7 @@ function tool(kind) {
   };
 }
 
+import { OCTO_PROCEDURAL } from "./octopus/parts.js";
 export const PROCEDURAL = [
   plate(),
   bracket(),
@@ -507,6 +512,7 @@ export const PROCEDURAL = [
   tool("screwdriver"), tool("iron"),
   motor("28byj48"), motor("nema17-34"), motor("nema17-40"), motor("nema17-48"), motor("n20"), motor("130"), motor("coin"),
   ...["tweezers", "cutter", "stripper", "multimeter", "pump", "solder", "hex1.5", "hex2", "hex2.5"].map(handTool),
+  ...OCTO_PROCEDURAL,
 ].map((d) => ({ ...d, licence: LIC_SELF, kind: "proc", thumb: `/lib/thumbs/${d.id}.webp` }));
 
 export const PROC_BY_ID = Object.fromEntries(PROCEDURAL.map((d) => [d.id, d]));

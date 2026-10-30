@@ -108,7 +108,10 @@ function Part({ uid, onDown }) {
     if (!ref.current || !engine.parts.has(uid)) return;
     const w = engine.worldPose(uid);
     const v = engine.parts.get(uid).vis;
-    if (v && v.ang) {
+    if (v && v.pose) {
+      ref.current.position.copy(v.pose.p);
+      ref.current.quaternion.copy(v.pose.q);
+    } else if (v && v.ang) {
       // 舵机带着转：绕输出轴旋转（只改画面）
       _q.setFromAxisAngle(v.axis, v.ang);
       _p.copy(w.p).sub(v.pivot).applyQuaternion(_q).add(v.pivot);

@@ -135,6 +135,30 @@ class Engine {
     this.emit();
     return uid;
   }
+  // 一次放一整个已装好的组件（例如八爪鱼躯干 + 8 个舵机 + 驱动板）：所有零件在同一个刚体里，
+  // 零件之间用 fasten 边连到第一个零件（拆开时 splitIntoBodies 仍按边分组）。items: [{def, p, q, label, state}]
+  addAssembly(items, opts = {}) {
+    const uids = [];
+    const poses = new Map();
+    for (const it of items) {
+      const uid = it.uid || `${it.def.id.replace(/[^a-z0-9]+/gi, "_").slice(0, 24)}#${uidSeq++}`;
+      this.parts.set(uid, { uid, def: it.def, body: null, rel: { p: new THREE.Vector3(), q: new THREE.Quaternion() }, state: { joints: {}, ...(it.state || {}) }, label: it.label });
+      poses.set(uid, { p: it.p.clone(), q: (it.q || new THREE.Quaternion()).clone() });
+      uids.push(uid);
+    }
+    const why = opts.why || "整体装配（预设）";
+    for (let i = 1; i < uids.length; i++) this.link(uids[i], uids[opts.parentOf ? opts.parentOf(i) : 0], "fasten", why);
+    const bid = this.makeBody(uids, poses, opts.sleep);
+    if (!opts.allowOverlap) {
+      const bp = this.bodyPose(bid);
+      for (let k = 0; k < 150 && this.overlapAt(bid, bp.p, bp.q, new Set()); k++) bp.p.y += 0.2;
+      this.bodies.get(bid).rb.setTranslation({ x: bp.p.x, y: bp.p.y, z: bp.p.z }, true);
+      this.world.propagateModifiedBodyPositionsToColliders();
+      this.depenetrate(bid, 6);
+    }
+    this.emit();
+    return uids;
+  }
   // 直接把一个单独的刚体摆到某个位姿（导入/预设用；随后仍走 trySnap 的同一套装配规则和穿模检查）
   teleport(uid, p, q) {
     const b = this.bodies.get(this.parts.get(uid).body);
@@ -643,19 +667,30 @@ class Engine {
   }
 
   // ---------------- 线缆（绳子） ----------------
-  addCable(kind, endUids, fixedEnd) {
+  // opts（可选）：endLocal [a,b] 两端在零件局部坐标里的接点；N 段数；len 线长；r 外皮半径；color 颜色；
+  // via 世界坐标途经点（给出时初始形状沿折线、线长 = 折线长）；meta 电气含义（哪个零件的哪个脚）
+  addCable(kind, endUids, fixedEnd, opts = {}) {
     const R = this.R;
     const spec = CABLES[kind];
     const id = `cable${uidSeq++}`;
-    const N = 20;
-    const r = spec.r || 0.08; // 导线外皮半径（cm）；画面上的粗细用同一个值
+    const N = opts.N || 20;
+    const r = opts.r || spec.r || 0.08; // 导线外皮半径（cm）；画面上的粗细用同一个值
+    const endLocal = opts.endLocal || [null, null];
 
-    const A = this.cableEndWorld(endUids[0]);
-    const B = endUids[1] ? this.cableEndWorld(endUids[1]) : fixedEnd.clone();
-    const segLen = spec.len / N;
+    const A = this.cableEndWorld(endUids[0], endLocal[0]);
+    const B = endUids[1] ? this.cableEndWorld(endUids[1], endLocal[1]) : fixedEnd.clone();
+    let len = opts.len || spec.len;
+    let nodes;
+    if (opts.via && opts.via.length) {
+      const poly = [A, ...opts.via.map((v) => V(v)), B];
+      nodes = polyNodes(poly, N);
+      len = nodes.len;
+    } else {
+      // 初始形状：A→B 之间往侧面鼓出去的弧线，弧长 = 线长（二分求鼓出量），再按弧长等分成 N 段
+      nodes = ropeNodes(A, B, len, N, r);
+    }
+    const segLen = len / N;
     const segs = [];
-    // 初始形状：A→B 之间往侧面鼓出去的弧线，弧长 = 线长（二分求鼓出量），再按弧长等分成 N 段
-    const nodes = ropeNodes(A, B, spec.len, N, r);
     for (let i = 0; i < N; i++) {
       const a = nodes[i], b = nodes[i + 1];
       const p = a.clone().add(b).multiplyScalar(0.5);
@@ -676,15 +711,15 @@ class Engine {
     if (!endUids[1]) {
       anchorBody = this.world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(B.x, B.y, B.z));
     }
-    const cable = { id, kind, spec, ends: endUids.filter(Boolean), endUids, segs, joints, segLen, N, r, endJoints: [null, null], anchorBody, fixedEnd: fixedEnd?.clone() };
+    const cable = { id, kind, spec, ends: endUids.filter(Boolean), endUids, segs, joints, segLen, N, r, len, endLocal, color: opts.color, meta: opts.meta, endJoints: [null, null], anchorBody, fixedEnd: fixedEnd?.clone() };
     this.cables.push(cable);
     this.bindCableEnds(cable);
     this.emit();
     return id;
   }
-  cableEndWorld(uid) {
+  cableEndWorld(uid, local) {
     const p = this.parts.get(uid);
-    return this.toWorld(uid, p.def.wireEnd || cableAttach(p.def));
+    return this.toWorld(uid, local || p.def.wireEnd || cableAttach(p.def));
   }
   bindCableEnds(c) {
     const R = this.R;
@@ -705,7 +740,7 @@ class Engine {
         const body = p && this.bodies.get(p.body);
         if (!body) continue;
         b2 = body.rb;
-        const lp = V(p.def.wireEnd || cableAttach(p.def)).applyQuaternion(p.rel.q).add(p.rel.p);
+        const lp = V(c.endLocal?.[k] || p.def.wireEnd || cableAttach(p.def)).applyQuaternion(p.rel.q).add(p.rel.p);
         a2 = { x: lp.x, y: lp.y, z: lp.z };
       } else {
         b2 = c.anchorBody;
@@ -734,16 +769,16 @@ class Engine {
   }
   cablePoints(c) {
     const pts = [];
-    const A = c.endUids[0] ? this.cableEndWorld(c.endUids[0]) : null;
+    const A = c.endUids[0] ? this.cableEndWorld(c.endUids[0], c.endLocal?.[0]) : null;
     if (A) pts.push(A);
     for (const s of c.segs) {
       const t = s.translation();
       pts.push(new THREE.Vector3(t.x, t.y, t.z));
     }
-    pts.push(c.endUids[1] ? this.cableEndWorld(c.endUids[1]) : c.fixedEnd.clone());
+    pts.push(c.endUids[1] ? this.cableEndWorld(c.endUids[1], c.endLocal?.[1]) : c.fixedEnd.clone());
     return pts;
   }
-  cableRadius(c) { return CABLES[c.kind]?.r || 0.08; }
+  cableRadius(c) { return c.r || CABLES[c.kind]?.r || 0.08; }
 
   // ---------------- 工具（运动学碰撞体） ----------------
   setTool(kind) {
@@ -780,6 +815,11 @@ class Engine {
   }
 
   // ---------------- 主循环 ----------------
+  // 每个物理步之后调用的钩子（八爪鱼固件仿真等用；fn(dt)）
+  onTick(fn) {
+    (this.tickHooks ||= new Set()).add(fn);
+    return () => this.tickHooks.delete(fn);
+  }
   update(dt) {
     if (!this.ready) return;
     this.acc = Math.min(this.acc + dt, 4 / 120);
@@ -799,6 +839,7 @@ class Engine {
       if (asleep.length) this.world.propagateModifiedBodyPositionsToColliders();
       this.dragDepenetrate();
       this.settleStep();
+      if (this.tickHooks) for (const fn of this.tickHooks) fn(this.world.timestep);
       this.acc -= this.world.timestep;
     }
     // 掉出桌面的零件拉回来（防御：理论上围栏挡住了）
@@ -964,6 +1005,22 @@ class Engine {
   }
 }
 
+// 沿折线按弧长等分成 N 段（返回 N+1 个点，附带折线总长 len）
+function polyNodes(poly, N) {
+  const cum = [0];
+  for (let i = 1; i < poly.length; i++) cum.push(cum[i - 1] + poly[i].distanceTo(poly[i - 1]));
+  const total = cum[cum.length - 1];
+  const out = [];
+  let j = 1;
+  for (let i = 0; i <= N; i++) {
+    const d = (total * i) / N;
+    while (j < poly.length - 1 && cum[j] < d) j++;
+    const t = (d - cum[j - 1]) / Math.max(1e-9, cum[j] - cum[j - 1]);
+    out.push(poly[j - 1].clone().lerp(poly[j], Math.min(1, Math.max(0, t))));
+  }
+  out.len = total;
+  return out;
+}
 function ropeNodes(A, B, len, N, r) {
   const ab = B.clone().sub(A);
   const side = new THREE.Vector3(-ab.z, 0, ab.x);
