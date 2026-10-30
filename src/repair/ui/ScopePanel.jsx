@@ -24,7 +24,7 @@ export function captureOpts(s) {
   return { exp: s.exp, run: s.exp !== "steady" || undefined, tdiv: s.tdiv, pre: s.pre, chans, math: s.math ? { a: 0, b: 1 } : null, trig: s.trig.src === "none" ? null : { src: s.trig.src, slope: s.trig.slope, level: s.trig.level, mode: s.trig.mode === "single" ? "normal" : "auto" } };
 }
 
-export default function ScopePanel({ s, set, nodes, onCapture, running, testid = "scope", extra = null }) {
+export default function ScopePanel({ s, set, nodes, onCapture, running, testid = "scope", extra = null, ghost = null }) {
   const upd = (p) => set({ ...s, ...p });
   const updCh = (i, p) => set({ ...s, chans: s.chans.map((c, j) => (j === i ? { ...c, ...p } : c)) });
   const cap = s.cap;
@@ -34,17 +34,20 @@ export default function ScopePanel({ s, set, nodes, onCapture, running, testid =
     const W = cap.W, t0 = cap.t[0];
     const xOf = (t) => ((t - t0) / W) * GW;
     const out = [];
-    const mk = (d, vdiv, off, ac, color, key) => {
+    const mk = (d, vdiv, off, ac, color, key, src = cap, g = false) => {
       const mean = ac ? d.reduce((a, b) => a + b, 0) / d.length : 0;
       const step = Math.max(1, Math.floor(d.length / 1200));
+      const gx = (t) => ((t - src.t[0]) / src.W) * GW;
       let p = "";
-      for (let i = 0; i < d.length; i += step) { const y = GH / 2 - ((d[i] - mean + off) / vdiv) * DY; p += `${i ? "L" : "M"}${xOf(cap.t[i]).toFixed(1)},${Math.max(-5, Math.min(GH + 5, y)).toFixed(1)}`; }
-      out.push({ key, p, color, mean });
+      for (let i = 0; i < d.length; i += step) { const y = GH / 2 - ((d[i] - mean + off) / vdiv) * DY; p += `${i ? "L" : "M"}${(g ? gx(src.t[i]) : xOf(src.t[i])).toFixed(1)},${Math.max(-5, Math.min(GH + 5, y)).toFixed(1)}`; }
+      out.push({ key, p, color, mean, ghost: g });
     };
+    // v19：前后对比——上一次抓到的波形（改动之前）画成灰色虚线
+    if (ghost?.t?.length) s.chans.forEach((c, i) => { const d = ghost.ch?.[i]; if (c.on && d) mk(d, c.vdiv, c.off, c.ac, CH_COLOR[i], "g" + i, ghost, true); });
     s.chans.forEach((c, i) => { const d = cap.ch?.[i]; if (c.on && d) mk(d, c.vdiv, c.off, c.ac, CH_COLOR[i], "ch" + i); });
     if (s.math && cap.math) mk(cap.math, s.chans[0].vdiv, 0, false, MATH_COLOR, "math");
     return out;
-  }, [cap, s.chans, s.math]);
+  }, [cap, s.chans, s.math, ghost]);
   const at = (f) => { if (!cap?.t?.length) return null; const i = Math.min(cap.t.length - 1, Math.max(0, Math.round(f * (cap.t.length - 1)))); return { t: cap.t[i], v: s.chans.map((c, k) => (c.on && cap.ch?.[k] ? cap.ch[k][i] : null)), m: cap.math ? cap.math[i] : null }; };
   const c1 = at(s.cur[0]), c2 = at(s.cur[1]);
   const trigCh = s.chans[s.trig.src];
@@ -65,7 +68,7 @@ export default function ScopePanel({ s, set, nodes, onCapture, running, testid =
             {cap && cap.t?.length > 0 && <line x1={(cap.pre ?? 0.1) * GW} y1={0} x2={(cap.pre ?? 0.1) * GW} y2={GH} stroke="#888" strokeDasharray="3 3" strokeWidth={0.6} />}
             {trigY != null && trigY > 0 && trigY < GH && <g><line x1={0} y1={trigY} x2={GW} y2={trigY} stroke={CH_COLOR[s.trig.src]} strokeDasharray="2 4" strokeWidth={0.6} /><text x={GW - 2} y={trigY - 2} fontSize={9} fill={CH_COLOR[s.trig.src]} textAnchor="end">T {fV(s.trig.level)}</text></g>}
             {(cap?.thresholds || []).map((th) => { const c = s.chans[th.ch]; if (!c?.on || c.ac) return null; const y = GH / 2 - ((th.v + c.off) / c.vdiv) * DY; return y > 0 && y < GH && <g key={"th" + th.ch} data-testid={`${testid}-bo`}><line x1={0} y1={y} x2={GW} y2={y} stroke="#ff4040" strokeDasharray="6 3" strokeWidth={0.8} /><text x={3} y={y - 3} fontSize={9} fill="#ff7070">{th.zh}</text></g>; })}
-            {traces.map((tr) => <path key={tr.key} d={tr.p} stroke={tr.color} strokeWidth={1.2} fill="none" data-testid={`${testid}-trace-${tr.key}`} />)}
+            {traces.map((tr) => <path key={tr.key} d={tr.p} stroke={tr.color} strokeWidth={tr.ghost ? 1 : 1.2} strokeOpacity={tr.ghost ? 0.45 : 1} strokeDasharray={tr.ghost ? "3 2" : undefined} fill="none" data-testid={`${testid}-trace-${tr.key}`} />)}
             {cap?.t?.length > 0 && evs.map((e, i) => { const x = ((e.t - cap.t[0]) / cap.W) * GW; return x >= 0 && x <= GW && <g key={i}><line x1={x} y1={0} x2={x} y2={14} stroke={e.kind === "boot" ? "#7f7" : "#f55"} strokeWidth={1.5} /><text x={x + 2} y={10} fontSize={8} fill={e.kind === "boot" ? "#7f7" : "#f88"}>{{ reset: "复位", boot: "启动", "boost-hiccup": "打嗝", lowStop: "低压停" }[e.kind]}</text></g>; })}
             {[c1, c2].map((c, k) => c && <line key={"c" + k} x1={s.cur[k] * GW} y1={0} x2={s.cur[k] * GW} y2={GH} stroke="#ddd" strokeWidth={0.7} strokeDasharray={k ? "4 2" : undefined} />)}
             {!cap && <text x={GW / 2} y={GH / 2} fontSize={13} fill="#7a9" textAnchor="middle">选通道和节点，按“抓一次”</text>}
@@ -87,7 +90,7 @@ export default function ScopePanel({ s, set, nodes, onCapture, running, testid =
           {s.chans.map((c, i) => (
             <div key={i} className={`flex flex-wrap items-center gap-1 border-l-4 pl-1 ${s.active === i ? "bg-[#f5f0e6]" : ""}`} style={{ borderColor: CH_COLOR[i] }} data-testid={`${testid}-ch${i + 1}`}>
               <button type="button" className={c.on ? btnOn : btn} onClick={() => updCh(i, { on: !c.on })} data-testid={`${testid}-ch${i + 1}-on`}>CH{i + 1}</button>
-              <select className={sel} value={c.node} onChange={(e) => updCh(i, { node: e.target.value, on: true })} data-testid={`${testid}-ch${i + 1}-node`}><option value="">（未接）</option>{nodes.map((n) => <option key={n} value={n}>{n}</option>)}</select>
+              <select className={sel} value={c.node} onChange={(e) => updCh(i, { node: e.target.value, on: true })} data-testid={`${testid}-ch${i + 1}-node`}><option value="">（未接）</option>{nodes.map((n, k) => (typeof n === "string" ? <option key={n} value={n}>{n}</option> : <option key={k} value={n.node}>{n.zh}</option>))}</select>
               <select className={sel} value={c.vdiv} onChange={(e) => updCh(i, { vdiv: +e.target.value })} data-testid={`${testid}-ch${i + 1}-vdiv`}>{VDIVS.map((v) => <option key={v} value={v}>{fV(v)}/div</option>)}</select>
               <button type="button" className={c.ac ? btnOn : btn} onClick={() => updCh(i, { ac: !c.ac, off: !c.ac ? 0 : -2 })} data-testid={`${testid}-ch${i + 1}-ac`}>{c.ac ? "AC" : "DC"}</button>
               <button type="button" className={btn} onClick={() => updCh(i, { off: c.off + c.vdiv })} title="波形下移一格">▼</button>

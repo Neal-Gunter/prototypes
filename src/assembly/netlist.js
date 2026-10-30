@@ -108,7 +108,7 @@ function jointAt(part, a) {
 }
 
 // ---------------- 从台面推出电路 ----------------
-export function buildCircuit(engine) {
+export function buildCircuit(engine, opt = {}) {
   ensureRefs(engine);
   const uf = new UF();
   const T = (uid, k) => `${uid}|${k}`;
@@ -169,7 +169,8 @@ export function buildCircuit(engine) {
       if (parts.has(sv) && parts.has(hs)) ["GND", "VCC", "SIG"].forEach((n, k) => uf.union(T(sv, n), T(hs, `c${k}`)));
       continue;
     }
-    if (c.endUids[0] && c.endUids[1]) { uf.union(T(c.endUids[0], "c0"), T(c.endUids[1], "c0")); wires.push({ id: c.id, kind: c.kind, a: c.endUids[0], b: c.endUids[1] }); }
+    // v19：opt.wireR = 杜邦线不并成一个节点，留给时域网表单独算线阻
+    if (c.endUids[0] && c.endUids[1]) { if (!opt.wireR) uf.union(T(c.endUids[0], "c0"), T(c.endUids[1], "c0")); wires.push({ id: c.id, kind: c.kind, a: c.endUids[0], b: c.endUids[1], len: c.len }); }
   }
   // USB：插头插在板子的口上、线的另一头接电脑（线缆自由端）
   for (const pl of plugs) {

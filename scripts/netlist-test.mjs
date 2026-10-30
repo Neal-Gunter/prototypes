@@ -2,7 +2,7 @@
 // 用法：OUT=/tmp/nl node scripts/netlist-test.mjs
 import fs from "node:fs";
 import { benchSpec } from "../src/assembly/octopus/bench.js";
-import { octoWiresFromSpec, octoWiresFromEngine, octoBoard } from "../src/sim/benchNetlist.js";
+import { octoWiresFromSpec, octoWiresFromEngine, octoBoard, whatIf } from "../src/sim/benchNetlist.js";
 import { benchBoard } from "../src/sim/refBench.js";
 import { capture } from "../src/repair/tboard.js";
 const OUT = process.env.OUT || "/tmp/nl";
@@ -81,6 +81,16 @@ ok(Math.abs(c1.benchPP / c1.refPP - 1) < 0.25, "对照②并 470 µF（ESR 同�
 const c2 = pair("不加电容 · 老化电池", { batt: "aged" }, { rint: 0.25, caps: { CAP1: 0, CAP2: 0 } });
 ok(c2.benchResets === c2.refResets && Math.abs(c2.benchVbatMin - c2.refVbatMin) < 0.03, "对照③老化电池：复位次数相同、VBAT 最低值差 < 30 mV", `复位 ${c2.refResets} vs ${c2.benchResets}，VBAT 最低 ${c2.refVbatMin.toFixed(3)} vs ${c2.benchVbatMin.toFixed(3)} V`);
 for (const r of [c0, c1, c2]) ok(Math.abs(r.benchMin5 - r.refMin5) < 0.03, `对照「${r.case}」：5V 最低值差 < 30 mV`, `${r.refMin5.toFixed(3)} vs ${r.benchMin5.toFixed(3)} V`);
-fs.writeFileSync(`${OUT}/netlist-test.json`, JSON.stringify({ pass, fail, cmp, log }, null, 2));
+// 7 “如果……会怎样”面板（估算）
+const wi = {};
+for (const [k, o] of Object.entries({ base: {}, cap0: { cap: 0 }, cap1000: { cap: 1000e-6 }, aged: { batt: "aged" }, aged0: { batt: "aged", cap: 0 }, awg30: { awg: 30, cap: 0 } })) wi[k] = whatIf(W, o);
+const fmt = (r) => `复位 ${r.resets}，5V 最低 ${r.minRail.toFixed(3)} V，起步跌落 ${(r.servoDip * 1000).toFixed(0)} mV，电池峰值 ${r.ipk.toFixed(2)} A（${r.ms} ms）`;
+ok(Object.values(wi).every((r) => r.ok), "what-if 6 组全部跑完", Object.values(wi).map((r) => r.ms + " ms").join(" / "));
+ok(wi.cap0.servoDip > wi.base.servoDip && wi.base.servoDip > wi.cap1000.servoDip, "what-if：电容越大，舵机起步跌落越小", `0 / 100 / 1000 µF：${[wi.cap0, wi.base, wi.cap1000].map((r) => (r.servoDip * 1000).toFixed(0)).join(" / ")} mV`);
+ok(wi.base.resets === 0 && wi.aged.resets > 0 && wi.aged0.resets >= wi.aged.resets, "what-if：新电池不复位，老化电池会复位，再去掉电容复位不减少", `${wi.base.resets} / ${wi.aged.resets} / ${wi.aged0.resets}`);
+ok(Object.values(wi).every((r) => r.ipk > 0.5 && r.ipk < 6), "what-if：电池峰值电流在 0.5–6 A 之间（8 个舵机起步，估算）", Object.values(wi).map((r) => r.ipk.toFixed(2)).join(" / ") + " A");
+ok(wi.cap1000.ipkInrush > wi.base.ipkInrush, "what-if：电容越大，上电浪涌越大（估算）", `${wi.base.ipkInrush.toFixed(1)} → ${wi.cap1000.ipkInrush.toFixed(1)} A`);
+for (const [k, r] of Object.entries(wi)) log.push(`  what-if ${k}: ${fmt(r)}`);
+fs.writeFileSync(`${OUT}/netlist-test.json`, JSON.stringify({ pass, fail, cmp, whatIf: Object.fromEntries(Object.entries(wi).map(([k, r]) => [k, { opt: r.opt, resets: r.resets, minRail: r.minRail, servoDip: r.servoDip, ipk: r.ipk, ipkInrush: r.ipkInrush, ms: r.ms }])), log }, null, 2));
 console.log(`\n${pass} 通过 / ${fail} 失败`);
 process.exit(fail ? 1 : 0);

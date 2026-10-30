@@ -30,3 +30,7 @@ node scripts/v15-test.mjs || exit 1
 node scripts/link-test.mjs || exit 1
 # v17：维修关卡（12 关：故障读数 / 预期修法 / 打乱顺序 / 错误修法 / 有序关卡 / 编辑器）
 node scripts/repair-test.mjs || exit 1
+# v19：台面网表 → 时域仿真（八爪鱼 + 通用台面）+ 自适应步长
+node scripts/netlist-test.mjs >/dev/null || exit 1
+node e2e/bench-netlist-node.mjs >/dev/null || exit 1
+node scripts/adaptive-test.mjs >/dev/null || exit 1

@@ -5,6 +5,7 @@
 //   ② 通用台面（面包板 / 杜邦线 / Pico / Feather / LED / 电阻 / 按键 / 电位器 / 舵机）：沿用 netlist.js 的连通关系，杜邦线单独算线阻。
 // 所有没有出处的参数都标“估算”；我自己定的建模取舍标“我的补充”。
 import { AWG_OHM_M, conductors, pinNode } from "../repair/board.js";
+import { capture } from "../repair/tboard.js";
 
 // 线种 → 线规（AWG）和默认长度（cm，3D 台面上用实际走线长度覆盖）。全部估算（页面没写线规的按常见规格）。
 export const WIRE_SPEC = {
@@ -115,6 +116,8 @@ export function diagnose(b, extra = {}) {
   // 只有“电源 / 转换器”把两边连起来（负载两端不算：负载一头没接 = 悬空）
   for (const p of b.parts) { if (p.state?.present === false || !["bat", "dcin", "boost", "ldo"].includes(p.kind)) continue; const ps = Object.keys(p.pins); for (let i = 1; i < ps.length; i++) any.u(P(p, ps[0]), P(p, ps[i])); }
   for (const p of b.parts) if (p.kind === "mcu") for (const g of Object.keys(p.props.drive || {})) if (p.pins[g]) any.u(P(p, "VCC"), P(p, g)); // 主控输出脚由主控驱动
+  // 通用台面：电阻 / 电位器 / LED / 上拉也算通路（面包板上它们本来就是电路的一部分，不是“悬空的负载”）（我的补充）
+  if (b.template === "bench-generic") for (const p of b.parts) if (["load", "led"].includes(p.kind)) { const ps = Object.keys(p.pins); for (let i = 1; i < ps.length; i++) any.u(P(p, ps[0]), P(p, ps[i])); }
   const srcs = b.parts.filter((p) => SRC_KINDS.has(p.kind) && p.state?.present !== false);
   if (!srcs.length) errors.push({ k: "nosource", fatal: true, zh: "台面上没有电源（电池 / 适配器 / USB）：没法仿真" });
   for (const s of srcs) if (low.f(P(s, "+")) === low.f(P(s, "-"))) errors.push({ k: "short", fatal: true, zh: `短路：${s.zh} 的 + 和 − 之间只有导线 / 焊锡（< 1 Ω）`, ref: s.ref });
@@ -143,4 +146,149 @@ export function probesOf(b) {
   const out = Object.keys(b.nets).sort().map((n) => ({ node: n, zh: n, kind: "pin" }));
   for (const w of b.wires || []) { out.push({ node: w.a, zh: `线 ${w.id}（${w.zh}）A 端`, kind: "wire", wire: w.id }); out.push({ node: w.b, zh: `线 ${w.id}（${w.zh}）B 端`, kind: "wire", wire: w.id }); }
   return out;
+}
+
+// —— ② 通用台面（面包板 + 杜邦线 + Pico / Feather + LED / 电阻 / 按键 / 电位器 / 舵机） ——
+// 连通关系沿用 netlist.js（针脚插面包板、排针穿焊盘 + 焊点质量、跳线、杜邦线插头），杜邦线本身按 26AWG × 长度 + 两端插头接触电阻算（估算）。
+// 板子：插了 USB = 5 V 适配器（内阻 0.2 Ω，估算）→ 板载 3.3 V 稳压（LDO）→ 主控；没插 USB 但从别的板子 5V 排针取电 = 同一个网络。
+// 主控的输出脚按当前固件（elec.fw）的 pinMode / digitalWrite / 舵机脚驱动。
+// 我的补充：主控平均电流 Feather 50 mA / Pico 25 mA、欠压复位 2.7 V、SG90 类舵机起步 0.25 A、运行 0.15 A——都是估算。
+const DUPONT_CONTACT = 0.02; // 每个杜邦插头接触电阻（估算）
+const MCU_EST = { esp32s3: { i: 0.05, bo: 2.7 }, rp2040: { i: 0.025, bo: 2.7 } };
+export function genericBoard(engine, X, fw = {}, edits = {}) {
+  // X：netlist.js 的 { buildCircuit, boardOf, boardPins, termLabel, elemKind }（传进来，避免 sim 层依赖装配层）
+  const cir = X.buildCircuit(engine, { wireR: true });
+  const names = new Map(), used = new Set();
+  const net = (term) => {
+    const r = cir.uf.find(term);
+    if (names.has(r)) return names.get(r);
+    let nm = X.termLabel(engine, term).replace(/\s+/g, " ");
+    if (used.has(nm)) { let k = 2; while (used.has(`${nm} #${k}`)) k++; nm = `${nm} #${k}`; }
+    names.set(r, nm); used.add(nm); return nm;
+  };
+  const parts = [], wires = [], traces = [], unsupported = [], issues = [];
+  const removed = new Set(edits.removed || []);
+  let k = 0;
+  for (const e of cir.els) {
+    const P = engine.parts.get(e.uid), ref = P?.state.ref || "X";
+    if (e.t === "R") parts.push(mk(`${ref}${cir.els.filter((q) => q.uid === e.uid).length > 1 ? "_" + ++k : ""}`, "load", `${ref} ${e.r >= 1000 ? +(e.r / 1000).toFixed(2) + " kΩ" : +e.r.toFixed(2) + " Ω"}`, { 1: net(e.a), 2: net(e.b) }, { ohms: e.r }));
+    if (e.t === "LED") parts.push(mk(ref, "led", `${ref} LED`, { A: net(e.a), K: net(e.k) }, {}, { orient: 1 }));
+  }
+  const boards = [];
+  for (const P of engine.parts.values()) {
+    const B = X.boardOf(P.def);
+    if (!B) continue;
+    const ref = P.state.ref, pins = X.boardPins(P.def);
+    const T = (i) => cir.T(P.uid, `p${i}`);
+    const of = (role) => pins.map((p, i) => (p && p.role === role ? i : -1)).filter((i) => i >= 0);
+    const g = of("gnd"), v33 = of("3v3"), v5 = of("5v");
+    for (const grp of [g, v33, v5]) for (let i = 1; i < grp.length; i++) traces.push({ id: `${ref}-in-${grp[0]}-${grp[i]}`, a: net(T(grp[0])), b: net(T(grp[i])), state: {} }); // 板内同名脚
+    const G = g.length ? net(T(g[0])) : `${ref}:GND`, N33 = v33.length ? net(T(v33[0])) : `${ref}:3V3`, N5 = v5.length ? net(T(v5[0])) : `${ref}:VBUS`;
+    const st = fw?.[P.uid] || {};
+    const usb = cir.powered.get(P.uid) === "USB" && !st.off;
+    if (usb) parts.push(mk(`${ref}_USB`, "dcin", `${ref} USB 5 V（内阻 0.2 Ω，估算）`, { "+": N5, "-": G }, { v: 5, r: 0.2 }));
+    parts.push(mk(`${ref}_LDO`, "ldo", `${ref} 板载 3.3 V 稳压（估算）`, { IN: N5, OUT: N33, GND: G }, { vout: 3.3, drop: 0.3, iq: 5e-5, ilim: 0.6 }));
+    const mpins = { VCC: N33, GND: G }, drive = {};
+    pins.forEach((p, i) => {
+      if (!p || p.role !== "gpio" || p.gpio == null) return;
+      mpins[`p${i}`] = net(T(i));
+      const mode = st.modes?.[p.gpio];
+      if (st.servoPins?.has?.(p.gpio)) drive[`p${i}`] = 1;
+      else if (mode === "OUTPUT") drive[`p${i}`] = st.vals?.[p.gpio] ? 1 : 0;
+      else if (mode === "INPUT_PULLUP") parts.push(mk(`${ref}_PU${p.gpio}`, "load", `${ref} GPIO${p.gpio} 内部上拉（${((B.rPull || 45e3) / 1000).toFixed(0)} kΩ，估算）`, { 1: N33, 2: mpins[`p${i}`] }, { ohms: B.rPull || 45e3 }));
+    });
+    const est = MCU_EST[B.kind] || MCU_EST.rp2040;
+    parts.push(mk(ref, "mcu", `${ref} ${B.short}（3V3 供电）`, mpins, { i: est.i, bo: est.bo, vnom: 3.3, vio: B.vdd, drive, fw: {} }));
+    boards.push({ ref, uid: P.uid, usb, G });
+  }
+  if (boards.length > 1) issues.push({ k: "multi", zh: `台面上有 ${boards.length} 块主控板：时域仿真里舵机信号只认第一块（${boards[0].ref}）（我的补充）` });
+  // 舵机：三根线接到母头（servo-lead）→ 节点 T(servo, GND/VCC/SIG)
+  const mcuPart = parts.find((p) => p.kind === "mcu");
+  const viaW = new UF(); // 信号线经过杜邦线也算同一根信号
+  for (const w of cir.wires) viaW.u(net(cir.T(w.a, "c0")), net(cir.T(w.b, "c0")));
+  for (const P of engine.parts.values()) {
+    if (X.elemKind(P.def) !== "servo") continue;
+    const ref = P.state.ref, S = net(cir.T(P.uid, "SIG")), V = net(cir.T(P.uid, "VCC")), Gd = net(cir.T(P.uid, "GND"));
+    const sig = mcuPart ? Object.entries(mcuPart.pins).find(([pin, n]) => viaW.f(n) === viaW.f(S) && mcuPart.props.drive[pin] != null)?.[0] || null : null;
+    parts.push(mk(ref, "servo", `${ref} 舵机（SG90 类，电流估算）`, { S, V, G: Gd }, { iIdle: 0.01, iPeak: 0.15, iInrush: 0.25, sigPin: sig }));
+  }
+  // 杜邦线
+  for (const w of cir.wires) {
+    if (removed.has(w.id)) continue;
+    const awg = edits.awg?.[w.id] ?? WIRE_SPEC.dupont.awg, len = (w.len || WIRE_SPEC.dupont.len) / 100;
+    const A = engine.parts.get(w.a), Bp = engine.parts.get(w.b);
+    wires.push({ id: w.id, a: net(cir.T(w.a, "c0")), b: net(cir.T(w.b, "c0")), awg, len, zh: `杜邦线 ${A?.state.ref || "?"} → ${Bp?.state.ref || "?"}`, state: { awg, len, crimpR: 2 * DUPONT_CONTACT }, src: w.id });
+  }
+  // 不支持的零件：有电气引脚（腿 / 焊盘）但不在模型里
+  for (const P of engine.parts.values()) {
+    const kd = X.elemKind(P.def);
+    if (kd || X.boardOf(P.def)) continue;
+    if ((P.def.legs || []).length || (P.def.anchors || []).some((a) => a.t === "pinhole")) unsupported.push({ role: P.state.ref, id: P.def.id, zh: `${P.state.ref || P.def.id}（${P.def.name || P.def.id}）没有时域模型，没进网表` });
+  }
+  const b = { template: "bench-generic", name: "我的电路（台面上实际接好的）", ground: boards[0]?.G || "GND", parts, wires, traces, shorts: [], nets: {}, covers: [], testpoints: [], watch: {}, spec: [] };
+  for (const p of parts) for (const n of Object.values(p.pins)) b.nets[n] = n;
+  for (const w of wires) { b.nets[w.a] = w.a; b.nets[w.b] = w.b; }
+  for (const t of traces) { b.nets[t.a] = t.a; b.nets[t.b] = t.b; }
+  const r = finish(b, { unsupported, source: "generic", loose: [], issues });
+  for (const i of issues) r.warnings.push(i);
+  return r;
+}
+
+// 台面 → 网表：有八爪鱼导线（meta）就走 ①，否则走 ②
+export function extractBench(engine, X, fw = {}, edits = {}) {
+  const octo = (engine.cables || []).some((c) => c.meta?.a && c.meta?.b);
+  if (octo) { const W = octoWiresFromEngine(engine); return { ...octoBoard(W, edits), W, kind: "octo" }; }
+  return { ...genericBoard(engine, X, fw, edits), kind: "generic" };
+}
+
+// —— ④ 八爪鱼“如果……会怎样”：选电容 / 电池 / 线规 → 复位次数、最低电压、舵机起步跌落、电池峰值电流 ——
+export const WHATIF_CAPS = [0, 100e-6, 470e-6, 1000e-6];
+export const WHATIF_AWG = [20, 22, 26, 28, 30];
+const TRIG = { src: 0, slope: "rise", level: 1, mode: "auto" };
+// opt：{ cap: F（CAP1/CAP2 同时换）, batt: "fresh"|"mid"|"aged", awg: 电源线线规（null = 原样） }
+export function whatIf(W, opt = {}) {
+  const t0 = Date.now();
+  const powerWires = W.wires.filter((w) => /power|jst/.test(w.kind) || /BAT|IN|OUT|V\+|GND/.test(w.a[1] + w.b[1])).map((w) => w.id);
+  const edits = {
+    rint: BATT_AGE[opt.batt || "fresh"].rint,
+    caps: opt.cap == null ? undefined : { CAP1: opt.cap, CAP2: opt.cap },
+    awg: opt.awg ? Object.fromEntries(powerWires.map((id) => [id, opt.awg])) : undefined,
+  };
+  const r = octoBoard(W, edits);
+  if (!r.ok) return { ok: false, errors: r.errors, ms: Date.now() - t0 };
+  const bat = r.board.parts.find((p) => p.kind === "bat");
+  const mcu = r.board.parts.find((p) => p.kind === "mcu");
+  const rails = r.board.parts.filter((p) => p.kind === "boost").map((p) => p.pins.OUT);
+  const cell = `${bat.ref}#cell`, neg = pinNode(bat.ref, "-");
+  const chans = [{ node: rails[0] || mcu.pins.VCC }, { node: rails[1] || rails[0] || mcu.pins.VCC }, { node: mcu.pins.VCC }, { node: cell }, { node: neg }];
+  const res = {};
+  let ocv = null;
+  for (const [ph, cfg] of [["power", { exp: "power", tdiv: 5e-3 }], ["run", { exp: "run", tdiv: 2e-3 }]]) {
+    const c = capture(r.board, { ...cfg, run: true, pre: 0.05, trig: TRIG, chans });
+    // 电池电流（估算）：电芯源 + 欧姆内阻那一段（内阻 × 0.6，见 devices.lipo）上的压降 / 电阻；开路电压按开始时刻近似
+    const vb = c.ch[3].map((v, i) => v - c.ch[4][i]); // 电芯节点 − 电池负极（扣掉回地导线上的压降）
+    const rS = edits.rint * 0.6;
+    if (ocv == null) ocv = vb[0]; // 上电前（开关断开）电芯没电流 = 开路电压
+    let ipk = 0;
+    // 电芯节点到 “−” 的电压 = ocv − I·rS（“−”就是地夹，所以 ch 读的就是对地值）
+    for (let i = 0; i < vb.length; i++) ipk = Math.max(ipk, (ocv - vb[i]) / rS);
+    const pre = (d) => { const n = Math.max(1, Math.floor(d.length * 0.04)); return d.slice(0, n).reduce((a, b) => a + b, 0) / n; };
+    const minRail = Math.min(c.meas[0].min, c.meas[1].min);
+    res[ph] = {
+      resets: c.dev[mcu.ref]?.resets ?? 0,
+      minRail, mcuMin: c.meas[2].min,
+      dip: Math.max(pre(c.ch[0]) - c.meas[0].min, pre(c.ch[1]) - c.meas[1].min),
+      ipk, ms: c.ms, events: c.allEvents.length,
+    };
+  }
+  const guessed = ["电池内阻（" + BATT_AGE[opt.batt || "fresh"].zh + "）", "电容 ESR 0.3 Ω", "舵机起步电流", "线规（硅胶线 / 舵机引线按常见规格）"];
+  return {
+    ok: true, opt, edits, guessed,
+    resets: res.power.resets + res.run.resets,
+    minRail: res.run.minRail, // 运行中 5 V 轨最低（上电阶段从 0 V 爬升，不算）
+    servoDip: res.run.dip,
+    ipk: res.run.ipk, // 运行中（舵机起步）电池峰值电流，估算
+    ipkInrush: res.power.ipk, // 上电瞬间给电容充电的浪涌（微秒级尖峰），估算
+    phases: res, ms: Date.now() - t0,
+  };
 }
