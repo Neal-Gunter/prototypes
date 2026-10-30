@@ -167,18 +167,19 @@ function plate() {
     studCols.push(box(x - r, x + r, mm(t), mm(t + L.studs.len), z - r, z + r));
   }
   anchors.push({ t: "bb-area", p: [mm(L.bb.c[0]), mm(t), mm(L.bb.c[1])], w: mm(L.bb.w), d: mm(L.bb.d) });
+  const baseCols = [
+    box(-mm(w) / 2, mm(w) / 2, mm(foot), mm(t), -mm(d) / 2, mm(d) / 2),
+    ...[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([sx, sz]) => box(sx * mm(w / 2 - 12) - 0.5, sx * mm(w / 2 - 12) + 0.5, 0, mm(foot), sz * mm(d / 2 - 12) - 0.5, sz * mm(d / 2 - 12) + 0.5)),
+    ...studCols,
+  ];
   return {
     id: "p-baseplate",
     name_zh: "底板 180×120（3 mm 亚克力 + 脚垫，自制）",
     name: "Base plate 180×120×3 acrylic (our design)",
     cat: "enclosure",
     proc: { type: "plate", w, d, t: th, foot },
-    colliders: [
-      box(-mm(w) / 2, mm(w) / 2, mm(foot), mm(t), -mm(d) / 2, mm(d) / 2),
-      ...[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([sx, sz]) => box(sx * mm(w / 2 - 12) - 0.5, sx * mm(w / 2 - 12) + 0.5, 0, mm(foot), sz * mm(d / 2 - 12) - 0.5, sz * mm(d / 2 - 12) + 0.5)),
-      ...studCols,
-    ],
-    dims_mm: { x: w, y: t, z: d },
+    colliders: baseCols,
+    dims_mm: { x: w, y: Math.round(Math.max(...baseCols.map((c) => c.c[1] + c.h[1])) * 100) / 10, z: d }, // v20：高度含压铆螺柱（之前只算板 + 脚垫）
     dims_src: "本项目设计尺寸",
     spec: "3 mm 亚克力 + 四角 6 mm 脚垫（估算）。孔位：Feather ESP32‑S3 的 4 个 M2.5 攻丝通孔（按官方 CAD）、Pico 47.0×11.4 的 4 个 M2 攻丝通孔、两根 M3×8 压铆螺柱、面包板贴胶区",
     density: DENSITY.acrylic,

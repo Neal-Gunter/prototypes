@@ -175,7 +175,7 @@ const CELLS = {
 function cell(k) {
   const [zh, d, L, v, mat] = CELLS[k], r = mm(d) / 2, l = mm(L);
   return mk({ id: `p-cell-${k.toLowerCase()}`, name_zh: `${zh} Φ${d}×${L}`, name: `Cell ${k}`, cat: "power", prims: [{ k: "cyl", c: [0, r, 0], r, h: l, ax: "x", m: mat === "liion" ? "blue" : "black" }, { k: "cyl", c: [l / 2 + mm(0.5), r, 0], r: r * 0.35, h: mm(1), ax: "x", m: "steel" }],
-    colliders: [cylBox([0, r, 0], r, l + mm(1), "x")], dims_mm: { x: L, y: d, z: d }, dims_src: mat === "alk" ? "IEC 60086 最大外形" : "锂电命名规则（直径 × 长度，带保护板会更长）", spec: `标称 ${v}`, volt: v, iface: ["battery"], density: D[mat],
+    colliders: [cylBox([0, r, 0], r, l, "x")], dims_mm: { x: L, y: d, z: d }, dims_src: mat === "alk" ? "IEC 60086 最大外形" : "锂电命名规则（直径 × 长度，带保护板会更长）", spec: `标称 ${v}`, volt: v, iface: ["battery"], density: D[mat],
     est: ["容量、内阻、质量（估算）"] });
 }
 const COINS = { CR2032: [20, 3.2], CR2025: [20, 2.5], CR2016: [20, 1.6], CR1220: [12.5, 2.0], CR1632: [16, 3.2], CR2450: [24.5, 5.0], LR44: [11.6, 5.4] };
