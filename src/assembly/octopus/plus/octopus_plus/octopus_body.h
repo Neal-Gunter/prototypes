@@ -19,6 +19,13 @@
 #if __has_include("octopus_gait_custom.h")
 #include "octopus_gait_custom.h"
 #endif
+// v14 我的补充：台面闭环面板导出的增益（有这个文件 → 打开 IMU + 闭环倾斜 / 航向 PD）
+#if __has_include("octopus_ctrl_custom.h")
+#include "octopus_ctrl_custom.h"
+#endif
+#endif
+#ifdef OCTO_CTRL_CUSTOM
+#include "octopus_ctrl.h"
 #endif
 
 namespace octo {
@@ -49,6 +56,11 @@ inline int ChannelOf(RigType rig, int arm, int slot) {
 
 class OctopusBody {
 public:
+#ifdef OCTO_CTRL_CUSTOM
+    // v14：IMU 读数回调（在运动任务里、每 20 ms 调一次）；读不到返回 false → 这一拍开环
+    using ImuReadFn = bool (*)(void* ctx, ImuSample& out);
+    void SetImu(ImuReadFn fn, void* ctx) { imu_fn_ = fn; imu_ctx_ = ctx; }
+#endif
     static constexpr const char* kTag = "OctopusBody";
 
     // 我的补充：相邻触手机械间隙（°，按 3D 结构估算，需实物验证）
@@ -179,7 +191,12 @@ private:
                 gait_.SetSteer(c.steer);
                 cycles_left_ = c.n;
                 cycle_mark_ = gait_.Cycles();
-                if (mode_ != Mode::kGait) custom_t_ = 0.0f;  // v13：自定义步态从 t = 0 开始
+                if (mode_ != Mode::kGait) {
+                    custom_t_ = 0.0f;  // v13：自定义步态从 t = 0 开始
+#ifdef OCTO_CTRL_CUSTOM
+                    ctrl_.Reset();     // v14：航向目标 = 起步时的朝向
+#endif
+                }
                 Enter(Mode::kGait);
                 break;
             case CmdType::kRest:
@@ -265,11 +282,22 @@ private:
             return;
         }
         float yaw[kArmCount];
+        float sc[kArmCount], off[kArmCount];
+        for (int a = 0; a < kArmCount; a++) { sc[a] = 1.0f; off[a] = 0.0f; }
+#ifdef OCTO_CTRL_CUSTOM
+        {   // v14：闭环（和台面 JS 孪生同式）
+            ImuSample s;
+            if (imu_fn_ && imu_fn_(imu_ctx_, s)) {
+                const TiltController::Out o = ctrl_.Step(s, dt);
+                for (int a = 0; a < kArmCount; a++) { sc[a] = o.sc[a]; off[a] = o.off[a]; }
+            }
+        }
+#endif
 #ifdef OCTO_GAIT_CUSTOM
         custom_t_ += dt;
-        for (int a = 0; a < kArmCount; a++) yaw[a] = custom_gait::Yaw(a, custom_t_, gait_.CustomScale(a));
+        for (int a = 0; a < kArmCount; a++) yaw[a] = custom_gait::Yaw(a, custom_t_, gait_.CustomScale(a) * sc[a]) + off[a];
 #else
-        for (int a = 0; a < kArmCount; a++) yaw[a] = gait_.Yaw(a);
+        for (int a = 0; a < kArmCount; a++) yaw[a] = gait_.Yaw(a) * sc[a] + off[a];
 #endif
         // 我的补充：邻臂防撞
 #if OCTO_V10
@@ -341,6 +369,11 @@ private:
     bool want_relax_ = false;
     float idle_t_ = 0.0f;
     float custom_t_ = 0.0f;  // v13：自定义步态的时间（秒）
+#ifdef OCTO_CTRL_CUSTOM
+    TiltController ctrl_;           // v14
+    ImuReadFn imu_fn_ = nullptr;
+    void* imu_ctx_ = nullptr;
+#endif
     int cycles_left_ = 0;
     uint32_t cycle_mark_ = 0;
     int home_idx_ = 0;

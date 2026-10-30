@@ -49,6 +49,7 @@ export class LedcBoard {
 // ---------------- octopus_gait.h ----------------
 export const kArmCount = 8;
 export const defaultGait = () => ({ freq_hz: 0.6, yaw_amp_deg: 38, lift_amp_deg: 20, phase_deg: 45, duty: 0.65 });
+import { TiltCtrl, octoCorrections, OCTO_CTRL } from "../../gait/ctrl.js";
 export class Gait {
   constructor(F) { this.F = F; this.params_ = defaultGait(); this.phase_ = 0; this.steer_ = 0; this.throttle_ = 1; this.spinTurn = false; }
   SetParams(p) { this.params_ = { ...p }; }
@@ -195,6 +196,8 @@ export class OctopusBody {
   SetVelocity(t, s) { this.gait_.SetThrottle(t); this.gait_.SetSteer(s); if (this.mode_ !== "gait") this.custom_t_ = 0; this.mode_ = "gait"; this.wantRelax = false; }
   // v13：相当于把 octopus_gait_custom.h 编进固件（null = 默认步态）。g 的格式见 src/gait/gait.js
   SetCustomGait(g) { this.custom_ = g || null; this.custom_t_ = 0; }
+  // v14（我的补充，octopus_ctrl.h 的 JS 孪生）：闭环倾斜 / 航向 PD。cfg = null → 开环。IMU 读不到 → 也是开环
+  SetController(cfg) { this.ctrlCfg_ = cfg ? { ...OCTO_CTRL, ...cfg } : null; this.ctrl_ = cfg ? new TiltCtrl(this.ctrlCfg_) : null; this.ctrlOut = null; }
   SetGaitParams(p) { this.gait_.SetParams(p); }
   GaitParamsSnapshot() { return { ...this.gait_.Params() }; }
   Rest() { this.mode_ = "idle"; this.crawlCycles = null; this.wantRelax = true; this.ReleaseHard(); }
@@ -226,9 +229,11 @@ export class OctopusBody {
     const before = this.gait_.phase_;
     this.gait_.Tick(dt);
     if (this.crawlCycles != null && this.gait_.phase_ < before) { if (--this.crawlCycles <= 0) { this.crawlCycles = null; this.mode_ = "idle"; this.bank_.ReleaseAll(); return; } }
-    let yaw;
-    if (this.custom_) { this.custom_t_ = (this.custom_t_ || 0) + dt; yaw = Array.from({ length: kArmCount }, (_, a) => customYaw(this.custom_.joints[a], this.custom_t_, this.gait_.CustomScale(a))); }
-    else yaw = Array.from({ length: kArmCount }, (_, a) => this.gait_.Yaw(a));
+    let yaw, corr = null;
+    const smp = this.ctrl_ && this.rt.imuRead ? this.rt.imuRead() : null;
+    if (smp) { const out = this.ctrl_.step(smp, dt); corr = octoCorrections(out, this.ctrlCfg_, Gait.MountAngle); this.ctrlOut = { ...out, ...corr }; }
+    if (this.custom_) { this.custom_t_ = (this.custom_t_ || 0) + dt; yaw = Array.from({ length: kArmCount }, (_, a) => customYaw(this.custom_.joints[a], this.custom_t_, this.gait_.CustomScale(a) * (corr ? corr.sc[a] : 1)) + (corr ? corr.off[a] : 0)); }
+    else yaw = Array.from({ length: kArmCount }, (_, a) => this.gait_.Yaw(a) * (corr ? corr.sc[a] : 1) + (corr ? corr.off[a] : 0));
     if (this.F.antiCollide) AntiCollide(yaw, this.rt.board === "v10" ? MIN_GAP.v10 : MIN_GAP[this.rt.plan] + 3);
     for (let a = 0; a < kArmCount; a++) this.WriteArm(a, yaw[a], this.gait_.Lift(a));
   }

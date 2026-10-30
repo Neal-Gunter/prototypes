@@ -20,3 +20,7 @@ node e2e/artic-bench.mjs || exit 1
 # v13：闭环连杆（四连杆 / 曲柄滑块 / 平行四边形 / 锁死）
 node scripts/loop-test.mjs || exit 1
 node scripts/gait-test.mjs || exit 1
+# v14：自动步态搜索（CMA-ES / Worker 任务）+ 闭环倾斜 / 航向 + MPU-6050
+node scripts/search-test.mjs || exit 1
+node scripts/v14-test.mjs || exit 1
+node scripts/ctrl-test.mjs || exit 1

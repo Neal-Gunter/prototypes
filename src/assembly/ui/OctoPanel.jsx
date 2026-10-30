@@ -11,8 +11,11 @@ import { LOCO_EST, MG90S } from "../octopus/loco.js";
 import { parseNL } from "../octopus/nl.js";
 import GaitEditor from "../../gait/GaitEditor.jsx";
 import { preset, OCTO_NAMES, OCTO_SIDE, octoFirmwareGait, sanitizeGait, toFirmwareHeader } from "../../gait/gait.js";
-import { octoRowGait } from "../../gait/octo-best.js";
+import { octoRowGait, octoV14Gait } from "../../gait/octo-best.js";
 import { runGait } from "../../gait/octo-measure.js";
+import GaitSearch from "../../gait/GaitSearch.jsx";
+import CtrlPanel from "../../gait/CtrlPanel.jsx";
+import { OCTO_CTRL, SimImu, toCtrlHeader } from "../../gait/ctrl.js";
 
 let detach = null;
 export function octoDetach() { detach?.(); detach = null; }
@@ -76,7 +79,8 @@ function TopView({ snap, plan }) {
 // v13：八爪鱼的步态预设（我的补充）。左右舷按 cos(安装角) 加权，前后两条触手权重 0（和固件默认步态同一个约定）
 const OCTO_PRESETS = [
   { k: "firmware", zh: "固件默认", make: octoFirmwareGait },
-  { k: "row", zh: "同步划桨（搜索最优）", make: octoRowGait },
+  { k: "row", zh: "同步划桨（v13 搜索）", make: octoRowGait },
+  { k: "v14", zh: "v14 自动搜索（速度优先）", make: octoV14Gait },
   { k: "alternating", zh: "交替", make: () => preset("alternating", OCTO_NAMES, { amp: 40, freq: 0.8, weights: OCTO_SIDE }) },
   { k: "wave", zh: "波浪", make: () => preset("wave", OCTO_NAMES, { amp: 40, freq: 0.8, weights: OCTO_SIDE }) },
   { k: "tripod", zh: "三组轮换（类三足）", make: () => preset("tripod", OCTO_NAMES, { amp: 40, freq: 0.8, weights: OCTO_SIDE }) },
@@ -84,7 +88,11 @@ const OCTO_PRESETS = [
 function OctoGait({ variant, plan, mu, send }) {
   const [g, setG] = useState(octoRowGait);
   const [on, setOn] = useState(false);
-  return <GaitEditor gait={g} setGait={setG} presets={OCTO_PRESETS} rateLimit={300} tid="octo-gait"
+  const run = (x) => { octoSim.rt?.body?.SetCustomGait(sanitizeGait(x, 8)); setOn(true); send("GO"); };
+  const hdr = (x) => ({ name: "octopus_gait_custom.h", text: toFirmwareHeader(sanitizeGait(x, 8), { stamp: new Date().toISOString().slice(0, 10) }) });
+  const measure1 = async (o) => { const r = await runGait({ gait: sanitizeGait(g, 8), sec: 15, mu: mu ?? 0.5, variant, plan, ...o }); try { r.lp?.world?.free(); } catch { /* 已释放 */ } return { speed: r.speed, dx: r.dx, dh: r.dh, tiltGMax: r.tiltGMax ?? r.tiltMax, tiltGAvg: r.tiltGAvg ?? r.tiltAvg }; };
+  return <>
+  <GaitEditor gait={g} setGait={setG} presets={OCTO_PRESETS} rateLimit={300} tid="octo-gait"
     time={on ? octoSim.rt?.body?.custom_t_ ?? null : null}
     onRun={(x) => { octoSim.rt?.body?.SetCustomGait(sanitizeGait(x, 8)); setOn(true); send("GO"); }}
     onStop={() => { send("STOP"); octoSim.rt?.body?.SetCustomGait(null); setOn(false); }}
@@ -96,7 +104,21 @@ function OctoGait({ variant, plan, mu, send }) {
       return rest;
     }}
     exports={[{ k: "h", zh: "固件头文件 octopus_gait_custom.h", make: (x) => ({ name: "octopus_gait_custom.h", text: toFirmwareHeader(sanitizeGait(x, 8), { stamp: new Date().toISOString().slice(0, 10) }) }) }]}
-    note={`“在台面上跑”= 相当于把导出的 octopus_gait_custom.h 编进固件再发 GO（固件孪生里调 Body.SetCustomGait），照样过防碰撞、限位 90±55°、限速 300 °/s；“停”回到固件默认步态。测量在后台另开一个同配置（${variant} · 方案 ${plan}）的台面跑，桌面 μ 用上面的滑杆（冰面对照用 0）。同步划桨是 scripts/gait-search.mjs 仿真搜出来的（我的补充，未上实机）。`} />;
+    note={`“在台面上跑”= 相当于把导出的 octopus_gait_custom.h 编进固件再发 GO（固件孪生里调 Body.SetCustomGait），照样过防碰撞、限位 90±55°、限速 300 °/s；“停”回到固件默认步态。测量在后台另开一个同配置（${variant} · 方案 ${plan}）的台面跑，桌面 μ 用上面的滑杆（冰面对照用 0）。同步划桨是 scripts/gait-search.mjs 仿真搜出来的（我的补充，未上实机）。`} />
+  <GaitSearch kind="octo" tid="octo-search" makeJob={() => ({ gait0: sanitizeGait(g, 8), variant, plan, sec: 10 })}
+    onApply={(x) => setG(x)} onPreview={(x) => { setG(x); run(x); }}
+    exports={[{ k: "h", zh: "导出固件头文件 .h", make: hdr }]}
+    note="每次评估 = 在固件孪生（Rapier 刚体 + 舵机限速 + 防碰撞）里跑 4 s 站稳 + 10 s 步态，比实时快约 10 倍。搜出来的只在仿真里好（估算），上实机前请先低速、短时验证。" />
+  <CtrlPanel tid="octo-ctrl" defaults={OCTO_CTRL} loadKind="load" defaultSlope={3}
+    onLive={(c, sl) => { if (c) { octoSim.attachImu(new SimImu()); octoSim.rt?.body?.SetController(c); octoSim.phys?.setSlope(sl?.deg || 0, sl?.dir || "cross"); } else { octoSim.rt?.body?.SetController(null); octoSim.attachImu(null); octoSim.phys?.setSlope(0); } }}
+    runCompare={async ({ ctrl, slope, load, onProgress }) => {
+      const open = await measure1({ slope, load, onProgress: (p) => onProgress(p / 2) });
+      const closed = await measure1({ slope, load, ctrl, imu: {}, onProgress: (p) => onProgress(0.5 + p / 2) });
+      return { open, closed, label: `当前步态 15 s · ${slope ? `${slope.deg}° ${slope.dir}` : "平地"}${load ? " · 加负载" : ""}` };
+    }}
+    exports={[{ k: "h", zh: "导出 octopus_ctrl_custom.h", make: (c) => ({ name: "octopus_ctrl_custom.h", text: toCtrlHeader(c) }) }]}
+    note="八爪鱼的倾斜靠底下 3 个万向球撑着、自己倾不了多少，所以这里主要调航向：IMU 测到偏航就把偏向那一侧的划桨幅度减小（只减不增，不会超限速）。横坡上万向球会往下滚，侧漂基本拦不住（简化仿真的诚实结论）；横坡上转向符号会反过来，固件按横滚角自动切换（仿真经验规则，估算）。实机需要加一块 MPU-6050（我的补充）。" />
+  </>;
 }
 function LocoBox({ L, mu, setMu }) {
   const g = (kg) => (kg * 1000).toFixed(0);

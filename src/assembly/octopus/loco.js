@@ -52,7 +52,9 @@ export class LocoPhys {
   // 浏览器和 node 都能用：先 init Rapier（只做一次），再建
   static async create(sim, opts) { await (rapierReady ||= RAPIER.init()); return new LocoPhys(RAPIER, sim, opts); }
   // R = 已 init 的 RAPIER；sim = OctoSim；c = 机身中心在世界里的位置（cm，y = 桌面）
-  constructor(R, sim, { c = [0, 0, 0], mu = 0.5, dt = 1 / 240, tanOff = 1.52, pad = [0.15, 0.45] } = {}) {
+  constructor(R, sim, { c = [0, 0, 0], mu = 0.5, dt = 1 / 240, tanOff = 1.52, pad = [0.15, 0.45], massScale = 1, trimDeg = null, slope = null } = {}) {
+    // v14（我的补充）：鲁棒性测试用 —— massScale = 机身质量倍数；trimDeg[a] = 第 a 条触手偏航舵机的装配零位误差（°）；slope = {deg, dir} 斜坡
+    this.massScale = massScale; this.trim = trimDeg;
     this.tanOff = tanOff; // B 俯仰舵机轴的切向偏置（CAD：+1.52 cm，八条同一侧）
     this.pad = pad; /* v13：单向脚垫 [逆向, 顺向] 摩擦（估算，灵敏度测试用） */ this.R = R; this.sim = sim; this.c = c; this.mu = mu; this.dt = dt;
     const B = sim.bench; this.plan = B.plan; this.variant = B.variant; this.hw = B.plusHw || {};
@@ -61,11 +63,35 @@ export class LocoPhys {
     this.world.lengthUnit = 100; this.world.timestep = dt; this.world.numSolverIterations = 10; this.world.numInternalPgsIterations = 4; // 舵机链质量比大（机身 ≈ 30× 触手），迭代少了马达推不动（实测）
     const gb = this.world.createRigidBody(R.RigidBodyDesc.fixed());
     this.ground = this.world.createCollider(R.ColliderDesc.cuboid(300, 1, 300).setTranslation(c[0], -1, c[2]).setFriction(1).setFrictionCombineRule(R.CoefficientCombineRule.Min).setCollisionGroups(groups(GRP_GROUND, GRP_ROBOT)), gb);
-    this.m = bodyMassKg(this.plan, this.variant);
+    { const m0 = bodyMassKg(this.plan, this.variant); this.m = { ...m0, torso: m0.torso * massScale, total: m0.total + m0.torso * (massScale - 1) }; }
+    this.loads = [];
     // 几何：v9 = md 方案 A/B（FRAME、MG90S）；v10 = 紧凑无线版（GEO_V10，和 3D 装配同一份 CAD 尺寸）
     this.geo = this.variant === "v10" ? GEO_V10 : { plateR: FRAME.R, plateT: FRAME.t, yawR: 3.8, yawH: FRAME.t + 3.07, tip: [8.75, -3.2], seg: [[1.0, 0.15], [7.3, -2.5]], segR: 0.18, horn: [0.6, 0.2, 0.3], hornAt: 0.6, armI: ARM_I, comY: 2, rg: 5, stall: stallKgfCm, servoMass: MG90S.mass };
     this.build();
+    if (slope) this.setSlope(slope.deg, slope.dir);
     this.reset();
+  }
+  // v14：斜坡 = 把重力方向倾斜 deg 度（和把桌面倾斜 deg 度在物理上等价，我的补充）。
+  // dir = 下坡方向（机身起始坐标系）："cross" = 往右（+x，横坡）、"down" = 往前（−z，下坡）、"up" = 往后（+z，上坡）
+  setSlope(deg = 0, dir = "cross") {
+    const a = ((+deg || 0) * Math.PI) / 180, d = dir === "down" ? [0, -1] : dir === "up" ? [0, 1] : dir === "crossL" ? [-1, 0] : [1, 0];
+    this.slope = { deg: +deg || 0, dir };
+    this.world.gravity = { x: G * Math.sin(a) * d[0], y: -G * Math.cos(a), z: G * Math.sin(a) * d[1] };
+  }
+  // v14：在机身上突然加一个负载（g 克，放在机身坐标 x 右 / z 后 cm、高 y cm 处）。直接固定在机身上（不模拟掉落弹跳，我的补充）
+  addLoad({ g = 30, x = 3, z = 0, y = null } = {}) {
+    const R = this.R, yy = y ?? this.geo.yawH + 0.5;
+    const col = this.world.createCollider(R.ColliderDesc.cuboid(0.8, 0.5, 0.8).setTranslation(x, yy, z).setMass(g / 1000).setCollisionGroups(groups(GRP_ROBOT, 0)), this.body);
+    this.loads.push({ col, g, x, y: yy, z }); this.m.total += g / 1000;
+    return col;
+  }
+  // v14：IMU 真值（传感器装在机身中心，X = 机身前方、Y = 左、Z = 上，MPU6050 的右手系，安装方向是我的补充）。
+  // acc = 比力（a − g）/ 981，单位 g；gyro = 角速度 °/s。加速度用机身质心速度的差分（忽略传感器离质心的偏移）
+  imuTruth() {
+    const q = this.body.rotation(), g = this.world.gravity, a = this.aW || { x: -g.x, y: -g.y, z: -g.z };
+    const f = rotInv(q, [a.x / G, a.y / G, a.z / G]);
+    const w = this.body.angvel(), wl = rotInv(q, [w.x, w.y, w.z]), k = 180 / Math.PI;
+    return { acc: [-f[2], -f[0], f[1]], gyro: [-wl[2] * k, -wl[0] * k, wl[1] * k] };
   }
   build() {
     const R = this.R, W = this.world, [cx, , cz] = this.c, m = this.m, GE = this.geo;
@@ -164,7 +190,7 @@ export class LocoPhys {
     for (const L of this.legs) for (const J of L.joints) {
       const s = this.servoOf(L.a, J.slot);
       const powered = s && s.cmd != null;
-      const tgt = s ? (((s.ang - 90) * Math.PI) / 180) * J.sign : 0;
+      const tgt = s ? (((s.ang - 90 + (J.slot === 0 && this.trim ? this.trim[L.a] || 0 : 0)) * Math.PI) / 180) * J.sign : 0;
       // 刚度：偏差 5° 出满扭矩（估算）；阻尼按关节等效惯量算到接近临界（估算）
       const k = powered ? T / ((5 * Math.PI) / 180) : 0, c = powered ? 0.08 * k : T * 0.02;
       J.j.configureMotorPosition(tgt, k, c); J.k = k;
@@ -181,8 +207,10 @@ export class LocoPhys {
         L.tipCol.setFriction(mu * (this.mu / 0.5)); L.segCol.setFriction(mu * (this.mu / 0.5));
       }
     }
+    const v0 = this.body.linvel();
     this.world.step();
     this.t += dt;
+    { const v1 = this.body.linvel(), g = this.world.gravity; this.aW = { x: (v1.x - v0.x) / dt - g.x, y: (v1.y - v0.y) / dt - g.y, z: (v1.z - v0.z) / dt - g.z }; } // v14：比力（世界系，cm/s²）
     { const h = this.heading(); let d = h - this.hLast; d = ((d + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; this.hAcc += d; this.hLast = h; }
     // —— 测量 ——
     let contacts = 0, slip = 0, stroke = 0; const load = [], torque = [];
@@ -278,6 +306,7 @@ const quatY = (a) => ({ w: Math.cos(a / 2), x: 0, y: Math.sin(a / 2), z: 0 });
 const quatZ = (a) => ({ w: Math.cos(a / 2), x: 0, y: 0, z: Math.sin(a / 2) });
 function mulQ(a, b) { return { w: a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z, x: a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y, y: a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x, z: a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w }; }
 function rotVec(q, v) { const [x, y, z] = v, { w, x: qx, y: qy, z: qz } = q; const ix = w * x + qy * z - qz * y, iy = w * y + qz * x - qx * z, iz = w * z + qx * y - qy * x, iw = -qx * x - qy * y - qz * z; return [ix * w + iw * -qx + iy * -qz - iz * -qy, iy * w + iw * -qy + iz * -qx - ix * -qz, iz * w + iw * -qz + ix * -qy - iy * -qx]; }
+function rotInv(q, v) { return rotVec({ w: q.w, x: -q.x, y: -q.y, z: -q.z }, v); }
 function worldPoint(rb, l) { const t = rb.translation(), r = rotVec(rb.rotation(), [l.x, l.y, l.z]); return { x: t.x + r[0], y: t.y + r[1], z: t.z + r[2] }; }
 function pose(rb) { const t = rb.translation(), q = rb.rotation(); return { p: [t.x, t.y, t.z], q: [q.x, q.y, q.z, q.w] }; }
 function tiltDeg(q) { const u = rotVec(q, [0, 1, 0]); return (Math.acos(Math.max(-1, Math.min(1, u[1]))) * 180) / Math.PI; }

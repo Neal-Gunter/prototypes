@@ -268,7 +268,28 @@ function vdiv1s() {
     octo: { pins, ties: [] },
   });
 }
-export const OCTO_PROCEDURAL = [devkit(), inmp441(), oled(), xl4015("6v"), xl4015("5v"), battery(), pack3s(), vdiv(), frame(), arm(), bracketB(), armB(), frameV10(), armV10(), vdiv1s()];
+// ---------- v14：MPU-6050 六轴 IMU（Adafruit 3886，STEMMA QT）——闭环倾斜 / 航向用（我的补充） ----------
+// 外形 26.0 × 17.8 × 4.6 mm、1.8 g 取自 Adafruit 3886 产品页；板上布局（两个 STEMMA QT 座、芯片位置、焊盘排）是估算。
+export const MPU6050_PINS = ["VIN", "3V3", "GND", "SCL", "SDA", "XCL", "XDA", "AD0", "INT"];
+function mpu6050() {
+  const pcb = box(-1.3, 1.3, 0, 0.16, -0.89, 0.89);
+  const qtL = box(-1.3, -0.875, 0.16, 0.46, -0.3, 0.3), qtR = box(0.875, 1.3, 0.16, 0.46, -0.3, 0.3);
+  const chip = box(-0.2, 0.2, 0.16, 0.25, -0.2, 0.2);
+  const cols = [pcb, qtL, qtR];
+  const prims = [B(pcb, "blue"), B(qtL, "white"), B(qtR, "white"), B(chip, "black")];
+  const pins = {};
+  MPU6050_PINS.forEach((nm, i) => { pins[nm] = { p: [(i - 4) * P, 0.16, 0.7], label: nm }; });
+  pins["QT1"] = { p: [-1.1, 0.46, 0], label: "STEMMA QT 座 1（I²C）" };
+  pins["QT2"] = { p: [1.1, 0.46, 0], label: "STEMMA QT 座 2（I²C 串接）" };
+  return base("p-octo-mpu6050", "MPU-6050 六轴 IMU（Adafruit 3886，v14 闭环，我的补充）", "Adafruit MPU-6050 6-DoF STEMMA QT (3886)", "sensor", cols, prims, {
+    dims_src: "Adafruit 3886 产品页：26.0 × 17.8 × 4.6 mm，1.8 g，四个 2.5 mm 安装孔；板上座子 / 芯片 / 焊盘位置为估算",
+    spec: "I²C 地址 0x68（AD0 接地）；v10 紧凑版用 QT Py 背面的 STEMMA QT 口（Wire1：SDA1 = GPIO41，SCL1 = GPIO40），因为 SDA / SCL 焊盘已经拿去接舵机；完善版和 PCA9685 共用 Wire。固件按 ±2 g / ±500 °/s、DLPF 44 Hz 配置（octopus_imu.h）",
+    est: ["板上布局"],
+    mass: 0.0018,
+    octo: { pins, ties: [["QT1", "QT2"]] },
+  });
+}
+export const OCTO_PROCEDURAL = [devkit(), inmp441(), oled(), xl4015("6v"), xl4015("5v"), battery(), pack3s(), vdiv(), frame(), arm(), bracketB(), armB(), frameV10(), armV10(), vdiv1s(), mpu6050()];
 
 // ---------- 库里真实零件的引脚表（零件局部坐标，cm） ----------
 // PCA9685（ada-815）：两端各一排 6 针控制排针（GND OE SCL SDA VCC V+），16 路 × 3 排舵机排针，中间螺丝端子 V+ / GND。

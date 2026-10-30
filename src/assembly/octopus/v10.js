@@ -33,6 +33,8 @@ export const MASS_V10 = [
   { k: "拨动开关", g: 0.07, src: "V" }, { k: "USB‑C 充电板", g: 2, src: "E" }, { k: "分压板 + 2 颗电容", g: 1.5, src: "E" }, { k: "导线", g: 4, src: "E" },
   { k: "万向珠 × 3", g: 9, src: "E" }, { k: "PLA 骨架", g: 22, src: "E" }, { k: "PLA 触手 × 8", g: 12, src: "E" },
 ];
+// v14 闭环选配（不计入上面的基准质量；鲁棒性测试的 ±质量覆盖这 1.8 g）
+export const IMU_V10 = { k: "MPU‑6050（Adafruit 3886，选配）", g: 1.8, src: "V", note: "Adafruit 3886 产品页 1.8 g；接 QT Py STEMMA QT 口（Wire1）" };
 export const massV10 = () => MASS_V10.reduce((s, r) => s + r.g, 0) / 1000;
 
 // 物理几何（cm）：和 parts.js 的 CAD / 程序零件一致

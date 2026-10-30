@@ -12,6 +12,9 @@ import { loadDiagramFile, pdfPageToPng } from "../modellab/diagram.js";
 import { loadBuiltinDemo } from "../modellab/demo.js";
 import JointControls from "../modellab/ui/JointControls.jsx";
 import GaitEditor from "../gait/GaitEditor.jsx";
+import GaitSearch from "../gait/GaitSearch.jsx";
+import CtrlPanel from "../gait/CtrlPanel.jsx";
+import { LAB_CTRL } from "../gait/ctrl.js";
 import { drivenJoints, gaitForProject, gaitToProject, playGait, measureArtic } from "../gait/artic-gait.js";
 import { preset } from "../gait/gait.js";
 import { driveParams } from "../modellab/servos.js";
@@ -56,8 +59,25 @@ function LabGait({ lab, project, R, an, M, save }) {
     onRun={(x) => { lab.follow = !project.sim?.fixBase; playGait(lab.core, project, x); }} onStop={() => { lab.follow = false; lab.core.stop(); }}
     onMeasure={async (x, o) => { const r = await measureArtic(R, project, an, M, x, { sec: o.sec, mu: o.mu, onProgress: o.onProgress }); window.__labGaitLast = r; return r; }}
     exports={[{ k: "save", zh: "存进工程", make: (x) => { save(x); return null; } }]}
-    note={`值 = 关节回中位置 + 步态值（° 或 mm），再按限位截断；舵机按 datasheet 速度追（这台最慢的驱动约 ${Math.round(rate)} /s，超过的行标“快”）。测量另开一个看不见的物理世界跑，整机质心 −z 为前；${project.sim?.fixBase ? "现在底座固定，走不了——只测能量和力矩" : project.sim?.roundHulls ? "已用圆角碰撞体" : "没勾“圆角碰撞体”时冰面对照可能也有几 cm 漂移（Rapier 尖角接触的数值误差，见上面复选框说明）"}。简化仿真，未上实机。`} /></div>;
+    note={`值 = 关节回中位置 + 步态值（° 或 mm），再按限位截断；舵机按 datasheet 速度追（这台最慢的驱动约 ${Math.round(rate)} /s，超过的行标“快”）。测量另开一个看不见的物理世界跑，整机质心 −z 为前；${project.sim?.fixBase ? "现在底座固定，走不了——只测能量和力矩" : project.sim?.roundHulls ? "已用圆角碰撞体" : "没勾“圆角碰撞体”时冰面对照可能也有几 cm 漂移（Rapier 尖角接触的数值误差，见上面复选框说明）"}。简化仿真，未上实机。`} />
+    {!project.sim?.fixBase && <div className="mt-2 grid gap-2">
+      <GaitSearch kind="artic" tid="lab-search" defaultCap={120}
+        makeJob={() => ({ gait0: g, project: JSON.parse(JSON.stringify(project)), Me: M.toArray(), an: serAn(an), sec: 6 })}
+        onApply={(x) => setG(x)} onPreview={(x) => { setG(x); lab.follow = true; playGait(lab.core, project, x); }}
+        exports={[{ k: "save", zh: "存进工程", make: (x) => { save(x); return null; } }]}
+        note="每个关节搜幅度、相位、偏置、占空比，全体共用一个频率；每次评估在看不见的物理世界里跑 6 s（同一个工程、同一个种子 → 同一个结果）。只在仿真里好（估算）。" />
+      <CtrlPanel tid="lab-ctrl" defaults={LAB_CTRL} loadKind="drop" defaultSlope={8} slopeMax={15}
+        runCompare={async ({ ctrl, slope, load, onProgress }) => {
+          const o = { sec: 6, slope, drop: load };
+          const open = await measureArtic(R, project, an, M, g, { ...o, onProgress: (p) => onProgress(p / 2) });
+          const closed = await measureArtic(R, project, an, M, g, { ...o, ctrl, imu: {}, onProgress: (p) => onProgress(0.5 + p / 2) });
+          return { open, closed, label: `当前步态 6 s · ${slope ? `${slope.deg}° ${slope.dir}` : "平地"}${load ? " · 掉方块" : ""}` };
+        }}
+        note="IMU 装在根模块（底座）上；倾斜 PD 按每个关节离机身中心的位置，把“下坡那一侧”的腿抬高一点（只动会改变高度的关节，换算系数来自关节轴和位置）。航向反馈默认关（Kp 0）：任意模型的转向符号要先在仿真里试出来，开之前先用“转向符号”试 +1 / −1 两次对比。" />
+    </div>}
+  </div>;
 }
+const serAn = (an) => [...an].map(([k, a]) => [k, { center: { x: a.center.x, y: a.center.y, z: a.center.z }, half: { x: a.half.x, y: a.half.y, z: a.half.z }, hull: a.hull ? Float32Array.from(a.hull) : null, massG: a.massG }]);
 
 export default function ModelLabPage() {
   const [project, setProject] = useState(null);

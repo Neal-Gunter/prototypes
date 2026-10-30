@@ -48,6 +48,11 @@
 #include "octopus_bus.h"
 #include "octopus_body.h"
 #include "octopus_batt.h"
+#ifdef OCTO_CTRL_CUSTOM
+#include "octopus_imu.h"   // v14：MPU-6050（有 octopus_ctrl_custom.h 才编进来）
+octo::Mpu6050 imu;
+static bool ImuRead(void* ctx, octo::ImuSample& s) { return static_cast<octo::Mpu6050*>(ctx)->Read(s); }
+#endif
 
 // ---- 引脚（按 README / md .ino）----
 #define I2C_SDA 8
@@ -154,6 +159,17 @@ void setup() {
     while (1) delay(1000);
   }
   body.SoftHomeBlocking();   // 我的补充：真正逐路上电（每路间隔 150 ms）
+#ifdef OCTO_CTRL_CUSTOM
+#if OCTO_V10
+  Wire1.begin(41, 40);       // v14：QT Py 的 STEMMA QT 口
+  Wire1.setClock(400000);
+  TwoWire* imuBus = &Wire1;
+#else
+  TwoWire* imuBus = &Wire;   // 完善版：和 PCA9685 同一条总线（都在运动任务里访问）
+#endif
+  if (imu.Begin(imuBus)) { imu.CalibrateGyro(); body.SetImu(ImuRead, &imu); Serial.println("IMU MPU-6050 ok: closed loop on"); }
+  else Serial.println("IMU not found (WHO_AM_I) - open loop");
+#endif
   body.Start();
 
   setupBle();
