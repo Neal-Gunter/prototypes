@@ -1,4 +1,4 @@
-import{b as e,c as t,f as n,g as r,l as i,n as a,p as o,t as s,v as c,x as l,y as u}from"./v10-BU3EwFpl.js";import{n as d,o as f,r as p,s as m}from"./parts-BRocpuEe.js";var h={red:`#d23a2f`,black:`#1e1f22`,orange:`#e07a2b`,yellow:`#e0b322`,blue:`#2f6fd6`,green:`#2f8f4e`,white:`#f1efe9`,purple:`#8a4fbf`,brown:`#7a4a2a`},g=[{k:`none`,zh:`正常（按 md 接好）`},{k:`nognd`,zh:`没有共地：ESP32 插电脑 USB 供电，没接 GND 到 PCA9685`,md:`采购清单 · 故障表“舵机完全不动 / 抖动 → 没有共地”`},{k:`pwm200`,zh:`PWM 频率不是 50 Hz（固件里漏了设预分频，PCA9685 上电默认约 200 Hz）`,md:`采购清单 · 故障表“舵机完全不动 → PWM 频率不是 50Hz” / README §8`},{k:`vplus-esp`,zh:`舵机 V+ 从 ESP32 的 5V 脚取电（ESP32 插 USB）`,md:`采购清单 · 故障表“舵机一转板子就重启”`},{k:`servo360`,zh:`买成了 360° 连续旋转舵机（3 号触手）`,md:`采购清单 · 故障表“抖动、抽搐 → 买了 360° 舵机”`},{k:`mech`,zh:`摆幅太大 + 转弯：超出机械极限、相邻触手打架`,md:`采购清单 · 故障表“到位后一直咯咯响 → 超出机械极限”`},{k:`phase0`,zh:`步态参数不对：phase = 0（八条同步，原地抽动）`,md:`采购清单 · 故障表“八个不同步 → 步态参数问题” / octopus_gait.h 注释`},{k:`i2caddr`,zh:`只有部分通道有反应：第二块 PCA9685 地址冲突（方案 C 才有两块，这里只说明）`,md:`采购清单 · 故障表“只有部分通道有反应”`,textOnly:!0},{k:`u1unset`,zh:`6 V 降压模块没先调压就接舵机（补充，md 没写）`,md:`补充：XL4015 出厂输出电压不确定`},{k:`lowbat`,zh:`电池快没电（md：6.3 V，低于 6.4 V 截止线；完善版：3S 9.4 V，低于 9.6 V）`,md:`无线架构 §6 · 低于 6.4V 停运动；完善版阈值为我的补充（估算）`}],_=[{k:0,zh:`阶段 0：先只跑通小智语音（不接舵机）`,md:`README §7 阶段 0（半天）`,roles:[`ESP`,`MIC`,`AMP`,`SPK`,`OLED`]},{k:1,zh:`阶段 1：1 个舵机 + 最小 MCP 工具`,md:`README §7 阶段 1（半天）；舵机接哪个脚文档未写，这里接 PCA9685 通道 0`,servos:1},{k:2,zh:`阶段 2：PCA9685 + 独立电源，4 个舵机`,md:`README §7 阶段 2（1 天）`,servos:4},{k:3,zh:`阶段 3：打印组装，整只八爪鱼上台`,md:`README §7 阶段 3（2–3 天）`,robot:!0},{k:4,zh:`阶段 4：调 CPG 步态（freq 0.6 / yaw 38 / duty 0.65 / phase 45 起步）`,md:`README §7 阶段 4`,robot:!0,tune:!0},{k:5,zh:`阶段 5：升级（总线舵机 / IMU）——只有文字，台面不做`,md:`README §7 阶段 5`,robot:!0,textOnly:!0}],v=(e,t,n,r,i,a)=>({a:e,b:t,kind:n,color:h[r]||r,why:i,md:a}),y=[{k:`md`,zh:`md 原样`,tip:`完全按 md 的接线、代码和数值（错的也照搬，方便对照）`},{k:`plus`,zh:`完善版（我的补充）`,tip:`按数据手册和推理补齐 md 没写清楚 / 写错的地方，每一处都标“我的补充”`},{k:`v10`,zh:`v10 紧凑无线版（我的补充）`,tip:`全部板载：1S 1200 mAh 电池 + QT Py ESP32‑S3 直接出 8 路 PWM + 2 个 5.2 V 升压 + 8 个 SG51R 小舵机；不插电，手机走 BLE`}],b=`我的补充`;function x({plan:e=`A`,phase:t=3,fault:n=`none`,variant:r=`md`}={}){if(r===`v10`)return C({fault:n});let i=r===`plus`,a=_.find(e=>e.k===t)||_[3],o=a.robot?8:a.servos||0,s=a.roles?[...a.roles]:[`ESP`,`MIC`,`AMP`,`SPK`,`OLED`,`PCA`,`BAT`,`U1`,`U2`,...i?[`DIV`]:[]],c=[],l=t===0||n===`nognd`||n===`vplus-esp`;c.push(v([`ESP`,`J1.5`],[`MIC`,`SCK`],`octo-dupont-20`,`yellow`,`GPIO5 → INMP441 SCK`,`README §4`),v([`ESP`,`J1.4`],[`MIC`,`WS`],`octo-dupont-20`,`green`,`GPIO4 → INMP441 WS`,`README §4`),v([`ESP`,`J1.6`],[`MIC`,`SD`],`octo-dupont-20`,`blue`,`GPIO6 → INMP441 SD`,`README §4`),v([`ESP`,`J1.2`],[`MIC`,`VDD`],`octo-dupont-20`,`orange`,`3V3 → INMP441 VDD`,`文档未写（数据手册 1.62–3.63 V）`),v([`ESP`,`J3.21`],[`MIC`,`GND`],`octo-dupont-20`,`black`,`GND → INMP441 GND`,`文档未写`),v([`ESP`,`J3.22`],[`MIC`,`L/R`],`octo-dupont-20`,`black`,`L/R 接 GND = 左声道`,`文档未写（数据手册）`),v([`ESP`,`J1.8`],[`AMP`,`BCLK`],`octo-dupont-20`,`yellow`,`GPIO15 → MAX98357A BCLK`,`README §4`),v([`ESP`,`J1.9`],[`AMP`,`LRC`],`octo-dupont-20`,`green`,`GPIO16 → MAX98357A LRC`,`README §4`),v([`ESP`,`J1.7`],[`AMP`,`DIN`],`octo-dupont-20`,`blue`,`GPIO7 → MAX98357A DIN`,`README §4`),v([`AMP`,`SPK+`],[`SPK`,`+`],`octo-dupont-20`,`red`,`功放 + → 喇叭 +`,`README §3`),v([`AMP`,`SPK-`],[`SPK`,`-`],`octo-dupont-20`,`black`,`功放 − → 喇叭 −`,`README §3`)),t===0?(c.push(v([`ESP`,`J1.21`],[`AMP`,`Vin`],`octo-dupont-20`,`red`,`5V（USB）→ 功放 Vin`,`文档未写`),v([`ESP`,`J1.22`],[`AMP`,`GND`],`octo-dupont-20`,`black`,`GND → 功放 GND`,`文档未写`)),c.push(v([`ESP`,`J1.1`],[`OLED`,`VCC`],`octo-dupont-20`,`orange`,`3V3 → OLED VCC`,`文档未写`),v([`ESP`,`J3.1`],[`OLED`,`GND`],`octo-dupont-20`,`black`,`GND → OLED GND`,`文档未写`),v([`ESP`,`J1.12`],[`OLED`,`SDA`],`octo-dupont-20`,`blue`,`GPIO8 → OLED SDA`,`README §4`),v([`ESP`,`J1.15`],[`OLED`,`SCL`],`octo-dupont-20`,`yellow`,`GPIO9 → OLED SCL`,`README §4`))):(c.push(v([`U2`,`OUT+`],[`AMP`,`Vin`],`octo-dupont-20`,`red`,`5V → 功放 Vin`,`文档未写`),v([`U2`,`OUT-`],[`AMP`,`GND`],`octo-dupont-20`,`black`,`GND → 功放 GND`,`文档未写`),v([`ESP`,`J1.12`],[`PCA`,`L.SDA`],`octo-dupont-30`,`blue`,`GPIO8 → PCA9685 SDA`,`README §4 / .ino I2C_SDA 8`),v([`ESP`,`J1.15`],[`PCA`,`L.SCL`],`octo-dupont-30`,`yellow`,`GPIO9 → PCA9685 SCL`,`README §4 / .ino I2C_SCL 9`),v([`ESP`,`J1.1`],[`PCA`,`L.VCC`],`octo-dupont-30`,`orange`,`3V3 → PCA9685 VCC（逻辑）`,`README §4`),v([`PCA`,`R.VCC`],[`OLED`,`VCC`],`octo-dupont-20`,`orange`,`3V3（经 PCA 排针）→ OLED VCC`,`文档未写`),v([`PCA`,`R.GND`],[`OLED`,`GND`],`octo-dupont-20`,`black`,`GND → OLED GND`,`文档未写`),v([`PCA`,`R.SDA`],[`OLED`,`SDA`],`octo-dupont-20`,`blue`,`SDA 同一条 I2C → OLED`,`README §4`),v([`PCA`,`R.SCL`],[`OLED`,`SCL`],`octo-dupont-20`,`yellow`,`SCL 同一条 I2C → OLED`,`README §4`),v([`BAT`,`BAT+`],[`U1`,`IN+`],`octo-wire`,`red`,`电池 + → 6 V 降压 IN+`,`README §4`),v([`BAT`,`BAT-`],[`U1`,`IN-`],`octo-wire`,`black`,`电池 − → 6 V 降压 IN−`,`README §4`),v([`BAT`,`BAT+`],[`U2`,`IN+`],`octo-wire`,`red`,`电池 + → 5 V 降压 IN+`,`补充（md 只写一块 XL4015 同时出 6 V 和 5 V，单块做不到）`),v([`BAT`,`BAT-`],[`U2`,`IN-`],`octo-wire`,`black`,`电池 − → 5 V 降压 IN−`,`补充`)),n===`vplus-esp`?c.push(v([`ESP`,`J1.21`],[`PCA`,`T.V+`],`octo-dupont-30`,`red`,`（故障）ESP32 5V → PCA9685 V+`,`反例`),v([`ESP`,`J1.22`],[`PCA`,`T.GND`],`octo-dupont-30`,`black`,`（故障）ESP32 GND → PCA9685 GND 端子`,`反例`)):c.push(v([`U1`,`OUT+`],[`PCA`,`T.V+`],`octo-wire`,`red`,`6 V → PCA9685 V+ 螺丝端子`,`README §4`),v([`U1`,`OUT-`],[`PCA`,`T.GND`],`octo-wire`,`black`,`GND → PCA9685 GND 端子`,`README §4`)),l||c.push(v([`U2`,`OUT+`],[`ESP`,`J1.21`],`octo-wire`,`red`,`5 V → ESP32 5V 脚`,`README §4（md 写 VIN/5V；DevKitC‑1 丝印是 5V）`),v([`U2`,`OUT-`],[`ESP`,`J1.22`],`octo-wire`,`black`,`GND → ESP32 GND（共地）`,`README §4`)),n!==`nognd`&&c.push(v([`ESP`,`J3.1`],[`PCA`,`L.GND`],`octo-dupont-30`,`black`,`GND → PCA9685 GND（逻辑地，共地）`,`README §4`)),i&&c.push(v([`BAT`,`BAT+`],[`DIV`,`IN`],`octo-dupont-20`,`red`,`电池 + → 分压板 IN（100k 上臂）`,`${b} · 替代 md 的 GPIO4 电池检测`),v([`BAT`,`BAT-`],[`DIV`,`GND`],`octo-dupont-20`,`black`,`电池 − → 分压板 GND（22k 下臂）`,b),v([`DIV`,`OUT`],[`ESP`,`J1.16`],`octo-dupont-20`,`purple`,`分压 OUT → GPIO10（ADC1_CH9）`,`${b} · GPIO4 已给麦克风 WS，GPIO1/2 留给采购清单第二批 I2C`)));let u=[],d=e===`B`&&a.robot?2:1;for(let e=0;e<o;e++)for(let t=0;t<d;t++){let r=d===2?e*2+t:e,i=d===2?`S${e}${t?`p`:`y`}`:`S${e}`;u.push({role:i,arm:e,slot:t,ch:`CH${r}`,type:n===`servo360`&&e===3&&t===0?`360`:`180`}),c.push({a:[i,`LEAD`],b:[`PCA`,`CH${r}`],kind:`octo-servo`,color:h.brown,why:`${i} 舵机引线 → PCA9685 通道 ${r}`,md:d===2?`octopus_body.h · ChannelOf(kDual16) = arm×2+slot`:`octopus_body.h · ChannelOf(kSingle8) = arm`})}let f=n===`lowbat`;return{plan:e,phase:t,fault:n,variant:r,ph:a,roles:s,wires:c,servos:u,usb:l,defs:i?{BAT:`p-octo-3s-pack`}:{},plusHw:i&&e===`A`&&a.robot?{casters:!0,pads:!0,tipShare:.3}:{},vbat:i?f?9.4:11.1:f?6.3:7.4,caps:a.robot?u.length:0,u1Unset:n===`u1unset`,robot:!!a.robot}}var S=[{k:`none`,zh:`正常（按 v10 接线）`},{k:`nognd`,zh:`QT Py 的 GND 没接到电池 / 升压地`},{k:`lowbat`,zh:`电池快没电（空载 3.55 V，带载低于 3.55 V 停运动阈值，估算）`},{k:`swoff`,zh:`电源开关拨到 OFF（EN 拉低，升压和 QT Py 都断电）`},{k:`onebst`,zh:`只装一个升压，8 个舵机全挂在它上面`}];function C({fault:e=`none`}={}){let n=`我的补充 · v10`,r=[`QTPY`,`BAT`,`CHG`,`BST1`,`BST2`,`SW`,`DIV`,`CAP1`,`CAP2`],i=[],a=e===`onebst`;i.push(v([`BAT`,`BAT+`],[`CHG`,`JST+`],`octo-jst`,`red`,`LiPo JST‑PH 插进充电板的电池座`,`Adafruit 4410：JST‑PH 电池座 + BAT 焊盘`),v([`BAT`,`BAT-`],[`CHG`,`JST-`],`octo-jst`,`black`,`（同一根 JST 线的黑线）`,`Adafruit 258：JST‑PH 2 针`),v([`CHG`,`BAT`],[`BST1`,`IN`],`octo-v10-power`,`red`,`充电板 BAT 焊盘 → 升压 1 IN（舵机大电流不过开关）`,n),v([`CHG`,`GND`],[`BST1`,`GND`],`octo-v10-power`,`black`,`GND → 升压 1 GND`,n),v([`CHG`,`BAT`],[`SW`,`1`],`octo-v10-wire`,`red`,`BAT → 开关 1 脚`,n),v([`CHG`,`GND`],[`SW`,`3`],`octo-v10-wire`,`black`,`GND → 开关 3 脚（拨到这边 = EN 接地 = 关）`,n),v([`SW`,`COM`],[`BST1`,`EN`],`octo-v10-wire`,`orange`,`开关 COM → 升压 1 EN`,`Adafruit 4654：EN 拉低 = 输出真断开`),v([`SW`,`COM`],[`QTPY`,`BAT`],`octo-v10-wire`,`orange`,`开关 COM → QT Py 背面 BAT 焊盘（3–6 V，带二极管）`,`Adafruit 5426：BAT 焊盘`),v([`SW`,`COM`],[`DIV`,`IN`],`octo-v10-wire`,`orange`,`开关 COM → 分压 IN`,n),v([`DIV`,`GND`],[`CHG`,`GND`],`octo-v10-wire`,`black`,`分压 GND`,n),v([`DIV`,`OUT`],[`QTPY`,`A3`],`octo-v10-wire`,`purple`,`分压 OUT → A3（GPIO8）电池检测`,n),v([`BST1`,`OUT`],[`CAP1`,`+`],`octo-v10-wire`,`red`,`升压 1 OUT → 电容 +`,`${n} · 电容值估算`),v([`BST1`,`GND`],[`CAP1`,`-`],`octo-v10-wire`,`black`,`电容 −`,n)),e!==`nognd`&&i.push(v([`QTPY`,`BGND`],[`CHG`,`GND`],`octo-v10-wire`,`black`,`QT Py BAT 旁的 GND 焊盘 → 电池地（共地）`,n)),a||i.push(v([`CHG`,`BAT`],[`BST2`,`IN`],`octo-v10-power`,`red`,`充电板 BAT 焊盘 → 升压 2 IN`,n),v([`CHG`,`GND`],[`BST2`,`GND`],`octo-v10-power`,`black`,`GND → 升压 2 GND`,n),v([`SW`,`COM`],[`BST2`,`EN`],`octo-v10-wire`,`orange`,`开关 COM → 升压 2 EN`,n),v([`BST2`,`OUT`],[`CAP2`,`+`],`octo-v10-wire`,`red`,`升压 2 OUT → 电容 +`,n),v([`BST2`,`GND`],[`CAP2`,`-`],`octo-v10-wire`,`black`,`电容 −`,n));let o=[];for(let e=0;e<8;e++){let r=`S${e}`,s=a||e<4?`BST1`:`BST2`,c=t[e];o.push({role:r,arm:e,slot:0,ch:`CH${e}`,type:`sg51r`,pad:c.pad,gpio:c.gpio,rail:s}),i.push({a:[r,`LEAD`],b:[`QTPY`,c.pad],kind:`octo-v10-servo`,rail:s,color:h.brown,why:`${r}：橙 PWM → QT Py ${c.pad}（GPIO${c.gpio}，LEDC 通道 ${e}）；红 V+ / 棕 GND → ${s}`,md:n})}return{plan:`A`,phase:3,fault:e,variant:`v10`,ph:_[3],roles:r,wires:i,servos:o,usb:!1,defs:{BAT:`ada-258`,DIV:`p-octo-vdiv-1s`,QTPY:`ada-5426`,CHG:`ada-4410`,BST1:`ada-4654`,BST2:`ada-4654`,SW:`ada-805`,CAP1:`kc-cp_radial_d6.3mm_p2.50mm`,CAP2:`kc-cp_radial_d6.3mm_p2.50mm`},plusHw:{casters:!0,pads:!0,tipShare:.3},vbat:e===`lowbat`?3.55:3.85,swOn:e!==`swoff`,caps:2,u1Unset:!1,robot:!0,board:`v10`}}var w={ESP:`p-octo-devkitc1`,PCA:`ada-815`,MIC:`p-octo-inmp441`,AMP:`ada-3006`,SPK:`ada-3923`,BAT:`p-octo-2s-lipo`,U1:`p-octo-xl4015-6v`,U2:`p-octo-xl4015-5v`,OLED:`p-octo-oled096`,DIV:`p-octo-vdiv`},T=Object.fromEntries(m.map(e=>[e.id,e])),E=(e,t)=>{let n=t?.defs?.[e]||w[e];return T[n]?.octo||f[n]||{pins:{},ties:[]}},D=class{constructor(){this.p=new Map}f(e){this.p.has(e)||this.p.set(e,e);let t=e;for(;this.p.get(t)!==t;)t=this.p.get(t);return this.p.set(e,t),t}u(e,t){this.p.set(this.f(e),this.f(t))}},O=e=>{if(e.kind===`octo-servo`){let[t]=e.a,n=e.b[1];return[[`${t}:GND`,`PCA:${n}.GND`],[`${t}:V+`,`PCA:${n}.V+`],[`${t}:PWM`,`PCA:${n}.PWM`]]}if(e.kind===`octo-v10-servo`){let[t]=e.a,n=e.b[1],r=e.rail;return[[`${t}:GND`,`${r}:GND`],[`${t}:V+`,`${r}:OUT`],[`${t}:PWM`,`QTPY:${n}`]]}return[[`${e.a[0]}:${e.a[1]}`,`${e.b[0]}:${e.b[1]}`]]};function k(e){if(e._uf)return e._uf;let t=new D;Object.defineProperty(e,"_uf",{value:t,enumerable:!1});let n=e.board===`v10`?e.roles:Object.keys(w);e.board===`v10`&&t.u(`SW:COM`,e.swOn?`SW:1`:`SW:3`);for(let r of n)for(let n of E(r,e).ties)for(let e=1;e<n.length;e++)t.u(`${r}:${n[0]}`,`${r}:${n[e]}`);for(let n of e.wires)for(let[e,r]of O(n))t.u(e,r);return e.usb&&t.u(`USB:GND`,`USB:GND`),t}var A=.12,j=.02,M=.0014,N=.003;function P(e,t={}){if(e.board===`v10`)return I(e,t);let n=k(e),r=(e,t)=>n.f(e)===n.f(t),i=t.servoI||0,a={checks:[],rails:{},warn:[]},o=e.vbat??7.4,s=r(`U1:IN+`,`BAT:BAT+`)&&r(`U1:IN-`,`BAT:BAT-`),c=r(`U2:IN+`,`BAT:BAT+`)&&r(`U2:IN-`,`BAT:BAT-`),l=t=>e.roles.includes(t),u=!!e.usb,d=l(`U2`)&&c&&r(`ESP:J1.21`,`U2:OUT+`);r(`ESP:J1.22`,`U2:OUT-`);let f=l(`U1`)&&s&&r(`PCA:T.V+`,`U1:OUT+`),p=l(`PCA`)&&r(`PCA:T.V+`,`ESP:J1.21`),m=e.variant===`plus`,h=m?o<9.8?.45:.15:e.vbat<6.6?.5:.12,g=e.u1Unset?null:6,_=0,v=0,y=0,b=(A+(l(`OLED`)?j:0)+(l(`MIC`)?M:0))*5+(l(`AMP`)?N*5:0);f&&(y+=i*6/.9),d&&(y+=b/.88),y/=Math.max(5.5,o);let x=o-y*h,S=.8;f&&(v=Math.min(g??x-S,x-S-i*.05)),d&&(_=Math.min(5,x-S)),u&&(_=Math.max(_,5-(p?i*1.4:0)-.05)),p&&(v=_-.3);let C=_>=4.3,w=r(`ESP:J3.1`,`PCA:L.GND`)||r(`ESP:J1.22`,`BAT:BAT-`)&&r(`PCA:T.GND`,`BAT:BAT-`),T=r(`PCA:L.VCC`,`ESP:J1.1`),E=C&&T&&(w||p&&u),D={sda:r(`PCA:L.SDA`,`ESP:J1.12`),scl:r(`PCA:L.SCL`,`ESP:J1.15`)},O=l(`DIV`)&&r(`DIV:IN`,`BAT:BAT+`)&&r(`DIV:GND`,`BAT:BAT-`)&&r(`DIV:OUT`,`ESP:J1.16`)&&r(`BAT:BAT-`,`ESP:J1.22`);a.rails={battSense:O,vbat:l(`BAT`)?+x.toFixed(2):null,vservo:+v.toFixed(2),espIn:+_.toFixed(2),v33:C?3.3:0,iBat:+y.toFixed(2),servoI:+i.toFixed(2),espOn:C,pcaLogic:E,gndCommon:w,i2cWired:D.sda&&D.scl,vpFromEsp:p,vpFromU1:f};let P=(e,t,n,r=`err`)=>a.checks.push({ok:!!e,zh:t,md:n,level:e?`ok`:r});return l(`PCA`)&&(P(w,`共地：ESP32 的 GND 和 PCA9685 / 电池 GND 连在一起`,`README §4 三条铁律 · 共地`),P(!p,`舵机 V+ 不从 ESP32 取电（走 PCA9685 的 V+ 螺丝端子）`,`README §4 三条铁律 · V+ 绝不从 ESP32 取`),P(T,`PCA9685 VCC 接 ESP32 3V3（逻辑电源）`,`README §4 接线表 · 3V3/GND → PCA VCC`),P(D.sda&&D.scl,`I2C：GPIO8 → SDA，GPIO9 → SCL`,`README §4 接线表 / body_firmware_A.ino #define I2C_SDA 8`),P(f,`V+ 端子 ← XL4015 调到 6 V`,`README §4 供电 · 7.4V → XL4015 → 6V`)),l(`MIC`)&&(P(r(`MIC:SCK`,`ESP:J1.5`)&&r(`MIC:WS`,`ESP:J1.4`)&&r(`MIC:SD`,`ESP:J1.6`),`麦克风 INMP441：SCK=GPIO5，WS=GPIO4，SD=GPIO6`,`README §4 接线表`),P(r(`MIC:L/R`,`ESP:J3.1`),`INMP441 L/R 接 GND（选左声道）`,`文档未写（按 INMP441 数据手册补）`,`warn`),P(r(`MIC:VDD`,`ESP:J1.1`),`INMP441 VDD 接 3V3`,`文档未写（数据手册 1.62–3.63 V）`,`warn`)),l(`AMP`)&&(P(r(`AMP:BCLK`,`ESP:J1.8`)&&r(`AMP:LRC`,`ESP:J1.9`)&&r(`AMP:DIN`,`ESP:J1.7`),`功放 MAX98357A：BCLK=GPIO15，LRC=GPIO16，DIN=GPIO7`,`README §4 接线表`),P(r(`AMP:SPK+`,`SPK:+`)&&r(`AMP:SPK-`,`SPK:-`),`喇叭接功放输出`,`README §3 物料（8Ω 2W 喇叭）`)),l(`SPK`)&&l(`MIC`)&&t.micSpkCm!=null&&P(t.micSpkCm>=5,`麦克风离喇叭 ${t.micSpkCm.toFixed(1)} cm（≥ 5 cm）`,`README §8 · 麦克风和喇叭至少隔 5 cm`),l(`OLED`)&&P(r(`OLED:SDA`,`PCA:L.SDA`)&&r(`OLED:SCL`,`PCA:L.SCL`),`OLED 和 PCA9685 共用 I2C（0x3C / 0x40 不冲突）`,`README §4 · 屏幕同一条 I2C`),l(`BAT`)&&(m?P(o>=8,`XL4015 输入 ${o.toFixed(1)} V（3S，截止 9.6 V 也高于数据手册下限 8 V）`,`我的补充 · XLSEMI XL4015 数据手册 8–36 V`,`warn`):P(o>=8,`XL4015 输入 ${o.toFixed(1)} V：数据手册下限 8 V，2S 电池大部分时间低于它`,`md 没提；XLSEMI XL4015 数据手册`,`warn`),m&&P(O,`电池检测：分压板 IN ← 电池 +、OUT → GPIO10（ADC1_CH9），12.6 V 时 2.27 V < 2.9 V 量程`,`我的补充 · 乐鑫 ESP32‑S3 ADC 文档（11 dB 校准量程 0–2900 mV）`,`warn`),P(!e.u1Unset,`6 V 那块降压先空载调好再接舵机`,`补充（md 没写调压步骤）`,`warn`),e.u1Unset&&a.warn.push(`U1 没调：输出接近输入（约 ${(x-S).toFixed(1)} V），超过 MG90S 标称 6.0 V`)),(e.servos||[]).forEach((t,n)=>{let r=t.ch;if(r==null)return;let i=e.plan===`B`?null:n;i!=null&&r!==`CH${i}`&&P(!1,`触手 ${n} 的舵机插在 ${r}，md 约定 ${i} 号触手 = 通道 ${i}`,`octopus_body.h · ChannelOf(kSingle8)`,`warn`)}),e.caps!=null&&l(`PCA`)&&P(e.caps>=(e.servos?.length||0),`每个舵机旁一颗 220µF（${e.caps} / ${e.servos?.length||0}）`,`README §4 三条铁律 · 每个舵机旁 220µF`,`warn`),i>5&&a.warn.push(`舵机电流 ${i.toFixed(1)} A 超过 XL4015 标称 5 A`),v>0&&v<4.6&&i>.3&&a.warn.push(`舵机电压掉到 ${v.toFixed(2)} V`),a.errCount=a.checks.filter(e=>e.level===`err`).length,a.warnCount=a.checks.filter(e=>e.level===`warn`).length+a.warn.length,a.same=r,a}var F=.08;function I(e,r={}){let i=k(e),c=(e,t)=>i.f(e)===i.f(t),l={checks:[],rails:{},warn:[]},u=(e,t,n,r=`err`)=>l.checks.push({ok:!!e,zh:t,md:n,level:e?`ok`:r}),d=r.servoI||0,f=r.railI||null,p=e.vbat,m=p<3.6?.3:.15,h=c(`CHG:JST+`,`BAT:BAT+`)&&c(`CHG:JST-`,`BAT:BAT-`),g=e=>h&&c(`${e}:IN`,`BAT:BAT+`)&&c(`${e}:GND`,`BAT:BAT-`),_=c(`SW:COM`,`BAT:BAT+`),v=e=>c(`${e}:EN`,`BAT:BAT+`),y=[`BST1`,`BST2`].filter(t=>e.roles.includes(t)&&g(t)),b={};for(let t of e.servos)b[t.role]=[`BST1`,`BST2`].find(e=>c(`${t.role}:V+`,`${e}:OUT`)&&c(`${t.role}:GND`,`BAT:BAT-`))||null;let x={BST1:0,BST2:0};if(f)for(let t of e.servos){let e=b[t.role];e&&(x[e]+=f[t.role]||0)}else{let t=e.servos.length;for(let n of e.servos){let e=b[n.role];e&&(x[e]+=d/t)}}let S=_&&h&&c(`QTPY:BAT`,`BAT:BAT+`),C=p,w=0,T={};for(let e=0;e<3;e++){w=S?F:0;for(let e of[`BST1`,`BST2`]){let t=y.includes(e)&&v(e),r=o(C),i=t?x[e]:0,s=t?i<=r?a.vout:a.vout*Math.max(0,r/i):0,c=i<=r?i:r;T[e]={on:t,v:s,I:i,lim:r,sat:t&&i>r},t&&(w+=s*c/n(c)/Math.max(2.5,C)+2e-4)}C=p-w*m}let E=S?C-.3:0,D=E>=3.1,O=c(`QTPY:BGND`,`BAT:BAT-`),A=c(`DIV:IN`,`SW:COM`)&&c(`DIV:GND`,`BAT:BAT-`)&&c(`DIV:OUT`,`QTPY:${s.pad}`),j={};for(let n of e.servos){let e=t.find(e=>c(`${n.role}:PWM`,`QTPY:${e.pad}`));j[n.role]=e&&O?e.gpio:null}let M=Object.fromEntries(e.servos.map(e=>[e.role,b[e.role]?T[b[e.role]].v:0])),N=Object.values(M),P=N.length?Math.min(...N):0;l.rails={battSense:A,vbat:+C.toFixed(3),vbatSw:_?+C.toFixed(3):0,vservo:+P.toFixed(2),vservoOf:M,espIn:+E.toFixed(2),v33:D?3.3:0,iBat:+w.toFixed(3),servoI:+d.toFixed(3),espOn:D,pcaLogic:D,gndCommon:O,i2cWired:!0,vpFromEsp:!1,vpFromU1:!1,boost:T,pwmGpio:j,swOn:_,usb:!1,pBat:+(w*C).toFixed(3)},u(h,`LiPo JST 插进充电板电池座`,`Adafruit 4410 / 258`),u(_,`电源开关拨到 ON（COM 接电池 +，两个升压 EN 拉高、QT Py 上电）`,`Adafruit 4654：EN 拉低 = 真断开`,`warn`),u(O,`共地：QT Py BAT 旁的 GND 焊盘接电池地（PWM 才有参考）`,`舵机 PWM 是相对 GND 的信号`),u(e.servos.every(e=>b[e.role]),`每个舵机红线 / 棕线接在升压 OUT / GND 上（不从 QT Py 取电）`,`我的补充 · QT Py 3.3 V 稳压 600 mA 峰值，带不动舵机`),u(e.servos.every(e=>j[e.role]!=null),`8 根橙线接 QT Py 的 8 个焊盘（A0 A1 A2 SDA SCL TX RX SCK）`,`ESP32‑S3 LEDC 8 个通道（乐鑫文档）`),u(A,`电池检测：开关后的电池 + → 100k/100k → A3（GPIO8）；4.2 V → 2.1 V < 2.9 V 量程`,s.src,`warn`);let I=e.servos.filter(e=>b[e.role]===`BST1`).length,L=e.servos.filter(e=>b[e.role]===`BST2`).length;u(I<=4&&L<=4,`两个升压各带 ≤ 4 个舵机（现在 ${I} + ${L}）`,`我的补充 · MiniBoost 3.7 V 输入时最大输出约 1.2 A（页面：1.1 A@3.5 V、1.4 A@4 V，插值）`,`warn`),u(!0,`工作时不插 USB：USB‑C 只用来充电（充电板 100 mA 默认 / 500 mA 跳线）`,`Adafruit 4410`),u(!1,`舵机电压 5.2 V 高于 SG51R 页面写的 4.8 V（页面没写最高电压；我没找到 5 V 以下的 1S 升压现成小板）`,`Adafruit 2201 / 4654 · 我的补充`,`warn`),u(!1,`拨动开关页面没写额定电流：这里只让它过 QT Py + EN 的小电流（< 0.2 A，估算），舵机电流不经过它`,`Adafruit 805`,`warn`);for(let e of[`BST1`,`BST2`])T[e]?.sat&&l.warn.push(`${e===`BST1`?`升压 1`:`升压 2`} 要 ${T[e].I.toFixed(2)} A，超过 ${C.toFixed(2)} V 输入时的上限 ${T[e].lim.toFixed(2)} A → 输出掉到 ${T[e].v.toFixed(2)} V`);return w>2&&l.warn.push(`电池电流 ${w.toFixed(2)} A 超过 LiPo 线材额定 2 A（Adafruit 258 页面）`),p<s.cut&&l.warn.push(`电池 ${p.toFixed(2)} V 低于 ${s.cut} V（估算阈值）：固件会停运动，请充电`),l.errCount=l.checks.filter(e=>e.level===`err`).length,l.warnCount=l.checks.filter(e=>e.level===`warn`).length+l.warn.length,l.same=c,l}var L=class{constructor(){this.reset()}reset(){this.duty=new Map,this.freqHz=50,this.bits=14,this.writes=0}write(e,t,n,r){return this.duty.set(e,t),n&&(this.freqHz=n),r&&(this.bits=r),this.writes++,0}get freq(){return this.freqHz}gpio(e){return{us:(this.duty.get(e)||0)/((1<<this.bits)-1)*(1e6/this.freqHz)}}},R={pulse:`舵机脉宽 0.5–2.5 ms ↔ 0–180°（MG90S 常见标定，估算）`,speed:`空载 0.1 s/60°@4.8 V、0.08 s/60°@6 V（MG90S 常见标称），按电压线性插值`,current:`电流：保持 0.01 A，运动 0.12 + 0.45·(速度/最高速) A，堵转 0.7 A（估算）`,frame:`只有 10–30 ms 周期（33–100 Hz）的 PWM 舵机才认（模拟舵机估算）`,friction:`v9 走路是物理仿真（Rapier）：机身是有重力的刚体，触手是舵机关节连着的刚体，只靠触手和桌面的接触摩擦推着走；摩擦系数、PLA 质量等是估算（见下面“走路物理”）`,plusA:`完善版 A（我的补充）：底板下 3 个万向珠（滚动阻力系数约 0.02）、调高度让触手尖分担约 30% 重量 + 触手尖单向鳞片脚垫（向后滑 0.45、向前滑 0.15）——全部估算`,gap:`相邻触手最小夹角：方案 A 12°（按触手根部宽度）；方案 B 13°（v8 在 3D 碰撞体上实测，见 e2e/gapB.mjs）——A 为估算`},z=12;function B(e){let t=e>>>0||1;return()=>(t=t*1664525+1013904223>>>0)/4294967296}var V=class{constructor(t={}){this.o={plan:`A`,phase:3,fault:`none`,mode:`ino`,variant:`md`,seed:7,tipShare:.15,...t},this.o.F||(this.o.F=this.o.variant===`plus`||this.o.variant===`v10`?l():e(!1)),this.rebuild()}set(e){Object.assign(this.o,e),this.rebuild()}rebuild(){let e=this.o;this.bench=x(e),this.r=B(e.seed),this.v10=this.bench.board===`v10`,this.dev=this.v10?new L:new c(64),this.t=0,this.servoI=0,this.peakI=0,this.events=[],this.phys=null,this.pose={x:0,z:0,h:0},this.trace=[{x:0,z:0,h:0,t:0}],this.servos=this.bench.servos.map(e=>({...e,chN:+e.ch.slice(2),ang:72+this.r()*36,w:0,cmd:null,us:0,I:0,stall:!1,buzz:!1,collide:!1})),this.res=P(this.bench,{servoI:0,micSpkCm:e.micSpkCm}),this.espOn=!1,this.offFor=1e9,this.boots=0,this.scenarioDone=!1,this.rt=this.bench.phase===0?null:new u({F:e.F,mode:e.mode,plan:e.plan,skipPrescale:e.fault===`pwm200`,i2cWrite:(e,t,n)=>this.i2c(e,t,n),adcMv:e=>this.adcMv(e),...this.v10?{board:`v10`,servoPins:t.map(e=>e.gpio),ledcWrite:(e,t,n,r)=>this.espOn?this.dev.write(e,t,n,r):!1}:{}}),this.step(.001)}i2c(e,t,n){if(e!==64)return 2;let r=this.res.rails;return!r.pcaLogic||!r.i2cWired?2:(this.dev.write(t,n,this.rt.now),0)}adcMv(e){let t=this.res.rails;return this.v10?e===s.gpio&&t.battSense&&t.espOn?Math.min(2900,t.vbatSw/s.ratio*1e3+(this.r()-.5)*10):0:e!==10||!t.battSense||!t.espOn?0:Math.min(2900,t.vbat*22/122*1e3+(this.r()-.5)*20)}ev(e){this.events.push({t:+this.t.toFixed(2),zh:e}),this.events.length>60&&this.events.shift()}send(e){this.rt&&this.espOn?this.rt.send(e):this.ev(`ESP32 没在运行，指令没发出去`)}mcp(e,t){if(this.o.mode!==`mcp`)return`当前是蓝牙串口 .ino 模式`;if(!this.rt||!this.espOn)return`ESP32 没在运行`;let n=this.rt.mcp(e,t);return this.ev(`MCP ${e} ${JSON.stringify(t)} → ${n}`),n}step(e){let t=.005,n=Math.max(1,Math.round(e/t));for(;n--;)this.sub(t)}sub(e){this.t+=e;let t=this.o,n=this.bench;this.res=P(n,{servoI:this.servoI,micSpkCm:t.micSpkCm,railI:this.v10?Object.fromEntries(this.servos.map(e=>[e.role,e.I])):null});let r=this.res.rails;if(this.rt){if(r.espOn&&!this.espOn&&this.offFor>.3?(this.espOn=!0,this.boots++,this.dev.reset(),this.rt.now=this.t*1e3,this.rt.boot(),this.boots>1&&this.ev(`ESP32 重新启动（第 ${this.boots} 次）`),this.scenarioDone=!1):!r.espOn&&this.espOn&&(this.espOn=!1,this.offFor=0,this.ev(this.v10?`QT Py 电源掉到 ${r.espIn.toFixed(2)} V → 欠压复位`:`ESP32 5V 掉到 ${r.espIn.toFixed(2)} V → 欠压复位`),r.vpFromU1||this.dev.reset()),this.espOn||(this.offFor+=e),this.espOn&&(this.rt.step(e*1e3),!this.scenarioDone&&this.rt.body.running_)){if(this.scenarioDone=!0,t.fault===`mech`){let e=this.rt.body.GaitParamsSnapshot();e.yaw_amp_deg=60,this.rt.body.SetGaitParams(e),this.rt.body.SetVelocity(1,1),this.ev(`场景：步态 yaw 被改成 60°，并且右转`)}if(t.fault===`phase0`){let e=this.rt.body.GaitParamsSnapshot();e.phase_deg=0,this.rt.body.SetGaitParams(e),this.rt.body.SetVelocity(1,0),this.ev(`场景：phase = 0，八条触手同相`)}}}else this.espOn=r.espOn;let a=1e6/this.dev.freq,o=r.vservo,s=a>=1e4&&a<=3e4,c=e=>this.v10?e<3.5?0:i.speed48*Math.min(1,e/4.8):e<3.5?0:600+(Math.min(e,6.5)-4.8)*125,l=c(o),u=0;for(let t of this.servos){let n=this.v10?r.pwmGpio?.[t.role]:null,a=this.v10?n!=null&&r.espOn?this.dev.gpio(n):{us:0}:r.pcaLogic||r.vpFromU1?this.dev.channel(t.chN):{us:0},u=this.v10?c(r.vservoOf?.[t.role]??o):l;t.wmax=u,t.us=a.us,t.stall=!1,t.buzz=!1;let d=s&&a.us>=400&&a.us<=2700&&u>0;t.cmd=d?this.v10?(a.us-i.us0)/(i.us1-i.us0)*180:(a.us-500)/2e3*180:null;let f=0;if(t.type===`360`)d&&Math.abs(a.us-1500)>20&&(f=Math.max(-1,Math.min(1,(a.us-1500)/500))*780*(l/750)),t.ang+=f*e;else if(t.cmd!=null){let n=Math.max(-3,Math.min(183,t.cmd))-t.ang,r=u*e,i=Math.abs(n)<=r?n:Math.sign(n)*r;t.ang+=i,f=i/e,(t.cmd>183.5||t.cmd<-3.5)&&Math.abs(n)<.5&&(t.stall=!0,t.buzz=!0)}t.w=f}let d=this.yawServos();for(let e of d)e.collide=!1;if(d.length===8)for(let e=0;e<8;e++){let t=d[e],n=d[(e+1)%8],r=45-(n.ang-90)+(t.ang-90),i=this.v10?-35:this.bench.plan===`B`&&this.bench.robot?13:z;if(r<i){let e=(i-r)/2;t.ang+=e,n.ang-=e,t.stall=n.stall=!0,t.collide=n.collide=!0,t.buzz=n.buzz=!0}}for(let e of this.servos){if(this.v10){let t=e.wmax||0,n=r.vservoOf?.[e.role]??o;e.I=e.stall?.233*Math.min(1,n/4.8):t>0?.0033+(Math.abs(e.w)>1?.04+.15*Math.min(1,Math.abs(e.w)/t):0):0}else e.I=e.stall?.7*Math.min(1,o/6):l>0?.01+(Math.abs(e.w)>1?.12+.45*Math.min(1,Math.abs(e.w)/l):0):0;t.plan===`B`&&e.slot===1&&this.stanceArm(e.arm)&&(e.I+=.15),u+=e.I}if(this.servoI=u,this.avgI=(this.avgI||0)+(u-(this.avgI||0))*Math.min(1,e/.2),this.peakI=Math.max(this.peakI,this.avgI),this.peakInst=Math.max(this.peakInst||0,u),this.v10&&(this.eJ=(this.eJ||0)+(r.pBat||0)*e,this.eT=(this.eT||0)+e),n.robot&&this.phys){this.phys.step(e),this.benchWrap&&this.phys.keepOnBench(...this.benchWrap)&&this.ev(`走到台边 → 整机搬回起点（第 ${this.phys.wraps} 次；测速和前进距离照常累计，我的补充）`),this.imu&&this.imu.feed(this.t,this.phys.imuTruth()),this.pose=this.phys.pose2d();let t=this.phys.meas;this.vel={v:t.v,slip:t.slip}}this.t-(this.trace.at(-1)?.t||0)>.05&&(this.trace.push({...this.pose,t:this.t}),this.trace.length>3e3&&this.trace.shift())}yawServos(){return this.servos.filter(e=>e.slot===0&&e.arm!=null).sort((e,t)=>e.arm-t.arm)}liftOf(e){let t=this.servos.find(t=>t.arm===e&&t.slot===1);return t?t.ang-90:0}stanceArm(e){return this.liftOf(e)<=5}armPose(e){let t=this.servos.find(t=>t.arm===e&&t.slot===0);return{yaw:t?t.ang-90:0,lift:this.liftOf(e)}}attachImu(e){this.imu=e,this.rt&&(this.rt.imuRead=e?()=>this.imu?.read(this.t):null)}attachPhys(e){this.phys=e,this.pose=e?e.pose2d():{x:0,z:0,h:0},this.trace=[{...this.pose,t:this.t}]}snapshot(){let e=this.res.rails;return{t:this.t,espOn:this.espOn,boots:this.boots,halted:this.rt?.halted||null,rails:e,checks:this.res.checks,warn:this.res.warn,servos:this.servos.map(e=>({role:e.role,ch:e.ch,arm:e.arm,slot:e.slot,us:e.us,ang:e.ang,cmd:e.cmd,I:e.I,stall:e.stall,buzz:e.buzz,collide:e.collide,type:e.type})),pBatAvg:this.v10&&this.eT?this.eJ/this.eT:null,servoI:this.servoI,avgI:this.avgI||0,peakI:this.peakI,peakInst:this.peakInst||0,vel:this.vel,freq:this.dev.freq,pose:{...this.pose},loco:this.phys?this.phys.snapshot():null,log:this.rt?this.rt.out.slice(-40):[],events:this.events.slice(-20),mode:this.rt?.body.mode_,gait:this.rt?.body.GaitParamsSnapshot?.()}}},H=`/*
+import{b as e,c as t,f as n,g as r,l as i,n as a,p as o,t as s,v as c,x as l,y as u}from"./v10-DpIluYna.js";import{n as d,o as f,r as p,s as m}from"./parts-BRocpuEe.js";var h={red:`#d23a2f`,black:`#1e1f22`,orange:`#e07a2b`,yellow:`#e0b322`,blue:`#2f6fd6`,green:`#2f8f4e`,white:`#f1efe9`,purple:`#8a4fbf`,brown:`#7a4a2a`},g=[{k:`none`,zh:`正常（按 md 接好）`},{k:`nognd`,zh:`没有共地：ESP32 插电脑 USB 供电，没接 GND 到 PCA9685`,md:`采购清单 · 故障表“舵机完全不动 / 抖动 → 没有共地”`},{k:`pwm200`,zh:`PWM 频率不是 50 Hz（固件里漏了设预分频，PCA9685 上电默认约 200 Hz）`,md:`采购清单 · 故障表“舵机完全不动 → PWM 频率不是 50Hz” / README §8`},{k:`vplus-esp`,zh:`舵机 V+ 从 ESP32 的 5V 脚取电（ESP32 插 USB）`,md:`采购清单 · 故障表“舵机一转板子就重启”`},{k:`servo360`,zh:`买成了 360° 连续旋转舵机（3 号触手）`,md:`采购清单 · 故障表“抖动、抽搐 → 买了 360° 舵机”`},{k:`mech`,zh:`摆幅太大 + 转弯：超出机械极限、相邻触手打架`,md:`采购清单 · 故障表“到位后一直咯咯响 → 超出机械极限”`},{k:`phase0`,zh:`步态参数不对：phase = 0（八条同步，原地抽动）`,md:`采购清单 · 故障表“八个不同步 → 步态参数问题” / octopus_gait.h 注释`},{k:`i2caddr`,zh:`只有部分通道有反应：第二块 PCA9685 地址冲突（方案 C 才有两块，这里只说明）`,md:`采购清单 · 故障表“只有部分通道有反应”`,textOnly:!0},{k:`u1unset`,zh:`6 V 降压模块没先调压就接舵机（补充，md 没写）`,md:`补充：XL4015 出厂输出电压不确定`},{k:`lowbat`,zh:`电池快没电（md：6.3 V，低于 6.4 V 截止线；完善版：3S 9.4 V，低于 9.6 V）`,md:`无线架构 §6 · 低于 6.4V 停运动；完善版阈值为我的补充（估算）`}],_=[{k:0,zh:`阶段 0：先只跑通小智语音（不接舵机）`,md:`README §7 阶段 0（半天）`,roles:[`ESP`,`MIC`,`AMP`,`SPK`,`OLED`]},{k:1,zh:`阶段 1：1 个舵机 + 最小 MCP 工具`,md:`README §7 阶段 1（半天）；舵机接哪个脚文档未写，这里接 PCA9685 通道 0`,servos:1},{k:2,zh:`阶段 2：PCA9685 + 独立电源，4 个舵机`,md:`README §7 阶段 2（1 天）`,servos:4},{k:3,zh:`阶段 3：打印组装，整只八爪鱼上台`,md:`README §7 阶段 3（2–3 天）`,robot:!0},{k:4,zh:`阶段 4：调 CPG 步态（freq 0.6 / yaw 38 / duty 0.65 / phase 45 起步）`,md:`README §7 阶段 4`,robot:!0,tune:!0},{k:5,zh:`阶段 5：升级（总线舵机 / IMU）——只有文字，台面不做`,md:`README §7 阶段 5`,robot:!0,textOnly:!0}],v=(e,t,n,r,i,a)=>({a:e,b:t,kind:n,color:h[r]||r,why:i,md:a}),y=[{k:`md`,zh:`md 原样`,tip:`完全按 md 的接线、代码和数值（错的也照搬，方便对照）`},{k:`plus`,zh:`完善版（我的补充）`,tip:`按数据手册和推理补齐 md 没写清楚 / 写错的地方，每一处都标“我的补充”`},{k:`v10`,zh:`v10 紧凑无线版（我的补充）`,tip:`全部板载：1S 1200 mAh 电池 + QT Py ESP32‑S3 直接出 8 路 PWM + 2 个 5.2 V 升压 + 8 个 SG51R 小舵机；不插电，手机走 BLE`}],b=`我的补充`;function x({plan:e=`A`,phase:t=3,fault:n=`none`,variant:r=`md`}={}){if(r===`v10`)return C({fault:n});let i=r===`plus`,a=_.find(e=>e.k===t)||_[3],o=a.robot?8:a.servos||0,s=a.roles?[...a.roles]:[`ESP`,`MIC`,`AMP`,`SPK`,`OLED`,`PCA`,`BAT`,`U1`,`U2`,...i?[`DIV`]:[]],c=[],l=t===0||n===`nognd`||n===`vplus-esp`;c.push(v([`ESP`,`J1.5`],[`MIC`,`SCK`],`octo-dupont-20`,`yellow`,`GPIO5 → INMP441 SCK`,`README §4`),v([`ESP`,`J1.4`],[`MIC`,`WS`],`octo-dupont-20`,`green`,`GPIO4 → INMP441 WS`,`README §4`),v([`ESP`,`J1.6`],[`MIC`,`SD`],`octo-dupont-20`,`blue`,`GPIO6 → INMP441 SD`,`README §4`),v([`ESP`,`J1.2`],[`MIC`,`VDD`],`octo-dupont-20`,`orange`,`3V3 → INMP441 VDD`,`文档未写（数据手册 1.62–3.63 V）`),v([`ESP`,`J3.21`],[`MIC`,`GND`],`octo-dupont-20`,`black`,`GND → INMP441 GND`,`文档未写`),v([`ESP`,`J3.22`],[`MIC`,`L/R`],`octo-dupont-20`,`black`,`L/R 接 GND = 左声道`,`文档未写（数据手册）`),v([`ESP`,`J1.8`],[`AMP`,`BCLK`],`octo-dupont-20`,`yellow`,`GPIO15 → MAX98357A BCLK`,`README §4`),v([`ESP`,`J1.9`],[`AMP`,`LRC`],`octo-dupont-20`,`green`,`GPIO16 → MAX98357A LRC`,`README §4`),v([`ESP`,`J1.7`],[`AMP`,`DIN`],`octo-dupont-20`,`blue`,`GPIO7 → MAX98357A DIN`,`README §4`),v([`AMP`,`SPK+`],[`SPK`,`+`],`octo-dupont-20`,`red`,`功放 + → 喇叭 +`,`README §3`),v([`AMP`,`SPK-`],[`SPK`,`-`],`octo-dupont-20`,`black`,`功放 − → 喇叭 −`,`README §3`)),t===0?(c.push(v([`ESP`,`J1.21`],[`AMP`,`Vin`],`octo-dupont-20`,`red`,`5V（USB）→ 功放 Vin`,`文档未写`),v([`ESP`,`J1.22`],[`AMP`,`GND`],`octo-dupont-20`,`black`,`GND → 功放 GND`,`文档未写`)),c.push(v([`ESP`,`J1.1`],[`OLED`,`VCC`],`octo-dupont-20`,`orange`,`3V3 → OLED VCC`,`文档未写`),v([`ESP`,`J3.1`],[`OLED`,`GND`],`octo-dupont-20`,`black`,`GND → OLED GND`,`文档未写`),v([`ESP`,`J1.12`],[`OLED`,`SDA`],`octo-dupont-20`,`blue`,`GPIO8 → OLED SDA`,`README §4`),v([`ESP`,`J1.15`],[`OLED`,`SCL`],`octo-dupont-20`,`yellow`,`GPIO9 → OLED SCL`,`README §4`))):(c.push(v([`U2`,`OUT+`],[`AMP`,`Vin`],`octo-dupont-20`,`red`,`5V → 功放 Vin`,`文档未写`),v([`U2`,`OUT-`],[`AMP`,`GND`],`octo-dupont-20`,`black`,`GND → 功放 GND`,`文档未写`),v([`ESP`,`J1.12`],[`PCA`,`L.SDA`],`octo-dupont-30`,`blue`,`GPIO8 → PCA9685 SDA`,`README §4 / .ino I2C_SDA 8`),v([`ESP`,`J1.15`],[`PCA`,`L.SCL`],`octo-dupont-30`,`yellow`,`GPIO9 → PCA9685 SCL`,`README §4 / .ino I2C_SCL 9`),v([`ESP`,`J1.1`],[`PCA`,`L.VCC`],`octo-dupont-30`,`orange`,`3V3 → PCA9685 VCC（逻辑）`,`README §4`),v([`PCA`,`R.VCC`],[`OLED`,`VCC`],`octo-dupont-20`,`orange`,`3V3（经 PCA 排针）→ OLED VCC`,`文档未写`),v([`PCA`,`R.GND`],[`OLED`,`GND`],`octo-dupont-20`,`black`,`GND → OLED GND`,`文档未写`),v([`PCA`,`R.SDA`],[`OLED`,`SDA`],`octo-dupont-20`,`blue`,`SDA 同一条 I2C → OLED`,`README §4`),v([`PCA`,`R.SCL`],[`OLED`,`SCL`],`octo-dupont-20`,`yellow`,`SCL 同一条 I2C → OLED`,`README §4`),v([`BAT`,`BAT+`],[`U1`,`IN+`],`octo-wire`,`red`,`电池 + → 6 V 降压 IN+`,`README §4`),v([`BAT`,`BAT-`],[`U1`,`IN-`],`octo-wire`,`black`,`电池 − → 6 V 降压 IN−`,`README §4`),v([`BAT`,`BAT+`],[`U2`,`IN+`],`octo-wire`,`red`,`电池 + → 5 V 降压 IN+`,`补充（md 只写一块 XL4015 同时出 6 V 和 5 V，单块做不到）`),v([`BAT`,`BAT-`],[`U2`,`IN-`],`octo-wire`,`black`,`电池 − → 5 V 降压 IN−`,`补充`)),n===`vplus-esp`?c.push(v([`ESP`,`J1.21`],[`PCA`,`T.V+`],`octo-dupont-30`,`red`,`（故障）ESP32 5V → PCA9685 V+`,`反例`),v([`ESP`,`J1.22`],[`PCA`,`T.GND`],`octo-dupont-30`,`black`,`（故障）ESP32 GND → PCA9685 GND 端子`,`反例`)):c.push(v([`U1`,`OUT+`],[`PCA`,`T.V+`],`octo-wire`,`red`,`6 V → PCA9685 V+ 螺丝端子`,`README §4`),v([`U1`,`OUT-`],[`PCA`,`T.GND`],`octo-wire`,`black`,`GND → PCA9685 GND 端子`,`README §4`)),l||c.push(v([`U2`,`OUT+`],[`ESP`,`J1.21`],`octo-wire`,`red`,`5 V → ESP32 5V 脚`,`README §4（md 写 VIN/5V；DevKitC‑1 丝印是 5V）`),v([`U2`,`OUT-`],[`ESP`,`J1.22`],`octo-wire`,`black`,`GND → ESP32 GND（共地）`,`README §4`)),n!==`nognd`&&c.push(v([`ESP`,`J3.1`],[`PCA`,`L.GND`],`octo-dupont-30`,`black`,`GND → PCA9685 GND（逻辑地，共地）`,`README §4`)),i&&c.push(v([`BAT`,`BAT+`],[`DIV`,`IN`],`octo-dupont-20`,`red`,`电池 + → 分压板 IN（100k 上臂）`,`${b} · 替代 md 的 GPIO4 电池检测`),v([`BAT`,`BAT-`],[`DIV`,`GND`],`octo-dupont-20`,`black`,`电池 − → 分压板 GND（22k 下臂）`,b),v([`DIV`,`OUT`],[`ESP`,`J1.16`],`octo-dupont-20`,`purple`,`分压 OUT → GPIO10（ADC1_CH9）`,`${b} · GPIO4 已给麦克风 WS，GPIO1/2 留给采购清单第二批 I2C`)));let u=[],d=e===`B`&&a.robot?2:1;for(let e=0;e<o;e++)for(let t=0;t<d;t++){let r=d===2?e*2+t:e,i=d===2?`S${e}${t?`p`:`y`}`:`S${e}`;u.push({role:i,arm:e,slot:t,ch:`CH${r}`,type:n===`servo360`&&e===3&&t===0?`360`:`180`}),c.push({a:[i,`LEAD`],b:[`PCA`,`CH${r}`],kind:`octo-servo`,color:h.brown,why:`${i} 舵机引线 → PCA9685 通道 ${r}`,md:d===2?`octopus_body.h · ChannelOf(kDual16) = arm×2+slot`:`octopus_body.h · ChannelOf(kSingle8) = arm`})}let f=n===`lowbat`;return{plan:e,phase:t,fault:n,variant:r,ph:a,roles:s,wires:c,servos:u,usb:l,defs:i?{BAT:`p-octo-3s-pack`}:{},plusHw:i&&e===`A`&&a.robot?{casters:!0,pads:!0,tipShare:.3}:{},vbat:i?f?9.4:11.1:f?6.3:7.4,caps:a.robot?u.length:0,u1Unset:n===`u1unset`,robot:!!a.robot}}var S=[{k:`none`,zh:`正常（按 v10 接线）`},{k:`nognd`,zh:`QT Py 的 GND 没接到电池 / 升压地`},{k:`lowbat`,zh:`电池快没电（空载 3.55 V，带载低于 3.55 V 停运动阈值，估算）`},{k:`swoff`,zh:`电源开关拨到 OFF（EN 拉低，升压和 QT Py 都断电）`},{k:`onebst`,zh:`只装一个升压，8 个舵机全挂在它上面`}];function C({fault:e=`none`}={}){let n=`我的补充 · v10`,r=[`QTPY`,`BAT`,`CHG`,`BST1`,`BST2`,`SW`,`DIV`,`CAP1`,`CAP2`],i=[],a=e===`onebst`;i.push(v([`BAT`,`BAT+`],[`CHG`,`JST+`],`octo-jst`,`red`,`LiPo JST‑PH 插进充电板的电池座`,`Adafruit 4410：JST‑PH 电池座 + BAT 焊盘`),v([`BAT`,`BAT-`],[`CHG`,`JST-`],`octo-jst`,`black`,`（同一根 JST 线的黑线）`,`Adafruit 258：JST‑PH 2 针`),v([`CHG`,`BAT`],[`BST1`,`IN`],`octo-v10-power`,`red`,`充电板 BAT 焊盘 → 升压 1 IN（舵机大电流不过开关）`,n),v([`CHG`,`GND`],[`BST1`,`GND`],`octo-v10-power`,`black`,`GND → 升压 1 GND`,n),v([`CHG`,`BAT`],[`SW`,`1`],`octo-v10-wire`,`red`,`BAT → 开关 1 脚`,n),v([`CHG`,`GND`],[`SW`,`3`],`octo-v10-wire`,`black`,`GND → 开关 3 脚（拨到这边 = EN 接地 = 关）`,n),v([`SW`,`COM`],[`BST1`,`EN`],`octo-v10-wire`,`orange`,`开关 COM → 升压 1 EN`,`Adafruit 4654：EN 拉低 = 输出真断开`),v([`SW`,`COM`],[`QTPY`,`BAT`],`octo-v10-wire`,`orange`,`开关 COM → QT Py 背面 BAT 焊盘（3–6 V，带二极管）`,`Adafruit 5426：BAT 焊盘`),v([`SW`,`COM`],[`DIV`,`IN`],`octo-v10-wire`,`orange`,`开关 COM → 分压 IN`,n),v([`DIV`,`GND`],[`CHG`,`GND`],`octo-v10-wire`,`black`,`分压 GND`,n),v([`DIV`,`OUT`],[`QTPY`,`A3`],`octo-v10-wire`,`purple`,`分压 OUT → A3（GPIO8）电池检测`,n),v([`BST1`,`OUT`],[`CAP1`,`+`],`octo-v10-wire`,`red`,`升压 1 OUT → 电容 +`,`${n} · 电容值估算`),v([`BST1`,`GND`],[`CAP1`,`-`],`octo-v10-wire`,`black`,`电容 −`,n)),e!==`nognd`&&i.push(v([`QTPY`,`BGND`],[`CHG`,`GND`],`octo-v10-wire`,`black`,`QT Py BAT 旁的 GND 焊盘 → 电池地（共地）`,n)),a||i.push(v([`CHG`,`BAT`],[`BST2`,`IN`],`octo-v10-power`,`red`,`充电板 BAT 焊盘 → 升压 2 IN`,n),v([`CHG`,`GND`],[`BST2`,`GND`],`octo-v10-power`,`black`,`GND → 升压 2 GND`,n),v([`SW`,`COM`],[`BST2`,`EN`],`octo-v10-wire`,`orange`,`开关 COM → 升压 2 EN`,n),v([`BST2`,`OUT`],[`CAP2`,`+`],`octo-v10-wire`,`red`,`升压 2 OUT → 电容 +`,n),v([`BST2`,`GND`],[`CAP2`,`-`],`octo-v10-wire`,`black`,`电容 −`,n));let o=[];for(let e=0;e<8;e++){let r=`S${e}`,s=a||e<4?`BST1`:`BST2`,c=t[e];o.push({role:r,arm:e,slot:0,ch:`CH${e}`,type:`sg51r`,pad:c.pad,gpio:c.gpio,rail:s}),i.push({a:[r,`LEAD`],b:[`QTPY`,c.pad],kind:`octo-v10-servo`,rail:s,color:h.brown,why:`${r}：橙 PWM → QT Py ${c.pad}（GPIO${c.gpio}，LEDC 通道 ${e}）；红 V+ / 棕 GND → ${s}`,md:n})}return{plan:`A`,phase:3,fault:e,variant:`v10`,ph:_[3],roles:r,wires:i,servos:o,usb:!1,defs:{BAT:`ada-258`,DIV:`p-octo-vdiv-1s`,QTPY:`ada-5426`,CHG:`ada-4410`,BST1:`ada-4654`,BST2:`ada-4654`,SW:`ada-805`,CAP1:`kc-cp_radial_d6.3mm_p2.50mm`,CAP2:`kc-cp_radial_d6.3mm_p2.50mm`},plusHw:{casters:!0,pads:!0,tipShare:.3},vbat:e===`lowbat`?3.55:3.85,swOn:e!==`swoff`,caps:2,u1Unset:!1,robot:!0,board:`v10`}}var w={ESP:`p-octo-devkitc1`,PCA:`ada-815`,MIC:`p-octo-inmp441`,AMP:`ada-3006`,SPK:`ada-3923`,BAT:`p-octo-2s-lipo`,U1:`p-octo-xl4015-6v`,U2:`p-octo-xl4015-5v`,OLED:`p-octo-oled096`,DIV:`p-octo-vdiv`},T=Object.fromEntries(m.map(e=>[e.id,e])),E=(e,t)=>{let n=t?.defs?.[e]||w[e];return T[n]?.octo||f[n]||{pins:{},ties:[]}},D=class{constructor(){this.p=new Map}f(e){this.p.has(e)||this.p.set(e,e);let t=e;for(;this.p.get(t)!==t;)t=this.p.get(t);return this.p.set(e,t),t}u(e,t){this.p.set(this.f(e),this.f(t))}},O=e=>{if(e.kind===`octo-servo`){let[t]=e.a,n=e.b[1];return[[`${t}:GND`,`PCA:${n}.GND`],[`${t}:V+`,`PCA:${n}.V+`],[`${t}:PWM`,`PCA:${n}.PWM`]]}if(e.kind===`octo-v10-servo`){let[t]=e.a,n=e.b[1],r=e.rail;return[[`${t}:GND`,`${r}:GND`],[`${t}:V+`,`${r}:OUT`],[`${t}:PWM`,`QTPY:${n}`]]}return[[`${e.a[0]}:${e.a[1]}`,`${e.b[0]}:${e.b[1]}`]]};function k(e){if(e._uf)return e._uf;let t=new D;Object.defineProperty(e,"_uf",{value:t,enumerable:!1});let n=e.board===`v10`?e.roles:Object.keys(w);e.board===`v10`&&t.u(`SW:COM`,e.swOn?`SW:1`:`SW:3`);for(let r of n)for(let n of E(r,e).ties)for(let e=1;e<n.length;e++)t.u(`${r}:${n[0]}`,`${r}:${n[e]}`);for(let n of e.wires)for(let[e,r]of O(n))t.u(e,r);return e.usb&&t.u(`USB:GND`,`USB:GND`),t}var A=.12,j=.02,M=.0014,N=.003;function P(e,t={}){if(e.board===`v10`)return I(e,t);let n=k(e),r=(e,t)=>n.f(e)===n.f(t),i=t.servoI||0,a={checks:[],rails:{},warn:[]},o=e.vbat??7.4,s=r(`U1:IN+`,`BAT:BAT+`)&&r(`U1:IN-`,`BAT:BAT-`),c=r(`U2:IN+`,`BAT:BAT+`)&&r(`U2:IN-`,`BAT:BAT-`),l=t=>e.roles.includes(t),u=!!e.usb,d=l(`U2`)&&c&&r(`ESP:J1.21`,`U2:OUT+`);r(`ESP:J1.22`,`U2:OUT-`);let f=l(`U1`)&&s&&r(`PCA:T.V+`,`U1:OUT+`),p=l(`PCA`)&&r(`PCA:T.V+`,`ESP:J1.21`),m=e.variant===`plus`,h=m?o<9.8?.45:.15:e.vbat<6.6?.5:.12,g=e.u1Unset?null:6,_=0,v=0,y=0,b=(A+(l(`OLED`)?j:0)+(l(`MIC`)?M:0))*5+(l(`AMP`)?N*5:0);f&&(y+=i*6/.9),d&&(y+=b/.88),y/=Math.max(5.5,o);let x=o-y*h,S=.8;f&&(v=Math.min(g??x-S,x-S-i*.05)),d&&(_=Math.min(5,x-S)),u&&(_=Math.max(_,5-(p?i*1.4:0)-.05)),p&&(v=_-.3);let C=_>=4.3,w=r(`ESP:J3.1`,`PCA:L.GND`)||r(`ESP:J1.22`,`BAT:BAT-`)&&r(`PCA:T.GND`,`BAT:BAT-`),T=r(`PCA:L.VCC`,`ESP:J1.1`),E=C&&T&&(w||p&&u),D={sda:r(`PCA:L.SDA`,`ESP:J1.12`),scl:r(`PCA:L.SCL`,`ESP:J1.15`)},O=l(`DIV`)&&r(`DIV:IN`,`BAT:BAT+`)&&r(`DIV:GND`,`BAT:BAT-`)&&r(`DIV:OUT`,`ESP:J1.16`)&&r(`BAT:BAT-`,`ESP:J1.22`);a.rails={battSense:O,vbat:l(`BAT`)?+x.toFixed(2):null,vservo:+v.toFixed(2),espIn:+_.toFixed(2),v33:C?3.3:0,iBat:+y.toFixed(2),servoI:+i.toFixed(2),espOn:C,pcaLogic:E,gndCommon:w,i2cWired:D.sda&&D.scl,vpFromEsp:p,vpFromU1:f};let P=(e,t,n,r=`err`)=>a.checks.push({ok:!!e,zh:t,md:n,level:e?`ok`:r});return l(`PCA`)&&(P(w,`共地：ESP32 的 GND 和 PCA9685 / 电池 GND 连在一起`,`README §4 三条铁律 · 共地`),P(!p,`舵机 V+ 不从 ESP32 取电（走 PCA9685 的 V+ 螺丝端子）`,`README §4 三条铁律 · V+ 绝不从 ESP32 取`),P(T,`PCA9685 VCC 接 ESP32 3V3（逻辑电源）`,`README §4 接线表 · 3V3/GND → PCA VCC`),P(D.sda&&D.scl,`I2C：GPIO8 → SDA，GPIO9 → SCL`,`README §4 接线表 / body_firmware_A.ino #define I2C_SDA 8`),P(f,`V+ 端子 ← XL4015 调到 6 V`,`README §4 供电 · 7.4V → XL4015 → 6V`)),l(`MIC`)&&(P(r(`MIC:SCK`,`ESP:J1.5`)&&r(`MIC:WS`,`ESP:J1.4`)&&r(`MIC:SD`,`ESP:J1.6`),`麦克风 INMP441：SCK=GPIO5，WS=GPIO4，SD=GPIO6`,`README §4 接线表`),P(r(`MIC:L/R`,`ESP:J3.1`),`INMP441 L/R 接 GND（选左声道）`,`文档未写（按 INMP441 数据手册补）`,`warn`),P(r(`MIC:VDD`,`ESP:J1.1`),`INMP441 VDD 接 3V3`,`文档未写（数据手册 1.62–3.63 V）`,`warn`)),l(`AMP`)&&(P(r(`AMP:BCLK`,`ESP:J1.8`)&&r(`AMP:LRC`,`ESP:J1.9`)&&r(`AMP:DIN`,`ESP:J1.7`),`功放 MAX98357A：BCLK=GPIO15，LRC=GPIO16，DIN=GPIO7`,`README §4 接线表`),P(r(`AMP:SPK+`,`SPK:+`)&&r(`AMP:SPK-`,`SPK:-`),`喇叭接功放输出`,`README §3 物料（8Ω 2W 喇叭）`)),l(`SPK`)&&l(`MIC`)&&t.micSpkCm!=null&&P(t.micSpkCm>=5,`麦克风离喇叭 ${t.micSpkCm.toFixed(1)} cm（≥ 5 cm）`,`README §8 · 麦克风和喇叭至少隔 5 cm`),l(`OLED`)&&P(r(`OLED:SDA`,`PCA:L.SDA`)&&r(`OLED:SCL`,`PCA:L.SCL`),`OLED 和 PCA9685 共用 I2C（0x3C / 0x40 不冲突）`,`README §4 · 屏幕同一条 I2C`),l(`BAT`)&&(m?P(o>=8,`XL4015 输入 ${o.toFixed(1)} V（3S，截止 9.6 V 也高于数据手册下限 8 V）`,`我的补充 · XLSEMI XL4015 数据手册 8–36 V`,`warn`):P(o>=8,`XL4015 输入 ${o.toFixed(1)} V：数据手册下限 8 V，2S 电池大部分时间低于它`,`md 没提；XLSEMI XL4015 数据手册`,`warn`),m&&P(O,`电池检测：分压板 IN ← 电池 +、OUT → GPIO10（ADC1_CH9），12.6 V 时 2.27 V < 2.9 V 量程`,`我的补充 · 乐鑫 ESP32‑S3 ADC 文档（11 dB 校准量程 0–2900 mV）`,`warn`),P(!e.u1Unset,`6 V 那块降压先空载调好再接舵机`,`补充（md 没写调压步骤）`,`warn`),e.u1Unset&&a.warn.push(`U1 没调：输出接近输入（约 ${(x-S).toFixed(1)} V），超过 MG90S 标称 6.0 V`)),(e.servos||[]).forEach((t,n)=>{let r=t.ch;if(r==null)return;let i=e.plan===`B`?null:n;i!=null&&r!==`CH${i}`&&P(!1,`触手 ${n} 的舵机插在 ${r}，md 约定 ${i} 号触手 = 通道 ${i}`,`octopus_body.h · ChannelOf(kSingle8)`,`warn`)}),e.caps!=null&&l(`PCA`)&&P(e.caps>=(e.servos?.length||0),`每个舵机旁一颗 220µF（${e.caps} / ${e.servos?.length||0}）`,`README §4 三条铁律 · 每个舵机旁 220µF`,`warn`),i>5&&a.warn.push(`舵机电流 ${i.toFixed(1)} A 超过 XL4015 标称 5 A`),v>0&&v<4.6&&i>.3&&a.warn.push(`舵机电压掉到 ${v.toFixed(2)} V`),a.errCount=a.checks.filter(e=>e.level===`err`).length,a.warnCount=a.checks.filter(e=>e.level===`warn`).length+a.warn.length,a.same=r,a}var F=.08;function I(e,r={}){let i=k(e),c=(e,t)=>i.f(e)===i.f(t),l={checks:[],rails:{},warn:[]},u=(e,t,n,r=`err`)=>l.checks.push({ok:!!e,zh:t,md:n,level:e?`ok`:r}),d=r.servoI||0,f=r.railI||null,p=e.vbat,m=p<3.6?.3:.15,h=c(`CHG:JST+`,`BAT:BAT+`)&&c(`CHG:JST-`,`BAT:BAT-`),g=e=>h&&c(`${e}:IN`,`BAT:BAT+`)&&c(`${e}:GND`,`BAT:BAT-`),_=c(`SW:COM`,`BAT:BAT+`),v=e=>c(`${e}:EN`,`BAT:BAT+`),y=[`BST1`,`BST2`].filter(t=>e.roles.includes(t)&&g(t)),b={};for(let t of e.servos)b[t.role]=[`BST1`,`BST2`].find(e=>c(`${t.role}:V+`,`${e}:OUT`)&&c(`${t.role}:GND`,`BAT:BAT-`))||null;let x={BST1:0,BST2:0};if(f)for(let t of e.servos){let e=b[t.role];e&&(x[e]+=f[t.role]||0)}else{let t=e.servos.length;for(let n of e.servos){let e=b[n.role];e&&(x[e]+=d/t)}}let S=_&&h&&c(`QTPY:BAT`,`BAT:BAT+`),C=p,w=0,T={};for(let e=0;e<3;e++){w=S?F:0;for(let e of[`BST1`,`BST2`]){let t=y.includes(e)&&v(e),r=o(C),i=t?x[e]:0,s=t?i<=r?a.vout:a.vout*Math.max(0,r/i):0,c=i<=r?i:r;T[e]={on:t,v:s,I:i,lim:r,sat:t&&i>r},t&&(w+=s*c/n(c)/Math.max(2.5,C)+2e-4)}C=p-w*m}let E=S?C-.3:0,D=E>=3.1,O=c(`QTPY:BGND`,`BAT:BAT-`),A=c(`DIV:IN`,`SW:COM`)&&c(`DIV:GND`,`BAT:BAT-`)&&c(`DIV:OUT`,`QTPY:${s.pad}`),j={};for(let n of e.servos){let e=t.find(e=>c(`${n.role}:PWM`,`QTPY:${e.pad}`));j[n.role]=e&&O?e.gpio:null}let M=Object.fromEntries(e.servos.map(e=>[e.role,b[e.role]?T[b[e.role]].v:0])),N=Object.values(M),P=N.length?Math.min(...N):0;l.rails={battSense:A,vbat:+C.toFixed(3),vbatSw:_?+C.toFixed(3):0,vservo:+P.toFixed(2),vservoOf:M,espIn:+E.toFixed(2),v33:D?3.3:0,iBat:+w.toFixed(3),servoI:+d.toFixed(3),espOn:D,pcaLogic:D,gndCommon:O,i2cWired:!0,vpFromEsp:!1,vpFromU1:!1,boost:T,pwmGpio:j,swOn:_,usb:!1,pBat:+(w*C).toFixed(3)},u(h,`LiPo JST 插进充电板电池座`,`Adafruit 4410 / 258`),u(_,`电源开关拨到 ON（COM 接电池 +，两个升压 EN 拉高、QT Py 上电）`,`Adafruit 4654：EN 拉低 = 真断开`,`warn`),u(O,`共地：QT Py BAT 旁的 GND 焊盘接电池地（PWM 才有参考）`,`舵机 PWM 是相对 GND 的信号`),u(e.servos.every(e=>b[e.role]),`每个舵机红线 / 棕线接在升压 OUT / GND 上（不从 QT Py 取电）`,`我的补充 · QT Py 3.3 V 稳压 600 mA 峰值，带不动舵机`),u(e.servos.every(e=>j[e.role]!=null),`8 根橙线接 QT Py 的 8 个焊盘（A0 A1 A2 SDA SCL TX RX SCK）`,`ESP32‑S3 LEDC 8 个通道（乐鑫文档）`),u(A,`电池检测：开关后的电池 + → 100k/100k → A3（GPIO8）；4.2 V → 2.1 V < 2.9 V 量程`,s.src,`warn`);let I=e.servos.filter(e=>b[e.role]===`BST1`).length,L=e.servos.filter(e=>b[e.role]===`BST2`).length;u(I<=4&&L<=4,`两个升压各带 ≤ 4 个舵机（现在 ${I} + ${L}）`,`我的补充 · MiniBoost 3.7 V 输入时最大输出约 1.2 A（页面：1.1 A@3.5 V、1.4 A@4 V，插值）`,`warn`),u(!0,`工作时不插 USB：USB‑C 只用来充电（充电板 100 mA 默认 / 500 mA 跳线）`,`Adafruit 4410`),u(!1,`舵机电压 5.2 V 高于 SG51R 页面写的 4.8 V（页面没写最高电压；我没找到 5 V 以下的 1S 升压现成小板）`,`Adafruit 2201 / 4654 · 我的补充`,`warn`),u(!1,`拨动开关页面没写额定电流：这里只让它过 QT Py + EN 的小电流（< 0.2 A，估算），舵机电流不经过它`,`Adafruit 805`,`warn`);for(let e of[`BST1`,`BST2`])T[e]?.sat&&l.warn.push(`${e===`BST1`?`升压 1`:`升压 2`} 要 ${T[e].I.toFixed(2)} A，超过 ${C.toFixed(2)} V 输入时的上限 ${T[e].lim.toFixed(2)} A → 输出掉到 ${T[e].v.toFixed(2)} V`);return w>2&&l.warn.push(`电池电流 ${w.toFixed(2)} A 超过 LiPo 线材额定 2 A（Adafruit 258 页面）`),p<s.cut&&l.warn.push(`电池 ${p.toFixed(2)} V 低于 ${s.cut} V（估算阈值）：固件会停运动，请充电`),l.errCount=l.checks.filter(e=>e.level===`err`).length,l.warnCount=l.checks.filter(e=>e.level===`warn`).length+l.warn.length,l.same=c,l}var L=class{constructor(){this.reset()}reset(){this.duty=new Map,this.freqHz=50,this.bits=14,this.writes=0}write(e,t,n,r){return this.duty.set(e,t),n&&(this.freqHz=n),r&&(this.bits=r),this.writes++,0}get freq(){return this.freqHz}gpio(e){return{us:(this.duty.get(e)||0)/((1<<this.bits)-1)*(1e6/this.freqHz)}}},R={pulse:`舵机脉宽 0.5–2.5 ms ↔ 0–180°（MG90S 常见标定，估算）`,speed:`空载 0.1 s/60°@4.8 V、0.08 s/60°@6 V（MG90S 常见标称），按电压线性插值`,current:`电流：保持 0.01 A，运动 0.12 + 0.45·(速度/最高速) A，堵转 0.7 A（估算）`,frame:`只有 10–30 ms 周期（33–100 Hz）的 PWM 舵机才认（模拟舵机估算）`,friction:`v9 走路是物理仿真（Rapier）：机身是有重力的刚体，触手是舵机关节连着的刚体，只靠触手和桌面的接触摩擦推着走；摩擦系数、PLA 质量等是估算（见下面“走路物理”）`,plusA:`完善版 A（我的补充）：底板下 3 个万向珠（滚动阻力系数约 0.02）、调高度让触手尖分担约 30% 重量 + 触手尖单向鳞片脚垫（向后滑 0.45、向前滑 0.15）——全部估算`,gap:`相邻触手最小夹角：方案 A 12°（按触手根部宽度）；方案 B 13°（v8 在 3D 碰撞体上实测，见 e2e/gapB.mjs）——A 为估算`},z=12;function B(e){let t=e>>>0||1;return()=>(t=t*1664525+1013904223>>>0)/4294967296}var V=class{constructor(t={}){this.o={plan:`A`,phase:3,fault:`none`,mode:`ino`,variant:`md`,seed:7,tipShare:.15,...t},this.o.F||(this.o.F=this.o.variant===`plus`||this.o.variant===`v10`?l():e(!1)),this.rebuild()}set(e){Object.assign(this.o,e),this.rebuild()}rebuild(){let e=this.o;this.bench=x(e),this.r=B(e.seed),this.v10=this.bench.board===`v10`,this.dev=this.v10?new L:new c(64),this.t=0,this.servoI=0,this.peakI=0,this.events=[],this.phys=null,this.pose={x:0,z:0,h:0},this.trace=[{x:0,z:0,h:0,t:0}],this.servos=this.bench.servos.map(e=>({...e,chN:+e.ch.slice(2),ang:72+this.r()*36,w:0,cmd:null,us:0,I:0,stall:!1,buzz:!1,collide:!1})),this.res=P(this.bench,{servoI:0,micSpkCm:e.micSpkCm}),this.espOn=!1,this.offFor=1e9,this.boots=0,this.scenarioDone=!1,this.rt=this.bench.phase===0?null:new u({F:e.F,mode:e.mode,plan:e.plan,skipPrescale:e.fault===`pwm200`,i2cWrite:(e,t,n)=>this.i2c(e,t,n),adcMv:e=>this.adcMv(e),...this.v10?{board:`v10`,servoPins:t.map(e=>e.gpio),ledcWrite:(e,t,n,r)=>this.espOn?this.dev.write(e,t,n,r):!1}:{}}),this.step(.001)}i2c(e,t,n){if(e!==64)return 2;let r=this.res.rails;return!r.pcaLogic||!r.i2cWired?2:(this.dev.write(t,n,this.rt.now),0)}adcMv(e){let t=this.res.rails;return this.v10?e===s.gpio&&t.battSense&&t.espOn?Math.min(2900,t.vbatSw/s.ratio*1e3+(this.r()-.5)*10):0:e!==10||!t.battSense||!t.espOn?0:Math.min(2900,t.vbat*22/122*1e3+(this.r()-.5)*20)}ev(e){this.events.push({t:+this.t.toFixed(2),zh:e}),this.events.length>60&&this.events.shift()}send(e){this.rt&&this.espOn?this.rt.send(e):this.ev(`ESP32 没在运行，指令没发出去`)}mcp(e,t){if(this.o.mode!==`mcp`)return`当前是蓝牙串口 .ino 模式`;if(!this.rt||!this.espOn)return`ESP32 没在运行`;let n=this.rt.mcp(e,t);return this.ev(`MCP ${e} ${JSON.stringify(t)} → ${n}`),n}step(e){let t=.005,n=Math.max(1,Math.round(e/t));for(;n--;)this.sub(t)}sub(e){this.t+=e;let t=this.o,n=this.bench;this.res=P(n,{servoI:this.servoI,micSpkCm:t.micSpkCm,railI:this.v10?Object.fromEntries(this.servos.map(e=>[e.role,e.I])):null});let r=this.res.rails;if(this.rt){if(r.espOn&&!this.espOn&&this.offFor>.3?(this.espOn=!0,this.boots++,this.dev.reset(),this.rt.now=this.t*1e3,this.rt.boot(),this.boots>1&&this.ev(`ESP32 重新启动（第 ${this.boots} 次）`),this.scenarioDone=!1):!r.espOn&&this.espOn&&(this.espOn=!1,this.offFor=0,this.ev(this.v10?`QT Py 电源掉到 ${r.espIn.toFixed(2)} V → 欠压复位`:`ESP32 5V 掉到 ${r.espIn.toFixed(2)} V → 欠压复位`),r.vpFromU1||this.dev.reset()),this.espOn||(this.offFor+=e),this.espOn&&(this.rt.step(e*1e3),!this.scenarioDone&&this.rt.body.running_)){if(this.scenarioDone=!0,t.fault===`mech`){let e=this.rt.body.GaitParamsSnapshot();e.yaw_amp_deg=60,this.rt.body.SetGaitParams(e),this.rt.body.SetVelocity(1,1),this.ev(`场景：步态 yaw 被改成 60°，并且右转`)}if(t.fault===`phase0`){let e=this.rt.body.GaitParamsSnapshot();e.phase_deg=0,this.rt.body.SetGaitParams(e),this.rt.body.SetVelocity(1,0),this.ev(`场景：phase = 0，八条触手同相`)}}}else this.espOn=r.espOn;let a=1e6/this.dev.freq,o=r.vservo,s=a>=1e4&&a<=3e4,c=e=>this.v10?e<3.5?0:i.speed48*Math.min(1,e/4.8):e<3.5?0:600+(Math.min(e,6.5)-4.8)*125,l=c(o),u=0;for(let t of this.servos){let n=this.v10?r.pwmGpio?.[t.role]:null,a=this.v10?n!=null&&r.espOn?this.dev.gpio(n):{us:0}:r.pcaLogic||r.vpFromU1?this.dev.channel(t.chN):{us:0},u=this.v10?c(r.vservoOf?.[t.role]??o):l;t.wmax=u,t.us=a.us,t.stall=!1,t.buzz=!1;let d=s&&a.us>=400&&a.us<=2700&&u>0;t.cmd=d?this.v10?(a.us-i.us0)/(i.us1-i.us0)*180:(a.us-500)/2e3*180:null;let f=0;if(t.type===`360`)d&&Math.abs(a.us-1500)>20&&(f=Math.max(-1,Math.min(1,(a.us-1500)/500))*780*(l/750)),t.ang+=f*e;else if(t.cmd!=null){let n=Math.max(-3,Math.min(183,t.cmd))-t.ang,r=u*e,i=Math.abs(n)<=r?n:Math.sign(n)*r;t.ang+=i,f=i/e,(t.cmd>183.5||t.cmd<-3.5)&&Math.abs(n)<.5&&(t.stall=!0,t.buzz=!0)}t.w=f}let d=this.yawServos();for(let e of d)e.collide=!1;if(d.length===8)for(let e=0;e<8;e++){let t=d[e],n=d[(e+1)%8],r=45-(n.ang-90)+(t.ang-90),i=this.v10?-35:this.bench.plan===`B`&&this.bench.robot?13:z;if(r<i){let e=(i-r)/2;t.ang+=e,n.ang-=e,t.stall=n.stall=!0,t.collide=n.collide=!0,t.buzz=n.buzz=!0}}for(let e of this.servos){if(this.v10){let t=e.wmax||0,n=r.vservoOf?.[e.role]??o;e.I=e.stall?.233*Math.min(1,n/4.8):t>0?.0033+(Math.abs(e.w)>1?.04+.15*Math.min(1,Math.abs(e.w)/t):0):0}else e.I=e.stall?.7*Math.min(1,o/6):l>0?.01+(Math.abs(e.w)>1?.12+.45*Math.min(1,Math.abs(e.w)/l):0):0;t.plan===`B`&&e.slot===1&&this.stanceArm(e.arm)&&(e.I+=.15),u+=e.I}if(this.servoI=u,this.avgI=(this.avgI||0)+(u-(this.avgI||0))*Math.min(1,e/.2),this.peakI=Math.max(this.peakI,this.avgI),this.peakInst=Math.max(this.peakInst||0,u),this.v10&&(this.eJ=(this.eJ||0)+(r.pBat||0)*e,this.eT=(this.eT||0)+e),n.robot&&this.phys){this.phys.step(e),this.benchWrap&&this.phys.keepOnBench(...this.benchWrap)&&this.ev(`走到台边 → 整机搬回起点（第 ${this.phys.wraps} 次；测速和前进距离照常累计，我的补充）`),this.imu&&this.imu.feed(this.t,this.phys.imuTruth()),this.pose=this.phys.pose2d();let t=this.phys.meas;this.vel={v:t.v,slip:t.slip}}this.t-(this.trace.at(-1)?.t||0)>.05&&(this.trace.push({...this.pose,t:this.t}),this.trace.length>3e3&&this.trace.shift())}yawServos(){return this.servos.filter(e=>e.slot===0&&e.arm!=null).sort((e,t)=>e.arm-t.arm)}liftOf(e){let t=this.servos.find(t=>t.arm===e&&t.slot===1);return t?t.ang-90:0}stanceArm(e){return this.liftOf(e)<=5}armPose(e){let t=this.servos.find(t=>t.arm===e&&t.slot===0);return{yaw:t?t.ang-90:0,lift:this.liftOf(e)}}attachImu(e){this.imu=e,this.rt&&(this.rt.imuRead=e?()=>this.imu?.read(this.t):null)}attachPhys(e){this.phys=e,this.pose=e?e.pose2d():{x:0,z:0,h:0},this.trace=[{...this.pose,t:this.t}]}snapshot(){let e=this.res.rails;return{t:this.t,espOn:this.espOn,boots:this.boots,halted:this.rt?.halted||null,rails:e,checks:this.res.checks,warn:this.res.warn,servos:this.servos.map(e=>({role:e.role,ch:e.ch,arm:e.arm,slot:e.slot,us:e.us,ang:e.ang,cmd:e.cmd,I:e.I,stall:e.stall,buzz:e.buzz,collide:e.collide,type:e.type})),pBatAvg:this.v10&&this.eT?this.eJ/this.eT:null,servoI:this.servoI,avgI:this.avgI||0,peakI:this.peakI,peakInst:this.peakInst||0,vel:this.vel,freq:this.dev.freq,pose:{...this.pose},loco:this.phys?this.phys.snapshot():null,log:this.rt?this.rt.out.slice(-40):[],events:this.events.slice(-20),mode:this.rt?.body.mode_,gait:this.rt?.body.GaitParamsSnapshot?.()}}},H=`/*
  * 八爪鱼身体固件 · 方案 A（手机手动蓝牙控制，零代码）
  * ============================================================
  * 手机装一个蓝牙串口 App，手动发送指令（WALK / LEFT / STOP ...）
@@ -947,6 +947,9 @@ void RegisterOctopusTools(octo::OctopusBody& body) {
  *   GAIT f=0.6 yaw=30 lift=20 phase=45 duty=0.6 press=20   现场调步态（大小写都行；press 只对 B 有用）
  *   BATT               回报电池电压
  * 15 s 没收到指令会自动 REST（md 的安全特性，保留）；想一直走，App 每 5 s 重发一次 GO。
+ *
+ * v16 我的补充：以 '@' 开头的行是 OCTL/1 协议帧（台面「实物连接」面板用，带序号和 CRC，见 octopus_link.h）。
+ *   会话中 1.5 s 收不到帧 → 自动 REST；BLE 断开 → 自动 REST；ESTOP → 立刻停 PWM。上面的文本指令照常能用。
  */
 
 // —— 我的补充：编译开关，选方案。8 = 方案 A（kSingle8），16 = 方案 B（kDual16）——
@@ -976,6 +979,8 @@ void RegisterOctopusTools(octo::OctopusBody& body) {
 #include "octopus_bus.h"
 #include "octopus_body.h"
 #include "octopus_batt.h"
+#include "octopus_link.h"   // v16 我的补充
+#include <esp_system.h>
 #ifdef OCTO_CTRL_CUSTOM
 #include "octopus_imu.h"   // v14：MPU-6050（有 octopus_ctrl_custom.h 才编进来）
 octo::Mpu6050 imu;
@@ -994,30 +999,46 @@ static bool ImuRead(void* ctx, octo::ImuSample& s) { return static_cast<octo::Mp
 
 octo::OctopusBody body;
 octo::Battery batt;
+octo::Link octoLink;            // v16
+volatile bool bleDropped = false;   // v16：BLE 回调只置位，loop() 里处理
 
 BLECharacteristic* txChar = nullptr;
 volatile bool bleConnected = false;
 QueueHandle_t lineQueue = nullptr;     // 我的补充：BLE 回调只把整行塞进队列，loop() 里解析
 
-struct Line { char s[64]; };
+struct Line { char s[OCTL_MAX_LINE + 8]; };   // v16：OCTL/1 一行最长 160
 
 String usbLine;
 uint32_t lastCmdMs = 0;
 uint32_t lastBattMs = 0;
 const uint32_t AUTO_REST_MS = 15000;   // md：15 s 没指令自动待机
 
-void reply(const String& s) {
-  Serial.println(s);
-  if (bleConnected && txChar) {
-    txChar->setValue((uint8_t*)s.c_str(), s.length());
+// v16 我的补充：BLE 默认 MTU 23 → 每次 notify 最多 20 字节，长行分段发，主机按 '\\n' 拼回整行
+void bleSend(const char* p, size_t n) {
+  if (!bleConnected || !txChar) return;
+  for (size_t i = 0; i < n; i += 20) {
+    const size_t k = (n - i) < 20 ? (n - i) : 20;
+    txChar->setValue((uint8_t*)(p + i), k);
     txChar->notify();
   }
+}
+
+void sendLine(const char* line, size_t n) {   // v16：协议帧（已带 '\\n'）
+  Serial.write(reinterpret_cast<const uint8_t*>(line), n);
+  bleSend(line, n);
+}
+
+void reply(const String& s) {
+  Serial.println(s);
+  String t = s + "\\n";   // v16：BLE 也补换行，分段后主机才能断行
+  bleSend(t.c_str(), t.length());
 }
 
 class ServerCb : public BLEServerCallbacks {
   void onConnect(BLEServer*) override { bleConnected = true; }
   void onDisconnect(BLEServer* srv) override {
     bleConnected = false;
+    bleDropped = true;   // v16
     srv->getAdvertising()->start();   // 断开后继续广播
   }
 };
@@ -1029,10 +1050,10 @@ class RxCb : public BLECharacteristicCallbacks {
     for (size_t i = 0; i < v.length(); i++) {
       char ch = v[i];
       if (ch == '\\n' || ch == '\\r') { push(); }
-      else if (buf.length() < 63) buf += ch;
+      else if (buf.length() < OCTL_MAX_LINE + 1) buf += ch;
     }
-    // 很多 App 发送时不带换行：一次 write 当一行
-    push();
+    // 很多 App 发送时不带换行：一次 write 当一行（v16：'@' 协议帧会被分成多次 write，等换行）
+    if (!buf.startsWith("@")) push();
   }
   void push() {
     if (!buf.length()) return;
@@ -1099,24 +1120,35 @@ void setup() {
   else Serial.println("IMU not found (WHO_AM_I) - open loop");
 #endif
   body.Start();
+  octoLink.Begin(&body, &batt, sendLine, OCTO_V10 ? 10 : 20);   // v16
 
   setupBle();
   reply(String(OCTO_V10 ? "Octopus ready (v10 wireless)" : "Octopus ready (plus)") + ". BLE name = OctoBrain, rig = " + String(OCTO_RIG));
   if (batt.Low()) reply("LOW BATTERY " + String(batt.Volts(), 2) + " V - charge first");   // 我的补充：开机就低电
   lastCmdMs = millis();
+  octoLink.Boot(static_cast<int>(esp_reset_reason()));   // v16：主机靠这一帧发现板子复位过（比如欠压）
 }
 
 void handleCommand(String s);
 
+// v16：协议帧给 link，其余走老的文本指令
+void handleLine(const char* s) {
+  if (octoLink.Handle(s, millis())) { lastCmdMs = millis(); return; }
+  handleCommand(String(s));
+}
+
 void loop() {
   Line l;
-  while (xQueueReceive(lineQueue, &l, 0) == pdTRUE) handleCommand(String(l.s));
+  while (xQueueReceive(lineQueue, &l, 0) == pdTRUE) handleLine(l.s);
 
   while (Serial.available()) {
     char c = Serial.read();
-    if (c == '\\n' || c == '\\r') { if (usbLine.length()) { handleCommand(usbLine); usbLine = ""; } }
-    else if (usbLine.length() < 63) usbLine += c;
+    if (c == '\\n' || c == '\\r') { if (usbLine.length()) { handleLine(usbLine.c_str()); usbLine = ""; } }
+    else if (usbLine.length() < OCTL_MAX_LINE + 1) usbLine += c;
   }
+
+  if (bleDropped) { bleDropped = false; octoLink.OnDisconnect(); }   // v16
+  octoLink.Tick(millis());
 
   if (millis() - lastCmdMs > AUTO_REST_MS) {
     body.Rest();
@@ -1134,6 +1166,7 @@ void loop() {
         body.Rest();
 #endif
         reply("LOW BATTERY " + String(batt.Volts(), 2) + " V - stopped");
+        octoLink.Event(3, batt.Volts());   // v16
       }
       else reply("battery OK " + String(batt.Volts(), 2) + " V");
     }
@@ -1543,6 +1576,8 @@ public:
     bool Relaxed() const { return relaxed_; }
 
     float Present(int ch) const { return Valid(ch) ? present_[ch] : 0.0f; }
+    float Trim(int ch) const { return Valid(ch) ? trim_[ch] : 0.0f; }   // v16 我的补充：遥测要换算成“相对校准中位”的角度
+    float MaxRate() const { return max_rate_; }
     int Channels() const { return channels_; }
 
 private:
@@ -1621,6 +1656,12 @@ inline int I2cWriteArduino(void* ctx, uint8_t addr, uint8_t reg, const uint8_t* 
 #ifdef OCTO_CTRL_CUSTOM
 #include "octopus_ctrl.h"
 #endif
+// v16 我的补充：台面「实物连接 · 校准」导出的每路中位 / 限位（有这个文件就用它）
+#if defined(__has_include)
+#if __has_include("octopus_trim_custom.h")
+#include "octopus_trim_custom.h"
+#endif
+#endif
 
 namespace octo {
 
@@ -1697,6 +1738,10 @@ public:
 #endif
         // 我的补充：每路软件限位 90°±55°（md §8 提到 SetLimit 但代码没调用）
         for (int i = 0; i < channels_; i++) bank_.SetLimit(i, kHome - 55.0f, kHome + 55.0f);
+#ifdef OCTO_TRIM_CUSTOM
+        // v16 我的补充：校准表（中位偏移 ±20°，限位相对校准中位、最多 ±55°）
+        for (int i = 0; i < channels_ && i < trim_custom::kChannels; i++) ApplyTrim(i, trim_custom::kCenter[i], trim_custom::kMin[i], trim_custom::kMax[i]);
+#endif
 
         // 我的补充：完善版默认步态（估算，台面里调出来的）
         GaitParams p;
@@ -1736,14 +1781,43 @@ public:
     }
 
     // ---------- 运动指令（线程安全：只入队） ----------
-    void SetVelocity(float throttle, float steer, int cycles = 0) { Post({CmdType::kGait, throttle, steer, cycles, {}}); }
-    void Rest()                 { Post({CmdType::kRest, 0, 0, 0, {}}); }
+    void SetVelocity(float throttle, float steer, int cycles = 0) { Post({CmdType::kGait, throttle, steer, cycles, {}, {}}); }
+    void Rest()                 { Post({CmdType::kRest, 0, 0, 0, {}, {}}); }
     // 我的补充 · v10 低电：不回中位，立刻停 PWM（舵机放松、不再耗电）。回中位时 8 个舵机一起动的电流会把快没电的单节电池拉到 QT Py 欠压复位（仿真估算）
-    void RelaxNow()             { Post({CmdType::kRelax, 0, 0, 0, {}}); }
-    void Home()                 { Post({CmdType::kHome, 0, 0, 0, {}}); }
-    void WaveOnce(int arm)      { Post({CmdType::kWave, 0, 0, arm, {}}); }
-    void Pulse(int times)       { Post({CmdType::kPulse, 0, 0, times, {}}); }
-    void SetGaitParams(const GaitParams& p) { Post({CmdType::kParams, 0, 0, 0, p}); }
+    void RelaxNow()             { Post({CmdType::kRelax, 0, 0, 0, {}, {}}); }
+    void Home()                 { Post({CmdType::kHome, 0, 0, 0, {}, {}}); }
+    void WaveOnce(int arm)      { Post({CmdType::kWave, 0, 0, arm, {}, {}}); }
+    void Pulse(int times)       { Post({CmdType::kPulse, 0, 0, times, {}, {}}); }
+    void SetGaitParams(const GaitParams& p) { Post({CmdType::kParams, 0, 0, 0, p, {}}); }
+
+    // ---------- v16 我的补充：实物连接（OCTL/1）用 ----------
+    static constexpr int kPoseMax = 16;
+    // 每路相对中位的角度（°）；超出 ±55 会再被限位夹住
+    void SetPose(const float* deg, int n) {
+        Cmd c{CmdType::kPose, 0, 0, n, {}, {}};
+        for (int i = 0; i < kPoseMax; i++) c.v[i] = (i < n) ? deg[i] : 0.0f;
+        Post(c);
+    }
+    void SetRate(float dps) { Cmd c{CmdType::kRate, dps, 0, 0, {}, {}}; Post(c); }
+    void SetTrimLimit(int ch, float center, float lo, float hi) {
+        Cmd c{CmdType::kTrim, 0, 0, ch, {}, {}};
+        c.v[0] = center; c.v[1] = lo; c.v[2] = hi;
+        Post(c);
+    }
+    // 遥测（别的任务只读 float / int，ESP32 上读写是原子的）
+    float Angle(int ch) const { return bank_.Present(ch) - kHome - bank_.Trim(ch); }   // 指令角（限速后），不是实测角：普通舵机没有位置反馈
+    int ModeCode() const { return static_cast<int>(mode_); }   // 0 停 1 走 2 挥手 3 收缩 4 回中位 5 摆姿势
+    float RateNow() const { return bank_.MaxRate(); }
+    bool Tilt(float& roll, float& pitch) const {
+#ifdef OCTO_CTRL_CUSTOM
+        if (!imu_ok_) return false;
+        roll = tilt_roll_; pitch = tilt_pitch_;
+        return true;
+#else
+        (void)roll; (void)pitch;
+        return false;
+#endif
+    }
 
     // 读快照只读 Params()，不写（float 读写在 ESP32 上是原子的）
     GaitParams GaitParamsSnapshot() const { return gait_.Params(); }
@@ -1753,14 +1827,15 @@ public:
     bool Relaxed() const { return bank_.Relaxed(); }
 
 private:
-    enum class Mode { kIdle, kGait, kWave, kPulse, kHoming };
-    enum class CmdType { kGait, kRest, kHome, kWave, kPulse, kParams, kRelax };
+    enum class Mode { kIdle, kGait, kWave, kPulse, kHoming, kPose };
+    enum class CmdType { kGait, kRest, kHome, kWave, kPulse, kParams, kRelax, kPose, kRate, kTrim };
     struct Cmd {
         CmdType type;
         float throttle;
         float steer;
-        int n;            // gait：周期数（0 = 不限）；wave：触手号；pulse：次数
+        int n;            // gait：周期数（0 = 不限）；wave：触手号；pulse：次数；pose：路数；trim：通道
         GaitParams params;
+        float v[kPoseMax]; // v16：pose 每路角度；trim：中位 / 下限 / 上限
     };
 
     static constexpr float kHome = 90.0f;
@@ -1826,7 +1901,40 @@ private:
             case CmdType::kParams:
                 gait_.SetParams(c.params);
                 break;
+            case CmdType::kPose:   // v16
+                for (int i = 0; i < kPoseMax; i++) pose_[i] = (i < c.n) ? c.v[i] : 0.0f;
+                gait_.Reset();
+                Enter(Mode::kPose);
+                break;
+            case CmdType::kRate: {  // v16：上限 = OCTO_LINK_RATE_MAX（默认 240 °/s ≈ 舵机标称速度的 80%）
+                float r = c.throttle;
+                if (r > kLinkRateMax) r = kLinkRateMax;
+                if (r < 30.0f) r = 30.0f;
+                bank_.SetMaxRate(r);
+                break;
+            }
+            case CmdType::kTrim:
+                ApplyTrim(c.n, c.v[0], c.v[1], c.v[2]);
+                break;
         }
+    }
+
+#ifndef OCTO_LINK_RATE_MAX
+#define OCTO_LINK_RATE_MAX 240.0f
+#endif
+    static constexpr float kLinkRateMax = OCTO_LINK_RATE_MAX;
+
+    // v16：中位偏移夹到 ±20°，限位相对校准中位、夹到 [−55, 0] / [0, 55]
+    void ApplyTrim(int ch, float center, float lo, float hi) {
+        if (ch < 0 || ch >= channels_) return;
+        if (center > 20.0f) center = 20.0f;
+        if (center < -20.0f) center = -20.0f;
+        if (lo < -55.0f) lo = -55.0f;
+        if (lo > 0.0f) lo = 0.0f;
+        if (hi > 55.0f) hi = 55.0f;
+        if (hi < 0.0f) hi = 0.0f;
+        bank_.SetTrim(ch, center);
+        bank_.SetLimit(ch, kHome + center + lo, kHome + center + hi);
     }
 
     void Enter(Mode m) {
@@ -1835,7 +1943,19 @@ private:
     }
 
     void Step(float dt) {
+#ifdef OCTO_CTRL_CUSTOM
+        // v16：每拍都读 IMU（不只是走路时），遥测才有倾角；StepGait 复用这一拍的读数
+        imu_ok_ = imu_fn_ && imu_fn_(imu_ctx_, imu_s_);
+        if (imu_ok_) {
+            const float k = 180.0f / static_cast<float>(M_PI);
+            const float r = std::atan2(imu_s_.acc[1], imu_s_.acc[2]) * k;
+            const float p = std::atan2(-imu_s_.acc[0], std::sqrt(imu_s_.acc[1] * imu_s_.acc[1] + imu_s_.acc[2] * imu_s_.acc[2])) * k;
+            tilt_roll_ += 0.2f * (r - tilt_roll_);
+            tilt_pitch_ += 0.2f * (p - tilt_pitch_);
+        }
+#endif
         switch (mode_) {
+            case Mode::kPose:   StepPose();     break;
             case Mode::kGait:   StepGait(dt);   break;
             case Mode::kWave:   StepWave(dt);   break;
             case Mode::kPulse:  StepPulse(dt);  break;
@@ -1876,7 +1996,7 @@ private:
         // 我的补充：MCP steps → 走够周期数自动 Rest
         if (cycles_left_ > 0 && gait_.Cycles() - cycle_mark_ >= static_cast<uint32_t>(cycles_left_)) {
             cycles_left_ = 0;
-            Apply({CmdType::kRest, 0, 0, 0, {}});
+            Apply({CmdType::kRest, 0, 0, 0, {}, {}});
             return;
         }
         float yaw[kArmCount];
@@ -1884,9 +2004,8 @@ private:
         for (int a = 0; a < kArmCount; a++) { sc[a] = 1.0f; off[a] = 0.0f; }
 #ifdef OCTO_CTRL_CUSTOM
         {   // v14：闭环（和台面 JS 孪生同式）
-            ImuSample s;
-            if (imu_fn_ && imu_fn_(imu_ctx_, s)) {
-                const TiltController::Out o = ctrl_.Step(s, dt);
+            if (imu_ok_) {
+                const TiltController::Out o = ctrl_.Step(imu_s_, dt);
                 for (int a = 0; a < kArmCount; a++) { sc[a] = o.sc[a]; off[a] = o.off[a]; }
             }
         }
@@ -1946,6 +2065,12 @@ private:
         home_timer_ = 0.15f;
     }
 
+    // v16：摆姿势（每路相对中位的角度，限速由 bank_ 负责）
+    void StepPose() {
+        gait_.Reset();
+        for (int i = 0; i < channels_ && i < kPoseMax; i++) bank_.SetTarget(i, kHome + pose_[i]);
+    }
+
     void StepIdle() {
         gait_.Reset();
         for (int a = 0; a < kArmCount; a++) WriteArm(a, 0.0f, 0.0f);
@@ -1971,7 +2096,11 @@ private:
     TiltController ctrl_;           // v14
     ImuReadFn imu_fn_ = nullptr;
     void* imu_ctx_ = nullptr;
+    ImuSample imu_s_{};             // v16
+    bool imu_ok_ = false;
+    float tilt_roll_ = 0.0f, tilt_pitch_ = 0.0f;
 #endif
+    float pose_[kPoseMax] = {};     // v16
     int cycles_left_ = 0;
     uint32_t cycle_mark_ = 0;
     int home_idx_ = 0;
