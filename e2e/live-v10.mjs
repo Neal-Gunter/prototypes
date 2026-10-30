@@ -1,0 +1,28 @@
+// 线上检查 v10：装配台预设能建、指南第 13 节在。用法：node e2e/live-v10.mjs <BASE> <OUTDIR>
+import { chromium } from "playwright";
+import fs from "node:fs";
+const BASE = (process.argv[2] || "https://neal-gunter.github.io/prototypes").replace(/\/$/, ""), OUT = process.argv[3] || "/tmp/live-v10";
+fs.mkdirSync(OUT, { recursive: true });
+const b = await chromium.launch({ executablePath: "/usr/bin/google-chrome", args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
+const res = {};
+const errs = [];
+const ctx = await b.newContext({ viewport: { width: 1366, height: 768 } }); const p = await ctx.newPage();
+p.on("pageerror", (e) => errs.push(e.message));
+await p.goto(BASE + "/assembly?scene=octo", { waitUntil: "networkidle", timeout: 90000 });
+const btn = p.getByTestId("octo-preset-v10");
+await btn.waitFor({ timeout: 60000 });
+await p.waitForFunction(() => !document.querySelector('[data-testid="octo-preset-v10"]').disabled, null, { timeout: 90000 });
+res.presetLabel = (await btn.textContent()).trim();
+await btn.click();
+await p.getByTestId("octo-v10-onboard").waitFor({ timeout: 120000 });
+await p.waitForTimeout(4000);
+res.onboard = (await p.getByTestId("octo-v10-onboard").textContent()).trim();
+res.label = await p.evaluate(() => document.body.innerText.includes("早期原型，简化仿真"));
+await p.screenshot({ path: `${OUT}/live-v10-preset.png` });
+await p.goto(BASE + "/assembly/octopus-guide?variant=v10", { waitUntil: "networkidle", timeout: 90000 });
+await p.getByTestId("og-v10").waitFor({ timeout: 30000 });
+res.guide = { h: (await p.getByTestId("og-v10").textContent()).trim(), compareRows: await p.locator('[data-testid="og-v10-compare"] tr').count(), fw: (await p.getByTestId("og-v10-fw").textContent()).slice(0, 120) };
+await p.getByTestId("og-v10").scrollIntoViewIfNeeded(); await p.screenshot({ path: `${OUT}/live-v10-guide.png` });
+res.errs = errs.slice(0, 5);
+console.log(JSON.stringify(res, null, 1)); fs.writeFileSync(`${OUT}/live-v10.json`, JSON.stringify(res, null, 1));
+await b.close();
