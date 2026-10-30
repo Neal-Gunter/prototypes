@@ -23,7 +23,7 @@ npm run preview
 - `/` — pitch, flow (想法 → 仿真 → 装配), three feature cards, who-it's-for strip, waitlist form
 - `/workbench` — **hardware workbench, early prototype, simplified simulation** (see below)
 - `/assembly` — **assembly bench (v4), early prototype, simplified simulation**: Rapier collisions, standoffs/screws/nuts M2/M2.5/M3, base plate, headers, JST/Dupont/USB plugs, breadboard, servo bracket + horn + tentacle, automated demo
-- `/parts` — parts library: 564 open-source CAD parts (real mm sizes, thumbnails, licence per part, no prices) + 76 procedural
+- `/parts` — parts library (v20): 2940 parts = 2415 open-source CAD (Adafruit MIT, KiCad / Espressif / Seeed CC BY-SA 4.0, SparkFun CC BY 4.0) + 525 procedural standard parts (CC0); real mm sizes, thumbnails, licence per part, no prices; search / filters / favourites / compare / size ruler / used-in
 - `/electrics` — now redirects to `/assembly?scene=electrics` (v5: one bench for assembly + circuit)
 - `/assembly/guide` — printable assembly guide (BOM, wiring table, breadboard holes, steps, `.ino`, 对照现实 readings, safety notes); `?src=default|bench`
 - `/repair` — **维修关卡（v17）**：12 个由易到难的维修场景 + 关卡编辑器（早期原型，简化仿真）
@@ -112,7 +112,7 @@ The script uses `window.__wb` test hooks only to find where things are on the sc
 - 564 real CAD parts converted to GLB by `scripts/convert-library.mjs`: Adafruit CAD Parts (MIT) 450, KiCad packages3D (CC BY-SA 4.0) 114. Every GLB is under 2 MB; `public/` is about 38 MB. Each category is lazy-loaded from `public/lib/catalog/<cat>.json`.
 - 25 procedural parts (fasteners M2/M2.5/M3, base plate, Dupont wire, tentacle, tools) in `src/assembly/procedural.js`, sized from ISO/DIN nominal values. A value that was not checked is shown as 估算.
 - Thumbnails: `public/lib/thumbs/<id>.webp`, rendered from the GLBs by `scripts/make-thumbs.mjs` (run `npx vite --port 5199` first).
-- Thin categories: motor 10, breadboard 13, wire 5. No fasteners or tools come from CAD (those are procedural). This is far from every part on the market.
+- Thin categories (v4): motor 10, breadboard 13, wire 5. No fasteners or tools come from CAD (those are procedural). This is far from every part on the market. **v20 update: 2940 parts, see the v20 section.**
 
 ### Collisions (`src/assembly/engine.js`)
 
@@ -173,6 +173,81 @@ The script uses `window.__wb` test hooks only to find where things are on the sc
   - 电流是估算值。
   - 只做直流层面的电压、电流检查。
 
+## v20：零件库扩充到 2940 个 + 零件浏览器升级 + 升压平均值模型（早期原型，简化仿真）
+
+**打开 `/parts`。** 读数和尺寸来自开源 CAD 文件与标准尺寸；电气参数能核对的写明来源，核对不了的标“估算”；质量全部是估算。**不替代真实安全培训**。
+
+### 零件库：2940 个（真实 CAD 2415 + 程序生成 525）
+
+另有 2 件只用于动画的工具（螺丝刀、烙铁），不计入总数，也不能放到台面上。来源全部是允许商用的开放许可证，逐条写在 `LICENSES.md` 和 `/credits` 页面里。不清楚许可证、或者只允许非商用的来源一律没收。
+
+| 来源 | 数量 | 许可证 |
+|---|---|---|
+| KiCad packages3D | 1728 | CC BY-SA 4.0（附 KiCad 例外条款） |
+| Adafruit_CAD_Parts | 465 | MIT |
+| SparkFun KiCad Libraries | 193 | CC BY 4.0 |
+| Espressif KiCad Libraries | 25 | CC BY-SA 4.0（附例外条款） |
+| Seeed Studio OPL KiCad Library | 4 | CC BY-SA 4.0 |
+| 程序生成（按 ISO / DIN / JEDEC / 常见规格尺寸） | 525 | CC0（本项目） |
+
+按许可证：MIT 465 · CC BY-SA 4.0 1757 · CC BY 4.0 193 · CC0 525。
+
+| 类别 | 数量 | 类别 | 数量 |
+|---|---|---|---|
+| connector 连接器 | 828 | led | 117 |
+| switch 开关 | 301 | mcu 主控板 | 101 |
+| passive 无源件 | 208 | motor 电机 / 舵机 | 61（其中 51 个是程序生成） |
+| semi 半导体 | 194 | enclosure 外壳 | 60 |
+| mech 机械（铝型材 / 轴承 / 齿轮 / 打印件） | 182（全部程序生成） | wire 线 | 21 |
+| power 电源 / 电池 | 162 | breadboard 面包板 | 17 |
+| sensor 传感器 | 151 | tool 工具 | 9 |
+| fastener 紧固件 | 138 | | |
+| module 模块 | 136 | | |
+| driver 驱动 | 128 | | |
+| display 显示屏 | 126 | | |
+
+- **每个零件都有**：真实毫米尺寸、碰撞体（默认用包围盒，可以改）、许可证 + 来源 + 作者、缩略图（真实 CAD 件）。引脚表和额定值只给能核对的；质量标“估算”。
+- **下载预算（实测）**：构建产物 118 MB，其中零件库 90 MB；GLB 合计 72.4 MB（平均 31 KB，中位数 18 KB，最大 422 KB，meshopt 压缩，共 915 万个三角形）；缩略图 2415 张 webp（平均 1.7 KB，懒加载）；索引 `index.json` 377 KB（gzip 后 59 KB）；分类目录 2.7 MB，按类别懒加载；主程序 js 188 KB（gzip）。打开 `/parts` 只下载索引 + 当前页缩略图。
+- **限速加载测试**（Chrome CDP，1.6 Mbit/s 下行、150 ms 往返、不用缓存）：列表 3.2 s 出来，3D 预览 4.0 s，共下载 601 KB。
+- **GLB 读取测试**（`node scripts/glb-load-test.mjs`）：2415/2415 个真实 CAD 件都能解析（meshopt 解码），都有三角形，包围盒和标注尺寸吻合（误差 5% + 0.5 mm 以内）；用时 4.5 s。两个已知警告：ada-4444 PyPortal Titano（60.6 对 65.66 mm）和 ada-5036 RGB 点阵 2.5 mm（14.5 对 17.5 mm），原因是网格简化时丢了很薄的部分。
+
+### 零件浏览器
+
+- **全文搜索**：中文和英文都能搜（例：“舵机” / servo 72 个，“继电器” / relay 88 个，“继电器 5V”、“轴承 608”、“JST XH 4”、XT60、esp32）。名称命中排在只命中类别名的前面。装配台的零件搜索用同一套引擎。
+- **筛选**：类别、尺寸范围、接口（I²C / SPI / UART …）、电压、许可证、来源、真实 CAD / 程序生成。
+- **收藏、最近使用**（存在浏览器本地，刷新后还在）；**两个零件并排对比**；3D 预览里的**尺寸标尺**（长 / 宽 / 高，单位 mm）；**“用在哪”**：链接到装配指南里用到这个零件的那一行。
+
+### 升压模块平均值模型（`src/sim/devices.js` → `boostAvg`，默认）
+
+旧的行为模型按上一步的电感电流显式计算调压和限流，结果和步长有关。新模型把稳压 / 限流写成同一步里迭代求解的分段线性结构，并显式写出电感、ESR、整流压降、开关管导通损耗、压差直通和限流。用开关级参考电路（真实 PWM 开关 + 二极管 + 电感 + 电容，`node scripts/boost-avg-test.mjs`，12/0）在几个工作点校验：稳态输入电流误差 ≤ 1.2%，输出电压误差 ≤ 13 mV。
+
+| 步长敏感度（旧 → 新） | 旧模型 | 平均值模型 |
+|---|---|---|
+| 负载阶跃：步长 ≤ 2 µs 之间的差 | 16.5 mV | 5.9 mV |
+| 负载阶跃：4 µs 对 0.25 µs | 43.6 mV | 15.8 mV |
+| 舵机起步跌落：1000–25000 点之间的最大差 | 103.9 mV | 64.8 mV |
+| 舵机起步跌落：2500 点对 25000 点 | 36.4 mV | 15.4 mV |
+| 舵机起步跌落：自适应步长对 25000 点 | 16.6 mV | 15.2 mV |
+
+- 25000 点时 5 V 轨最低值：旧模型 4.942 V，新模型 5.016 V。旧模型的跌落偏深，有一部分是步长造成的假象。
+- **行为变化（如实说明）**：老化电池（内阻 0.25 Ω，估算）时电池最低约 3.44 V，高于主控欠压门限 3.4 V（估算），所以**不再欠压复位**，而是先触发固件低压保护（3.55 V）停舵机。what-if 面板：默认组合 0 次复位 0 次低压停；老化电池复位 0 次、低压停 2 次（v19 旧模型是复位 13 次）。v18 / v19 / netlist 测试的断言改成“复位或低压停”。舵机起步跌落：不加电容 167 mV，100 µF 99 mV，1000 µF 89 mV。参考板对照：不加电容 173.1 对 167.2 mV。
+- 想对比旧模型：在浏览器控制台或脚本里设 `BOOST_MODEL.mode = "legacy"`。
+
+### 测试
+
+- `node scripts/parts-validate.mjs`（15/0）：数据格式、每个零件有许可证、尺寸都为正、默认碰撞体不重叠、每个来源都有致谢条目（`LICENSES.md` + `/credits`）。
+- `node scripts/glb-load-test.mjs`（2415/2415）、`node scripts/boost-avg-test.mjs`（12/0）。这三个都已加进 `scripts/engine-test.sh`。
+- `node e2e/v20-bench.mjs`（33/0）：搜索、筛选、标尺、“用在哪”、收藏 / 最近使用、对比、9 个零件抽样加载、装配台搜索、致谢页、指南、限速加载、没有页面错误；同时生成截图和视频。
+- 之前的测试全部重跑：engine-test、repair、transient、scope、netlist、e2e v14–v19、`reg.sh`。
+
+### 局限（我的补充）
+
+- 2940 个离“市面上所有零件”还差得远。电机、舵机、轴承、齿轮、铝型材、紧固件大多是程序生成的近似形状：尺寸按标准或常见规格，外形是简化的。
+- 只有部分主控板和模块有逐个引脚的引脚表；电气额定值核对不了的都标“估算”，质量全部是估算。
+- 默认碰撞体是包围盒，凹形零件（外壳、支架）会比实物“胖”一些。有 27 个真实 CAD 件的默认碰撞体和别的零件有重叠，只记为警告，没有修。
+- 升压平均值模型仍然没有环路带宽和逐周期纹波；输入电流用上一步的输出电流（显式，影响小）；舵机起步跌落还剩约 15 mV 的步长差。
+- 零件库让 GitHub Pages 站点变成约 118 MB（上限 1 GB），以后再加需要继续压缩或者拆分。
+
 ## v19：示波器仿真台面上实际接的电路（早期原型，简化仿真）
 
 **打开 `/assembly?scene=electrics` 或 `/assembly?scene=octo` → “电”页签 → 示波器 → “我的电路（台面）”。** 程序按你在 3D 台面上实际放的零件和接的线生成网表，再交给 v18 的时域引擎；v18 的参考板示波器保留为“参考板（v18，备用）”，并标明它不是台面电路。读数全部是仿真，不是实测；**不替代真实安全培训**。
@@ -180,10 +255,10 @@ The script uses `window.__wb` test hooks only to find where things are on the sc
 - **网表提取**（`src/sim/benchNetlist.js`、`src/assembly/netlist.js`）：电池、开关、升压 / 降压、稳压、主控板、舵机、电容、电阻、LED、连接器；用已有的电气数据（引脚表、AWG 线阻 × 线长、端子接触电阻）。悬空网络、短路、缺地、没有电源会报错；不支持的零件（例如面包板上的传感器）只提示、不参与仿真。八爪鱼 v10 按 3D 接线提取；其他台面走通用提取（板载 USB 5 V、3V3 LDO、主控电流、INPUT_PULLUP 上拉都是估算）。
 - **自适应步长**（`src/sim/transient.js`）：按局部误差调步长，有最小步长限制，开关 / 欠压复位 / 限流事件会对齐到事件时刻。和解析解比：RC 阶跃误差 0.39 mV，用 84 步（固定步长 0.049 mV，500 步）；RLC 22.1 mV / 820 步（固定 7.8 mV / 1000 步）；开关事件 6.8 mV（固定 113.2 mV）。和细步长比：舵机起步 9.0 mV（固定 163.4 mV），老化电池复位时刻误差 2.7 µs（固定 79.2 µs），复位次数一致（4/4/4）。**默认容差下不比固定 2500 步更快**（186 ms 对 153 ms）。
 - **实时改参数**：电容值、电池新旧、每根线的线规、拔掉某根线；改完自动重抓，改前的波形画成灰色虚线，支持一步步撤销和全部复原。
-- **八爪鱼 what-if 面板**：选电容 / 电池 / 线规组合，给出复位次数、最低电压、舵机起步跌落、电池峰值电流（估算）。例：默认组合 0 次复位、跌落 114 mV、峰值约 2.3 A；去掉电容跌落 220 mV；老化电池 + 不加电容复位 13 次。
+- **八爪鱼 what-if 面板**：选电容 / 电池 / 线规组合，给出复位次数、最低电压、舵机起步跌落、电池峰值电流（估算）。例：默认组合 0 次复位、跌落 114 mV、峰值约 2.3 A；去掉电容跌落 220 mV；老化电池 + 不加电容复位 13 次。（v19 旧升压模型的数字；v20 平均值模型下老化电池是 0 次复位、2 次低压停，见 v20 一节）
 - **和 v18 参考结果比**：不加电容时纹波峰峰值 264.8 mV（参考 264.7 mV）；加 470 µF 后 55.3 mV（参考 49.6 mV）；老化电池复位 4 次（参考 4 次），5 V 最低 4.972 V（参考 4.979 V）。
 - **测试**：`node scripts/netlist-test.mjs`（31 项）、`node e2e/bench-netlist-node.mjs`（12 项）、`node scripts/adaptive-test.mjs`（17 项），都已加进 `scripts/engine-test.sh`；`node e2e/v19-bench.mjs` 做浏览器走查 + 截图 + 视频。`e2e/v18-bench.mjs` 现在先点“参考板（备用）”再测，因为默认改成了“我的电路”。
-- **局限（我的补充）**：升压是行为模型，结果和步长有关（舵机起步跌落有约 20 mV 的差别）；多块主控时只有第一块驱动舵机信号；LDO、主控、舵机电流和电池老化内阻都是估算；涌入电流是微秒级尖峰，表里单独列出；没有 EMI、温度、PCB 寄生参数。
+- **局限（我的补充）**：升压是行为模型，结果和步长有关（舵机起步跌落有约 20 mV 的差别；v20 改成平均值模型后约 15 mV）；多块主控时只有第一块驱动舵机信号；LDO、主控、舵机电流和电池老化内阻都是估算；涌入电流是微秒级尖峰，表里单独列出；没有 EMI、温度、PCB 寄生参数。
 
 ## v18：时域仿真 + 示波器（早期原型，简化仿真）
 

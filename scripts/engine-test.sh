@@ -34,3 +34,7 @@ node scripts/repair-test.mjs || exit 1
 node scripts/netlist-test.mjs >/dev/null || exit 1
 node e2e/bench-netlist-node.mjs >/dev/null || exit 1
 node scripts/adaptive-test.mjs >/dev/null || exit 1
+# v20：零件库数据校验 + 全部 GLB 读取 + 升压平均值模型对开关级参考
+node scripts/parts-validate.mjs >/dev/null || exit 1
+OUT=${OUT:-/tmp/v20eng} node scripts/glb-load-test.mjs >/dev/null || exit 1
+node scripts/boost-avg-test.mjs >/dev/null || exit 1
