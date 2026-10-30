@@ -3,6 +3,7 @@ import "../lib/three-base";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { SAFETY } from "../assembly/guide.js";
+import { useT } from "../i18n.js";
 
 const save = (name, text, type = "text/plain") => {
   const a = document.createElement("a");
@@ -14,6 +15,7 @@ const save = (name, text, type = "text/plain") => {
 const fmtTime = (iso) => new Date(iso).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour12: false }) + "（北京时间）";
 
 export default function GuidePage() {
+  const tr = useT();
   const [params, setParams] = useSearchParams();
   const [g, setG] = useState(null);
   const [err, setErr] = useState(null);
@@ -48,7 +50,7 @@ export default function GuidePage() {
       </header>
 
       <section className="mt-5 break-inside-avoid">
-        <h2 className="text-lg font-medium">1. 物料清单（BOM）</h2>
+        <h2 className="text-lg font-medium">{tr("1. 物料清单（BOM）", "1. Bill of materials (BOM)")}</h2>
         <p className="text-xs text-ink-soft">尺寸取自 3D 模型的包围盒（长 × 宽 × 高），标“估算”的没有查到原始资料。链接是资料或模型来源，不是购买推荐，也不含价格。</p>
         <table className="mt-2 w-full border-collapse text-left text-xs" data-testid="guide-bom">
           <thead><tr className="border-b border-ink"><th className="py-1 pr-2">#</th><th className="pr-2">名称 / 规格</th><th className="pr-2">数量</th><th className="pr-2">位号</th><th className="pr-2">尺寸</th><th>资料</th></tr></thead>
@@ -69,7 +71,7 @@ export default function GuidePage() {
       </section>
 
       <section className="mt-6 break-inside-avoid">
-        <h2 className="text-lg font-medium">2. 接线表（开发板针脚 → 连到哪里）</h2>
+        <h2 className="text-lg font-medium">{tr("2. 接线表（开发板针脚 → 连到哪里）", "2. Wiring table (board pin → where it goes)")}</h2>
         <table className="mt-2 w-full border-collapse text-left text-xs" data-testid="guide-nets">
           <thead><tr className="border-b border-ink"><th className="py-1 pr-2">开发板针脚</th><th className="pr-2">物理脚号</th><th className="pr-2">连到</th><th>模拟电压</th></tr></thead>
           <tbody>
@@ -88,14 +90,14 @@ export default function GuidePage() {
       </section>
 
       <section className="mt-6">
-        <h2 className="text-lg font-medium">3. 装配和焊接步骤</h2>
+        <h2 className="text-lg font-medium">{tr("3. 装配和焊接步骤", "3. Assembly and soldering steps")}</h2>
         <ol className="mt-2 list-decimal pl-5" data-testid="guide-steps">
           {g.steps.map((s, i) => <li key={i} className="mb-2 break-inside-avoid"><span className="font-medium">{s.t}</span>{s.solder && <span className="ml-1 border border-copper px-1 text-[10px] text-copper">焊接</span>}<br /><span className="text-ink-soft">{s.d}</span></li>)}
         </ol>
       </section>
 
       <section className="mt-6 break-inside-avoid">
-        <h2 className="text-lg font-medium">4. 对照现实：用万用表量一量</h2>
+        <h2 className="text-lg font-medium">{tr("4. 对照现实：用万用表量一量", "4. Check against reality: measure with a multimeter")}</h2>
         <p className="text-xs text-ink-soft">左边是模拟算出来的值，右边是在实物上怎么量。差得很多，通常是接错孔、虚焊或零件规格不同；差一点是正常的（元件误差、USB 电压、万用表精度）。</p>
         <table className="mt-2 w-full border-collapse text-left text-xs" data-testid="guide-real">
           <thead><tr className="border-b border-ink"><th className="py-1 pr-2">量什么</th><th className="pr-2">模拟读数</th><th>实物上怎么量 / 正常范围</th></tr></thead>
@@ -105,7 +107,7 @@ export default function GuidePage() {
 
       {g.sketch && (
         <section className="mt-6">
-          <h2 className="text-lg font-medium">5. 固件（Arduino 风格，按接线自动生成）</h2>
+          <h2 className="text-lg font-medium">{tr("5. 固件（Arduino 风格，按接线自动生成）", "5. Firmware (Arduino-style, generated from the wiring)")}</h2>
           <pre className="mt-2 overflow-x-auto border border-line bg-white p-2 font-mono text-[11px] leading-4" data-testid="guide-code">{g.sketch}</pre>
         </section>
       )}
@@ -184,11 +186,12 @@ export default function GuidePage() {
         </ol>
         <p className="mt-2 text-xs text-ink-soft">限制（我的补充）：这不是市面上的全部零件，只收许可干净、允许商用的模型；电机、舵机、轴承、型材多数是按标准或常见规格生成的外形，没核实的尺寸标“估算”；接口和电压标签大多从名称推断，质量多为<b>估算</b>；以实物和数据手册为准。不显示价格。</p>
         <p className="mt-2 text-xs text-ink-soft" data-testid="guide-v21">v21 更新：零件库现在 3081 个（真实 CAD 2556 + 程序生成 525），其中 81 个原来是近似形状的舵机、电机、轴承、带轮、型材换成了 FreeCAD-library 的真实模型（CC BY 3.0，逐件署名）；仍为近似的在列表里标“近似形状（程序生成）”。新增 <Link className="underline" to="/pinouts">引脚表</Link>（29 块板 / 模块，每块有来源），电路检查会报“输出冲突”和 3.3 V / 5 V“电平不匹配”。3D 预览可以“显示碰撞体”：34 个真实件的碰撞体改成互不重叠的凸块，比外形最多大 1 个体素对角线（每个零件写明数值，估算精度）。</p>
+        <p className="mt-2 text-xs text-ink-soft" data-testid="guide-v24">v24 更新（我的补充）：① 拆焊返修——工具栏多了“拆焊”（也可以烙铁 + Shift），按住焊点约 1 秒吸掉焊锡；选中零件后“吸掉全部焊点”→“拿下来复用”，可以把同一颗芯片贴到另一块转接板上重焊，网表跟着变。同一个焊盘拆到第 3 次、或一次吸锡超过 4 s，焊盘会翘起（开路，检查面板会报），可以“飞线补救”；零件累计受热超过 30 s 会提示（这些阈值都是估算，不是热仿真）。② 页头的 EN 按钮切换英文界面（记在本机）：导航、横幅、命令面板、导览、装配台主要按钮已翻译，指南正文、零件说明和仿真提示仍是中文。③ 更多零件换成凸包碰撞体（细网格外扩 &lt; 3 mm 的见 README）。</p>
         <p className="mt-2 text-xs text-ink-soft" data-testid="guide-v23">v23 更新（我的补充）：贴片芯片（SOIC、TSSOP、SSOP、QFN、LQFP、SOT-23、0603、0805 共 13 种封装）可以先焊到转接板上：把芯片拖到转接板上对位贴好，再用烙铁逐脚焊。焊点好坏沿用焊接模式的判断，焊好的脚经转接板接到 2.54 mm 排针，能插面包板、接杜邦线；虚焊的脚不通（试试 ?scene=smd）。L298N 芯片是直插 Multiwatt15 封装，不能直接插面包板，选中时有提示。11 个零件的碰撞体换成了凸包（857 个盒子 → 192 个凸包），重场景物理计算快了约一倍；100 mm 大按钮的外扩降到 3 mm 以内。手机上导航、点按目标、文字对比度都修过；命令面板和新手导览可以全程用键盘操作。界面以中文为主。早期原型，简化仿真。</p>
         <p className="mt-2 text-xs text-ink-soft" data-testid="guide-v22">v22 更新（我的补充）：引脚表里的 29 块板 / 模块在台面上都有物理引脚位置——15 块用 KiCad 封装焊盘坐标对到真实 CAD 模型上，2 块（HC-SR04、L298N 模块）直接从 CAD 网格量出针脚，12 块只有封装、外形厚度是估算；鼠标悬停在引脚上会显示名字和编号，导线接在真实针脚上，引脚间距逐块核对。贴片焊盘可以用万用表点，但不能插线。首次打开装配台会有 8 步新手导览（可跳过，右上“新手导览”重新打开）；任意页面按 Ctrl/⌘ K 打开命令面板，可跳到页面、零件、预设场景和维修题。大件碰撞体细分后，34 件里 33 件比外形最多大 3 mm 以内，剩 1 件（100 mm 大按钮 ada-1185）约 3.7 mm。早期原型，简化仿真。</p>
       </section>
       <section className="mt-6 break-inside-avoid border border-copper p-3" data-testid="guide-safety">
-        <h2 className="font-medium">安全提示</h2>
+        <h2 className="font-medium">{tr("安全提示", "Safety notes")}</h2>
         <p className="text-xs text-copper">{SAFETY[0]}</p>
         <ul className="mt-1 list-disc pl-5 text-xs">{SAFETY.slice(1).map((s) => <li key={s}>{s}</li>)}</ul>
       </section>

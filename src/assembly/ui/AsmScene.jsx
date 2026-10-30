@@ -299,11 +299,11 @@ function Interact({ toolRef, vis, flux, controls, onHover, onProbe }) {
       if (!ok) engine.toast(p?.state.screw ? "现在拧不动" : "这个零件不需要拧：先把螺丝 / 螺母 / 铜柱放到孔上", "info");
       if (tool === "screwdriver") vis.current = { kind: "screwdriver", pos: engine.worldPose(uid).p.clone().add(new THREE.Vector3(0, 1.4, 0)) };
       st.current.mode = "op";
-    } else if (tool === "iron") {
+    } else if (tool === "iron" || tool === "desolder") {
       engine.tool.kind = "iron";
       vis.current = { kind: "iron", pos: e.point.clone().add(new THREE.Vector3(0, 0.05, 0)) };
-      // Shift + 烙铁 = 拆焊（吸锡带/吸锡器）
-      engine.holdSolder(e.point.clone(), { flux: flux.current, desolder: e.nativeEvent.shiftKey });
+      // Shift + 烙铁 = 拆焊（吸锡带/吸锡器）；v24：“拆焊”工具直接拆
+      engine.holdSolder(e.point.clone(), { flux: flux.current, desolder: tool === "desolder" || e.nativeEvent.shiftKey });
       st.current.mode = "op";
     }
     onHover?.(uid);

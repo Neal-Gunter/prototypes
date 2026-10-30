@@ -1,4 +1,5 @@
 import "../lib/three-base";
+import { useT, tr as trS } from "../i18n.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import * as THREE from "three";
@@ -40,8 +41,41 @@ function SmdTools({ sel }) {
   return (
     <div className="text-xs leading-5" data-testid="smd-tools">
       <p className="text-ink-soft">贴片封装 {d.smdPkg.toUpperCase()}：脚太细，不能直接插面包板，要先焊到转接板上（转接板的排针按 2.54 mm 插面包板 / 接杜邦线）。</p>
-      <button type="button" onClick={go} disabled={mounted} className="mt-1 min-h-9 border border-ink px-3 hover:bg-ink hover:text-paper-2 disabled:opacity-50" data-testid="smd-mount">{mounted ? "已在转接板上" : "贴到转接板上"}</button>
+      <button type="button" onClick={go} disabled={mounted} className="mt-1 min-h-9 border border-ink px-3 hover:bg-ink hover:text-paper-2 disabled:opacity-50" data-testid="smd-mount">{mounted ? trS("已在转接板上") : trS("贴到转接板上")}</button>
       {msg && <p className="mt-1" role="status">{msg}</p>}
+    </div>
+  );
+}
+
+// v24（我的补充）：拆焊返修——选中零件：一键吸掉它的全部焊点、拿下来复用；板子上翘起的焊盘可以“飞线补救”。规则和阈值是估算
+function ReworkTools({ sel }) {
+  useT();
+  const [, bump] = useState(0);
+  const [msg, setMsg] = useState("");
+  const P = engine.parts.get(sel);
+  if (!P) return null;
+  const J = engine.jointsOf(sel);
+  const lifted = P.state.lifted || [];
+  const wear = Object.entries(P.state.rework || {}).filter(([, n]) => n > 0);
+  const onBoard = engine.edges.some((e) => (e.a === sel || e.b === sel) && /^(smd|onpins|solder)$/.test(e.why || ""));
+  if (!J.length && !lifted.length && !wear.length && !onBoard && !P.state.heat) return null;
+  const all = () => { const r = engine.desolderAll(sel); setMsg(`拆焊模式：吸掉 ${r.n} 个焊点${r.lifted ? `，其中 ${r.lifted} 个焊盘翘起（返修次数到上限）` : ""}。现在可以拿下来复用。`); bump((x) => x + 1); };
+  const lift = () => { const r = engine.liftOff(sel); setMsg(r.ok ? `已拿下（${r.group.length} 个零件一起），拖到新位置或贴到另一块转接板上再焊。累计受热 ${(r.heat || 0).toFixed(0)} s（估算）。` : r.why); bump((x) => x + 1); };
+  return (
+    <div className="border border-line bg-white p-2 text-xs leading-5" data-testid="rework-tools">
+      <p className="font-medium">{trS("拆焊返修")} <span className="font-normal text-ink-soft">{trS("（我的补充 · 简化规则，阈值为估算）")}</span></p>
+      <p className="text-ink-soft">同一个焊盘拆到第 3 次、或一次吸锡超过 4 s，焊盘会翘起（开路，需要飞线）。{P.state.heat ? ` 这个零件累计受热 ${P.state.heat.toFixed(0)} s（估算上限 30 s）。` : ""}</p>
+      <div className="mt-1 flex flex-wrap gap-1">
+        <button type="button" disabled={!J.length} onClick={all} className="min-h-9 border border-ink px-2 disabled:opacity-50" data-testid="rework-all">{J.length ? trS(`吸掉全部 ${J.length} 个焊点`, `Desolder all ${J.length} joints`) : trS("没有焊点")}</button>
+        <button type="button" disabled={!!J.length || !onBoard} onClick={lift} className="min-h-9 border border-line px-2 disabled:opacity-50" data-testid="rework-lift">{trS("拿下来复用")}</button>
+      </div>
+      {wear.length > 0 && <p className="mt-1 text-ink-soft" data-testid="rework-wear">返修次数：{wear.slice(0, 8).map(([k, n]) => `${String(k).startsWith("t") ? "焊盘 " + (+String(k).slice(1) + 1) : "孔 " + (+k + 1)} × ${n}`).join("，")}</p>}
+      {lifted.length > 0 && (
+        <ul className="mt-1" data-testid="rework-lifted">
+          {lifted.map((k) => <li key={k} className="flex items-center gap-2 text-mark">翘起：{String(k).startsWith("t") ? `焊盘 ${+String(k).slice(1) + 1}` : `孔 ${+k + 1}`}<button type="button" className="min-h-8 border border-line px-2 text-ink" onClick={() => { engine.repairPad(sel, k); bump((x) => x + 1); }} data-testid="rework-flywire">{trS("飞线补救")}</button></li>)}
+        </ul>
+      )}
+      {msg && <p className="mt-1" role="status" data-testid="rework-msg">{msg}</p>}
     </div>
   );
 }
@@ -70,10 +104,12 @@ const TOOLS = [
   { k: "hand", zh: "手", tip: "左键拖动零件；右键按住 = 用手拧铜柱 / 螺母（Shift 反拧）" },
   { k: "screwdriver", zh: "螺丝刀", tip: "按住螺丝拧紧，Shift + 按住 拧松" },
   { k: "iron", zh: "烙铁", tip: "按住穿过针脚的焊盘孔焊接；Shift + 按住 = 拆焊（吸掉焊锡）" },
+  { k: "desolder", zh: "拆焊", tip: "v24 拆焊模式：按住焊点加热吸锡（直插用吸锡器，贴片用吸锡带），约 1 秒松开；按住超过 4 s 焊盘会翘起（估算）" },
   { k: "meter", zh: "表笔", tip: "左键 = 红表笔，右键或 Shift+左键 = 黑表笔；读数在“通电”页" },
 ];
 
 export default function AssemblyPage() {
+  const tr = useT();
   const [ready, setReady] = useState(false);
   const [uids, setUids] = useState([]);
   const [tool, setTool] = useState("hand");
@@ -221,12 +257,12 @@ export default function AssemblyPage() {
     <section className="flex flex-col gap-3 px-3 py-3 lg:h-[calc(100vh-7.5rem)] lg:flex-row" data-testid="assembly">
       <Tour setTab={setTab} />
       <aside className="flex min-h-0 flex-col gap-2 overflow-y-auto lg:w-80">
-        <h1 className="text-xl font-medium">装配台 <span className="ml-1 border border-copper px-1.5 py-0.5 align-middle text-xs text-copper">早期原型，简化仿真</span></h1>
-        <p className="text-xs leading-5 text-ink-soft">零件有真实尺寸（毫米），由 Rapier 刚体引擎做碰撞：零件不会互相穿过去，拖着的零件会被挡住或推开别的零件。</p>
-        <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={flip} onChange={(e) => setFlip(e.target.checked)} />排针翻面放（长针朝下，用来插面包板）</label>
+        <h1 className="text-xl font-medium">{tr("装配台")} <span className="ml-1 border border-copper px-1.5 py-0.5 align-middle text-xs text-copper">{tr("早期原型，简化仿真")}</span></h1>
+        <p className="text-xs leading-5 text-ink-soft">{tr("零件有真实尺寸（毫米），由 Rapier 刚体引擎做碰撞：零件不会互相穿过去，拖着的零件会被挡住或推开别的零件。")}</p>
+        <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={flip} onChange={(e) => setFlip(e.target.checked)} />{tr("排针翻面放（长针朝下，用来插面包板）")}</label>
         <div className="shrink-0 border border-line bg-white p-2 text-xs leading-5">
-          <Link to="/assembly/model" className="font-medium underline">上传自己的 3D 模型 + 功能图 →</Link>
-          <span className="text-ink-soft">（拆模块、绑定功能，再放到这里做碰撞）</span>
+          <Link to="/assembly/model" className="font-medium underline">{tr("上传自己的 3D 模型 + 功能图 →")}</Link>
+          <span className="text-ink-soft">{tr("（拆模块、绑定功能，再放到这里做碰撞）")}</span>
           {customMsg && <p data-testid="custom-msg" className={customMsg.ok ? "mt-1" : "mt-1 text-mark"}>{customMsg.text}{customMsg.id && <> · <Link className="underline" to={customMsg.id.startsWith("demo") ? `/assembly/model?demo${customMsg.id === "demo" ? "" : "=" + customMsg.id.slice(5)}` : `/assembly/model?p=${encodeURIComponent(customMsg.id)}`}>回去编辑</Link></>}</p>}
         </div>
         {artic && (
@@ -237,10 +273,10 @@ export default function AssemblyPage() {
           </div>
         )}
         <PartsBrowser compact onAdd={add} onPick={setSel} />
-        <Link to="/parts" className="inline-flex min-h-6 shrink-0 items-center text-xs underline">打开完整零件库（看尺寸、孔位、许可）</Link>
+        <Link to="/parts" className="inline-flex min-h-6 shrink-0 items-center text-xs underline">{tr("打开完整零件库（看尺寸、孔位、许可）")}</Link>
       </aside>
       <div className="relative min-h-[60vh] flex-1 border border-line bg-paper-2">
-        {ready ? <AsmScene uids={uids} tool={tool} debug={debug} flux={flux} vis={vis} onTick={onTick} onSelect={setSel} probes={probes} onProbe={(k, t) => setProbes((p) => ({ ...p, [k]: t }))} onPin={setPin} /> : <p className="p-6 text-ink-soft">正在加载物理引擎…</p>}
+        {ready ? <AsmScene uids={uids} tool={tool} debug={debug} flux={flux} vis={vis} onTick={onTick} onSelect={setSel} probes={probes} onProbe={(k, t) => setProbes((p) => ({ ...p, [k]: t }))} onPin={setPin} /> : <p className="p-6 text-ink-soft">{tr("正在加载物理引擎…")}</p>}
         {pin && (
           <div className="pointer-events-none fixed z-50 max-w-xs border border-ink/30 bg-paper-2/95 px-2 py-1 text-xs shadow" style={{ left: pin.x + 14, top: pin.y + 10 }} data-testid="pin-hover">
             <div className="font-semibold text-ink">{pin.ref ? pin.ref + " · " : ""}{pin.title}</div>
@@ -262,56 +298,57 @@ export default function AssemblyPage() {
       <aside className="flex min-h-0 flex-col gap-3 overflow-y-auto text-sm lg:w-80">
         <div className="flex gap-1" role="tablist">
           {[["tools", "工具与装配"], ["elec", "通电"], ["octo", "八爪鱼"]].map(([k, zh]) => (
-            <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={`min-h-9 flex-1 border ${tab === k ? "border-ink bg-ink text-paper-2" : "border-line bg-white"}`} data-testid={`tab-${k}`}>{zh}</button>
+            <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={`min-h-9 flex-1 border ${tab === k ? "border-ink bg-ink text-paper-2" : "border-line bg-white"}`} data-testid={`tab-${k}`}>{tr(zh)}</button>
           ))}
         </div>
         <div className={tab === "octo" ? "" : "hidden"}><OctoPanel ready={ready} busy={!!(demo && !demo.done)} clear={clear} run={async (s) => { stopRef.current = false; if (window.__asmSpeed) return driveRun(s); let k = Math.round(s * 120); while (k-- > 0) engine.update(1 / 120); await new Promise((r) => requestAnimationFrame(r)); }} setDemo={setDemo} onExport={() => { localStorage.setItem("octo-guide", JSON.stringify(octoGuide(octoSim, engine))); nav("/assembly/octopus-guide?src=bench"); }} /></div>
         <fieldset className={tab === "octo" ? "hidden" : ""}>
-          <legend className="font-medium">练习电路（自动装配到桌面上）</legend>
+          <legend className="font-medium">{tr("练习电路（自动装配到桌面上）")}</legend>
           <div className="mt-1 flex flex-col gap-1">
             {Object.entries(PRESETS).map(([k, p]) => (
               <button key={k} type="button" disabled={!ready || (demo && !demo.done)} onClick={() => { setTab("elec"); buildList(p.text, p.zh.split("：")[0]); }} className="min-h-9 border border-line bg-white px-2 text-left text-xs disabled:opacity-50" data-testid={`preset-${k}`}>{p.zh}</button>
             ))}
           </div>
           <details className="mt-1 text-xs">
-            <summary className="cursor-pointer">导入清单（粘贴文字清单，照着装配）</summary>
+            <summary className="cursor-pointer">{tr("导入清单（粘贴文字清单，照着装配）")}</summary>
             <textarea value={listText} onChange={(e) => setListText(e.target.value)} rows={8} spellCheck={false} className="mt-1 w-full border border-line bg-white p-1 font-mono text-[11px] leading-4" data-testid="list-text" />
-            <button type="button" disabled={!ready || (demo && !demo.done)} onClick={() => buildList(listText)} className="min-h-8 border border-ink px-2 disabled:opacity-50" data-testid="list-build">照清单装配</button>
+            <button type="button" disabled={!ready || (demo && !demo.done)} onClick={() => buildList(listText)} className="min-h-8 border border-ink px-2 disabled:opacity-50" data-testid="list-build">{tr("照清单装配")}</button>
             <p className="mt-1 text-ink-soft">每行一件：面包板 / 板子 / 零件 / 跳线 / 导线 / 舵机 / USB，“#”后是注释。<Link to="/assembly/guide" className="underline">看装配指南格式</Link></p>
           </details>
-          <button type="button" disabled={!ready || !uids.length} onClick={exportGuide} className="mt-1 min-h-9 w-full border border-copper bg-white px-2 text-xs disabled:opacity-50" data-testid="guide-btn">生成装配指南（物料清单、接线表、步骤、.ino，可打印）</button>
+          <button type="button" disabled={!ready || !uids.length} onClick={exportGuide} className="mt-1 min-h-9 w-full border border-copper bg-white px-2 text-xs disabled:opacity-50" data-testid="guide-btn">{tr("生成装配指南（物料清单、接线表、步骤、.ino，可打印）")}</button>
           {listErr.length > 0 && <ul className="mt-1 list-disc pl-4 text-xs text-red-700" data-testid="list-errors">{listErr.slice(0, 8).map((e) => <li key={e}>{e}</li>)}</ul>}
         </fieldset>
         <div className={tab === "elec" ? "" : "hidden"}><ElecPanel probes={probes} setProbes={setProbes} tool={tool} setTool={pickTool} /></div>
         <div className={tab === "tools" ? "flex flex-col gap-3" : "hidden"}>
         <fieldset>
-          <legend className="font-medium">工具</legend>
+          <legend className="font-medium">{tr("工具")}</legend>
           <div className="mt-1 flex gap-1">
             {TOOLS.map((t) => (
-              <button key={t.k} type="button" onClick={() => pickTool(t.k)} title={t.tip} aria-pressed={tool === t.k} className={`min-h-9 flex-1 border px-2 ${tool === t.k ? "border-ink bg-ink text-paper-2" : "border-line bg-white"}`} data-testid={`tool-${t.k}`}>{t.zh}</button>
+              <button key={t.k} type="button" onClick={() => pickTool(t.k)} title={tr(t.tip)} aria-pressed={tool === t.k} className={`min-h-9 flex-1 border px-2 ${tool === t.k ? "border-ink bg-ink text-paper-2" : "border-line bg-white"}`} data-testid={`tool-${t.k}`}>{tr(t.zh)}</button>
             ))}
           </div>
-          <p className="mt-1 text-xs text-ink-soft">{TOOLS.find((t) => t.k === tool).tip}</p>
-          {tool === "iron" && <label className="mt-1 flex items-center gap-2 text-xs"><input type="checkbox" checked={flux} onChange={(e) => setFlux(e.target.checked)} />先涂助焊剂（不涂：焊得慢 2 倍多，提示可能虚焊）</label>}
+          <p className="mt-1 text-xs text-ink-soft">{tr(TOOLS.find((t) => t.k === tool).tip)}</p>
+          {tool === "iron" && <label className="mt-1 flex items-center gap-2 text-xs"><input type="checkbox" checked={flux} onChange={(e) => setFlux(e.target.checked)} />{tr("先涂助焊剂（不涂：焊得慢 2 倍多，提示可能虚焊）")}</label>}
         </fieldset>
         <div className="text-xs leading-5 text-ink-soft">
-          <p className="font-medium text-ink">操作</p>
-          <p>拖动时：滚轮或 Q / E 抬高 / 放低，R 转 90°（Shift+R 反转），按住 Shift 拖 = 用力推开挡路的零件。空白处拖动 = 转视角。</p>
+          <p className="font-medium text-ink">{tr("操作")}</p>
+          <p>{tr("拖动时：滚轮或 Q / E 抬高 / 放低，R 转 90°（Shift+R 反转），按住 Shift 拖 = 用力推开挡路的零件。空白处拖动 = 转视角。")}</p>
         </div>
         <div className="flex flex-wrap gap-1">
-          <button type="button" onClick={play} disabled={!ready || (demo && !demo.done)} className="min-h-9 border border-ink px-3 hover:bg-ink hover:text-paper-2 disabled:opacity-50" data-testid="demo-btn">自动装配演示</button>
-          <button type="button" onClick={() => { stopRef.current = true; }} className="min-h-9 border border-line bg-white px-3">停止</button>
-          <button type="button" onClick={clear} className="min-h-9 border border-line bg-white px-3" data-testid="clear-btn">清空桌面</button>
-          <button type="button" onClick={() => window.dispatchEvent(new Event("open-tour"))} className="min-h-9 border border-line bg-white px-3" data-testid="tour-btn">新手导览</button>
+          <button type="button" onClick={play} disabled={!ready || (demo && !demo.done)} className="min-h-9 border border-ink px-3 hover:bg-ink hover:text-paper-2 disabled:opacity-50" data-testid="demo-btn">{tr("自动装配演示")}</button>
+          <button type="button" onClick={() => { stopRef.current = true; }} className="min-h-9 border border-line bg-white px-3">{tr("停止")}</button>
+          <button type="button" onClick={clear} className="min-h-9 border border-line bg-white px-3" data-testid="clear-btn">{tr("清空桌面")}</button>
+          <button type="button" onClick={() => window.dispatchEvent(new Event("open-tour"))} className="min-h-9 border border-line bg-white px-3" data-testid="tour-btn">{tr("新手导览")}</button>
         </div>
-        <label className="flex items-center gap-2"><input type="checkbox" checked={debug} onChange={(e) => setDebug(e.target.checked)} data-testid="debug-toggle" />显示碰撞盒（调试）</label>
+        <label className="flex items-center gap-2"><input type="checkbox" checked={debug} onChange={(e) => setDebug(e.target.checked)} data-testid="debug-toggle" />{tr("显示碰撞盒（调试）")}</label>
         {pen?.pair && pen.now > 0.01 && <p className="text-xs text-ink-soft">最深的一对：{pen.pair.join(" ↔ ")}</p>}
         <details open className="text-xs leading-5">
-          <summary className="cursor-pointer font-medium">这里简化了什么</summary>
+          <summary className="cursor-pointer font-medium">{tr("这里简化了什么")}</summary>
           <ul className="mt-1 list-disc pl-4 text-ink-soft">{ASM_SIMPLIFICATIONS.map((s) => <li key={s}>{s}</li>)}</ul>
         </details>
-        {sel && <p className="text-xs text-ink-soft">选中：{engine.parts.get(sel)?.def.name_zh || sel}</p>}
+        {sel && <p className="text-xs text-ink-soft">{tr("选中：")}{engine.parts.get(sel)?.def.name_zh || sel}</p>}
         {sel && <SmdTools sel={sel} />}
+        {sel && <ReworkTools key={sel} sel={sel} />}
         </div>
       </aside>
     </section>

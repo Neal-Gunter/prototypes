@@ -1,5 +1,6 @@
 // v22（我的补充）：装配台首次使用导览，8 步，可跳过；关掉后记在本机 localStorage，不再自动弹。早期原型，简化仿真。
 import { useEffect, useRef, useState } from "react";
+import { useT } from "../../i18n.js";
 
 export const TOUR_KEY = "asm-tour-v22-done";
 export const STEPS = [
@@ -15,6 +16,7 @@ export const STEPS = [
 const done = () => { try { return localStorage.getItem(TOUR_KEY) === "1"; } catch { return true; } };
 
 export default function Tour({ setTab }) {
+  const tr = useT();
   const [i, setI] = useState(() => {
     const p = new URLSearchParams(location.search).get("tour");
     if (p === "1") return 0;
@@ -48,15 +50,15 @@ export default function Tour({ setTab }) {
       {box && <div className="pointer-events-none fixed z-[55] rounded-sm ring-2 ring-copper ring-offset-2" style={{ left: box.x, top: box.y, width: box.w, height: box.h }} data-testid="tour-ring" />}
       <div className="fixed bottom-4 right-4 z-[56] w-[min(18rem,calc(100vw-2rem))] border border-ink bg-paper p-3 text-sm shadow-lg" role="dialog" aria-modal="false" aria-labelledby="tour-t" aria-describedby="tour-d" data-testid="tour"
         onKeyDown={(e) => { if (e.target.tagName === "INPUT") return; if (e.key === "ArrowRight" && i + 1 < STEPS.length) { e.preventDefault(); setI(i + 1); } else if (e.key === "ArrowLeft" && i > 0) { e.preventDefault(); setI(i - 1); } }}>
-        <p className="text-xs text-ink-soft" aria-live="polite">新手导览 {i + 1} / {STEPS.length}<span className="sr-only">（←/→ 翻页，Esc 跳过）</span></p>
-        <p className="mt-1 font-medium" id="tour-t" data-testid="tour-title">{s.t}</p>
-        <p className="mt-1" id="tour-d">{s.d}</p>
+        <p className="text-xs text-ink-soft" aria-live="polite">{tr("新手导览")} {i + 1} / {STEPS.length}<span className="sr-only">{tr("（←/→ 翻页，Esc 跳过）", " (←/→ to page, Esc to skip)")}</span></p>
+        <p className="mt-1 font-medium" id="tour-t" data-testid="tour-title">{tr(s.t)}</p>
+        <p className="mt-1" id="tour-d">{tr(s.d)}</p>
         <div className="mt-2 flex gap-2">
-          <button type="button" onClick={close} className="min-h-8 border border-line px-2 text-xs" data-testid="tour-skip">跳过</button>
-          {i > 0 && <button type="button" onClick={() => setI(i - 1)} className="min-h-8 border border-line px-2 text-xs" data-testid="tour-prev">上一步</button>}
-          <button ref={nextRef} type="button" onClick={() => (i + 1 < STEPS.length ? setI(i + 1) : close())} className="ml-auto min-h-8 border border-ink bg-ink px-3 text-xs text-paper-2" data-testid="tour-next">{i + 1 < STEPS.length ? "下一步" : "完成"}</button>
+          <button type="button" onClick={close} className="min-h-8 border border-line px-2 text-xs" data-testid="tour-skip">{tr("跳过")}</button>
+          {i > 0 && <button type="button" onClick={() => setI(i - 1)} className="min-h-8 border border-line px-2 text-xs" data-testid="tour-prev">{tr("上一步")}</button>}
+          <button ref={nextRef} type="button" onClick={() => (i + 1 < STEPS.length ? setI(i + 1) : close())} className="ml-auto min-h-8 border border-ink bg-ink px-3 text-xs text-paper-2" data-testid="tour-next">{i + 1 < STEPS.length ? tr("下一步") : tr("完成")}</button>
         </div>
-        <p className="mt-2 text-[11px] text-ink-soft">我的补充 · 早期原型，简化仿真</p>
+        <p className="mt-2 text-[11px] text-ink-soft">{tr("我的补充 · 早期原型，简化仿真", "My addition · early prototype, simplified simulation")}</p>
       </div>
     </>
   );
