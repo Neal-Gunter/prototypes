@@ -1,0 +1,467 @@
+{
+ "title": "电路练习：Pico + LED + 按键 + 电位器 + 舵机",
+ "made": "2026-10-30T02:54:06.627Z",
+ "listText": "# 早期原型，简化仿真。每行一个零件；这张清单可以复制、修改后粘贴到“导入”里重建\n# 面包板孔名：a–j 行 + 1–30 列（a–e 一组、f–j 一组，同一列 5 个孔导通）\n面包板 BB1 p-breadboard-half 0,-4\n# Pico 跨在中间槽上：1 脚在 h1，20 脚在 h20（21–40 脚落在 c20…c1）\n板子 U1 kc-raspberrypi_pico 1脚=h1 20脚=h20\n# LED 电路：GP15(20脚) → 220Ω → LED 阳极；LED 阴极 → 杜邦线 → GND(18脚)\n零件 R1 kc-r_axial_din0207_l6.3mm_d2.5mm_p10.16mm_horizontal i20 i24\n零件 D1 kc-led_d5.0mm g25 g24   # 孔按脚的顺序：阴极K（短脚） 阳极A（长脚）\n导线 W1 dupont-mm j25 j18\n# 按键：一对脚在 f27/i27、另一对在 f29/i29；按下时 27 列和 29 列接通。GP14(19脚) 用内部上拉\n零件 SW1 kc-sw_push_6mm f27 f29 i27 i29   # 4 个脚的顺序：先左后右、先上后下（左上、左下、右上、右下）\n导线 W2 dupont-mm j27 j19\n导线 W3 dupont-mm j29 j13\n# 电位器：两端接 GND(38脚) 和 3V3(36脚)，滑片接 GP26/ADC0(31脚)\n零件 RV1 kc-potentiometer_bourns_3386w_horizontal a26 a27 a28\n导线 W4 dupont-mm c26 a3\n导线 W5 dupont-mm c27 a10\n导线 W6 dupont-mm c28 a5\n# 舵机：3 针排针插 d22–d24，舵机线母头套上去；棕 GND→23脚、红 VCC→VBUS(40脚, USB 5V)、橙 SIG→GP16(21脚)\n舵机 M1 ada-1143 14,2 d22,d23,d24\n导线 W7 dupont-mm b22 a18\n导线 W8 dupont-mm b23 a1\n导线 W9 dupont-mm b24 a20\nUSB U1",
+ "sketch": "// 由装配台按当前接线自动生成 —— 早期原型，简化仿真\n// 板子：Raspberry Pi Pico（U1）  Arduino 板子包：rp2040:rp2040（arduino-pico 板子包）\n// 接线：\n//   GP14 ← SW1（另一端接 GND，用内部上拉）\n//   GP15 → R1 → D1 阳极\n//   GP16 → M1 信号线（橙）\n//   GP26 ← RV1 滑片（两端 3V3 / GND）\n#include <Servo.h>\n\nconst int LED_PIN = 15;\nconst int BTN_PIN = 14;\nconst int POT_PIN = 26;\nconst int SERVO_PIN = 16;\nServo servo1;\n\nvoid setup() {\n  Serial.begin(115200);\n  pinMode(LED_PIN, OUTPUT);\n  pinMode(BTN_PIN, INPUT_PULLUP);\n  servo1.attach(SERVO_PIN);\n  Serial.println(\"ready\");\n}\n\nvoid loop() {\n  if (digitalRead(BTN_PIN) == LOW) {\n    digitalWrite(LED_PIN, HIGH);\n  } else {\n    digitalWrite(LED_PIN, LOW);\n  }\n  int raw = analogRead(POT_PIN);\n  servo1.write(map(raw, 0, 1023, 0, 180));\n  Serial.print(\"pot=\");\n  Serial.println(raw);\n  delay(50);\n}",
+ "bom": [
+  {
+   "id": "p-breadboard-half",
+   "name": "半尺寸面包板 400 孔",
+   "dims": "85 × 55 × 9.7 mm",
+   "dims_src": "外形取 Adafruit 64 半尺寸面包板 CAD 包围盒；孔距 2.54 mm",
+   "qty": 1,
+   "refs": [
+    "BB1"
+   ],
+   "links": [],
+   "licence": "本项目自制（程序生成，CC0）",
+   "spec": "半尺寸免焊面包板 400 孔（30 列 × 10 行 + 两侧电源轨）"
+  },
+  {
+   "id": "kc-raspberrypi_pico",
+   "name": "Raspberry Pi Pico",
+   "dims": "21 × 52.3 × 3.7 mm",
+   "dims_src": "CAD 包围盒（已核实）",
+   "qty": 1,
+   "refs": [
+    "U1"
+   ],
+   "links": [
+    {
+     "zh": "官方资料",
+     "url": "https://www.raspberrypi.com/documentation/microcontrollers/pico-series.html"
+    },
+    {
+     "zh": "3D 模型来源",
+     "url": "https://gitlab.com/kicad/libraries/kicad-packages3D/-/blob/master/Module.3dshapes/RaspberryPi_Pico.step"
+    }
+   ],
+   "licence": "CC-BY-SA-4.0（含 KiCad 设计例外条款）",
+   "spec": "Raspberry Pi Pico（RP2040，无排针版；需要自己焊 2 条 1×20 排针）"
+  },
+  {
+   "id": "kc-pinheader_1x20_p2.54mm_vertical",
+   "name": "排针 1x20 2.54 mm（长针朝下）",
+   "dims": "2.5 × 50.8 × 11.5 mm",
+   "dims_src": "CAD 包围盒（已核实）",
+   "qty": 2,
+   "refs": [
+    "J1U1",
+    "J2U1"
+   ],
+   "links": [
+    {
+     "zh": "3D 模型来源",
+     "url": "https://gitlab.com/kicad/libraries/kicad-packages3D/-/blob/master/Connector_PinHeader_2.54mm.3dshapes/PinHeader_1x20_P2.54mm_Vertical.step"
+    }
+   ],
+   "licence": "CC-BY-SA-4.0（含 KiCad 设计例外条款）",
+   "spec": "2.54 mm 单排直针排针 1×20（可以从 1×40 掰断）"
+  },
+  {
+   "id": "kc-pinheader_1x03_p2.54mm_vertical",
+   "name": "排针 1x03 2.54 mm（长针朝下）",
+   "dims": "2.5 × 7.6 × 11.5 mm",
+   "dims_src": "CAD 包围盒（已核实）",
+   "qty": 1,
+   "refs": [
+    "JM1"
+   ],
+   "links": [
+    {
+     "zh": "3D 模型来源",
+     "url": "https://gitlab.com/kicad/libraries/kicad-packages3D/-/blob/master/Connector_PinHeader_2.54mm.3dshapes/PinHeader_1x03_P2.54mm_Vertical.step"
+    }
+   ],
+   "licence": "CC-BY-SA-4.0（含 KiCad 设计例外条款）",
+   "spec": "2.54 mm 单排直针排针 1×3（可以从 1×40 掰断）"
+  },
+  {
+   "id": "kc-r_axial_din0207_l6.3mm_d2.5mm_p10.16mm_horizontal",
+   "name": "直插电阻 DIN0207",
+   "dims": "10.8 × 2.5 × 5.5 mm",
+   "dims_src": "CAD 包围盒（已核实）",
+   "qty": 1,
+   "refs": [
+    "R1"
+   ],
+   "links": [
+    {
+     "zh": "3D 模型来源",
+     "url": "https://gitlab.com/kicad/libraries/kicad-packages3D/-/blob/master/Resistor_THT.3dshapes/R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal.step"
+    }
+   ],
+   "licence": "CC-BY-SA-4.0（含 KiCad 设计例外条款）",
+   "spec": "220 Ω 色环电阻，直插 DIN0207 封装（常见 1/4 W），卧装脚距 10.16 mm"
+  },
+  {
+   "id": "kc-led_d5.0mm",
+   "name": "直插 LED Φ5.0 mm",
+   "dims": "5.4 × 5.8 × 14.1 mm",
+   "dims_src": "CAD 包围盒（已核实）",
+   "qty": 1,
+   "refs": [
+    "D1"
+   ],
+   "links": [
+    {
+     "zh": "3D 模型来源",
+     "url": "https://gitlab.com/kicad/libraries/kicad-packages3D/-/blob/master/LED_THT.3dshapes/LED_D5.0mm.step"
+    }
+   ],
+   "licence": "CC-BY-SA-4.0（含 KiCad 设计例外条款）",
+   "spec": "5 mm 直插 LED（模拟按红色、正向压降约 2.0 V 估算）；长脚是阳极"
+  },
+  {
+   "id": "kc-sw_push_6mm",
+   "name": "6 mm 轻触按键",
+   "dims": "7.2 × 6 × 7.8 mm",
+   "dims_src": "CAD 包围盒（已核实）",
+   "qty": 1,
+   "refs": [
+    "SW1"
+   ],
+   "links": [
+    {
+     "zh": "3D 模型来源",
+     "url": "https://gitlab.com/kicad/libraries/kicad-packages3D/-/blob/master/Button_Switch_THT.3dshapes/SW_PUSH_6mm.step"
+    }
+   ],
+   "licence": "CC-BY-SA-4.0（含 KiCad 设计例外条款）",
+   "spec": "6×6 mm 直插轻触按键（4 脚，两两内部相通）"
+  },
+  {
+   "id": "kc-potentiometer_bourns_3386w_horizontal",
+   "name": "微调电位器 Bourns 3386W",
+   "dims": "9.5 × 4.8 × 15.5 mm",
+   "dims_src": "CAD 包围盒（已核实）",
+   "qty": 1,
+   "refs": [
+    "RV1"
+   ],
+   "links": [
+    {
+     "zh": "3D 模型来源",
+     "url": "https://gitlab.com/kicad/libraries/kicad-packages3D/-/blob/master/Potentiometer_THT.3dshapes/Potentiometer_Bourns_3386W_Horizontal.step"
+    }
+   ],
+   "licence": "CC-BY-SA-4.0（含 KiCad 设计例外条款）",
+   "spec": "Bourns 3386W 卧式微调电位器 10 kΩ（3 脚）"
+  },
+  {
+   "id": "ada-1143",
+   "name": "Micro Servo - High Torque Metal Gear",
+   "dims": "12 × 31.3 × 30.7 mm",
+   "dims_src": "CAD 包围盒（已核实）",
+   "qty": 1,
+   "refs": [
+    "M1"
+   ],
+   "links": [
+    {
+     "zh": "商品 / 资料页",
+     "url": "https://www.adafruit.com/product/1143"
+    },
+    {
+     "zh": "3D 模型来源",
+     "url": "https://github.com/adafruit/Adafruit_CAD_Parts/tree/main/1143%20Micro%20Servo%20-%20High%20Torque%20Metal%20Gear"
+    }
+   ],
+   "licence": "MIT",
+   "spec": "微型舵机（金属齿轮，3 线：棕 GND / 红 VCC / 橙 SIG）"
+  },
+  {
+   "id": "cable:dupont-mm",
+   "name": "杜邦线 公‑公 20 cm",
+   "dims": "长 20 cm，插针 2.54 mm",
+   "qty": 9,
+   "refs": [],
+   "links": [],
+   "spec": "杜邦线 公‑公 20 cm（2.54 mm 插针）"
+  },
+  {
+   "id": "cable:micro-usb",
+   "name": "Micro‑USB 数据线（接电脑）",
+   "dims": "长约 30 cm（估算）",
+   "qty": 1,
+   "refs": [],
+   "links": [],
+   "spec": "Micro‑USB 数据线（必须是能传数据的线，不是只能充电的线）"
+  }
+ ],
+ "nets": [
+  {
+   "pin": "U1 GND",
+   "phys": 13,
+   "role": "gnd",
+   "to": [
+    "SW1 脚 1"
+   ],
+   "v": 5.499994500005115e-7
+  },
+  {
+   "pin": "U1 GND",
+   "phys": 18,
+   "role": "gnd",
+   "to": [
+    "D1 阴极 K（短脚）"
+   ],
+   "v": 0.00004727100830286516
+  },
+  {
+   "pin": "U1 GP14",
+   "phys": 19,
+   "role": "gpio",
+   "to": [
+    "SW1 脚 2"
+   ],
+   "v": 0.000003299996700003097
+  },
+  {
+   "pin": "U1 GP15",
+   "phys": 20,
+   "role": "gpio",
+   "to": [
+    "R1 脚 1"
+   ],
+   "v": 3.1109159665812607
+  },
+  {
+   "pin": "U1 GP16",
+   "phys": 21,
+   "role": "gpio",
+   "to": [
+    "M1 SIG"
+   ],
+   "v": 0
+  },
+  {
+   "pin": "U1 GND",
+   "phys": 23,
+   "role": "gnd",
+   "to": [
+    "M1 GND"
+   ],
+   "v": 0
+  },
+  {
+   "pin": "U1 GP26",
+   "phys": 31,
+   "role": "gpio",
+   "to": [
+    "RV1 滑片"
+   ],
+   "v": 1.649985146038175
+  },
+  {
+   "pin": "U1 3V3",
+   "phys": 36,
+   "role": "3v3",
+   "to": [
+    "RV1 脚 3"
+   ],
+   "v": 3.2999670003625825
+  },
+  {
+   "pin": "U1 GND",
+   "phys": 38,
+   "role": "gnd",
+   "to": [
+    "RV1 脚 1"
+   ],
+   "v": 0.0000032999636921489327
+  },
+  {
+   "pin": "U1 VBUS",
+   "phys": 40,
+   "role": "5v",
+   "to": [
+    "M1 VCC"
+   ],
+   "v": 4.999999999999
+  }
+ ],
+ "holes": [
+  {
+   "ref": "U1",
+   "what": "开发板（带排针）",
+   "where": "1 脚 → h1，20 脚 → h20（其余脚依次排开）"
+  },
+  {
+   "ref": "R1",
+   "what": "第 1 脚（电阻不分方向）",
+   "where": "i20"
+  },
+  {
+   "ref": "R1",
+   "what": "第 2 脚（电阻不分方向）",
+   "where": "i24"
+  },
+  {
+   "ref": "D1",
+   "what": "阴极 K（短脚，壳上切边一侧）",
+   "where": "g25"
+  },
+  {
+   "ref": "D1",
+   "what": "阳极 A（长脚）",
+   "where": "g24"
+  },
+  {
+   "ref": "W1",
+   "what": "杜邦线 公‑公 20 cm",
+   "where": "j25 ↔ j18"
+  },
+  {
+   "ref": "SW1",
+   "what": "左上脚",
+   "where": "f27"
+  },
+  {
+   "ref": "SW1",
+   "what": "左下脚",
+   "where": "f29"
+  },
+  {
+   "ref": "SW1",
+   "what": "右上脚",
+   "where": "i27"
+  },
+  {
+   "ref": "SW1",
+   "what": "右下脚",
+   "where": "i29"
+  },
+  {
+   "ref": "W2",
+   "what": "杜邦线 公‑公 20 cm",
+   "where": "j27 ↔ j19"
+  },
+  {
+   "ref": "W3",
+   "what": "杜邦线 公‑公 20 cm",
+   "where": "j29 ↔ j13"
+  },
+  {
+   "ref": "RV1",
+   "what": "脚 1",
+   "where": "a26"
+  },
+  {
+   "ref": "RV1",
+   "what": "滑片（中间脚）",
+   "where": "a27"
+  },
+  {
+   "ref": "RV1",
+   "what": "脚 3",
+   "where": "a28"
+  },
+  {
+   "ref": "W4",
+   "what": "杜邦线 公‑公 20 cm",
+   "where": "c26 ↔ a3"
+  },
+  {
+   "ref": "W5",
+   "what": "杜邦线 公‑公 20 cm",
+   "where": "c27 ↔ a10"
+  },
+  {
+   "ref": "W6",
+   "what": "杜邦线 公‑公 20 cm",
+   "where": "c28 ↔ a5"
+  },
+  {
+   "ref": "M1",
+   "what": "舵机线（经 3 针排针）",
+   "where": "棕 GND → d22，红 VCC → d23，橙 SIG → d24"
+  },
+  {
+   "ref": "W7",
+   "what": "杜邦线 公‑公 20 cm",
+   "where": "b22 ↔ a18"
+  },
+  {
+   "ref": "W8",
+   "what": "杜邦线 公‑公 20 cm",
+   "where": "b23 ↔ a1"
+  },
+  {
+   "ref": "W9",
+   "what": "杜邦线 公‑公 20 cm",
+   "where": "b24 ↔ a20"
+  },
+  {
+   "ref": "U1",
+   "what": "USB 数据线",
+   "where": "插到开发板 USB 口，另一头接电脑"
+  }
+ ],
+ "real": [
+  {
+   "what": "U1 3V3 对 GND（插着 USB）",
+   "sim": "3.30 V",
+   "how": "红表笔 3V3（36 脚），黑表笔 GND（3 脚）；读数应接近 3.3 V"
+  },
+  {
+   "what": "U1 VBUS 对 GND",
+   "sim": "5.00 V",
+   "how": "VBUS（40 脚）是 USB 的 5 V；USB 规范允许 4.75–5.25 V，线和口的压降会让它略低"
+  },
+  {
+   "what": "R1 两端电阻（断电量）",
+   "sim": "220.0 Ω",
+   "how": "拔掉 USB 再量；色环电阻有 ±1%–±5% 的误差，在电路里量会受并联支路影响"
+  },
+  {
+   "what": "D1 亮的时候的电流",
+   "sim": "4.73 mA（按下按键时会变化）",
+   "how": "量电阻两端电压 ÷ 电阻值 = 电流；不要把万用表电流档直接并在 LED 上"
+  }
+ ],
+ "steps": [
+  {
+   "t": "放好面包板",
+   "d": "放在平整、不导电的桌面上（不要放在金属、碎线头上）。中间的槽把两边隔开；a–e 一组、f–j 一组，同一列 5 个孔导通。"
+  },
+  {
+   "t": "U1：给开发板焊排针",
+   "d": "把两条 1×20 排针长脚朝下插进面包板，开发板放上去（面包板当夹具，保证排针垂直）。先焊对角两个脚固定，检查板子是平的，再焊其余的脚。",
+   "solder": true
+  },
+  {
+   "t": "U1：检查焊点",
+   "d": "合格焊点光亮、呈小圆锥、包住针脚；发灰起球、针脚周围有缝的是虚焊（补焊：加一点助焊剂再加热）；相邻两点连在一起的是连锡（用吸锡带吸掉）。",
+   "solder": true
+  },
+  {
+   "t": "U1：插到面包板上",
+   "d": "1 脚对准 h1、20 脚对准 h20，均匀用力按下，板子跨在中间槽上。USB 口朝面包板外侧。"
+  },
+  {
+   "t": "插元件",
+   "d": "R1 → i20 / i24；D1 → g25 / g24；SW1 → f27 / f29 / i27 / i29；RV1 → a26 / a27 / a28。LED 分正负：长脚（阳极）接电阻那一侧；电阻不分方向；按键 4 个脚两两相通，按清单方向插。"
+  },
+  {
+   "t": "接导线",
+   "d": "W1：j25 ↔ j18；W2：j27 ↔ j19；W3：j29 ↔ j13；W4：c26 ↔ a3；W5：c27 ↔ a10；W6：c28 ↔ a5；W7：b22 ↔ a18；W8：b23 ↔ a1；W9：b24 ↔ a20。导线不用绷紧，留一点余量；接一根核对一根。"
+  },
+  {
+   "t": "M1：接舵机",
+   "d": "在 d22 / d23 / d24 插一段 1×3 排针，把舵机线母头套上：棕 → d22，红 → d23，橙 → d24。舵机用 USB 的 5 V（VBUS）供电，地线要和开发板共地。"
+  },
+  {
+   "t": "通电前检查",
+   "d": "拔着 USB，用万用表通断档量 3V3 对 GND、VBUS 对 GND：都不应该“嘀”（不通）。确认 LED 方向、没有导线插错列。"
+  },
+  {
+   "t": "上传固件并测试",
+   "d": "按住 Pico 的 BOOTSEL 键插上 USB，用 Arduino IDE（安装 Raspberry Pi Pico/RP2040 板子包）打开下载的 .ino 上传。打开串口监视器（115200），按按键 LED 应该亮，转电位器舵机跟着转。"
+  }
+ ],
+ "counts": {
+  "parts": 10,
+  "cables": 11
+ }
+}
