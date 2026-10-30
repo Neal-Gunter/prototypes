@@ -61,7 +61,7 @@ export default function ElecPanel({ probes, setProbes, tool, setTool }) {
           </button>
         ))}
         {boards.some((b) => b.powered) && (
-          <Link to="/repair?tab=editor&import=bench" className="mt-1 inline-block text-xs underline" data-testid="to-repair"
+          <Link to="/repair?tab=editor&import=bench" className="mt-1 inline-flex min-h-6 items-center text-xs underline" data-testid="to-repair"
             onClick={() => { try { const d = benchToDesc(elec.last?.cir); if (d) localStorage.setItem(BENCH_KEY, JSON.stringify(d)); } catch (e) { console.warn(e); } }}>
             把这个电路做成维修关卡 →
           </Link>

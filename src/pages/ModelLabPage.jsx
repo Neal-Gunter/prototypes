@@ -532,7 +532,7 @@ export default function ModelLabPage() {
     <main id="main" className="mx-auto max-w-[1600px] px-3 py-4">
       <div className="flex flex-wrap items-center gap-2">
         <h1 className="text-xl font-medium">模型 + 功能图 <span className="ml-1 border border-copper px-1.5 py-0.5 align-middle text-xs text-copper">早期原型，简化仿真</span></h1>
-        <Link to="/assembly" className="text-sm underline">← 装配台</Link>
+        <Link to="/assembly" className="inline-flex min-h-6 items-center text-sm underline">← 装配台</Link>
         <span className="ml-auto text-xs text-ink-soft">工程：</span>
         <select aria-label="本机工程" data-testid="project-list" className="min-h-9 max-w-56 border border-line bg-white px-1 text-sm" value={project?.id || ""} onChange={(e) => e.target.value && openSaved(e.target.value)}>
           <option value="">{project ? project.name : "（未打开）"}</option>

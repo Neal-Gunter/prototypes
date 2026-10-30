@@ -237,7 +237,7 @@ export default function AssemblyPage() {
           </div>
         )}
         <PartsBrowser compact onAdd={add} onPick={setSel} />
-        <Link to="/parts" className="shrink-0 text-xs underline">打开完整零件库（看尺寸、孔位、许可）</Link>
+        <Link to="/parts" className="inline-flex min-h-6 shrink-0 items-center text-xs underline">打开完整零件库（看尺寸、孔位、许可）</Link>
       </aside>
       <div className="relative min-h-[60vh] flex-1 border border-line bg-paper-2">
         {ready ? <AsmScene uids={uids} tool={tool} debug={debug} flux={flux} vis={vis} onTick={onTick} onSelect={setSel} probes={probes} onProbe={(k, t) => setProbes((p) => ({ ...p, [k]: t }))} onPin={setPin} /> : <p className="p-6 text-ink-soft">正在加载物理引擎…</p>}

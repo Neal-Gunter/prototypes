@@ -90,7 +90,7 @@ h2[id] { scroll-margin-top: 5rem; }
 
 /* v23（我的补充）：触屏上的点按目标至少 24 px（WCAG 2.2 2.5.8）——复选框/单选放大，折叠标题和小按钮加高 */
 @media (pointer: coarse) {
-  input[type="checkbox"], input[type="radio"] { width: 1.5rem; height: 1.5rem; }
+  input[type="checkbox"], input[type="radio"] { width: 1.5rem; height: 1.5rem; min-width: 1.5rem; flex-shrink: 0; }
   summary, select, button { min-height: 1.5rem; }
   summary { padding-block: 0.25rem; }
   a.inline-flex, a.block, a.flex { min-height: 1.5rem; }

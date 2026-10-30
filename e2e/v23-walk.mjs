@@ -27,6 +27,9 @@ for (const [vk, vp] of VPS) for (const [k, u] of PAGES) {
     const over = [];
     for (const el of document.body.querySelectorAll("*")) { if (!vis(el) || el.closest("canvas,svg")) continue; const r = el.getBoundingClientRect(); if (r.right > W + 1 && r.left < W && !clipped(el) && getComputedStyle(el).position !== "fixed") over.push(desc(el) + ` →${Math.round(r.right)}`); }
     const docOver = document.documentElement.scrollWidth - W;
+    // 1b) 被挤成“竖排”的文字（每行只剩 1–2 个字：高度 ≥ 3 行且宽度 < 2.2 个字）——v23 走查在手机导航栏发现
+    const squeezed = [];
+    for (const el of document.body.querySelectorAll("a,button,span,p,li,label,th,td,h1,h2,h3")) { if (!vis(el) || el.closest("canvas,svg,.sr-only")) continue; const t = (el.textContent || "").trim(); if (t.length < 3 || el.children.length > 2) continue; const s = getComputedStyle(el), r = el.getBoundingClientRect(), fs = parseFloat(s.fontSize), lh = parseFloat(s.lineHeight) || fs * 1.4; if (r.height >= lh * 2.8 && r.width < fs * 2.2) squeezed.push(desc(el) + ` ${Math.round(r.width)}×${Math.round(r.height)}`); }
     // 2) 对比度：直接含文字的可见元素，前景色 vs 叠加后的背景色
     // Tailwind v4 的 bg-ink/85 算出来是 color(srgb …) / oklab(…)：统一画到 1×1 画布上读像素
     const cv = document.createElement("canvas"); cv.width = cv.height = 1; const cx = cv.getContext("2d", { willReadFrequently: true }); const pc = new Map();
@@ -47,7 +50,7 @@ for (const [vk, vp] of VPS) for (const [k, u] of PAGES) {
     const noname = [...document.querySelectorAll("button,a[href],input,select,textarea,[role=button]")].filter((el) => vis(el) && !((el.getAttribute("aria-label") || el.getAttribute("title") || el.textContent || el.getAttribute("placeholder") || el.labels?.[0]?.textContent || el.getAttribute("aria-labelledby") || el.value || "").trim()) && el.type !== "hidden").map(desc);
     // 4) 手机上过小的点按目标（< 24×24 CSS px，WCAG 2.2 AA 2.5.8；行内文字链接除外）
     const small = [...document.querySelectorAll("button,a[href],input:not([type=hidden]),select,[role=button],summary")].filter((el) => { if (!vis(el) || el.closest(".sr-only") || el.classList.contains("sr-only")) return false; const r = el.getBoundingClientRect(); if (r.width <= 2 && r.height <= 2) return false; if (el.tagName === "A" && getComputedStyle(el).display === "inline") return false; return r.width < 24 || r.height < 24; }).map((el) => { const r = el.getBoundingClientRect(); return desc(el) + ` ${Math.round(r.width)}×${Math.round(r.height)}`; });
-    return { docOver, over: over.slice(0, 12), nOver: over.length, nText, low: low.slice(0, 15), nLow: low.length, noname: noname.slice(0, 10), nNoname: noname.length, small: small.slice(0, 10), nSmall: small.length, lang: document.documentElement.lang };
+    return { docOver, squeezed: squeezed.slice(0, 8), nSqueezed: squeezed.length, over: over.slice(0, 12), nOver: over.length, nText, low: low.slice(0, 15), nLow: low.length, noname: noname.slice(0, 10), nNoname: noname.length, small: small.slice(0, 10), nSmall: small.length, lang: document.documentElement.lang };
   });
   // 5) 键盘：Tab 30 次，记录焦点是否可见（outline / box-shadow / ring）、焦点是否落到不可见元素
   const kb = { steps: 0, invisible: [], hidden: [] };
@@ -62,10 +65,10 @@ for (const [vk, vp] of VPS) for (const [k, u] of PAGES) {
   if (SHOTS) await p.screenshot({ path: `${OUT}/${vk}-${k}.png`, fullPage: false });
   const row = { vp: vk, k, u, ...r, kb: { steps: kb.steps, nInvisible: kb.invisible.length, invisible: kb.invisible.slice(0, 8), hidden: kb.hidden.slice(0, 5) }, errs: errs.slice(0, 4) };
   rep.push(row);
-  console.log(`${vk} ${k.padEnd(13)} 溢出 ${r.docOver}px/${r.nOver} · 低对比 ${r.nLow}/${r.nText} · 无名 ${r.nNoname} · 小目标 ${vk === "m" ? r.nSmall : "-"} · 焦点不可见 ${kb.invisible.length}/${kb.steps} · 报错 ${errs.length}`);
+  console.log(`${vk} ${k.padEnd(13)} 溢出 ${r.docOver}px/${r.nOver} · 竖排挤压 ${r.nSqueezed} · 低对比 ${r.nLow}/${r.nText} · 无名 ${r.nNoname} · 小目标 ${vk === "m" ? r.nSmall : "-"} · 焦点不可见 ${kb.invisible.length}/${kb.steps} · 报错 ${errs.length}`);
   await ctx.close();
 }
 fs.writeFileSync(`${OUT}/walk.json`, JSON.stringify(rep, null, 1));
 const tot = (f) => rep.reduce((s, r) => s + f(r), 0);
-console.log(`合计：横向溢出页面 ${rep.filter((r) => r.docOver > 1).length} · 低对比文字 ${tot((r) => r.nLow)} · 无名控件 ${tot((r) => r.nNoname)} · 手机小目标 ${tot((r) => (r.vp === "m" ? r.nSmall : 0))} · 焦点不可见 ${tot((r) => r.kb.nInvisible)} · 报错 ${tot((r) => r.errs.length)}`);
+console.log(`合计：横向溢出页面 ${rep.filter((r) => r.docOver > 1).length} · 竖排挤压 ${tot((r) => r.nSqueezed)} · 低对比文字 ${tot((r) => r.nLow)} · 无名控件 ${tot((r) => r.nNoname)} · 手机小目标 ${tot((r) => (r.vp === "m" ? r.nSmall : 0))} · 焦点不可见 ${tot((r) => r.kb.nInvisible)} · 报错 ${tot((r) => r.errs.length)}`);
 await b.close();

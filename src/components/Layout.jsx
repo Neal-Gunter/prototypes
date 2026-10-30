@@ -4,7 +4,7 @@ import { containerClass } from "../container";
 import CommandPalette from "./CommandPalette.jsx";
 
 function navClass({ isActive }) {
-  return `inline-flex min-h-11 items-center px-3 text-base ${
+  return `inline-flex min-h-11 shrink-0 items-center whitespace-nowrap px-3 text-base ${
     isActive
       ? "text-ink underline decoration-copper decoration-2 underline-offset-8"
       : "text-ink-soft hover:text-ink"
@@ -29,10 +29,10 @@ export default function Layout() {
       <div className="no-print sticky top-0 z-40 bg-ink px-4 py-2 text-center text-sm leading-6 text-paper-2">
         {PROTO_PATHS.some((p) => pathname.startsWith(p)) ? (
           <p data-testid="banner">
-            早期原型，简化仿真 · <span lang="en">Early prototype, simplified simulation</span>
+            早期原型，简化仿真<span className="hidden sm:inline"> · <span lang="en">Early prototype, simplified simulation</span></span>
           </p>
         ) : (
-          <p data-testid="banner">概念演示，不是成品 · <span lang="en">Concept demo, not a finished product</span></p>
+          <p data-testid="banner">概念演示，不是成品<span className="hidden sm:inline"> · <span lang="en">Concept demo, not a finished product</span></span></p>
         )}
       </div>
       <div className="relative flex flex-1 flex-col">
@@ -55,7 +55,7 @@ export default function Layout() {
                   概念
                 </span>
               </NavLink>
-              <nav aria-label="页面" className="flex items-center">
+              <nav aria-label="页面" className="order-3 flex min-w-0 basis-full items-center overflow-x-auto [scrollbar-width:thin] xl:order-none xl:basis-auto" data-testid="main-nav">
                 <NavLink to="/" end className={navClass}>
                   首页
                 </NavLink>
@@ -85,7 +85,7 @@ export default function Layout() {
                 </NavLink>
               </nav>
               <button type="button" onClick={() => window.dispatchEvent(new Event("open-palette"))} className="inline-flex min-h-9 items-center gap-1 border border-line px-2 text-xs text-ink-soft hover:text-ink" title="命令面板：跳到页面、零件、场景" data-testid="palette-btn">
-                搜索跳转 <kbd className="font-mono">Ctrl/⌘ K</kbd>
+                搜索跳转 <kbd className="hidden font-mono sm:inline">Ctrl/⌘ K</kbd>
               </button>
             </div>
           </header>
@@ -96,6 +96,7 @@ export default function Layout() {
           <footer className="border-t border-line">
             <div className={`${containerClass} py-8 text-sm leading-6 text-ink-soft`}>
               <p>硬件验证 · 概念演示</p>
+              <p className="mt-1" data-testid="lang-note">界面以中文为主（我的补充）：零件名、数据手册术语和代码保留英文原文。<span lang="en"> The UI is Chinese-first; part names, datasheet terms and code stay in English. There is no English translation yet.</span></p>
               <p className="mt-1 max-w-2xl">
                 页面不会加载 MuJoCo，也不会模拟 ESP32‑S3 / RP2040 芯片：固件由 JS 写的迷你解释器运行；焊接台的舵机物理是简化弹簧模型，装配台的碰撞用 Rapier 刚体引擎（简化碰撞盒）。等候名单里的邮箱和回答都不会发出去，也不会保存。
               </p>
