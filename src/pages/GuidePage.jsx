@@ -170,6 +170,19 @@ export default function GuidePage() {
         </ol>
         <p className="mt-2 text-xs text-ink-soft">简化（我的补充）：线阻、端子接触电阻、主控和 LDO 电流、舵机电流、电池老化内阻都是<b>估算</b>；面包板上的传感器等未建模零件只提示、不参与仿真；同一台面多块主控时只有第一块驱动舵机信号。读数不是实测，<b>不替代真实安全培训</b>。</p>
       </section>
+      <section id="parts-lib" className="mt-6 border border-line bg-white p-3" data-testid="guide-parts-lib">
+        <h2 className="text-lg font-medium">零件库（v20，早期原型，简化仿真）</h2>
+        <p className="text-xs text-ink-soft">打开 <Link className="underline" to="/parts">零件库</Link>（装配台左侧的零件面板是同一套）。现在共 2940 个零件：2415 个真实 CAD 模型（Adafruit、KiCad、SparkFun、乐鑫、Seeed），525 个按标准尺寸程序生成（螺丝、轴承、齿轮、型材、步进电机、舵机、电池、保险丝、插头等）。</p>
+        <ol className="mt-2 list-decimal pl-5 text-xs leading-5">
+          <li><b>搜索</b>：中英文都行，多个词同时满足，例如“舵机 / servo”“继电器 5V”“JST XH 4”“轴承 608”。</li>
+          <li><b>筛选</b>：分类、最大边尺寸范围（mm）、接口（I²C、SPI、UART、USB…）、电压、许可、来源、真实 CAD 或程序生成。</li>
+          <li><b>收藏 / 最近使用</b>：存在你自己的浏览器里，不上传。</li>
+          <li><b>对比</b>：勾两个“对比”，下面并排列出尺寸、尺寸差、接口、电压、来源和许可。</li>
+          <li><b>尺寸标尺</b>：3D 预览里标出长、宽、高（mm），可以关掉。</li>
+          <li><b>用在哪里</b>：零件在本指南物料清单里出现时，点链接直接跳到那一行。</li>
+        </ol>
+        <p className="mt-2 text-xs text-ink-soft">限制（我的补充）：这不是市面上的全部零件，只收许可干净、允许商用的模型；电机、舵机、轴承、型材多数是按标准或常见规格生成的外形，没核实的尺寸标“估算”；接口和电压标签大多从名称推断，质量多为<b>估算</b>；以实物和数据手册为准。不显示价格。</p>
+      </section>
       <section className="mt-6 break-inside-avoid border border-copper p-3" data-testid="guide-safety">
         <h2 className="font-medium">安全提示</h2>
         <p className="text-xs text-copper">{SAFETY[0]}</p>

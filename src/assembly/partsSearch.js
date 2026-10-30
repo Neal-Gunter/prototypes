@@ -29,6 +29,10 @@ export function voltRange(v) {
   const f = nums.filter((x) => x > 0 && x < 1000);
   return f.length ? [Math.min(...f), Math.max(...f)] : null;
 }
+// 名称 / 编号 / 标签（不含分类名）：命中这里比只命中分类名排得靠前
+export function makeNameHay(r) {
+  return norm(`${r.id} ${r.name} ${r.name_zh} ${(r.iface || []).join(" ")} ${r.tags || ""}`);
+}
 export function makeHay(r) {
   return norm(`${r.id} ${r.name} ${r.name_zh} ${r.catLabel || ""} ${r.cat} ${(r.iface || []).join(" ")} ${r.tags || ""} ${r.src || ""}`);
 }
@@ -37,6 +41,7 @@ export function score(r, q) {
   const toks = norm(q).trim().split(" ").filter(Boolean);
   if (!toks.length) return 1;
   const hay = r.hay || (r.hay = makeHay(r));
+  const nh = r.nhay || (r.nhay = makeNameHay(r));
   let s = 0;
   for (const t of toks) {
     const alts = [t, ...(SYN_MAP.get(t) || [])];
@@ -45,7 +50,10 @@ export function score(r, q) {
     let hit = 0;
     for (const a of alts) {
       const i = hay.indexOf(a);
-      if (i >= 0) { hit = Math.max(hit, a === t ? 3 : 2) + (norm(r.name_zh).startsWith(a) || norm(r.name).startsWith(a) ? 2 : 0); }
+      if (i < 0) continue;
+      // 只在分类名里出现（如搜“舵机”命中“电机 / 舵机 / 步进”分类里的直流电机）只给 1 分
+      const h = nh.indexOf(a) < 0 ? 1 : (a === t ? 3 : 2) + (norm(r.name_zh).startsWith(a) || norm(r.name).startsWith(a) ? 2 : 0);
+      hit = Math.max(hit, h);
     }
     if (!hit) return 0;
     s += hit;

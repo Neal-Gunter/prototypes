@@ -60,9 +60,11 @@ for (const s of srcs) {
   ok(`署名：${s}（${n} 个，${lics.join("/")}）在 LICENSES.md 和署名页都有`, licMd.includes(s) && credits.includes(s) && lics.every((l) => { const b = l.split("（")[0]; return licMd.includes(b) || licMd.includes(b.replace(/^CC-BY-SA-/, "CC BY-SA ").replace(/^CC-BY-/, "CC BY ")); }));
 }
 // 统计
+// 统计只算零件库里能浏览 / 放置的（两件手工具 notPlaceable 只在装配动画里用，仍参与上面的校验）
+const shown = all.filter((e) => !e.notPlaceable), procShown = shown.length - real.length;
 const byCat = {}, bySrc = {};
-for (const e of all) { byCat[e.cat] = (byCat[e.cat] || 0) + 1; const s = e._real ? e.source : "程序生成（CC0）"; bySrc[s] = (bySrc[s] || 0) + 1; }
+for (const e of shown) { byCat[e.cat] = (byCat[e.cat] || 0) + 1; const s = e._real ? e.source : "程序生成（CC0）"; bySrc[s] = (bySrc[s] || 0) + 1; }
 console.log("\n分类：", JSON.stringify(byCat)); console.log("来源：", JSON.stringify(bySrc));
-console.log(`\n零件 ${all.length}（真实 CAD ${real.length} + 程序生成 ${PROCEDURAL.length}）· ${pass} 通过 / ${fail} 失败`);
-if (process.env.OUT) { fs.mkdirSync(process.env.OUT, { recursive: true }); fs.writeFileSync(path.join(process.env.OUT, "parts-validate.json"), JSON.stringify({ pass, fail, warnOver, total: all.length, real: real.length, proc: PROCEDURAL.length, byCat, bySrc, results, bad: bad.slice(0, 500) }, null, 1)); }
+console.log(`\n零件库 ${shown.length}（真实 CAD ${real.length} + 程序生成 ${procShown}；另有 ${all.length - shown.length} 件只用于动画的工具）· ${pass} 通过 / ${fail} 失败`);
+if (process.env.OUT) { fs.mkdirSync(process.env.OUT, { recursive: true }); fs.writeFileSync(path.join(process.env.OUT, "parts-validate.json"), JSON.stringify({ pass, fail, warnOver, total: shown.length, real: real.length, proc: procShown, checked: all.length, byCat, bySrc, results, bad: bad.slice(0, 500) }, null, 1)); }
 process.exit(fail ? 1 : 0);

@@ -7,6 +7,9 @@ import { ProcMesh, Glb } from "./partMeshes.jsx";
 
 function tickStep(mm) { return mm <= 12 ? 1 : mm <= 60 ? 5 : mm <= 250 ? 10 : 50; }
 function Axis({ from, dir, len, label, side }) {
+  // drei Html 在 Canvas 首帧和其它 Html 同时挂载时偶尔丢第一个标签（v20 走查发现“长”不显示）：挂载后下一拍再放标签
+  const [on, setOn] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setOn(true), 30); return () => clearTimeout(t); }, []);
   // len 单位 cm；每 tickStep mm 一个刻度
   const mm = len * 10, st = tickStep(mm);
   const pts = [from, from.map((v, i) => v + dir[i] * len)];
@@ -22,7 +25,7 @@ function Axis({ from, dir, len, label, side }) {
     <group>
       <Line points={pts} color="#b45309" lineWidth={2} />
       {ticks}
-      <Html position={mid} center className="pointer-events-none select-none whitespace-nowrap rounded bg-white/90 px-1 text-[11px] text-amber-800" data-testid="ruler-label">{label}</Html>
+      {on && <Html position={mid} center zIndexRange={[20, 0]}><span className="pointer-events-none select-none whitespace-nowrap rounded bg-white/90 px-1 text-[11px] text-amber-800" data-testid="ruler-label">{label}</span></Html>}
     </group>
   );
 }

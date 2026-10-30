@@ -145,7 +145,7 @@ export default function PartsBrowser({ onAdd, compact = false, onPick, favs: fav
 }
 // v20：“用在哪里”——查装配指南的物料清单
 let guideP = null;
-const loadGuide = () => (guideP ||= fetch("/guides/electrics.json").then((r) => r.json()).catch(() => null));
+const loadGuide = () => (guideP ||= fetch(pub("/guides/electrics.json")).then((r) => r.json()).catch(() => null));
 export function PartDetail({ id }) {
   const [e, setE] = useState(null);
   const [used, setUsed] = useState(null);

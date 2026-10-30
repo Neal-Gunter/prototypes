@@ -71,7 +71,7 @@ v5 新增的程序零件（同样是本项目自制、CC0）：
 
 物理引擎：`@dimforge/rapier3d-compat`，Apache-2.0。
 
-## v20：零件库扩充到 2942 个（真实 CAD 2415 + 程序生成 527）
+## v20：零件库扩充到 2940 个（真实 CAD 2415 + 程序生成 525）
 
 每个真实 CAD 零件的来源链接（`url`）、作者（`author`）、来源名（`source`）和许可证（`licence`）都写在 `public/lib/catalog/<分类>.json` 里，`scripts/parts-validate.mjs` 会逐条检查。只收了许可证清楚、允许商用的来源；许可证不清楚或禁止商用的一律没收。
 
@@ -82,7 +82,7 @@ v5 新增的程序零件（同样是本项目自制、CC0）：
 | SparkFun KiCad Libraries（https://github.com/sparkfun/SparkFun-KiCad-Libraries） | 193 | CC-BY-4.0（README 写明 CC BY 4.0，允许商用） | SparkFun Electronics | `sfe-*.glb` |
 | Espressif KiCad Libraries（https://github.com/espressif/kicad-libraries） | 25 | CC-BY-SA-4.0 + 与 KiCad 相同的例外条款（LICENSE.md） | Espressif Systems | `esp-*.glb` |
 | Seeed Studio OPL KiCad Library（https://github.com/Seeed-Studio/OPL_Kicad_Library） | 4 | CC-BY-SA-4.0（LICENSE） | Seeed Studio | `seeed-*.glb` |
-| 本项目程序生成（`src/assembly/procedural*.js`） | 527 | CC0 | — | 代码 |
+| 本项目程序生成（`src/assembly/procedural*.js`） | 525 | CC0 | — | 代码 |
 
 改动内容（所有 CAD 来源相同）：STEP/WRL → GLB 转换、网格减面、材质合并、单位换算、meshopt 压缩，另由 GLB 渲染 256 px 缩略图（`public/lib/thumbs/*.webp`，许可证随原模型）。CC BY-SA 来源的改编 GLB 同样以 CC BY-SA 4.0 发布；CC BY 4.0 的 SparkFun 模型保留署名。许可证全文：`licenses/CC-BY-4.0.txt`、`licenses/CC-BY-SA-4.0.txt`、`licenses/KiCad-packages3D-LICENSE.md`、`licenses/Espressif-kicad-libraries-LICENSE.md`、`licenses/Seeed-OPL-LICENSE.txt`。
 
@@ -107,8 +107,8 @@ v5 新增的程序零件（同样是本项目自制、CC0）：
 | 紧固件 | 138 | 0 | 1 | 6 | 0 | 0 | 131 |
 | 轴承 / 齿轮 / 带轮 / 型材 | 182 | 0 | 0 | 0 | 0 | 0 | 182 |
 | 外壳 / 结构件 | 60 | 20 | 14 | 0 | 0 | 0 | 26 |
-| 工具 | 11 | 0 | 0 | 0 | 0 | 0 | 11 |
-| **合计** | **2942** | 465 | 1728 | 193 | 25 | 4 | 527 |
+| 工具 | 9 | 0 | 0 | 0 | 0 | 0 | 9 |
+| **合计** | **2940** | 465 | 1728 | 193 | 25 | 4 | 525 |
 
 
 ## v6：小智八爪鱼
