@@ -73,6 +73,20 @@ const ROWS = [
     url: "https://github.com/Seeed-Studio/OPL_Kicad_Library",
     lic: "CC BY-SA 4.0；改编后的 GLB 同样以 CC BY-SA 4.0 发布",
   },
+  {
+    what: "零件库（v21）：舵机、步进 / 直流电机、轴承、直线轴承、同步带轮、铝型材、角码、T 螺母等 141 个（81 个真实 STEP + 60 个型材长度变体），替换掉对应的程序生成近似件",
+    file: "public/lib/*/fc-*.glb、public/lib/thumbs/fc-*.webp",
+    from: "FreeCAD-library（各零件作者，据 git 提交记录追溯，见 licenses/FreeCAD-library-AUTHORS.md），STEP 转换为 GLB、减面；型材变体只沿长度缩放",
+    url: "https://github.com/FreeCAD/FreeCAD-library",
+    lic: "CC BY 3.0（README：全部零件 CC-BY 3.0，归属各自作者）；改编后的 GLB 同样以 CC BY 3.0 发布",
+  },
+  {
+    what: "引脚表（v21）：29 块开发板 / 模组 / 驱动芯片的逐脚表（/pinouts），引脚号和名称",
+    file: "public/pinouts/*.json",
+    from: "KiCad 官方符号库 kicad-symbols（KiCad Library Team 及贡献者），提交 45efbd93；逻辑电平取自各自数据手册 / 厂家页面（每个 JSON 里有链接）",
+    url: "https://gitlab.com/kicad/libraries/kicad-symbols",
+    lic: "CC BY-SA 4.0（附 KiCad 例外条款）；提取出的引脚表同样以 CC BY-SA 4.0 发布",
+  },
 ];
 
 const PROCEDURAL = [

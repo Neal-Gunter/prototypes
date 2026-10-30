@@ -76,6 +76,9 @@ export default function Layout() {
                 <NavLink to="/parts" className={navClass}>
                   零件库
                 </NavLink>
+                <NavLink to="/pinouts" className={navClass}>
+                  引脚表
+                </NavLink>
                 <NavLink to="/credits" className={navClass}>
                   素材与许可
                 </NavLink>

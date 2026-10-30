@@ -7,9 +7,12 @@ npx esbuild src/assembly/catalog.js --bundle --format=esm --platform=node --outf
 printf 'export * from "../src/assembly/netlist.js";\nexport * from "../src/assembly/builder.js";\nexport * from "../src/assembly/electrics.js";\nexport * from "../src/assembly/guide.js";\n' > .tmp/elec-entry.js
 npx esbuild .tmp/elec-entry.js --bundle --format=esm --platform=node --outfile=.tmp/elec-bundle.mjs --log-level=warning --external:three
 npx esbuild src/assembly/procedural.js --bundle --format=esm --platform=node --outfile=.tmp/proc-bundle.mjs --log-level=warning
+[ "$1" = "elec-bundle-only" ] && exit 0
 [ "$1" = "elec" ] || node e2e/engine-node.mjs
 [ "$1" = "elec" ] || node e2e/engine-v5.mjs
 node e2e/elec-node.mjs
+# v21：引脚表 + 引脚冲突 / 3V3-5V 电平
+NOBUNDLE=1 node scripts/pinout-test.mjs || exit 1
 node scripts/octo-test.mjs || exit 1
 # v11：模型 + 功能图（解析、拆分、工程 ZIP、上传零件进引擎碰撞）
 node scripts/modellab-test.mjs || exit 1

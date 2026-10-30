@@ -53,11 +53,11 @@ export default function PartsPage() {
         <div className="mt-3 max-w-4xl text-sm leading-6 text-ink-soft" data-testid="parts-counts">
           <p>
             现在共 <b className="text-ink" data-testid="parts-total">{stats.real + stats.proc}</b> 个零件：<b className="text-ink">{stats.real}</b> 个真实 CAD 模型
-            （{["ada", "kicad", "sfe", "esp", "seeed"].map((k) => `${SRC_ZH[k]} ${stats.src[k] || 0}`).join("、")}），
+            （{["ada", "kicad", "sfe", "esp", "seeed", "freecad"].map((k) => `${SRC_ZH[k]} ${stats.src[k] || 0}`).join("、")}），
             加上 <b className="text-ink">{stats.proc}</b> 个按标准尺寸程序生成的零件（ISO 螺丝螺母垫圈、ISO 15 轴承、齿轮、GT2 带轮、铝型材、NEMA 步进电机、舵机尺寸档、电池、保险丝、JST / 杜邦 / XT 插头等）。
           </p>
           <p className="mt-1">按分类：{stats.cats.map((c) => `${c.label} ${c.n}`).join("、")}。</p>
-          <p className="mt-1">这仍不是市面上的全部零件：只收许可干净（MIT / CC0 / CC BY / CC BY‑SA）的模型；电机、舵机、轴承、型材等大多没有许可干净的真实 CAD，只有按标准或估算外形程序生成的。不显示价格。尺寸来自 CAD 包围盒或标准（ISO / JEDEC），没核实的标“估算”。</p>
+          <p className="mt-1">这仍不是市面上的全部零件：只收许可干净（MIT / CC0 / CC BY / CC BY‑SA）的模型。v21 起电机、舵机、轴承、型材的一部分换成了 FreeCAD 零件库（CC BY 3.0）的真实 CAD（<b className="text-ink" data-testid="parts-replaced">{Object.keys(idx?.replaced || {}).length}</b> 个程序生成零件已有真实版本，筛选“只看最佳模型”可隐藏它们）；其余仍是按标准或估算外形程序生成的近似形状，详情里标“近似形状”。不显示价格。尺寸来自 CAD 包围盒或标准（ISO / JEDEC），没核实的标“估算”。</p>
         </div>
       )}
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_24rem]">

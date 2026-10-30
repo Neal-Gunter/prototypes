@@ -7,7 +7,7 @@ import path from "node:path";
 import { PROCEDURAL } from "../src/assembly/procedural.js";
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const LIB = path.join(ROOT, "public/lib");
-const OK_LIC = new Set(["MIT", "CC0", "CC-BY-4.0", "CC-BY-SA-4.0", "Apache-2.0", "本项目自制（程序生成，CC0）"]);
+const OK_LIC = new Set(["MIT", "CC0", "CC-BY-3.0", "CC-BY-4.0", "CC-BY-SA-4.0", "Apache-2.0", "本项目自制（程序生成，CC0）"]);
 let pass = 0, fail = 0; const bad = []; const results = [];
 const ok = (name, c, info = "") => { results.push({ name, ok: !!c, info: String(info) }); if (c) pass++; else fail++; console.log(c ? "✓" : "✗", name, info ? "— " + info : ""); };
 const index = JSON.parse(fs.readFileSync(path.join(LIB, "index.json"), "utf8"));

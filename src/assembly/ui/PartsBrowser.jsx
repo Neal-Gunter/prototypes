@@ -150,6 +150,14 @@ export default function PartsBrowser({ onAdd, compact = false, onPick, favs: fav
 // v20：“用在哪里”——查装配指南的物料清单
 let guideP = null;
 const loadGuide = () => (guideP ||= fetch(pub("/guides/electrics.json")).then((r) => r.json()).catch(() => null));
+let pinIdxP = null;
+const pinIdx = () => (pinIdxP ||= fetch(pub("/pinouts/index.json")).then((r) => r.json()).catch(() => ({ boards: [] })));
+function PinoutLink({ id }) {
+  const [b, setB] = useState(null);
+  useEffect(() => { let live = true; pinIdx().then((x) => live && setB(x.boards.find((y) => y.parts?.includes(id)) || null)); return () => { live = false; }; }, [id]);
+  if (!b) return null;
+  return (<><dt className="text-ink-soft">引脚表</dt><dd><Link className="underline" data-testid="pinout-link" to={`/pinouts?b=${b.id}`}>{b.zh}（{b.n} 脚，{b.logicV ? `${b.logicV} V 逻辑` : "电平见说明"}{b.est ? "，估算" : ""}）</Link></dd></>);
+}
 export function PartDetail({ id }) {
   const [e, setE] = useState(null);
   const [used, setUsed] = useState(null);
@@ -174,6 +182,7 @@ export function PartDetail({ id }) {
       <dt className="text-ink-soft">质量</dt><dd>{m.g} g{m.est ? <span className="text-ink-soft">（估算：碰撞盒体积 × 密度）</span> : null}</dd>
       <dt className="text-ink-soft">安装孔</dt><dd>{holes.length ? `${holes.length} 个${e.holes?.[0]?.d ? `，孔径 ${e.holes[0].d} mm` : ""}${e.holes_src ? `（${e.holes_src}）` : e.holes ? "（从 CAD 几何提取）" : ""}` : "无"}</dd>
       <dt className="text-ink-soft">引脚间距</dt><dd>{e.pitch_mm ? `${e.pitch_mm} mm（从 CAD 提取）` : e.spec || (e.pinholes ? `${e.pinholes.length} 个引脚孔` : "—")}</dd>
+      <PinoutLink id={e.id || id} />
       {e.pins ? (<><dt className="text-ink-soft">针数</dt><dd>{e.pins}</dd></>) : null}
       {e.rating ? (<><dt className="text-ink-soft">额定</dt><dd>{e.rating}<span className="text-ink-soft">（{e.rating_src || "估算"}）</span></dd></>) : null}
       {e.volt ? (<><dt className="text-ink-soft">电压</dt><dd>{e.volt}</dd></>) : null}

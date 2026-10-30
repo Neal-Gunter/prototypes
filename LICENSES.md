@@ -82,9 +82,10 @@ v5 新增的程序零件（同样是本项目自制、CC0）：
 | SparkFun KiCad Libraries（https://github.com/sparkfun/SparkFun-KiCad-Libraries） | 193 | CC-BY-4.0（README 写明 CC BY 4.0，允许商用） | SparkFun Electronics | `sfe-*.glb` |
 | Espressif KiCad Libraries（https://github.com/espressif/kicad-libraries） | 25 | CC-BY-SA-4.0 + 与 KiCad 相同的例外条款（LICENSE.md） | Espressif Systems | `esp-*.glb` |
 | Seeed Studio OPL KiCad Library（https://github.com/Seeed-Studio/OPL_Kicad_Library） | 4 | CC-BY-SA-4.0（LICENSE） | Seeed Studio | `seeed-*.glb` |
+| FreeCAD-library（https://github.com/FreeCAD/FreeCAD-library） | 141（81 个真实 STEP + 60 个型材长度变体） | CC BY 3.0（README 写明全部零件 CC-BY 3.0，归属各自作者） | 各零件作者（据 git 提交记录，逐个列在 `licenses/FreeCAD-library-AUTHORS.md` 和 catalog 的 `author` 字段） | `fc-*.glb` |
 | 本项目程序生成（`src/assembly/procedural*.js`） | 525 | CC0 | — | 代码 |
 
-改动内容（所有 CAD 来源相同）：STEP/WRL → GLB 转换、网格减面、材质合并、单位换算、meshopt 压缩，另由 GLB 渲染 256 px 缩略图（`public/lib/thumbs/*.webp`，许可证随原模型）。CC BY-SA 来源的改编 GLB 同样以 CC BY-SA 4.0 发布；CC BY 4.0 的 SparkFun 模型保留署名。许可证全文：`licenses/CC-BY-4.0.txt`、`licenses/CC-BY-SA-4.0.txt`、`licenses/KiCad-packages3D-LICENSE.md`、`licenses/Espressif-kicad-libraries-LICENSE.md`、`licenses/Seeed-OPL-LICENSE.txt`。
+改动内容（所有 CAD 来源相同）：STEP/WRL → GLB 转换、网格减面、材质合并、单位换算、meshopt 压缩，另由 GLB 渲染 256 px 缩略图（`public/lib/thumbs/*.webp`，许可证随原模型）。CC BY-SA 来源的改编 GLB 同样以 CC BY-SA 4.0 发布；CC BY 4.0 的 SparkFun 模型保留署名。FreeCAD-library 的 CC BY 3.0 模型保留每个零件的作者署名，改编 GLB 同样以 CC BY 3.0 发布；型材长度变体由真实截面只沿长度缩放（我的补充）。许可证全文：`licenses/CC-BY-3.0.txt`、`licenses/CC-BY-4.0.txt`、`licenses/CC-BY-SA-4.0.txt`、`licenses/KiCad-packages3D-LICENSE.md`、`licenses/Espressif-kicad-libraries-LICENSE.md`、`licenses/Seeed-OPL-LICENSE.txt`。
 
 按分类 / 来源：
 
@@ -151,3 +152,9 @@ v5 新增的程序零件（同样是本项目自制、CC0）：
 - `public/demo/octo-v10.glb`、`octo-v10-functions.svg`、`octo-v10.project.json`：本项目自制（从 v10 预设导出，glTF-Transform + meshoptimizer 压缩），与本仓库同许可。
 - `e2e/fixtures/v11/*`：本项目用脚本生成的测试样例，CC0（见 `LICENSE-samples.txt`）。
 - e2e 测试里用到的 KiCad `SOT-23.step` 来自 KiCad 3D 库（CC-BY-SA 4.0 + 例外条款），只在本地测试时读取，不随网站发布。
+
+## 引脚表（v21，`public/pinouts/*.json`）
+
+- 引脚号、名称、KiCad 电气类型：取自 KiCad 官方符号库 kicad-symbols（https://gitlab.com/kicad/libraries/kicad-symbols ，提交 `45efbd93be87e365a21d743daf9b8a07e6414df6`），CC BY-SA 4.0 + KiCad 设计例外；提取出的引脚表作为改编数据同样以 CC BY-SA 4.0 发布，署名 “KiCad Library Team 及贡献者”。每个 JSON 的 `src` 指向固定提交的符号文件。
+- 逻辑电平 / 是否耐 5 V：取自各自数据手册或厂家页面（`levelSrc` 字段）。HC‑SR04 取自 SparkFun 发布的数据手册；L298N 模块的排针顺序没有可核实的厂家文档，标 “估算”。
+- “归类”（GND / 3V3 / 5V / IO 等）是按引脚名自动分类的（我的补充），不是数据手册内容。

@@ -1,0 +1,74 @@
+// v21：引脚表数据 + 台面引脚冲突 / 3V3‑5V 电平检查。早期原型，简化仿真。
+// 用法：sh scripts/engine-test.sh elec 先打包；或直接 node scripts/pinout-test.mjs（会自己打包）
+import fs from "node:fs";
+import { execSync } from "node:child_process";
+const OUT = process.env.OUT || "/tmp/pinout";
+fs.mkdirSync(OUT, { recursive: true });
+if (!process.env.NOBUNDLE) execSync("sh scripts/engine-test.sh elec-bundle-only", { stdio: "ignore" });
+globalThis.fetch = async (u) => { const p = new URL("../public" + u, import.meta.url); if (!fs.existsSync(p)) return { ok: false, json: async () => [] }; return { ok: true, json: async () => JSON.parse(fs.readFileSync(p, "utf8")) }; };
+let pass = 0, fail = 0; const log = [];
+const ok = (c, m, d = "") => { (c ? pass++ : fail++); const l = `${c ? "✓" : "✗"} ${m}${d ? " — " + d : ""}`; log.push(l); console.log(l); };
+// 1 数据
+const idx = JSON.parse(fs.readFileSync("public/pinouts/index.json", "utf8"));
+const B = Object.fromEntries(idx.boards.map((b) => [b.id, JSON.parse(fs.readFileSync(`public/pinouts/${b.id}.json`, "utf8"))]));
+ok(idx.boards.length >= 25, "引脚表数量", `${idx.boards.length} 块，${idx.boards.reduce((s, b) => s + b.n, 0)} 个引脚`);
+const noSrc = Object.values(B).filter((b) => !b.est && !/^https:\/\//.test(b.src));
+ok(noSrc.length === 0, "每块非估算的引脚表都有来源 URL", noSrc.map((b) => b.id).join(","));
+ok(Object.values(B).filter((b) => /kicad-symbols/.test(b.src)).every((b) => b.src.includes(idx.kicadSha) && /CC-BY-SA-4.0/.test(b.lic)), "KiCad 来源固定到提交、标 CC BY-SA 4.0");
+ok(Object.values(B).every((b) => b.logicV == null || /^https:\/\//.test(b.levelSrc)), "逻辑电平都附数据手册 / 厂家文档链接");
+ok(B["l298n-module"].est && /估算/.test(B["l298n-module"].note), "L298N 模块排针顺序没有开放来源：标“估算”");
+const want = { "rpi-pico": 40, "arduino-nano-v3": 30, "arduino-uno-r3": 32, "esp-01": 8, "pololu-a4988": 16, "hc-sr04": 4 };
+ok(Object.entries(want).every(([k, n]) => B[k].pins.length === n), "引脚数和实物一致（Pico 40 / Nano 30 / UNO 32 / ESP-01 8 / A4988 16 / HC-SR04 4）", Object.keys(want).map((k) => `${k}:${B[k].pins.length}`).join(" "));
+const nano = Object.fromEntries(B["arduino-nano-v3"].pins.map((p) => [p.num, p.name]));
+ok(nano["1"] === "D1/TX" && nano["4"] === "GND" && nano["27"] === "+5V" && nano["17"] === "3V3" && nano["30"] === "VIN", "Nano 引脚号→名称（1 D1/TX，4 GND，17 3V3，27 +5V，30 VIN）");
+const { PICO_PINS } = await import("../.tmp/cat-bundle.mjs");
+const pk = B["rpi-pico"].pins.filter((p) => +p.num <= 40);
+const norm = (x) => x.replace(/^GPIO(\d+).*$/, "GP$1").replace(/^AGND$/, "GND");
+const mism = pk.filter((p) => PICO_PINS[+p.num - 1] && norm(PICO_PINS[+p.num - 1]) !== norm(p.name));
+ok(mism.length === 0, "台面 Pico 的焊盘名（v4 起手写）和 KiCad 符号逐脚一致", mism.map((p) => `${p.num}:${p.name}≠${PICO_PINS[+p.num - 1]}`).join(" ") || "40/40");
+ok(Object.values(B).filter((b) => /esp32|esp-|pico|feather|nano-esp|nano-rp/.test(b.id)).every((b) => b.logicV === 3.3 && b.tol5v === false), "ESP32 / ESP8266 / RP2040 / SAMD21 系：3.3 V、不耐 5 V");
+ok(["arduino-uno-r3", "arduino-nano-v3", "arduino-leonardo", "arduino-nano-every"].every((k) => B[k].logicV === 5), "AVR Arduino：5 V 逻辑");
+// 2 台面检查
+const { engine } = await import("../.tmp/eng-bundle.mjs");
+const X = await import("../.tmp/elec-bundle.mjs");
+await engine.init();
+const run = async (s) => { for (let i = 0; i < Math.round(s * 120); i++) engine.update(1 / 120); };
+await X.buildFromList(engine, X.PRESETS.electrics.text, { run });
+await run(0.6);
+let clock = 0;
+const elec = new X.BenchElectrics(engine, { now: () => clock, budgetMs: 50 });
+let L = elec.tick();
+const U1 = [...engine.parts.values()].find((p) => p.state.ref === "U1").uid;
+elec.upload(U1, elec.sketchFor(U1));
+for (let t = 0; t < 600; t += 50) { clock += 50; await run(0.05); elec.tick(); }
+L = elec.last;
+const pins = X.boardPins(engine.parts.get(U1).def);
+const T = (label) => `${U1}|p${pins.findIndex((p) => p?.label === label)}`;
+const base = X.pinChecks(L.cir, L.sol, elec.fw);
+ok(base.length === 0, "电路练习（正常接线）：没有引脚冲突 / 电平报错", base.map((c) => c.text).join(" | "));
+const tryWire = (a, b, extra = {}) => {
+  const cir = X.buildCircuit(engine);
+  cir.uf.union(T(a), T(b));
+  const fw = { ...elec.fw, ...extra };
+  const sol = X.solve(cir, fw);
+  return { pin: X.pinChecks(cir, sol, fw), all: X.checks(cir, sol, fw), cir, sol };
+};
+const r1 = tryWire("GP26", "VBUS");
+ok(r1.pin.some((c) => c.level === "error" && /电平不匹配/.test(c.text) && /GP26/.test(c.text)), "GP26（3.3 V）接到 VBUS（5 V）：报“电平不匹配”，给分压/电平转换建议", r1.pin[0]?.text);
+ok(r1.all.some((c) => /电平不匹配/.test(c.text)), "……同一条也出现在台面自检列表里");
+const r2 = tryWire("3V3", "VBUS");
+ok(r2.pin.some((c) => c.level === "error" && /3V3/.test(c.text) && /VBUS/.test(c.text)), "3V3 和 VBUS 接在一起：报“引脚冲突”", r2.pin[0]?.text);
+const r3 = tryWire("GP15", "GND");
+ok(r3.pin.some((c) => c.level === "error" && /OUTPUT/.test(c.text)), "GP15（固件 OUTPUT 点 LED）直接接 GND：报错（输出短路）", r3.pin[0]?.text);
+const r4 = tryWire("GP27", "GND");
+ok(r4.pin.some((c) => c.level === "warn" && /GP27/.test(c.text)) && !r4.pin.some((c) => c.level === "error"), "没用到的 GP27 直接接 GND：只提醒（设成 OUTPUT 才会短路）", r4.pin[0]?.text);
+const r5 = tryWire("GP15", "GP16");
+ok(r5.pin.some((c) => /输出冲突/.test(c.text)), "GP15（LED 输出）和 GP16（舵机信号输出）接到一起：报“输出冲突”", r5.pin.find((c) => /输出冲突/.test(c.text))?.text);
+const cir6 = X.buildCircuit(engine); const sol6 = X.solve(cir6, elec.fw);
+const t26 = cir6.uf.find(T("GP26"));
+const fake = { ...sol6, v: (t) => (cir6.uf.find(t) === t26 ? 4.2 : sol6.v(t)) };
+const r6 = X.pinChecks(cir6, fake, elec.fw);
+ok(r6.some((c) => /4\.20 V/.test(c.text)), "网络被别的器件推到 4.2 V（解出来的电压 > VDD + 0.3）：报“电平不匹配”", r6[0]?.text);
+fs.writeFileSync(`${OUT}/pinout-test.log`, log.join("\n") + `\n${pass} 通过，${fail} 失败\n`);
+console.log(`${pass} 通过，${fail} 失败`);
+process.exit(fail ? 1 : 0);

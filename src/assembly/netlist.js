@@ -15,8 +15,11 @@ export const BOARDS = {
   "ada-5323": { kind: "esp32s3", short: "Feather", label: "Adafruit Feather ESP32‑S3", vdd: 3.3, adcBits: 12, gpioMaxmA: 40, rOut: 30, rPull: 45000, analog: (g) => g >= 1 && g <= 20, core: "esp32:esp32（Arduino ESP32 板子包）", fqbn: "esp32:esp32:adafruit_feather_esp32s3" },
   "kc-raspberrypi_pico": { kind: "rp2040", short: "Pico", label: "Raspberry Pi Pico", vdd: 3.3, adcBits: 10, gpioMaxmA: 12, rOut: 40, rPull: 60000, analog: (g) => g >= 26 && g <= 28, core: "rp2040:rp2040（arduino-pico 板子包）", fqbn: "rp2040:rp2040:rpipico" },
 };
+// v21：逻辑电平（数据手册）+ 引脚表 id（public/pinouts/，KiCad 符号库解析）
+Object.assign(BOARDS["ada-5323"], { tol5v: false, pinout: null, logicSrc: "https://www.espressif.com/sites/default/files/documentation/esp32-s3_datasheet_en.pdf" });
+Object.assign(BOARDS["kc-raspberrypi_pico"], { tol5v: false, pinout: "rpi-pico", logicSrc: "https://datasheets.raspberrypi.com/pico/pico-datasheet.pdf" });
 BOARDS["kc-raspberrypi_pico_h"] = BOARDS["kc-raspberrypi_pico"];
-BOARDS["kc-raspberrypi_pico_w"] = { ...BOARDS["kc-raspberrypi_pico"], label: "Raspberry Pi Pico W" };
+BOARDS["kc-raspberrypi_pico_w"] = { ...BOARDS["kc-raspberrypi_pico"], label: "Raspberry Pi Pico W", pinout: "rpi-pico-w", logicSrc: "https://datasheets.raspberrypi.com/picow/pico-w-datasheet.pdf" };
 const picoRole = (n) => (n === "GND" ? "gnd" : n === "3V3" ? "3v3" : n === "VBUS" ? "5v" : n === "VSYS" ? "vsys" : n === "RUN" ? "rst" : n === "3V3_EN" ? "en" : n === "ADC_VREF" ? "vref" : /^GP\d+$/.test(n) ? "gpio" : "nc");
 
 export function boardOf(def) {
@@ -473,6 +476,8 @@ export function checks(cir, sol, fw = {}) {
     }
     if (s.kind === "gpio" && Math.abs(s.mA) > b.gpioMaxmA) add("warn", `${ref(s.board)} GPIO${s.gpio} 输出电流 ${Math.abs(s.mA).toFixed(0)} mA，超过约 ${b.gpioMaxmA} mA（估算的单脚上限），可能损坏引脚`, [s.board]);
   }
+  // v21：引脚冲突 + 3V3 / 5V 电平不匹配
+  for (const c of pinChecks(cir, sol, fw)) add(c.level, c.text, c.uids, c.fix);
   // 舵机
   for (const s of servoStates(cir, sol, fw)) {
     if (!s.connected) { add("info", `${s.ref} 舵机线没接：舵机引线母头套到 3 针排针上（棕 GND / 红 VCC / 橙 SIG）`, [s.uid]); continue; }
@@ -499,6 +504,60 @@ export function checks(cir, sol, fw = {}) {
 }
 
 // ---------------- 按接线自动生成固件 ----------------
+// v21：引脚冲突 / 电平检查。每块板的每个脚按所在网络归组，然后看：
+// ① 3V3 和 5V/VBUS/VSYS 接到一起；② 3.3 V 板子的 GPIO 接到 5V 电源脚，或解出来的电压 > VDD + 0.3 V；
+// ③ GPIO 直接接电源/地（设成 OUTPUT 就短路）；④ 两个输出脚接到同一网络（输出冲突）。
+const RAIL_ZH = { gnd: "GND", "3v3": "3V3", "5v": "5V/VBUS", vsys: "VSYS" };
+export function pinChecks(cir, sol, fw = {}) {
+  const E = cir.engine;
+  const out = [];
+  const nets = new Map();
+  for (const P of E.parts.values()) {
+    const B = boardOf(P.def);
+    if (!B) continue;
+    boardPins(P.def).forEach((p, i) => {
+      if (!p) return;
+      const t = cir.T(P.uid, `p${i}`);
+      const n = cir.uf.find(t);
+      if (!nets.has(n)) nets.set(n, []);
+      nets.get(n).push({ uid: P.uid, ref: P.state.ref, B, p, t });
+    });
+  }
+  const nm = (x) => `${x.ref} ${x.p.label}`;
+  const seen = new Set();
+  const push = (level, text, uids, fix) => { if (seen.has(text)) return; seen.add(text); out.push({ level, text, uids, fix, k: "pin" }); };
+  for (const [n, ps] of nets) {
+    const rails = ps.filter((x) => RAIL_ZH[x.p.role]);
+    const r33 = rails.filter((x) => x.p.role === "3v3"), r5 = rails.filter((x) => x.p.role === "5v" || x.p.role === "vsys"), rg = rails.filter((x) => x.p.role === "gnd");
+    if (r33.length && r5.length) push("error", `引脚冲突：${nm(r33[0])} 和 ${nm(r5[0])} 接在了一起——3.3 V 稳压输出被 5 V 反灌，真实中会损坏稳压器`, [...new Set([r33[0].uid, r5[0].uid])], "拆掉把 3V3 和 5V/VBUS/VSYS 连起来的导线；两块板之间只需要共 GND，必要时只连一路电源");
+    const gp = ps.filter((x) => x.p.role === "gpio");
+    for (const g of gp) {
+      const mode = fw?.[g.uid]?.modes?.[g.p.gpio];
+      const out5 = r5[0];
+      if (out5 && g.B.vdd < 4 && !g.B.tol5v) {
+        push("error", `电平不匹配：${nm(g)}（${g.B.vdd} V 逻辑，数据手册：GPIO 不耐 5 V）直接接到 ${nm(out5)}——超过 VDD + 0.3 V 的绝对最大值，会损坏引脚`, [...new Set([g.uid, out5.uid])], "5 V 信号先经分压（如 1 kΩ 串 + 2 kΩ 到地，约 3.3 V）或电平转换模块再进 GPIO；只是要供电就改接 3V3");
+        continue;
+      }
+      const other = rails.find((x) => !(x.uid === g.uid && x.p === g.p));
+      if (other) {
+        const isOut = mode === "OUTPUT" || fw?.[g.uid]?.servoPins?.has?.(g.p.gpio);
+        push(isOut ? "error" : "warn", isOut ? `引脚冲突：${nm(g)} 设成 OUTPUT，却直接接在 ${nm(other)} 上——输出相反电平时就是短路` : `${nm(g)} 直接接到 ${nm(other)}（没有电阻）：只要固件把它设成 OUTPUT 就会短路`, [...new Set([g.uid, other.uid])], "中间串一个 1 kΩ 左右的电阻，或读按键时用 INPUT_PULLUP + 按键接 GND");
+      }
+      const v = sol?.v?.(g.t);
+      if (v != null && v > g.B.vdd + 0.3 && !r5.length) push("error", `电平不匹配：${nm(g)} 上的电压约 ${v.toFixed(2)} V，高于 ${g.B.vdd} V + 0.3 V（数据手册的绝对最大值）`, [g.uid], "检查这个网络是不是被 5 V 器件驱动；用分压或电平转换");
+    }
+    const outs = (sol?.sources || []).filter((s) => s.kind === "gpio" && cir.uf.find(s.n) === n);
+    const keys = [...new Map(outs.map((s) => [s.board + ":" + s.gpio, s])).values()];
+    if (keys.length >= 2) {
+      const [a, b] = keys;
+      const ra = E.parts.get(a.board)?.state.ref, rb = E.parts.get(b.board)?.state.ref;
+      const diff = Math.abs(a.v - b.v) > 0.1;
+      push("error", `输出冲突：${ra} GPIO${a.gpio} 和 ${rb} GPIO${b.gpio} 都是输出，却接在同一个网络${diff ? `，一高一低时互相灌电流（约 ${Math.abs(a.mA).toFixed(0)} mA）` : ""}`, [...new Set([a.board, b.board])], "一个设成 INPUT，或中间串电阻；需要双向通信用 I²C（开漏）或 UART 的 TX→RX 交叉接法");
+    }
+  }
+  return out;
+}
+
 export function detectIO(cir, uid) {
   const E = cir.engine;
   const P = E.parts.get(uid);
