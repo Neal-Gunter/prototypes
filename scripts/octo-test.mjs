@@ -41,5 +41,11 @@ sn = run(s, 5); ok(sn.mode === "idle", "crawl steps end " + sn.mode);
 s = new OctoSim({ F: fixesAll(true), plan: "B" }); run(s, 4); s.send("GO"); sn = run(s, 6);
 ok(sn.servos.length === 16, "B 16"); console.log("B GO pose", sn.pose, "peak", sn.peakI.toFixed(2));
 s = new OctoSim({ F: fixesAll(true), plan: "B" }); run(s, 4); s.send("LEFT"); sn = run(s, 6); console.log("B LEFT pose", sn.pose);
+// MCP 模式：工具调用真的让舵机动起来；steps 修正后走够步数自动停；wave 只动一条
+s = new OctoSim({ F: fixesAll(true), mode: "mcp" }); run(s, 4);
+ok(s.mcp("self.octopus.action", { action: "crawl", steps: 2, speed: 1000 }) === "开始爬行", "mcp crawl ret");
+sn = run(s, 1.5); ok(sn.servos.some((x) => Math.abs(x.ang - 90) > 10), "mcp crawl moves");
+sn = run(s, 4); ok(s.rt.body.mode_ === "idle", "mcp steps stop " + s.rt.body.mode_);
+ok(s.mcp("self.octopus.set_gait", { freq: 8, amplitude: 30, phase: 45 }) === "步态已更新" && Math.abs(s.rt.body.GaitParamsSnapshot().freq_hz - 0.8) < 1e-9, "mcp set_gait");
 console.log(`octo tests: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -11,7 +11,8 @@ let detach = null;
 export function octoDetach() { detach?.(); detach = null; }
 export const octoSim = new OctoSim({ plan: "A", phase: 3 });
 
-const Btn = ({ children, on, dis, t, cls = "" }) => <button type="button" disabled={dis} onClick={on} data-testid={t} className={`min-h-8 border border-line bg-white px-2 text-xs disabled:opacity-40 ${cls}`}>{children}</button>;
+const fx = (v, d) => (typeof v === "number" && isFinite(v) ? v.toFixed(d) : "—");
+const Btn = ({ children, on, dis, t, cls = "", submit }) => <button type={submit ? "submit" : "button"} disabled={dis} onClick={on} data-testid={t} className={`min-h-8 border border-line bg-white px-2 text-xs disabled:opacity-40 ${cls}`}>{children}</button>;
 
 function TopView({ snap, plan }) {
   if (!snap) return null;
@@ -64,7 +65,14 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
     return () => clearInterval(id);
   }, [built]);
 
+  const [building, setBuilding] = useState(false);
+  const lock = useRef(false);
   async function build(o = {}) {
+    if (lock.current) return null; // 正在装：不重复进
+    lock.current = true; setBuilding(true);
+    try { return await build1(o); } finally { lock.current = false; setBuilding(false); }
+  }
+  async function build1(o = {}) {
     const cfg = { plan, phase, fault, mode, F, ...o };
     setPlan(cfg.plan); setPhase(cfg.phase); setFault(cfg.fault); setMode(cfg.mode); setF(cfg.F);
     octoDetach();
@@ -111,8 +119,8 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
       <p className="leading-5 text-ink-soft">照你给的 md（octopus-ai）复刻：零件、接线、供电、固件都按文档；文档没写的标“文档未写”，数字是推出来的标“估算”。语音、大模型、WiFi / 蓝牙都是<b className="text-ink">模拟</b>。</p>
       <fieldset className="flex flex-col gap-1">
         <legend className="font-medium">预设</legend>
-        <Btn t="octo-preset-A" dis={!ready || busy} on={() => build({ plan: "A", phase: 3, fault: "none" })} cls="text-left">小智八爪鱼 方案A（8 个 MG90S，只摆不抬）</Btn>
-        <Btn t="octo-preset-B" dis={!ready || busy} on={() => build({ plan: "B", phase: 3, fault: "none" })} cls="text-left">小智八爪鱼 方案B（16 个 MG90S，每条摆 + 抬）</Btn>
+        <Btn t="octo-preset-A" dis={!ready || busy || building} on={() => build({ plan: "A", phase: 3, fault: "none" })} cls="text-left">小智八爪鱼 方案A（8 个 MG90S，只摆不抬）</Btn>
+        <Btn t="octo-preset-B" dis={!ready || busy || building} on={() => build({ plan: "B", phase: 3, fault: "none" })} cls="text-left">小智八爪鱼 方案B（16 个 MG90S，每条摆 + 抬）</Btn>
         <label className="mt-1">按 md 的阶段装：
           <select value={phase} onChange={(e) => setPhase(+e.target.value)} className="ml-1 w-full border border-line bg-white" data-testid="octo-phase">{PHASES.map((p) => <option key={p.k} value={p.k}>{p.zh}</option>)}</select>
         </label>
@@ -122,25 +130,25 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
         </label>
         {FAULTS.find((f) => f.k === fault)?.md && <p className="text-ink-soft">出处：{FAULTS.find((f) => f.k === fault).md}</p>}
         <div className="flex gap-2">
-          <label><input type="radio" checked={mode === "ino"} onChange={() => setMode("ino")} /> 蓝牙串口固件（body_firmware_A.ino）</label>
-          <label><input type="radio" checked={mode === "mcp"} onChange={() => setMode("mcp")} data-testid="octo-mode-mcp" /> 小智 MCP（模拟）</label>
+          <label><input type="radio" checked={mode === "ino"} onChange={() => (built ? build({ mode: "ino" }) : setMode("ino"))} data-testid="octo-mode-ino" /> 蓝牙串口固件（body_firmware_A.ino）</label>
+          <label><input type="radio" checked={mode === "mcp"} onChange={() => (built ? build({ mode: "mcp" }) : setMode("mcp"))} data-testid="octo-mode-mcp" /> 小智 MCP（模拟）</label>
         </div>
         <details>
           <summary className="cursor-pointer">固件修正（{Object.values(F).filter(Boolean).length}/{FIX_LIST.length} 项打开；全关 = md 原样）</summary>
           <div className="mt-1 flex gap-1"><Btn on={() => setF(fixesAll(true))} t="octo-fix-all">全部修正</Btn><Btn on={() => setF(fixesAll(false))} t="octo-fix-none">全部原样（md 代码）</Btn></div>
           {FIX_LIST.map((f) => <label key={f.k} className="mt-1 flex gap-1 leading-4"><input type="checkbox" checked={!!F[f.k]} onChange={(e) => setF({ ...F, [f.k]: e.target.checked })} /><span>{f.zh}<span className="text-ink-soft">（{f.md}）</span></span></label>)}
         </details>
-        <Btn t="octo-build" dis={!ready || busy} on={() => build()} cls="border-ink">按上面的设置重新装（方案{plan}）</Btn>
+        <Btn t="octo-build" dis={!ready || busy || building} on={() => build()} cls="border-ink">按上面的设置重新装（方案{plan}）</Btn>
       </fieldset>
       {built && snap && <>
         <fieldset data-testid="octo-power">
           <legend className="font-medium">通电状态</legend>
           <p className={snap.espOn ? "text-emerald-700" : "text-red-700"}>ESP32：{snap.espOn ? `运行中（启动 ${snap.boots} 次）` : "没在运行"}{snap.halted ? ` · 固件停在：${snap.halted}` : ""}</p>
           <table className="mt-1 w-full font-mono text-[11px]"><tbody>
-            <tr><td>电池</td><td>{R.vbat.toFixed(2)} V</td><td>舵机 V+</td><td>{R.vservo.toFixed(2)} V</td></tr>
-            <tr><td>ESP32 5V</td><td>{R.espIn.toFixed(2)} V</td><td>3V3</td><td>{R.v33.toFixed(2)} V</td></tr>
-            <tr><td>舵机电流</td><td>{snap.avgI.toFixed(2)} A</td><td>峰值</td><td>{snap.peakI.toFixed(2)} A</td></tr>
-            <tr><td>PWM</td><td>{snap.freq.toFixed(0)} Hz</td><td>共地</td><td>{R.gndCommon ? "有" : "没有"}</td></tr>
+            <tr><td>电池</td><td>{fx(R.vbat, 2)} V</td><td>舵机 V+</td><td>{fx(R.vservo, 2)} V</td></tr>
+            <tr><td>ESP32 5V</td><td>{fx(R.espIn, 2)} V</td><td>3V3</td><td>{fx(R.v33, 2)} V</td></tr>
+            <tr><td>舵机电流</td><td>{fx(snap.avgI, 2)} A</td><td>峰值</td><td>{fx(snap.peakI, 2)} A</td></tr>
+            <tr><td>PWM</td><td>{fx(snap.freq, 0)} Hz</td><td>共地</td><td>{R.gndCommon ? "有" : "没有"}</td></tr>
           </tbody></table>
           <p className="text-ink-soft">电流、电压是估算模型（{EST.current}）</p>
           <ul className="mt-1 flex flex-col gap-0.5" data-testid="octo-checks">
@@ -150,13 +158,13 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
         {!noBody && <fieldset className="flex flex-col gap-1" data-testid="octo-controls">
           <legend className="font-medium">{mode === "mcp" ? "MCP 工具 self.octopus.*（模拟小智调用）" : "蓝牙串口指令（模拟，md 的 .ino）"}</legend>
           {mode === "mcp" ? <div className="flex flex-wrap gap-1">
-            <Btn t="mcp-crawl" on={() => mcp("self.octopus.move", { action: "crawl", steps: 3, direction: 0 })}>爬 3 步</Btn>
-            <Btn t="mcp-left" on={() => mcp("self.octopus.move", { action: "crawl", steps: 3, direction: -100 })}>左转</Btn>
-            <Btn t="mcp-right" on={() => mcp("self.octopus.move", { action: "crawl", steps: 3, direction: 100 })}>右转</Btn>
-            <Btn t="mcp-wave" on={() => mcp("self.octopus.move", { action: "wave", arm: wave })}>挥 {wave} 号</Btn>
-            <Btn t="mcp-pulse" on={() => mcp("self.octopus.move", { action: "pulse", steps: 2 })}>收缩 2 次</Btn>
-            <Btn t="mcp-home" on={() => mcp("self.octopus.move", { action: "home" })}>回中</Btn>
-            <Btn t="mcp-rest" on={() => mcp("self.octopus.move", { action: "rest" })}>放松</Btn>
+            <Btn t="mcp-crawl" on={() => mcp("self.octopus.action", { action: "crawl", steps: 3, direction: 0 })}>爬 3 步</Btn>
+            <Btn t="mcp-left" on={() => mcp("self.octopus.action", { action: "crawl", steps: 3, direction: -100 })}>左转</Btn>
+            <Btn t="mcp-right" on={() => mcp("self.octopus.action", { action: "crawl", steps: 3, direction: 100 })}>右转</Btn>
+            <Btn t="mcp-wave" on={() => mcp("self.octopus.action", { action: "wave", arm: wave })}>挥 {wave} 号</Btn>
+            <Btn t="mcp-pulse" on={() => mcp("self.octopus.action", { action: "pulse", steps: 2 })}>收缩 2 次</Btn>
+            <Btn t="mcp-home" on={() => mcp("self.octopus.action", { action: "home" })}>回中</Btn>
+            <Btn t="mcp-rest" on={() => mcp("self.octopus.action", { action: "rest" })}>放松</Btn>
           </div> : <div className="flex flex-wrap gap-1">
             {["GO", "LEFT", "RIGHT", "STOP", "HOME"].map((c) => <Btn key={c} t={`ser-${c}`} on={() => send(c)}>{c}</Btn>)}
             <Btn t="ser-WAVE" on={() => send(`WAVE ${wave}`)}>WAVE {wave}</Btn><Btn t="ser-PULSE" on={() => send("PULSE 2")}>PULSE 2</Btn>
@@ -169,11 +177,11 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
           </div>
           <Btn t="octo-gait" on={() => mode === "mcp" ? mcp("self.octopus.set_gait", gait) : send(`GAIT f=${gait.freq / 10} yaw=${gait.amplitude} phase=${gait.phase}`)}>{mode === "mcp" ? "set_gait" : "发送 GAIT"}（md 建议 0.6 Hz / 38° / 45°）</Btn>
           {mode === "ino" && <form className="flex gap-1" onSubmit={(e) => { e.preventDefault(); if (line.trim()) send(line); setLine(""); }}>
-            <input value={line} onChange={(e) => setLine(e.target.value)} placeholder="串口一行，例如 GAIT F=0.8 YAW=30" className="min-w-0 flex-1 border border-line px-1 font-mono" data-testid="octo-serial" /><Btn>发送</Btn>
+            <input value={line} onChange={(e) => setLine(e.target.value)} placeholder="串口一行，例如 GAIT F=0.8 YAW=30" className="min-w-0 flex-1 border border-line px-1 font-mono" data-testid="octo-serial" /><Btn submit t="octo-serial-send">发送</Btn>
           </form>}
           <form className="mt-1 flex flex-col gap-1" onSubmit={(e) => { e.preventDefault(); talk(say); }}>
             <span>对它说一句（<b>模拟</b>：真实小智是 语音 → 云端识别 + 大模型 → MCP；这里用关键词规则代替）</span>
-            <div className="flex gap-1"><input value={say} onChange={(e) => setSay(e.target.value)} className="min-w-0 flex-1 border border-line px-1" data-testid="octo-nl" /><Btn t="octo-nl-send">说</Btn></div>
+            <div className="flex gap-1"><input value={say} onChange={(e) => setSay(e.target.value)} className="min-w-0 flex-1 border border-line px-1" data-testid="octo-nl" /><Btn submit t="octo-nl-send">说</Btn></div>
             {nlOut && <p className="font-mono text-[11px]" data-testid="octo-nl-out">“大模型”（模拟）→ {nlOut.zh}{mode === "mcp" ? nlOut.calls.map((c, i) => <span key={i}><br />{c.tool} {JSON.stringify(c.args)} → {nlOut.res[i]}</span>) : nlOut.serial ? <><br />串口 → {nlOut.serial}</> : null}</p>}
           </form>
         </fieldset>}

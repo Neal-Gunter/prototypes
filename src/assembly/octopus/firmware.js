@@ -227,10 +227,11 @@ export class Runtime {
       yield 10;
     }
   }
-  // 小智固件里调 RegisterOctopusTools(body)：板子初始化做了什么 md 没写，这里只 Init + Start（文档未写是否 SoftHome）
+  // 小智固件里调 RegisterOctopusTools(body)：板子初始化做了什么 md 没写。这里按 .ino 的顺序 Init → SoftHome → Start（文档未写，照 .ino 推）
   *mcpMain() {
     const rig = this.plan === "B" || !this.F.rig8 ? RIG.kDual16 : RIG.kSingle8;
     if (!this.body.Init(this.plan === "B" ? RIG.kDual16 : rig, this.i2cWrite)) { this.log("PCA9685 初始化失败"); this.halted = "PCA9685 初始化失败"; while (true) yield 1000; }
+    yield* this.body.SoftHome();
     this.body.Start();
     this.log("小智固件（模拟）：已注册 self.octopus.action / self.octopus.set_gait");
     this.mcpReady = true;
@@ -282,6 +283,7 @@ export class Runtime {
       b.SetGaitParams(p);
       return "步态已更新";
     }
+    if (tool !== "self.octopus.action") return "未知工具: " + tool;
     const action = args.action ?? "crawl";
     const steps = clamp(args.steps ?? 3, 1, 100), dir = clamp(args.direction ?? 0, -100, 100), speed = clamp(args.speed ?? 1000, 300, 3000), arm = clamp(args.arm ?? 0, 0, 7);
     const hz = 1000 / (speed > 0 ? speed : 1000);

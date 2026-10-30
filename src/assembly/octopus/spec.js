@@ -71,7 +71,7 @@ export const TRACE = [
   ["0 号触手在正前方，顺时针排布（每 45°）", "octopus_gait.h MountAngle() 注释"],
   ["步态起点 0.6 Hz / 38° / duty 0.65 / phase 45°", "README §7；octopus_gait.h GaitParams"],
   ["串口指令 GO / LEFT / RIGHT / STOP / HOME / WAVE n / PULSE n / GAIT", "body_firmware_A.ino handleCommand()；手机控制指南 §4"],
-  ["MCP 工具 self.octopus.move / set_gait", "octopus_mcp.cpp"],
+  ["MCP 工具 self.octopus.action / set_gait", "octopus_mcp.cpp"],
   ["50 Hz PWM、SoftHome 分时上电", "README §8；octopus_bus.h / octopus_body.h"],
   ["低压截止 6.4 V", "无线架构 §6；采购清单 无线化追加清单"],
   ["15 s 没指令自动停（AUTO_REST）", "body_firmware_A.ino"],
