@@ -11,3 +11,6 @@ npx esbuild src/assembly/procedural.js --bundle --format=esm --platform=node --o
 [ "$1" = "elec" ] || node e2e/engine-v5.mjs
 node e2e/elec-node.mjs
 node scripts/octo-test.mjs || exit 1
+# v11：模型 + 功能图（解析、拆分、工程 ZIP、上传零件进引擎碰撞）
+node scripts/modellab-test.mjs || exit 1
+node e2e/modellab-engine.mjs || exit 1

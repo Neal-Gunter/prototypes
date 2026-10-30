@@ -27,6 +27,25 @@ function yawOf(q) {
 }
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 
+// 凸包往中心缩 shr（cm），用来做“放下去会不会穿模”的预检（和方块的缩边一样）
+const _hullCache = new WeakMap();
+function hullShape(R, hull, shr) {
+  const key = typeof hull === "object" ? hull : null;
+  if (key && _hullCache.has(key)) return _hullCache.get(key);
+  const n = hull.length / 3;
+  let cx = 0, cy = 0, cz = 0;
+  for (let i = 0; i < n; i++) { cx += hull[3 * i]; cy += hull[3 * i + 1]; cz += hull[3 * i + 2]; }
+  cx /= n; cy /= n; cz /= n;
+  const out = new Float32Array(hull.length);
+  for (let i = 0; i < n; i++) {
+    const dx = hull[3 * i] - cx, dy = hull[3 * i + 1] - cy, dz = hull[3 * i + 2] - cz, L = Math.hypot(dx, dy, dz) || 1, k = Math.max(0, L - shr) / L;
+    out[3 * i] = cx + dx * k; out[3 * i + 1] = cy + dy * k; out[3 * i + 2] = cz + dz * k;
+  }
+  const sh = new R.ConvexPolyhedron(out, null);
+  if (key) _hullCache.set(key, sh);
+  return sh;
+}
+
 let uidSeq = 1;
 let bodySeq = 1;
 
@@ -239,13 +258,16 @@ class Engine {
     const list = [];
     for (const c of p.def.colliders) {
       const cp = V(c.c).applyQuaternion(p.rel.q).add(p.rel.p);
-      const d = R.ColliderDesc.cuboid(Math.max(c.h[0], 0.005), Math.max(c.h[1], 0.005), Math.max(c.h[2], 0.005))
+      // v11（我的补充）：上传模型的模块可以用凸包碰撞体（c.hull = 相对 c.c 的顶点，cm）；凸包算不出来时退回方块
+      const hd = c.hull ? R.ColliderDesc.convexHull(c.hull instanceof Float32Array ? c.hull : new Float32Array(c.hull)) : null;
+      const d = (hd || R.ColliderDesc.cuboid(Math.max(c.h[0], 0.005), Math.max(c.h[1], 0.005), Math.max(c.h[2], 0.005)))
         .setTranslation(cp.x, cp.y, cp.z)
         .setRotation({ x: p.rel.q.x, y: p.rel.q.y, z: p.rel.q.z, w: p.rel.q.w })
-        .setDensity(p.def.density || 1.2)
-        .setFriction(0.7)
+        .setFriction(p.def.friction ?? 0.7)
         .setRestitution(0)
         .setCollisionGroups(GROUPS.part);
+      // 质量：c.m（克，用户填的或按体积估算）优先，否则按密度
+      if (c.m > 0) d.setMass(c.m); else d.setDensity(p.def.density || 1.2);
       const col = this.world.createCollider(d, body.rb);
       this.colOwner.set(col.handle, p.uid);
       list.push({ col, c });
@@ -625,7 +647,7 @@ class Engine {
         const wc = lc.applyQuaternion(q).add(pos);
         const wq = q.clone().multiply(p.rel.q);
         const shr = 0.02;
-        const shape = new R.Cuboid(Math.max(0.003, c.h[0] - shr), Math.max(0.003, c.h[1] - shr), Math.max(0.003, c.h[2] - shr));
+        const shape = c.hull ? hullShape(R, c.hull, shr) : new R.Cuboid(Math.max(0.003, c.h[0] - shr), Math.max(0.003, c.h[1] - shr), Math.max(0.003, c.h[2] - shr));
         this.world.intersectionsWithShape({ x: wc.x, y: wc.y, z: wc.z }, { x: wq.x, y: wq.y, z: wq.z, w: wq.w }, shape, (col) => {
           const o = this.colOwner.get(col.handle);
           if (o === "bench") {
