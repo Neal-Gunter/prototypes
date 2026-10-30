@@ -1,5 +1,5 @@
 // v22（我的补充）：装配台首次使用导览，8 步，可跳过；关掉后记在本机 localStorage，不再自动弹。早期原型，简化仿真。
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export const TOUR_KEY = "asm-tour-v22-done";
 export const STEPS = [
@@ -22,25 +22,39 @@ export default function Tour({ setTab }) {
     return 0;
   });
   const [box, setBox] = useState(null);
+  const nextRef = useRef(null); const back = useRef(null);
   useEffect(() => { const ev = () => setI(0); window.addEventListener("open-tour", ev); return () => window.removeEventListener("open-tour", ev); }, []);
   useEffect(() => {
     if (i < 0) return; const s = STEPS[i]; if (s.tab) setTab?.(s.tab);
-    let n = 0; const id = setInterval(() => { const el = document.querySelector(s.sel); if (el || ++n > 20) { clearInterval(id); if (el) { el.scrollIntoView?.({ block: "nearest" }); const r = el.getBoundingClientRect(); setBox({ x: r.left, y: r.top, w: r.width, h: r.height }); } else setBox(null); } }, 50);
-    return () => clearInterval(id);
+    // v23：窗口缩放/滚动时高亮框跟着目标走（窄屏走查时框会错位）；目标在窄屏被隐藏（宽高为 0）时不画框
+    let el = null; const place = () => { if (!el) return; const r = el.getBoundingClientRect(); setBox(r.width && r.height ? { x: r.left, y: r.top, w: r.width, h: r.height } : null); };
+    let n = 0; const id = setInterval(() => { el = document.querySelector(s.sel); if (el || ++n > 20) { clearInterval(id); if (el) { el.scrollIntoView?.({ block: "nearest" }); place(); } else setBox(null); } }, 50);
+    window.addEventListener("resize", place); window.addEventListener("scroll", place, true);
+    return () => { clearInterval(id); window.removeEventListener("resize", place); window.removeEventListener("scroll", place, true); };
   }, [i]); // eslint-disable-line react-hooks/exhaustive-deps
+  // v23：键盘——打开时焦点放到“下一步”；Esc 跳过；焦点在导览里时 ←/→ 翻页；关掉后焦点回到原处
+  const open = i >= 0;
+  useEffect(() => { if (!open) { const b = back.current; back.current = null; if (b && document.contains(b)) b.focus?.(); return; } if (!back.current) back.current = document.activeElement; }, [open]);
+  useEffect(() => { if (i >= 0) setTimeout(() => nextRef.current?.focus({ preventScroll: true }), 0); }, [i]);
+  useEffect(() => {
+    if (!open) return;
+    const on = (e) => { if (e.key === "Escape" && !document.querySelector('[data-testid="palette"]')) { try { localStorage.setItem(TOUR_KEY, "1"); } catch { /* 无痕模式 */ } setI(-1); } };
+    window.addEventListener("keydown", on); return () => window.removeEventListener("keydown", on);
+  }, [open]);
   if (i < 0) return null;
   const s = STEPS[i]; const close = () => { try { localStorage.setItem(TOUR_KEY, "1"); } catch { /* 无痕模式 */ } setI(-1); };
   return (
     <>
       {box && <div className="pointer-events-none fixed z-[55] rounded-sm ring-2 ring-copper ring-offset-2" style={{ left: box.x, top: box.y, width: box.w, height: box.h }} data-testid="tour-ring" />}
-      <div className="fixed bottom-4 right-4 z-[56] w-72 border border-ink bg-paper p-3 text-sm shadow-lg" role="dialog" aria-label="新手导览" data-testid="tour">
-        <p className="text-xs text-ink-soft">新手导览 {i + 1} / {STEPS.length}</p>
-        <p className="mt-1 font-medium" data-testid="tour-title">{s.t}</p>
-        <p className="mt-1">{s.d}</p>
+      <div className="fixed bottom-4 right-4 z-[56] w-[min(18rem,calc(100vw-2rem))] border border-ink bg-paper p-3 text-sm shadow-lg" role="dialog" aria-modal="false" aria-labelledby="tour-t" aria-describedby="tour-d" data-testid="tour"
+        onKeyDown={(e) => { if (e.target.tagName === "INPUT") return; if (e.key === "ArrowRight" && i + 1 < STEPS.length) { e.preventDefault(); setI(i + 1); } else if (e.key === "ArrowLeft" && i > 0) { e.preventDefault(); setI(i - 1); } }}>
+        <p className="text-xs text-ink-soft" aria-live="polite">新手导览 {i + 1} / {STEPS.length}<span className="sr-only">（←/→ 翻页，Esc 跳过）</span></p>
+        <p className="mt-1 font-medium" id="tour-t" data-testid="tour-title">{s.t}</p>
+        <p className="mt-1" id="tour-d">{s.d}</p>
         <div className="mt-2 flex gap-2">
           <button type="button" onClick={close} className="min-h-8 border border-line px-2 text-xs" data-testid="tour-skip">跳过</button>
           {i > 0 && <button type="button" onClick={() => setI(i - 1)} className="min-h-8 border border-line px-2 text-xs" data-testid="tour-prev">上一步</button>}
-          <button type="button" onClick={() => (i + 1 < STEPS.length ? setI(i + 1) : close())} className="ml-auto min-h-8 border border-ink bg-ink px-3 text-xs text-paper-2" data-testid="tour-next">{i + 1 < STEPS.length ? "下一步" : "完成"}</button>
+          <button ref={nextRef} type="button" onClick={() => (i + 1 < STEPS.length ? setI(i + 1) : close())} className="ml-auto min-h-8 border border-ink bg-ink px-3 text-xs text-paper-2" data-testid="tour-next">{i + 1 < STEPS.length ? "下一步" : "完成"}</button>
         </div>
         <p className="mt-2 text-[11px] text-ink-soft">我的补充 · 早期原型，简化仿真</p>
       </div>
