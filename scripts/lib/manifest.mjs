@@ -2,6 +2,7 @@
 // 用法：node scripts/lib/manifest.mjs  → ../libsrc/manifest.json
 import fs from "node:fs";
 import path from "node:path";
+import { freecadEntries } from "./freecad.mjs";
 const LIB = path.resolve("../libsrc");
 
 export const CATS = {
@@ -245,6 +246,7 @@ for (const p of readSel("seeed_sel.txt")) {
     iface: /himax/i.test(file) ? ["camera"] : ["lora"], source: "Seeed Studio OPL KiCad Library", licence: "CC-BY-SA-4.0", author: "Seeed Studio",
     url: `https://github.com/Seeed-Studio/OPL_Kicad_Library/tree/master/${p.split("/").slice(0, -1).map(encodeURIComponent).join("/")}` });
 }
+for (const e of freecadEntries(LIB)) if (!ids.has(e.id)) { ids.add(e.id); out.push(e); } // v21：FreeCAD-library（CC BY 3.0）
 fs.writeFileSync(path.join(LIB, "manifest.json"), JSON.stringify(out, null, 1));
 const c = {};
 for (const e of out) c[e.cat] = (c[e.cat] || 0) + 1;

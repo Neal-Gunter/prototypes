@@ -10,6 +10,7 @@ await p.waitForFunction(() => window.thumbReady);
 let ok = 0, bad = [];
 for (const row of idx.parts) {
   const [id, , , cat] = row;
+  if (/^fc-ext-.*-l\d+$/.test(id)) continue; // v21：型材长度变体共用原件缩略图
   const f = `public/lib/thumbs/${id}.webp`;
   if (fs.existsSync(f) && !process.env.FORCE) { ok++; continue; }
   try {

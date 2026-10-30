@@ -10,8 +10,8 @@ const OUT = path.resolve("public/lib");
 const man = JSON.parse(fs.readFileSync(path.join(LIB, "manifest.json"), "utf8"));
 const r2 = (v) => Math.round(v * 100) / 100;
 // v20：来源短码和许可短码（索引里用来筛选）
-export const SRC_KEY = { "Adafruit CAD Parts": "ada", "KiCad packages3D": "kicad", "SparkFun KiCad Libraries": "sfe", "Espressif KiCad Libraries": "esp", "Seeed Studio OPL KiCad Library": "seeed" };
-const licKey = (l) => (l.startsWith("MIT") ? "MIT" : l.startsWith("CC-BY-4.0") ? "CC-BY-4.0" : "CC-BY-SA-4.0");
+export const SRC_KEY = { "Adafruit CAD Parts": "ada", "KiCad packages3D": "kicad", "SparkFun KiCad Libraries": "sfe", "Espressif KiCad Libraries": "esp", "Seeed Studio OPL KiCad Library": "seeed", "FreeCAD-library": "freecad" };
+const licKey = (l) => (l.startsWith("MIT") ? "MIT" : l.startsWith("CC-BY-4.0") ? "CC-BY-4.0" : l.startsWith("CC-BY-3.0") ? "CC-BY-3.0" : "CC-BY-SA-4.0");
 // v20：接口 / 电压标签——只从名字里的关键词推断（界面标“名称推断”）
 const IFACE_RULES = [["i2c", /i2c|stemma qt|qwiic/i], ["spi", /\bspi\b|micro ?sd|sd card/i], ["uart", /uart|serial|gps|gnss/i], ["usb", /usb/i], ["can", /\bcan\b/i], ["i2s", /i2s/i],
   ["wifi", /wifi|esp32|esp8266|esp8684|airlift|wroom|wrover|pico w/i], ["ble", /\bble\b|bluetooth|nrf52|esp32/i], ["lora", /lora|rfm9|sx12/i], ["pwm", /servo|pwm/i], ["jst", /jst|stemma/i], ["header", /pinheader|pinsocket|header/i], ["power", /barrel|terminal|xt\d0|battery|lipo/i]];
@@ -61,6 +61,7 @@ fs.rmSync(path.join(OUT, "catalog"), { recursive: true, force: true });
 fs.mkdirSync(path.join(OUT, "catalog"), { recursive: true });
 const byCat = {};
 const index = [];
+const replaced = {}; // v21：程序件 id → 真实件 id
 let skipped = 0;
 for (const m of man) {
   const f = path.join(LIB, "meta", m.id + ".json");
@@ -73,7 +74,7 @@ for (const m of man) {
     name_zh: m.name_zh,
     cat: m.cat,
     glb: `/lib/${m.cat}/${m.id}.glb`,
-    thumb: `/lib/thumbs/${m.id}.webp`,
+    thumb: `/lib/thumbs/${m.derived_from || m.id}.webp`,
     dims_mm: meta.dims_mm,
     dims_src: meta.dims_src,
     tris: meta.tris,
@@ -92,6 +93,8 @@ for (const m of man) {
     source: m.source,
     licence: m.licence,
     url: m.url,
+    replaces: m.replaces, // v21：这个真实件替换掉的程序生成近似件 id
+    derived_from: m.derived_from, // v21：型材长度变体的原件
     product_url: m.product_url,
     mass: null, // 质量没有核实来源：页面上按碰撞盒体积 × 材料密度显示“估算”
   };
@@ -101,6 +104,7 @@ for (const m of man) {
   e.volts = tg.volts.length ? tg.volts : undefined;
   e.tags_src = "名称推断";
   (byCat[m.cat] ||= []).push(e);
+  if (m.replaces) replaced[m.replaces] = m.id;
   index.push([e.id, e.name_zh, e.name, e.cat, [r2(e.dims_mm.x), r2(e.dims_mm.z), r2(e.dims_mm.y)], licKey(e.licence), SRC_KEY[e.source] || "other", [...(e.iface || []), ...(e.volts || []).map((v) => v + "V")].join(" ")]);
 }
 for (const [cat, list] of Object.entries(byCat)) {
@@ -108,6 +112,6 @@ for (const [cat, list] of Object.entries(byCat)) {
   fs.writeFileSync(path.join(OUT, "catalog", cat + ".json"), JSON.stringify(list));
 }
 const cats = Object.entries(CATS).map(([key, label]) => ({ key, label, real: byCat[key]?.length || 0 }));
-fs.writeFileSync(path.join(OUT, "index.json"), JSON.stringify({ generated: new Date().toISOString().slice(0, 10), total: index.length, cats, parts: index }));
+fs.writeFileSync(path.join(OUT, "index.json"), JSON.stringify({ generated: new Date().toISOString().slice(0, 10), total: index.length, cats, parts: index, replaced }));
 console.log("parts", index.length, "skipped", skipped);
 console.log(cats.map((c) => `${c.key}:${c.real}`).join(" "));

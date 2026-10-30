@@ -1,0 +1,1324 @@
+[
+{
+"id": "fc-servo-sg90",
+"authors": [
+"Gafeju",
+"WladIMirG"
+],
+"first": "2015-08-26",
+"size": 1503392,
+"authors_chain": [
+"Gafeju",
+"WladIMirG"
+],
+"paths": [
+"Electrical Parts/Servos/SG-90/Servo-sg90.step"
+]
+},
+{
+"id": "fc-servo-es08a",
+"authors": [
+"obijuan",
+"WladIMirG"
+],
+"first": "2015-01-10",
+"size": 875310,
+"authors_chain": [
+"obijuan",
+"WladIMirG"
+],
+"paths": [
+"Electrical Parts/Servos/Emax-ES08A/Emax-es08A.step"
+]
+},
+{
+"id": "fc-servo-futaba3003",
+"authors": [
+"obijuan",
+"WladIMirG"
+],
+"first": "2014-07-27",
+"size": 1523039,
+"authors_chain": [
+"obijuan",
+"WladIMirG"
+],
+"paths": [
+"Electrical Parts/Servos/Futaba3003/Futaba3003.stp",
+"Electrical Parts/Servos/Futaba3003.stp"
+]
+},
+{
+"id": "fc-servo-sm-s4303r",
+"authors": [
+"obijuan",
+"WladIMirG"
+],
+"first": "2014-08-10",
+"size": 3185431,
+"authors_chain": [
+"obijuan",
+"WladIMirG"
+],
+"paths": [
+"Electrical Parts/Servos/SpringRC-SM-S4303R/SM-S4303R.step"
+]
+},
+{
+"id": "fc-servo-sg90-horn1",
+"authors": [
+"Gafeju",
+"WladIMirG"
+],
+"first": "2015-08-26",
+"size": 85272,
+"authors_chain": [
+"Gafeju",
+"WladIMirG"
+],
+"paths": [
+"Electrical Parts/Servos/SG-90/SG90-1-arm-horn.step"
+]
+},
+{
+"id": "fc-servo-sg90-horn2",
+"authors": [
+"Gafeju",
+"WladIMirG"
+],
+"first": "2015-08-26",
+"size": 136701,
+"authors_chain": [
+"Gafeju",
+"WladIMirG"
+],
+"paths": [
+"Electrical Parts/Servos/SG-90/SG90-2-arms-horn.step"
+]
+},
+{
+"id": "fc-servo-sg90-horn4",
+"authors": [
+"Gafeju",
+"WladIMirG"
+],
+"first": "2015-08-26",
+"size": 164410,
+"authors_chain": [
+"Gafeju",
+"WladIMirG"
+],
+"paths": [
+"Electrical Parts/Servos/SG-90/SG90-4-arms-horn.step"
+]
+},
+{
+"id": "fc-servo-futaba-horn4",
+"authors": [
+"obijuan",
+"WladIMirG"
+],
+"first": "2014-08-04",
+"size": 366397,
+"authors_chain": [
+"obijuan",
+"WladIMirG"
+],
+"paths": [
+"Electrical Parts/Servos/Futaba3003/Futaba3003-4-arms-horn.step",
+"Electrical Parts/Servos/Futaba3003-4-arms-horn.step"
+]
+},
+{
+"id": "fc-dc-tt-straight",
+"authors": [
+"Charles Fox"
+],
+"first": "2022-08-03",
+"size": 483631,
+"authors_chain": [
+"Charles Fox",
+"hasecilu"
+],
+"paths": [
+"Electrical Parts/Motors/DC motor/Yellow_gearmotor/straight/Yellow_gearmotor_straight.step",
+"Electronics Parts/Motors/DC motor/Yellow_gearmotor/straight/Yellow_gearmotor_straight.step"
+]
+},
+{
+"id": "fc-dc-tt-l",
+"authors": [
+"Charles Fox"
+],
+"first": "2022-08-03",
+"size": 341498,
+"authors_chain": [
+"Charles Fox",
+"hasecilu"
+],
+"paths": [
+"Electrical Parts/Motors/DC motor/Yellow_gearmotor/L_shape/Yellow_gearmotor_L.step",
+"Electronics Parts/Motors/DC motor/Yellow_gearmotor/L_shape/Yellow_gearmotor_L.step"
+]
+},
+{
+"id": "fc-wheel-tt-65",
+"authors": [
+"Charles Fox"
+],
+"first": "2022-08-02",
+"size": 5555823,
+"authors_chain": [
+"Charles Fox",
+"hasecilu"
+],
+"paths": [
+"Electrical Parts/Motors/DC motor/Yellow_wheel_65mm/Yellow_wheel_65mm.step",
+"Electronics Parts/Motors/DC motor/Yellow_wheel_65mm/Yellow_wheel_65mm.step"
+]
+},
+{
+"id": "fc-dc-n20-pololu",
+"authors": [
+"Charles Fox"
+],
+"first": "2015-12-10",
+"size": 82529,
+"authors_chain": [
+"Charles Fox",
+"hasecilu",
+"BERSERK",
+"Almisuifre",
+"WladIMirG"
+],
+"paths": [
+"Electrical Parts/Motors/DC motor/Pololu-Micro/Pololu-298_1-6V.step",
+"Electronics Parts/Motors/DC motor/Pololu-Micro/Pololu-298_1-6V.step",
+"Electronics Parts/Motors/Motor-CC/Pololu-Micro/Pololu-298_1-6V.step",
+"Mechanical Parts/Motor-CC/Pololu-Micro/Pololu-298_1-6V.step"
+]
+},
+{
+"id": "fc-dc-faulhaber-2342",
+"authors": [
+"Charles Fox"
+],
+"first": "2022-06-16",
+"size": 18231708,
+"authors_chain": [
+"Charles Fox",
+"hasecilu"
+],
+"paths": [
+"Electrical Parts/Motors/DC motor/FAULHABER 2342L-012CPR/FAULHABER_2342L-012CPR.step",
+"Electronics Parts/Motors/DC motor/FAULHABER 2342L-012CPR/FAULHABER_2342L-012CPR.step"
+]
+},
+{
+"id": "fc-dc-mabuchi-enc",
+"authors": [
+"Charles Fox"
+],
+"first": "2016-04-03",
+"size": 1597730,
+"authors_chain": [
+"Charles Fox",
+"hasecilu",
+"BERSERK",
+"Agustin Nunez",
+"WladIMirG"
+],
+"paths": [
+"Electrical Parts/Motors/DC motor/Mabuchi-Encoder/DCMotorEncoder.step",
+"Electronics Parts/Motors/DC motor/Mabuchi-Encoder/DCMotorEncoder.step",
+"Electronics Parts/Motors/Motor-CC/Mabuchi-Encoder/DCMotorEncoder.step",
+"Mechanical Parts/Motor-CC/Mabuchi-Encoder/DCMotorEncoder.step"
+]
+},
+{
+"id": "fc-dc-mitsumi-12v",
+"authors": [
+"Charles Fox"
+],
+"first": "2016-02-09",
+"size": 31895,
+"authors_chain": [
+"Charles Fox",
+"hasecilu",
+"BERSERK",
+"rcccort",
+"WladIMirG"
+],
+"paths": [
+"Electrical Parts/Motors/DC motor/Motors/Motor-CC-12V-MITSUMI.step",
+"Electronics Parts/Motors/DC motor/Motors/Motor-CC-12V-MITSUMI.step",
+"Electronics Parts/Motors/Motor-CC/Motors/Motor-CC-12V-MITSUMI.step",
+"Mechanical Parts/Motor-CC/Motors/Motor-CC-12V-MITSUMI.step"
+]
+},
+{
+"id": "fc-dc-wltoys-3v3",
+"authors": [
+"Charles Fox"
+],
+"first": "2016-01-10",
+"size": 16536,
+"authors_chain": [
+"Charles Fox",
+"hasecilu",
+"BERSERK",
+"Almisuifre",
+"WladIMirG"
+],
+"paths": [
+"Electrical Parts/Motors/DC motor/Motors/Motor-CC-3.3V-WlToy911.step",
+"Electronics Parts/Motors/DC motor/Motors/Motor-CC-3.3V-WlToy911.step",
+"Electronics Parts/Motors/Motor-CC/Motors/Motor-CC-3.3V-WlToy911.step",
+"Mechanical Parts/Motor-CC/Motors/Motor-CC-3.3V-WlToy911.step"
+]
+},
+{
+"id": "fc-dc-6v-servo",
+"authors": [
+"Charles Fox"
+],
+"first": "2016-01-05",
+"size": 78447,
+"authors_chain": [
+"Charles Fox",
+"hasecilu",
+"BERSERK",
+"Almisuifre",
+"WladIMirG"
+],
+"paths": [
+"Electrical Parts/Motors/DC motor/Motors/Motor-CC-6V-Servo.step",
+"Electronics Parts/Motors/DC motor/Motors/Motor-CC-6V-Servo.step",
+"Electronics Parts/Motors/Motor-CC/Motors/Motor-CC-6V-Servo.step",
+"Mechanical Parts/Motor-CC/Motors/Motor-CC-6V-Servo.step"
+]
+},
+{
+"id": "fc-dc-cqrobot-37d",
+"authors": [
+"Charles Fox"
+],
+"first": "2026-10-06",
+"size": 70675,
+"authors_chain": [
+"Charles Fox"
+],
+"paths": [
+"Electrical Parts/Motors/cqrobot_37d/CQRobot_37D_90to1_64CPR.step"
+]
+},
+{
+"id": "fc-step-28byj48",
+"authors": [
+"Charles Fox"
+],
+"first": "2015-09-23",
+"size": 252207,
+"authors_chain": [
+"Charles Fox",
+"hasecilu",
+"BERSERK",
+"nicoguaro",
+"WladIMirG"
+],
+"paths": [
+"Electrical Parts/Motors/Stepper/28BYJ-48/28BYJ-48.step",
+"Electronics Parts/Motors/Stepper/28BYJ-48/28BYJ-48.step",
+"Electronics Parts/Motors/28BYJ-48_Stepper_Motor/28BYJ-48.step",
+"Electrical Parts/Motors/28BYJ-48_Stepper_Motor/28BYJ-48.step"
+]
+},
+{
+"id": "fc-step-em286",
+"authors": [
+"Charles Fox"
+],
+"first": "2022-03-12",
+"size": 993014,
+"authors_chain": [
+"Charles Fox",
+"hasecilu"
+],
+"paths": [
+"Electrical Parts/Motors/Stepper/EM-286/EM-286.step",
+"Electronics Parts/Motors/Stepper/EM-286/EM-286.step"
+]
+},
+{
+"id": "fc-nema17-conn",
+"authors": [
+"Charles Fox"
+],
+"first": "2022-01-27",
+"size": 8075316,
+"authors_chain": [
+"Charles Fox",
+"hasecilu"
+],
+"paths": [
+"Electrical Parts/Motors/Stepper/NEMA/NEMA_17_with_connector.step",
+"Electronics Parts/Motors/Stepper/NEMA/NEMA_17_with_connector.step"
+]
+},
+{
+"id": "fc-nema17-26",
+"authors": [
+"Charles Fox"
+],
+"first": "2018-02-11",
+"size": 349034,
+"authors_chain": [
+"Charles Fox",
+"hasecilu",
+"BERSERK",
+"diegotrap",
+"WladIMirG"
+],
+"paths": [
+"Electrical Parts/Motors/Stepper/NEMA/Old/NEMA-17_Stepper_Motor_26mm_with_connector.stp",
+"Electronics Parts/Motors/Stepper/NEMA/Old/NEMA-17_Stepper_Motor_26mm_with_connector.stp",
+"Electronics Parts/Motors/01 NEMA/Old/NEMA-17_Stepper_Motor_26mm_with_connector.stp",
+"Electronics Parts/Motors/NEMA-17_Stepper_Motor_26mm_with_connector.stp",
+"Electrical Parts/Motors/NEMA-17_Stepper_Motor_26mm_with_connector.stp"
+]
+},
+{
+"id": "fc-nema17-40",
+"authors": [
+"Charles Fox"
+],
+"first": "2014-11-30",
+"size": 188991,
+"authors_chain": [
+"Charles Fox",
+"hasecilu",
+"BERSERK",
+"obijuan",
+"WladIMirG"
+],
+"paths": [
+"Electrical Parts/Motors/Stepper/NEMA/Old/NEMA-17_Stepper_Motor_40mm.step",
+"Electronics Parts/Motors/Stepper/NEMA/Old/NEMA-17_Stepper_Motor_40mm.step",
+"Electronics Parts/Motors/01 NEMA/Old/NEMA-17_Stepper_Motor_40mm.step",
+"Electronics Parts/Motors/NEMA-17_Stepper_Motor_40mm.step",
+"Electrical Parts/Motors/NEMA-17_Stepper_Motor_40mm.step",
+"Electrical Parts/NEMA-17_Stepper_Motor_40mm.step"
+]
+},
+{
+"id": "fc-nema17-47",
+"authors": [
+"Charles Fox"
+],
+"first": "2013-08-05",
+"size": 242341,
+"authors_chain": [
+"Charles Fox",
+"hasecilu",
+"BERSERK",
+"obijuan",
+"WladIMirG",
+"Normand C"
+],
+"paths": [
+"Electrical Parts/Motors/Stepper/NEMA/Old/NEMA-17_Stepper_Motor_47mm.step",
+"Electronics Parts/Motors/Stepper/NEMA/Old/NEMA-17_Stepper_Motor_47mm.step",
+"Electronics Parts/Motors/01 NEMA/Old/NEMA-17_Stepper_Motor_47mm.step",
+"Electronics Parts/Motors/NEMA-17_Stepper_Motor_47mm.step",
+"Electrical Parts/Motors/NEMA-17_Stepper_Motor_47mm.step",
+"Electrical Parts/NEMA-17_Stepper_Motor_47mm.step"
+]
+},
+{
+"id": "fc-nema23-conn",
+"authors": [
+"Charles Fox"
+],
+"first": "2022-01-27",
+"size": 8076379,
+"authors_chain": [
+"Charles Fox",
+"hasecilu"
+],
+"paths": [
+"Electrical Parts/Motors/Stepper/NEMA/NEMA_23_with_connector.step",
+"Electronics Parts/Motors/Stepper/NEMA/NEMA_23_with_connector.step"
+]
+},
+{
+"id": "fc-nema17-bracket",
+"authors": [
+"Charles Fox"
+],
+"first": "2018-02-12",
+"size": 164716,
+"authors_chain": [
+"Charles Fox",
+"hasecilu",
+"BERSERK",
+"yomboprime",
+"WladIMirG"
+],
+"paths": [
+"Electrical Parts/Motors/Stepper/NEMA/Nema-17_Mount_Bracket/Nema-17_MountBracket.step",
+"Electronics Parts/Motors/Stepper/NEMA/Nema-17_Mount_Bracket/Nema-17_MountBracket.step",
+"Electronics Parts/Motors/01 NEMA/Nema-17_Mount_Bracket/Nema-17_MountBracket.step",
+"Electronics Parts/Motors/Nema-17_Mount_Bracket/Nema-17_MountBracket.step",
+"Electrical Parts/Motors/Nema-17_Mount_Bracket/Nema-17_MountBracket.step"
+]
+},
+{
+"id": "fc-pump-mini",
+"authors": [
+"Charles Fox"
+],
+"first": "2022-01-27",
+"size": 741568,
+"authors_chain": [
+"Charles Fox",
+"hasecilu"
+],
+"paths": [
+"Electrical Parts/Motors/Vacuum Pump/Mini vacuum pump.step",
+"Electronics Parts/Motors/Vacuum Pump/Mini vacuum pump.step"
+]
+},
+{
+"id": "fc-fan-40",
+"authors": [
+"obijuan",
+"WladIMirG"
+],
+"first": "2014-12-09",
+"size": 1383904,
+"authors_chain": [
+"obijuan",
+"WladIMirG"
+],
+"paths": [
+"Electrical Parts/fans/fan-40x40mm.step"
+]
+},
+{
+"id": "fc-fan-50",
+"authors": [
+"obijuan",
+"WladIMirG"
+],
+"first": "2014-12-31",
+"size": 902022,
+"authors_chain": [
+"obijuan",
+"WladIMirG"
+],
+"paths": [
+"Electrical Parts/fans/fan-50x50mm.step"
+]
+},
+{
+"id": "fc-blower-50",
+"authors": [
+"obijuan",
+"WladIMirG"
+],
+"first": "2014-12-08",
+"size": 713981,
+"authors_chain": [
+"obijuan",
+"WladIMirG"
+],
+"paths": [
+"Electrical Parts/fans/blower-50x50mm.step"
+]
+},
+{
+"id": "fc-bearing-608zz",
+"authors": [
+"Normand C",
+"WladIMirG"
+],
+"first": "2013-08-05",
+"size": 39363,
+"authors_chain": [
+"Normand C",
+"WladIMirG"
+],
+"paths": [
+"Mechanical Parts/Bearings/608ZZ_Ball_Bearing.step"
+]
+},
+{
+"id": "fc-bearing-623zz",
+"authors": [
+"rcccort",
+"WladIMirG"
+],
+"first": "2014-10-20",
+"size": 42174,
+"authors_chain": [
+"rcccort",
+"WladIMirG"
+],
+"paths": [
+"Mechanical Parts/Bearings/623ZZ_Ball_Bearing.step"
+]
+},
+{
+"id": "fc-bearing-624zz",
+"authors": [
+"rcccort",
+"WladIMirG"
+],
+"first": "2014-10-20",
+"size": 301499,
+"authors_chain": [
+"rcccort",
+"WladIMirG"
+],
+"paths": [
+"Mechanical Parts/Bearings/624ZZ_Ball_Bearing.stp"
+]
+},
+{
+"id": "fc-bearing-f623zz",
+"authors": [
+"diegotrap",
+"WladIMirG"
+],
+"first": "2018-02-11",
+"size": 38055,
+"authors_chain": [
+"diegotrap",
+"WladIMirG"
+],
+"paths": [
+"Mechanical Parts/Bearings/F623ZZ_Ball_Bearing.stp"
+]
+},
+{
+"id": "fc-bearing-6201",
+"authors": [
+"WaalerThomas"
+],
+"first": "2024-06-16",
+"size": 20641,
+"authors_chain": [
+"WaalerThomas"
+],
+"paths": [
+"Mechanical Parts/Bearings/Ball Bearings/6201-2RS_Ball_Bearing.step"
+]
+},
+{
+"id": "fc-bearing-6803",
+"authors": [
+"WaalerThomas"
+],
+"first": "2024-04-10",
+"size": 20664,
+"authors_chain": [
+"WaalerThomas"
+],
+"paths": [
+"Mechanical Parts/Bearings/Ball Bearings/6803-2RS_Ball_Bearing.step"
+]
+},
+{
+"id": "fc-lm8uu",
+"authors": [
+"obijuan",
+"WladIMirG"
+],
+"first": "2014-10-19",
+"size": 49650,
+"authors_chain": [
+"obijuan",
+"WladIMirG"
+],
+"paths": [
+"Mechanical Parts/Bearings/linear_bearings/LM8uu.stp"
+]
+},
+{
+"id": "fc-lm8suu",
+"authors": [
+"obijuan",
+"WladIMirG"
+],
+"first": "2016-09-15",
+"size": 0,
+"authors_chain": [
+"obijuan",
+"WladIMirG"
+],
+"paths": [
+"Mechanical Parts/Bearings/linear_bearings/LM8suu.step"
+]
+},
+{
+"id": "fc-lm10uu",
+"authors": [
+"Francisco",
+"WladIMirG"
+],
+"first": "2015-03-19",
+"size": 49738,
+"authors_chain": [
+"Francisco",
+"WladIMirG"
+],
+"paths": [
+"Mechanical Parts/Bearings/linear_bearings/LM10uu.step"
+]
+},
+{
+"id": "fc-lm12uu",
+"authors": [
+"Francisco",
+"WladIMirG"
+],
+"first": "2015-03-19",
+"size": 51409,
+"authors_chain": [
+"Francisco",
+"WladIMirG"
+],
+"paths": [
+"Mechanical Parts/Bearings/linear_bearings/LM12uu.step"
+]
+},
+{
+"id": "fc-mgn7-rail",
+"authors": [
+"Adrian McEwen"
+],
+"first": "2021-10-02",
+"size": 59773,
+"authors_chain": [
+"Adrian McEwen"
+],
+"paths": [
+"Mechanical Parts/Bearings/linear_bearings/LinearSlide-MGN7-Rail.step"
+]
+},
+{
+"id": "fc-mgn7c",
+"authors": [
+"Adrian McEwen"
+],
+"first": "2021-10-02",
+"size": 34970,
+"authors_chain": [
+"Adrian McEwen"
+],
+"paths": [
+"Mechanical Parts/Bearings/linear_bearings/LinearSlide-MGN7C.step"
+]
+},
+{
+"id": "fc-mgn9-rail",
+"authors": [
+"Adrian McEwen"
+],
+"first": "2021-10-02",
+"size": 52078,
+"authors_chain": [
+"Adrian McEwen"
+],
+"paths": [
+"Mechanical Parts/Bearings/linear_bearings/LinearSlide-MGN9-Rail.step"
+]
+},
+{
+"id": "fc-mgn9c",
+"authors": [
+"Adrian McEwen"
+],
+"first": "2021-10-02",
+"size": 35080,
+"authors_chain": [
+"Adrian McEwen"
+],
+"paths": [
+"Mechanical Parts/Bearings/linear_bearings/LinearSlide-MGN9C.step"
+]
+},
+{
+"id": "fc-mgn9h",
+"authors": [
+"Adrian McEwen"
+],
+"first": "2021-10-02",
+"size": 35143,
+"authors_chain": [
+"Adrian McEwen"
+],
+"paths": [
+"Mechanical Parts/Bearings/linear_bearings/LinearSlide-MGN9H.step"
+]
+},
+{
+"id": "fc-mgn12-rail",
+"authors": [
+"Adrian McEwen"
+],
+"first": "2021-10-02",
+"size": 46309,
+"authors_chain": [
+"Adrian McEwen"
+],
+"paths": [
+"Mechanical Parts/Bearings/linear_bearings/LinearSlide-MGN12-Rail.step"
+]
+},
+{
+"id": "fc-mgn12c",
+"authors": [
+"Adrian McEwen"
+],
+"first": "2021-10-02",
+"size": 33398,
+"authors_chain": [
+"Adrian McEwen"
+],
+"paths": [
+"Mechanical Parts/Bearings/linear_bearings/LinearSlide-MGN12C.step"
+]
+},
+{
+"id": "fc-mgn12h",
+"authors": [
+"Adrian McEwen"
+],
+"first": "2021-10-02",
+"size": 33384,
+"authors_chain": [
+"Adrian McEwen"
+],
+"paths": [
+"Mechanical Parts/Bearings/linear_bearings/LinearSlide-MGN12H.step"
+]
+},
+{
+"id": "fc-sc8uu",
+"authors": [
+"hasecilu"
+],
+"first": "2022-01-04",
+"size": 175950,
+"authors_chain": [
+"hasecilu"
+],
+"paths": [
+"Mechanical Parts/Mountings/SC8UU/SC8UU.step"
+]
+},
+{
+"id": "fc-sk08",
+"authors": [
+"hasecilu"
+],
+"first": "2021-12-12",
+"size": 81426,
+"authors_chain": [
+"hasecilu"
+],
+"paths": [
+"Mechanical Parts/Mountings/SK08/SK08-SK08.step"
+]
+},
+{
+"id": "fc-shf08",
+"authors": [
+"hasecilu"
+],
+"first": "2022-02-23",
+"size": 123065,
+"authors_chain": [
+"hasecilu"
+],
+"paths": [
+"Mechanical Parts/Mountings/SHF08/SHF08.step"
+]
+},
+{
+"id": "fc-kfl08",
+"authors": [
+"hasecilu"
+],
+"first": "2022-02-23",
+"size": 1187725,
+"authors_chain": [
+"hasecilu"
+],
+"paths": [
+"Mechanical Parts/Mountings/KFL08/KFL08.step"
+]
+},
+{
+"id": "fc-kp08",
+"authors": [
+"hasecilu"
+],
+"first": "2022-02-23",
+"size": 1229331,
+"authors_chain": [
+"hasecilu"
+],
+"paths": [
+"Mechanical Parts/Mountings/KP08/KP08.step"
+]
+},
+{
+"id": "fc-t8-bracket",
+"authors": [
+"hasecilu"
+],
+"first": "2022-03-22",
+"size": 63261,
+"authors_chain": [
+"hasecilu"
+],
+"paths": [
+"Mechanical Parts/Mountings/T8_housing_bracket/T8_housing_bracket.step"
+]
+},
+{
+"id": "fc-t8-leadscrew-150",
+"authors": [
+"hasecilu"
+],
+"first": "2022-03-22",
+"size": 4975287,
+"authors_chain": [
+"hasecilu"
+],
+"paths": [
+"Mechanical Parts/Mountings/T8_leadscrew/T8_leadscrew_150mm.step"
+]
+},
+{
+"id": "fc-t8-flange-nut",
+"authors": [
+"hasecilu"
+],
+"first": "2022-03-22",
+"size": 675646,
+"authors_chain": [
+"hasecilu"
+],
+"paths": [
+"Mechanical Parts/Mountings/T8_screw_nut/Flange_nut/T8_Flange_nut.step"
+]
+},
+{
+"id": "fc-t8-antibacklash",
+"authors": [
+"hasecilu"
+],
+"first": "2022-03-22",
+"size": 1643093,
+"authors_chain": [
+"hasecilu"
+],
+"paths": [
+"Mechanical Parts/Mountings/T8_screw_nut/Anti_backlash_nut/T8_antibacklash_nut.step"
+]
+},
+{
+"id": "fc-coupler-5x8",
+"authors": [
+"Daniel Stauffer",
+"WladIMirG"
+],
+"first": "2016-12-13",
+"size": 427920,
+"authors_chain": [
+"Daniel Stauffer",
+"WladIMirG"
+],
+"paths": [
+"Mechanical Parts/Fasteners/Shaft Couplers & Dowel Pins/Zaxis_coupling_5x8mm.step"
+]
+},
+{
+"id": "fc-ext-2020v-50",
+"authors": [
+"hasecilu"
+],
+"first": "2022-02-28",
+"size": 233736,
+"authors_chain": [
+"hasecilu"
+],
+"paths": [
+"Mechanical Parts/Mountings/2020_V-slot_Al_extrusion/2020x50_V_slot_profile-Part.step"
+]
+},
+{
+"id": "fc-ext-2020b",
+"authors": [
+"mathis"
+],
+"first": "2025-09-08",
+"size": 393267,
+"authors_chain": [
+"mathis"
+],
+"paths": [
+"Mechanical Parts/Profiles EN/Generic/Profile-20x20-B-Type_Slot6_A.step"
+]
+},
+{
+"id": "fc-ext-2020i",
+"authors": [
+"mathis"
+],
+"first": "2025-09-08",
+"size": 336570,
+"authors_chain": [
+"mathis"
+],
+"paths": [
+"Mechanical Parts/Profiles EN/Generic/Profile-20x20-I-Type_Slot5.step"
+]
+},
+{
+"id": "fc-ext-2040b",
+"authors": [
+"mathis"
+],
+"first": "2025-09-08",
+"size": 1127480,
+"authors_chain": [
+"mathis"
+],
+"paths": [
+"Mechanical Parts/Profiles EN/Generic/Profile-20x40-B-Type_Slot6.step"
+]
+},
+{
+"id": "fc-ext-3030b",
+"authors": [
+"mathis"
+],
+"first": "2025-09-08",
+"size": 714049,
+"authors_chain": [
+"mathis"
+],
+"paths": [
+"Mechanical Parts/Profiles EN/Generic/Profile-30x30-B-Type_Slot8.step"
+]
+},
+{
+"id": "fc-ext-3060b",
+"authors": [
+"mathis"
+],
+"first": "2025-09-08",
+"size": 1217645,
+"authors_chain": [
+"mathis"
+],
+"paths": [
+"Mechanical Parts/Profiles EN/Generic/Profile-30x60-B-Type_Slot8.step"
+]
+},
+{
+"id": "fc-ext-4040i",
+"authors": [
+"mathis"
+],
+"first": "2025-09-08",
+"size": 640840,
+"authors_chain": [
+"mathis"
+],
+"paths": [
+"Mechanical Parts/Profiles EN/Generic/Profile-40x40L-I-Type_Slot8.step"
+]
+},
+{
+"id": "fc-ext-4080i",
+"authors": [
+"mathis"
+],
+"first": "2025-09-08",
+"size": 322650,
+"authors_chain": [
+"mathis"
+],
+"paths": [
+"Mechanical Parts/Profiles EN/Generic/Profile-40x80L-I-Type_Slot8-Body.step"
+]
+},
+{
+"id": "fc-corner-2020",
+"authors": [
+"hasecilu"
+],
+"first": "2021-12-12",
+"size": 132515,
+"authors_chain": [
+"hasecilu"
+],
+"paths": [
+"Mechanical Parts/Mountings/Corner/2020_corner_bracket-Corner.step"
+]
+},
+{
+"id": "fc-joint-2020-90",
+"authors": [
+"mathis"
+],
+"first": "2025-09-08",
+"size": 138874,
+"authors_chain": [
+"mathis"
+],
+"paths": [
+"Mechanical Parts/Profiles EN/Generic/T-slot_20x20_90_joint.step"
+]
+},
+{
+"id": "fc-gantry-2020",
+"authors": [
+"hasecilu"
+],
+"first": "2021-01-13",
+"size": 489072,
+"authors_chain": [
+"hasecilu",
+"Igor Diakonov"
+],
+"paths": [
+"Mechanical Parts/Mountings/Gantry_plate/Gantry_plate_20mm_v_slot.step",
+"Mechanical Parts/Mountings/Gantry_plate/v-slot_20mm.step"
+]
+},
+{
+"id": "fc-plate-l5",
+"authors": [
+"hasecilu"
+],
+"first": "2021-12-12",
+"size": 85934,
+"authors_chain": [
+"hasecilu"
+],
+"paths": [
+"Mechanical Parts/Mountings/Joining_plate/L_shaped_5_holes-Plate.step"
+]
+},
+{
+"id": "fc-plate-t5",
+"authors": [
+"hasecilu"
+],
+"first": "2021-12-12",
+"size": 74481,
+"authors_chain": [
+"hasecilu"
+],
+"paths": [
+"Mechanical Parts/Mountings/Joining_plate/T_shaped_5_holes-Plate.step"
+]
+},
+{
+"id": "fc-tnut-2020-m3",
+"authors": [
+"Charles Fox"
+],
+"first": "2026-10-06",
+"size": 261475,
+"authors_chain": [
+"Charles Fox"
+],
+"paths": [
+"Mechanical Parts/Fasteners/T-nuts/TNut_2020_Slot6_Sliding_M3.step"
+]
+},
+{
+"id": "fc-tnut-2020-m4",
+"authors": [
+"Charles Fox"
+],
+"first": "2026-10-06",
+"size": 186975,
+"authors_chain": [
+"Charles Fox"
+],
+"paths": [
+"Mechanical Parts/Fasteners/T-nuts/TNut_2020_Slot6_Sliding_M4.step"
+]
+},
+{
+"id": "fc-tnut-2020-m5",
+"authors": [
+"Charles Fox"
+],
+"first": "2026-10-06",
+"size": 177464,
+"authors_chain": [
+"Charles Fox"
+],
+"paths": [
+"Mechanical Parts/Fasteners/T-nuts/TNut_2020_Slot6_Sliding_M5.step"
+]
+},
+{
+"id": "fc-gt2-20t-5",
+"authors": [
+"Márcio Pessoa",
+"WladIMirG"
+],
+"first": "2017-12-14",
+"size": 51245,
+"authors_chain": [
+"Márcio Pessoa",
+"WladIMirG"
+],
+"paths": [
+"Mechanical Parts/Pulleys/GT2_20T_Smooth_5mm_Bore.step"
+]
+},
+{
+"id": "fc-gt2-16t",
+"authors": [
+"Daniel Stauffer",
+"WladIMirG"
+],
+"first": "2016-12-15",
+"size": 615112,
+"authors_chain": [
+"Daniel Stauffer",
+"WladIMirG"
+],
+"paths": [
+"Mechanical Parts/Pulleys/GT2_16T.step"
+]
+},
+{
+"id": "fc-gt2-pulley",
+"authors": [
+"rcccort",
+"WladIMirG"
+],
+"first": "2014-10-20",
+"size": 267639,
+"authors_chain": [
+"rcccort",
+"WladIMirG"
+],
+"paths": [
+"Mechanical Parts/Pulleys/GT2Pulley.stp"
+]
+},
+{
+"id": "fc-wheel-rc18",
+"authors": [
+"Charles Fox"
+],
+"first": "2026-10-06",
+"size": 25969,
+"authors_chain": [
+"Charles Fox"
+],
+"paths": [
+"Mechanical Parts/Wheels/Wheel-RC-1:8-17mm-hex/Wheel-RC-1:8-17mm-hex.step"
+]
+},
+{
+"id": "fc-hc-sr04",
+"authors": [
+"Charles Fox"
+],
+"first": "2017-09-20",
+"size": 3130919,
+"authors_chain": [
+"Charles Fox",
+"hasecilu",
+"berserkdesign",
+"Javier Castellanos",
+"WladIMirG"
+],
+"paths": [
+"Sensors/Ultrasonic Sensors/HC-SR04.step",
+"Electronics Parts/Ultrasonic Sensors/HC-SR04.step",
+"Electronics Parts/00 electronic-components/Ultrasonic Sensor/HC-SR04.step",
+"Electrical Parts/electronic-components/Ultrasonic Sensor/HC-SR04.step"
+]
+},
+{
+"id": "fc-maxsonar-mb1010",
+"authors": [
+"Charles Fox"
+],
+"first": "2015-12-25",
+"size": 40778,
+"authors_chain": [
+"Charles Fox",
+"hasecilu",
+"berserkdesign",
+"Almisuifre",
+"WladIMirG"
+],
+"paths": [
+"Sensors/Ultrasonic Sensors/MaxSonar/MB1010/MaxSonar-MB1010.step",
+"Electronics Parts/Ultrasonic Sensors/MaxSonar/MB1010/MaxSonar-MB1010.step",
+"Electronics Parts/00 electronic-components/MaxSonar/MB1010/MaxSonar-MB1010.step",
+"Electrical Parts/electronic-components/MaxSonar/MB1010/MaxSonar-MB1010.step"
+]
+},
+{
+"id": "fc-endstop",
+"authors": [
+"rcccort",
+"WladIMirG"
+],
+"first": "2015-02-17",
+"size": 221225,
+"authors_chain": [
+"rcccort",
+"WladIMirG"
+],
+"paths": [
+"Electrical Parts/Endstop/endstop.stp"
+]
+},
+{
+"id": "fc-microswitch-v",
+"authors": [
+"hasecilu"
+],
+"first": "2021-12-16",
+"size": 682575,
+"authors_chain": [
+"hasecilu"
+],
+"paths": [
+"Electronics Parts/Switch/Limit switch/Microswitch_SPDT_Vertical.step",
+"Electronics Parts/Switch/Microswitch_SPDT_Vertical.step"
+]
+},
+{
+"id": "fc-l298n",
+"authors": [
+"Charles Fox"
+],
+"first": "2026-10-06",
+"size": 626259,
+"authors_chain": [
+"Charles Fox"
+],
+"paths": [
+"Electrical Parts/Motor Drivers/L298N/L298N.step"
+]
+}
+]

@@ -82,6 +82,6 @@ export function filterRows(rows, f) {
   if ((f.q || "").trim()) out.sort((a, b) => b[0] - a[0]);
   return out.map((x) => x[1]);
 }
-export const SRC_ZH = { ada: "Adafruit CAD Parts", kicad: "KiCad 3D 模型库", sfe: "SparkFun KiCad 库", esp: "Espressif KiCad 库", seeed: "Seeed OPL KiCad 库", proc: "本项目程序生成" };
-export const LIC_ZH = { MIT: "MIT", "CC-BY-SA-4.0": "CC BY‑SA 4.0", "CC-BY-4.0": "CC BY 4.0", CC0: "CC0（本项目程序生成）" };
+export const SRC_ZH = { ada: "Adafruit CAD Parts", kicad: "KiCad 3D 模型库", sfe: "SparkFun KiCad 库", esp: "Espressif KiCad 库", seeed: "Seeed OPL KiCad 库", freecad: "FreeCAD 零件库", proc: "本项目程序生成" };
+export const LIC_ZH = { MIT: "MIT", "CC-BY-SA-4.0": "CC BY‑SA 4.0", "CC-BY-4.0": "CC BY 4.0", "CC-BY-3.0": "CC BY 3.0", CC0: "CC0（本项目程序生成）" };
 export const IFACE_ZH = { i2c: "I²C", spi: "SPI", uart: "UART / 串口", usb: "USB", can: "CAN", i2s: "I²S", wifi: "Wi‑Fi", ble: "蓝牙 BLE", lora: "LoRa", pwm: "PWM / 舵机信号", jst: "JST 接口", header: "排针 2.54", power: "电源接口", battery: "电池", fuse: "保险丝", shaft: "轴", gear: "齿轮", belt: "同步带", slot: "型材槽", "4-wire": "四线（步进）", stepper: "步进", "3-phase": "三相", esc: "电调", "2-wire": "两线", "m3-grid": "M3 孔阵" };
