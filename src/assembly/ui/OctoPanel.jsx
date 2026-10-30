@@ -11,7 +11,7 @@ import { LOCO_EST, MG90S } from "../octopus/loco.js";
 import { parseNL } from "../octopus/nl.js";
 import GaitEditor from "../../gait/GaitEditor.jsx";
 import { preset, OCTO_NAMES, OCTO_SIDE, octoFirmwareGait, sanitizeGait, toFirmwareHeader } from "../../gait/gait.js";
-import { octoRowGait, octoV14Gait } from "../../gait/octo-best.js";
+import { octoRowGait, octoV14Gait, octoV15Gait } from "../../gait/octo-best.js";
 import { runGait } from "../../gait/octo-measure.js";
 import GaitSearch from "../../gait/GaitSearch.jsx";
 import CtrlPanel from "../../gait/CtrlPanel.jsx";
@@ -82,6 +82,7 @@ const OCTO_PRESETS = [
   { k: "firmware", zh: "固件默认", make: octoFirmwareGait },
   { k: "row", zh: "同步划桨（v13 搜索）", make: octoRowGait },
   { k: "v14", zh: "v14 自动搜索（速度优先）", make: octoV14Gait },
+  { k: "v15", zh: "v15 多工况鲁棒（240 °/s，配定向小轮）", make: octoV15Gait },
   { k: "alternating", zh: "交替", make: () => preset("alternating", OCTO_NAMES, { amp: 40, freq: 0.8, weights: OCTO_SIDE }) },
   { k: "wave", zh: "波浪", make: () => preset("wave", OCTO_NAMES, { amp: 40, freq: 0.8, weights: OCTO_SIDE }) },
   { k: "tripod", zh: "三组轮换（类三足）", make: () => preset("tripod", OCTO_NAMES, { amp: 40, freq: 0.8, weights: OCTO_SIDE }) },
