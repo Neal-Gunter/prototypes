@@ -220,8 +220,8 @@ export default function WorkbenchPage() {
               <InspectCard />
               <Toast />
               {parts.length === 0 && (
-                <p className="pointer-events-none absolute inset-x-0 top-1/3 text-center text-sm text-paper-2 drop-shadow">
-                  把左边的零件拖到这块木底板上
+                <p className="pointer-events-none absolute inset-x-0 top-1/3 text-center text-sm text-paper-2"><span className="bg-ink/75 px-2 py-1">
+                  把左边的零件拖到这块木底板上</span>
                 </p>
               )}
             </div>

@@ -17,7 +17,7 @@ export function CodeEditor() {
   const lines = code.split("\n").length;
   return (
     <div className="flex h-80 border border-ink bg-[#14120f] font-mono text-[13px] leading-5 text-[#efe7d6]">
-      <div ref={gutter} aria-hidden="true" className="select-none overflow-hidden border-r border-[#3a342c] px-2 py-2 text-right text-[#7d7366]">
+      <div ref={gutter} aria-hidden="true" className="select-none overflow-hidden border-r border-[#3a342c] px-2 py-2 text-right text-[#8f8574]">
         {Array.from({ length: lines }, (_, i) => (
           <div key={i} className={errLine === i + 1 ? "bg-mark text-paper-2" : ""}>
             {i + 1}
@@ -59,7 +59,7 @@ export function SerialMonitor() {
     <div>
       <h3 className="text-xs font-medium text-ink-soft">串口监视器（115200）</h3>
       <div ref={ref} data-testid="serial" className="mt-1 h-40 overflow-auto border border-line bg-[#14120f] p-2 font-mono text-xs leading-5 text-[#cfe9d8]">
-        {serial.length === 0 && <div className="text-[#7d7366]">（还没有输出）</div>}
+        {serial.length === 0 && <div className="text-[#8f8574]">（还没有输出）</div>}
         {serial.map((l, i) => (
           <div key={i} className={l.kind === "sim" ? "text-[#f0b48a]" : ""}>
             {l.text}

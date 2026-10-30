@@ -28,7 +28,9 @@ for (const [vk, vp] of VPS) for (const [k, u] of PAGES) {
     for (const el of document.body.querySelectorAll("*")) { if (!vis(el) || el.closest("canvas,svg")) continue; const r = el.getBoundingClientRect(); if (r.right > W + 1 && r.left < W && !clipped(el) && getComputedStyle(el).position !== "fixed") over.push(desc(el) + ` →${Math.round(r.right)}`); }
     const docOver = document.documentElement.scrollWidth - W;
     // 2) 对比度：直接含文字的可见元素，前景色 vs 叠加后的背景色
-    const parse = (c) => { const m = c.match(/rgba?\(([^)]+)\)/); if (!m) return null; const v = m[1].split(/[ ,/]+/).filter(Boolean).map(Number); return [v[0], v[1], v[2], v.length > 3 ? v[3] : 1]; };
+    // Tailwind v4 的 bg-ink/85 算出来是 color(srgb …) / oklab(…)：统一画到 1×1 画布上读像素
+    const cv = document.createElement("canvas"); cv.width = cv.height = 1; const cx = cv.getContext("2d", { willReadFrequently: true }); const pc = new Map();
+    const parse = (c) => { if (pc.has(c)) return pc.get(c); let o = null; if (c && c !== "transparent") { cx.clearRect(0, 0, 1, 1); cx.fillStyle = "#000"; cx.fillStyle = c; cx.fillRect(0, 0, 1, 1); const d = cx.getImageData(0, 0, 1, 1).data; o = [d[0], d[1], d[2], d[3] / 255]; } pc.set(c, o); return o; };
     const lum = ([r, g, b]) => { const f = (x) => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
     const bgOf = (el) => { const st = []; for (let a = el; a; a = a.parentElement) { const s = getComputedStyle(a); if (s.backgroundImage !== "none") return null; const c = parse(s.backgroundColor); if (c && c[3] > 0) { st.push(c); if (c[3] >= 1) break; } } let o = [255, 255, 255]; for (const c of st.reverse()) o = o.map((v, i) => v * (1 - c[3]) + c[i] * c[3]); return o; };
     const low = []; let nText = 0;
@@ -44,7 +46,7 @@ for (const [vk, vp] of VPS) for (const [k, u] of PAGES) {
     // 3) 无名按钮/链接/输入
     const noname = [...document.querySelectorAll("button,a[href],input,select,textarea,[role=button]")].filter((el) => vis(el) && !((el.getAttribute("aria-label") || el.getAttribute("title") || el.textContent || el.getAttribute("placeholder") || el.labels?.[0]?.textContent || el.getAttribute("aria-labelledby") || el.value || "").trim()) && el.type !== "hidden").map(desc);
     // 4) 手机上过小的点按目标（< 24×24 CSS px，WCAG 2.2 AA 2.5.8；行内文字链接除外）
-    const small = [...document.querySelectorAll("button,a[href],input:not([type=hidden]),select,[role=button],summary")].filter((el) => { if (!vis(el)) return false; const r = el.getBoundingClientRect(); if (el.tagName === "A" && getComputedStyle(el).display === "inline") return false; return r.width < 24 || r.height < 24; }).map((el) => { const r = el.getBoundingClientRect(); return desc(el) + ` ${Math.round(r.width)}×${Math.round(r.height)}`; });
+    const small = [...document.querySelectorAll("button,a[href],input:not([type=hidden]),select,[role=button],summary")].filter((el) => { if (!vis(el) || el.closest(".sr-only") || el.classList.contains("sr-only")) return false; const r = el.getBoundingClientRect(); if (r.width <= 2 && r.height <= 2) return false; if (el.tagName === "A" && getComputedStyle(el).display === "inline") return false; return r.width < 24 || r.height < 24; }).map((el) => { const r = el.getBoundingClientRect(); return desc(el) + ` ${Math.round(r.width)}×${Math.round(r.height)}`; });
     return { docOver, over: over.slice(0, 12), nOver: over.length, nText, low: low.slice(0, 15), nLow: low.length, noname: noname.slice(0, 10), nNoname: noname.length, small: small.slice(0, 10), nSmall: small.length, lang: document.documentElement.lang };
   });
   // 5) 键盘：Tab 30 次，记录焦点是否可见（outline / box-shadow / ring）、焦点是否落到不可见元素
