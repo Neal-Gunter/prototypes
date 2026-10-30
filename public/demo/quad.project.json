@@ -1,0 +1,662 @@
+{
+ "schema": "proto-modellab/1",
+ "id": "builtin-quad",
+ "builtin": true,
+ "name": "内置示例：四足爬行器（8 舵机）",
+ "updated": 0,
+ "notes": "本项目自制（CC0）。尺寸我定的；舵机 MG90S（datasheet 值）；质量按 PLA 实心估算，没算舵机本体。步态是 v13 搜出来的（仿真，没上实物）。",
+ "model": {
+  "file": "quad.obj",
+  "builtin": "demo/quad.obj",
+  "units": "mm",
+  "scale": 1,
+  "upAxis": "y",
+  "unitWhy": "画的时候就是毫米",
+  "split": "auto"
+ },
+ "modules": [
+  {
+   "massG": null,
+   "material": "pla",
+   "collider": "hull",
+   "hidden": false,
+   "id": "body",
+   "name": "机身",
+   "color": "#c9c2b0",
+   "meshes": [
+    "m0"
+   ]
+  },
+  {
+   "massG": null,
+   "material": "pla",
+   "collider": "hull",
+   "hidden": false,
+   "id": "lf-hip",
+   "name": "左前髋座",
+   "color": "#8a8f98",
+   "meshes": [
+    "m1"
+   ]
+  },
+  {
+   "massG": null,
+   "material": "pla",
+   "collider": "hull",
+   "hidden": false,
+   "id": "lf-leg",
+   "name": "左前腿",
+   "color": "#2f6fd6",
+   "meshes": [
+    "m2",
+    "m3"
+   ]
+  },
+  {
+   "massG": null,
+   "material": "pla",
+   "collider": "hull",
+   "hidden": false,
+   "id": "rf-hip",
+   "name": "右前髋座",
+   "color": "#8a8f98",
+   "meshes": [
+    "m4"
+   ]
+  },
+  {
+   "massG": null,
+   "material": "pla",
+   "collider": "hull",
+   "hidden": false,
+   "id": "rf-leg",
+   "name": "右前腿",
+   "color": "#d23a2f",
+   "meshes": [
+    "m5",
+    "m6"
+   ]
+  },
+  {
+   "massG": null,
+   "material": "pla",
+   "collider": "hull",
+   "hidden": false,
+   "id": "lb-hip",
+   "name": "左后髋座",
+   "color": "#8a8f98",
+   "meshes": [
+    "m7"
+   ]
+  },
+  {
+   "massG": null,
+   "material": "pla",
+   "collider": "hull",
+   "hidden": false,
+   "id": "lb-leg",
+   "name": "左后腿",
+   "color": "#1f9d55",
+   "meshes": [
+    "m8",
+    "m9"
+   ]
+  },
+  {
+   "massG": null,
+   "material": "pla",
+   "collider": "hull",
+   "hidden": false,
+   "id": "rb-hip",
+   "name": "右后髋座",
+   "color": "#8a8f98",
+   "meshes": [
+    "m10"
+   ]
+  },
+  {
+   "massG": null,
+   "material": "pla",
+   "collider": "hull",
+   "hidden": false,
+   "id": "rb-leg",
+   "name": "右后腿",
+   "color": "#e0b322",
+   "meshes": [
+    "m11",
+    "m12"
+   ]
+  }
+ ],
+ "functions": [
+  {
+   "id": "f-lf",
+   "name": "左前腿",
+   "kind": "执行",
+   "color": "#2f6fd6",
+   "regions": [
+    {
+     "x": 0.04,
+     "y": 0.1774193548387097,
+     "w": 0.21,
+     "h": 0.24193548387096775
+    }
+   ],
+   "pins": [
+    {
+     "label": "髋",
+     "signal": "MG90S"
+    },
+    {
+     "label": "膝",
+     "signal": "MG90S"
+    }
+   ],
+   "modules": [
+    "lf-hip",
+    "lf-leg"
+   ],
+   "joints": [
+    "j-lf-yaw",
+    "j-lf-lift"
+   ],
+   "note": "髋：前后摆；膝：抬腿"
+  },
+  {
+   "id": "f-rf",
+   "name": "右前腿",
+   "kind": "执行",
+   "color": "#d23a2f",
+   "regions": [
+    {
+     "x": 0.27,
+     "y": 0.1774193548387097,
+     "w": 0.21,
+     "h": 0.24193548387096775
+    }
+   ],
+   "pins": [
+    {
+     "label": "髋",
+     "signal": "MG90S"
+    },
+    {
+     "label": "膝",
+     "signal": "MG90S"
+    }
+   ],
+   "modules": [
+    "rf-hip",
+    "rf-leg"
+   ],
+   "joints": [
+    "j-rf-yaw",
+    "j-rf-lift"
+   ],
+   "note": "髋：前后摆；膝：抬腿"
+  },
+  {
+   "id": "f-lb",
+   "name": "左后腿",
+   "kind": "执行",
+   "color": "#1f9d55",
+   "regions": [
+    {
+     "x": 0.5,
+     "y": 0.1774193548387097,
+     "w": 0.21,
+     "h": 0.24193548387096775
+    }
+   ],
+   "pins": [
+    {
+     "label": "髋",
+     "signal": "MG90S"
+    },
+    {
+     "label": "膝",
+     "signal": "MG90S"
+    }
+   ],
+   "modules": [
+    "lb-hip",
+    "lb-leg"
+   ],
+   "joints": [
+    "j-lb-yaw",
+    "j-lb-lift"
+   ],
+   "note": "髋：前后摆；膝：抬腿"
+  },
+  {
+   "id": "f-rb",
+   "name": "右后腿",
+   "kind": "执行",
+   "color": "#e0b322",
+   "regions": [
+    {
+     "x": 0.73,
+     "y": 0.1774193548387097,
+     "w": 0.23,
+     "h": 0.24193548387096775
+    }
+   ],
+   "pins": [
+    {
+     "label": "髋",
+     "signal": "MG90S"
+    },
+    {
+     "label": "膝",
+     "signal": "MG90S"
+    }
+   ],
+   "modules": [
+    "rb-hip",
+    "rb-leg"
+   ],
+   "joints": [
+    "j-rb-yaw",
+    "j-rb-lift"
+   ],
+   "note": "髋：前后摆；膝：抬腿"
+  },
+  {
+   "id": "f-body",
+   "name": "机身",
+   "kind": "结构",
+   "color": "#a89a7a",
+   "regions": [
+    {
+     "x": 0.04,
+     "y": 0.532258064516129,
+     "w": 0.44,
+     "h": 0.1774193548387097
+    }
+   ],
+   "pins": [],
+   "modules": [
+    "body"
+   ],
+   "joints": [],
+   "note": "电池、主控放这里（示意，没建模）"
+  },
+  {
+   "id": "f-gait",
+   "name": "步态（对角小跑）",
+   "kind": "控制",
+   "color": "#7b4bd6",
+   "regions": [
+    {
+     "x": 0.5,
+     "y": 0.532258064516129,
+     "w": 0.46,
+     "h": 0.1774193548387097
+    }
+   ],
+   "pins": [],
+   "modules": [],
+   "joints": [
+    "j-lf-yaw",
+    "j-lf-lift",
+    "j-rf-yaw",
+    "j-rf-lift",
+    "j-lb-yaw",
+    "j-lb-lift",
+    "j-rb-yaw",
+    "j-rb-lift"
+   ],
+   "note": "在“步态”面板里改相位 / 幅度 / 频率，点“测量”看走多快"
+  }
+ ],
+ "joints": [
+  {
+   "id": "j-lf-yaw",
+   "name": "左前髋（前后摆）",
+   "type": "revolute",
+   "parent": "body",
+   "child": "lf-hip",
+   "anchor": [
+    -25,
+    38,
+    -30
+   ],
+   "axis": [
+    0,
+    1,
+    0
+   ],
+   "limits": {
+    "min": -40,
+    "max": 40
+   },
+   "drive": {
+    "preset": "mg90s",
+    "volt": 4.8,
+    "torque": 1,
+    "speed": 300,
+    "forceN": 5,
+    "speedMm": 20
+   },
+   "home": 0
+  },
+  {
+   "id": "j-lf-lift",
+   "name": "左前膝（抬腿）",
+   "type": "revolute",
+   "parent": "lf-hip",
+   "child": "lf-leg",
+   "anchor": [
+    -45,
+    38,
+    -30
+   ],
+   "axis": [
+    0,
+    0,
+    1
+   ],
+   "limits": {
+    "min": -40,
+    "max": 40
+   },
+   "drive": {
+    "preset": "mg90s",
+    "volt": 4.8,
+    "torque": 1,
+    "speed": 300,
+    "forceN": 5,
+    "speedMm": 20
+   },
+   "home": 0
+  },
+  {
+   "id": "j-rf-yaw",
+   "name": "右前髋（前后摆）",
+   "type": "revolute",
+   "parent": "body",
+   "child": "rf-hip",
+   "anchor": [
+    25,
+    38,
+    -30
+   ],
+   "axis": [
+    0,
+    1,
+    0
+   ],
+   "limits": {
+    "min": -40,
+    "max": 40
+   },
+   "drive": {
+    "preset": "mg90s",
+    "volt": 4.8,
+    "torque": 1,
+    "speed": 300,
+    "forceN": 5,
+    "speedMm": 20
+   },
+   "home": 0
+  },
+  {
+   "id": "j-rf-lift",
+   "name": "右前膝（抬腿）",
+   "type": "revolute",
+   "parent": "rf-hip",
+   "child": "rf-leg",
+   "anchor": [
+    45,
+    38,
+    -30
+   ],
+   "axis": [
+    0,
+    0,
+    1
+   ],
+   "limits": {
+    "min": -40,
+    "max": 40
+   },
+   "drive": {
+    "preset": "mg90s",
+    "volt": 4.8,
+    "torque": 1,
+    "speed": 300,
+    "forceN": 5,
+    "speedMm": 20
+   },
+   "home": 0
+  },
+  {
+   "id": "j-lb-yaw",
+   "name": "左后髋（前后摆）",
+   "type": "revolute",
+   "parent": "body",
+   "child": "lb-hip",
+   "anchor": [
+    -25,
+    38,
+    30
+   ],
+   "axis": [
+    0,
+    1,
+    0
+   ],
+   "limits": {
+    "min": -40,
+    "max": 40
+   },
+   "drive": {
+    "preset": "mg90s",
+    "volt": 4.8,
+    "torque": 1,
+    "speed": 300,
+    "forceN": 5,
+    "speedMm": 20
+   },
+   "home": 0
+  },
+  {
+   "id": "j-lb-lift",
+   "name": "左后膝（抬腿）",
+   "type": "revolute",
+   "parent": "lb-hip",
+   "child": "lb-leg",
+   "anchor": [
+    -45,
+    38,
+    30
+   ],
+   "axis": [
+    0,
+    0,
+    1
+   ],
+   "limits": {
+    "min": -40,
+    "max": 40
+   },
+   "drive": {
+    "preset": "mg90s",
+    "volt": 4.8,
+    "torque": 1,
+    "speed": 300,
+    "forceN": 5,
+    "speedMm": 20
+   },
+   "home": 0
+  },
+  {
+   "id": "j-rb-yaw",
+   "name": "右后髋（前后摆）",
+   "type": "revolute",
+   "parent": "body",
+   "child": "rb-hip",
+   "anchor": [
+    25,
+    38,
+    30
+   ],
+   "axis": [
+    0,
+    1,
+    0
+   ],
+   "limits": {
+    "min": -40,
+    "max": 40
+   },
+   "drive": {
+    "preset": "mg90s",
+    "volt": 4.8,
+    "torque": 1,
+    "speed": 300,
+    "forceN": 5,
+    "speedMm": 20
+   },
+   "home": 0
+  },
+  {
+   "id": "j-rb-lift",
+   "name": "右后膝（抬腿）",
+   "type": "revolute",
+   "parent": "rb-hip",
+   "child": "rb-leg",
+   "anchor": [
+    45,
+    38,
+    30
+   ],
+   "axis": [
+    0,
+    0,
+    1
+   ],
+   "limits": {
+    "min": -40,
+    "max": 40
+   },
+   "drive": {
+    "preset": "mg90s",
+    "volt": 4.8,
+    "torque": 1,
+    "speed": 300,
+    "forceN": 5,
+    "speedMm": 20
+   },
+   "home": 0
+  }
+ ],
+ "poses": [
+  {
+   "id": "p-home",
+   "name": "站立",
+   "values": {
+    "j-lf-yaw": 0,
+    "j-lf-lift": 0,
+    "j-rf-yaw": 0,
+    "j-rf-lift": 0,
+    "j-lb-yaw": 0,
+    "j-lb-lift": 0,
+    "j-rb-yaw": 0,
+    "j-rb-lift": 0
+   }
+  }
+ ],
+ "timeline": {
+  "loop": false,
+  "keys": []
+ },
+ "sim": {
+  "fixBase": false,
+  "roundHulls": true
+ },
+ "gait": {
+  "name": "对角小跑（v13）",
+  "joints": [
+   {
+    "jid": "j-lf-yaw",
+    "amp": -20,
+    "phase": 0,
+    "offset": 0,
+    "freq": 1,
+    "wave": "sine",
+    "duty": 0.5
+   },
+   {
+    "jid": "j-lf-lift",
+    "amp": -15,
+    "phase": 90,
+    "offset": 0,
+    "freq": 1,
+    "wave": "sine",
+    "duty": 0.5
+   },
+   {
+    "jid": "j-rf-yaw",
+    "amp": 20,
+    "phase": 180,
+    "offset": 0,
+    "freq": 1,
+    "wave": "sine",
+    "duty": 0.5
+   },
+   {
+    "jid": "j-rf-lift",
+    "amp": 15,
+    "phase": 270,
+    "offset": 0,
+    "freq": 1,
+    "wave": "sine",
+    "duty": 0.5
+   },
+   {
+    "jid": "j-lb-yaw",
+    "amp": -20,
+    "phase": 180,
+    "offset": 0,
+    "freq": 1,
+    "wave": "sine",
+    "duty": 0.5
+   },
+   {
+    "jid": "j-lb-lift",
+    "amp": -15,
+    "phase": 270,
+    "offset": 0,
+    "freq": 1,
+    "wave": "sine",
+    "duty": 0.5
+   },
+   {
+    "jid": "j-rb-yaw",
+    "amp": 20,
+    "phase": 0,
+    "offset": 0,
+    "freq": 1,
+    "wave": "sine",
+    "duty": 0.5
+   },
+   {
+    "jid": "j-rb-lift",
+    "amp": 15,
+    "phase": 90,
+    "offset": 0,
+    "freq": 1,
+    "wave": "sine",
+    "duty": 0.5
+   }
+  ]
+ },
+ "diagram": {
+  "file": "quad-functions.svg",
+  "builtin": "demo/quad-functions.svg",
+  "mime": "image/svg+xml",
+  "w": 1000,
+  "h": 620
+ }
+}

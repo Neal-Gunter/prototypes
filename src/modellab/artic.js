@@ -427,7 +427,25 @@ export function sampleTimeline(project, keys, t) {
 }
 
 // ---- 模型页自己的小世界：地面 + 每个刚体组一个刚体 ----
-export function createLabWorld(R, project, an, M, { fixBase = false, gravity = true } = {}) {
+// v13（我的补充）：凸包碰撞体改成“圆角凸包”（圆角 0.5 mm，顶点先往里收 0.5 mm，外形基本不变）。
+// 原因：Rapier 的尖角凸包和地面接触时，偶尔给出斜的接触法线，μ = 0 的冰面上整机也会“自己滑走”（实测 10 s 漂 14 cm，
+// 违反动量守恒）；圆角后同一测试只漂 0.1 cm。对照实验见 scripts/gait-test.mjs。
+// 只在工程勾了 sim.roundHulls 时用（会让本来刚好贴着的零件互相碰到，旧的关节/连杆示例不适合），四足示例默认勾上。
+const HULL_R = 0.05;
+function roundHull(R, a) {
+  const h = a.hull, n = h.length / 3, r = Math.min(HULL_R, 0.25 * Math.min(a.half.x, a.half.y, a.half.z));
+  if (r < 0.005) return R.ColliderDesc.convexHull(h);
+  let cx = 0, cy = 0, cz = 0;
+  for (let i = 0; i < n; i++) { cx += h[3 * i]; cy += h[3 * i + 1]; cz += h[3 * i + 2]; }
+  cx /= n; cy /= n; cz /= n;
+  const p = new Float32Array(h.length);
+  for (let i = 0; i < n; i++) {
+    const dx = h[3 * i] - cx, dy = h[3 * i + 1] - cy, dz = h[3 * i + 2] - cz, L = Math.hypot(dx, dy, dz) || 1, k = Math.max(0, 1 - r / L);
+    p[3 * i] = cx + dx * k; p[3 * i + 1] = cy + dy * k; p[3 * i + 2] = cz + dz * k;
+  }
+  return R.ColliderDesc.roundConvexHull(p, r) || R.ColliderDesc.convexHull(h);
+}
+export function createLabWorld(R, project, an, M, { fixBase = false, gravity = true, roundHulls = !!project.sim?.roundHulls } = {}) {
   const G = buildGroups(project);
   const world = new R.World({ x: 0, y: gravity ? -981 : 0, z: 0 });
   world.timestep = 1 / 240;
@@ -443,7 +461,7 @@ export function createLabWorld(R, project, an, M, { fixBase = false, gravity = t
       const a = an.get(m), mod = project.modules.find((x) => x.id === m);
       if (!a) continue;
       const mat = MATERIALS[mod.material] || MATERIALS.pla;
-      const d = (a.hull ? R.ColliderDesc.convexHull(a.hull) : null) || R.ColliderDesc.cuboid(Math.max(a.half.x, 0.005), Math.max(a.half.y, 0.005), Math.max(a.half.z, 0.005));
+      const d = (a.hull ? (roundHulls ? roundHull(R, a) : R.ColliderDesc.convexHull(a.hull)) : null) || R.ColliderDesc.cuboid(Math.max(a.half.x, 0.005), Math.max(a.half.y, 0.005), Math.max(a.half.z, 0.005));
       d.setTranslation(a.center.x, a.center.y, a.center.z).setFriction(mat.mu).setRestitution(0).setMass(Math.max(0.01, a.massG));
       const col = world.createCollider(d, rb);
       colMod.set(col.handle, m);

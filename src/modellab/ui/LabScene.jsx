@@ -56,9 +56,16 @@ function Hook({ groupRef }) {
 
 // v12：仿真开着时每帧推进物理，并把网格 / 关节标记 / 测试方块摆到刚体的位置（刚体从原点、无旋转开始，所以网格几何体不用改）
 function SimSync({ lab, groupRef, markRef, blockRef }) {
-  useFrame((_, dt) => {
+  useFrame((st, dt) => {
     if (!lab) return;
     stepLab(lab, Math.min(dt, 1 / 30));
+    // v13：跑步态时镜头跟着机身平移（只平移 x / z，不转）
+    const root = lab.rbs?.[0];
+    if (root) {
+      const t = root.translation();
+      if (lab.follow && lab._camLast && st.controls) { const dx = t.x - lab._camLast.x, dz = t.z - lab._camLast.z; st.camera.position.x += dx; st.camera.position.z += dz; st.controls.target.x += dx; st.controls.target.z += dz; st.controls.update(); }
+      lab._camLast = { x: t.x, z: t.z };
+    }
     const put = (o, rb) => { const t = rb.translation(), r = rb.rotation(); o.position.set(t.x, t.y, t.z); o.quaternion.set(r.x, r.y, r.z, r.w); };
     groupRef.current?.children.forEach((o) => { const rb = o.userData.mod && lab.modBody.get(o.userData.mod); if (rb) put(o, rb); });
     markRef.current?.children.forEach((o) => { const rb = o.userData.jparent && lab.modBody.get(o.userData.jparent); if (rb) put(o, rb); });
@@ -99,7 +106,8 @@ export default function LabScene({ meshes, M, project, modOf, visible, hl, selMe
   useEffect(() => () => geoms.forEach((g) => g.dispose()), [geoms]);
   const colorOf = useMemo(() => new Map(project.modules.map((m) => [m.id, m.color])), [project.modules]);
   const anyHl = hl.size > 0;
-  const grid = Math.max(10, Math.ceil(Math.max(sizeCm.x, sizeCm.z) * 1.6 / 10) * 10);
+  const grid0 = Math.max(10, Math.ceil(Math.max(sizeCm.x, sizeCm.z) * 1.6 / 10) * 10);
+  const grid = lab && !project.sim?.fixBase ? Math.max(grid0, 160) : grid0; // 自由底座时桌面画大一点（物理地面 400 cm 宽），走出去也看得见
   return (
     <Canvas shadows={false} camera={{ fov: 40, position: [20, 20, 20] }} gl={{ preserveDrawingBuffer: true, antialias: true }} onPointerMissed={(e) => e.button === 0 && onPick(null, null, e)}>
       <color attach="background" args={["#f6f4ef"]} />

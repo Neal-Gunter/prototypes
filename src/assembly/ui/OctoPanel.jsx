@@ -9,6 +9,10 @@ import { VARIANTS } from "../octopus/bench.js";
 import { buildOcto, OCTO_C, TAUT } from "../octopus/build3d.js";
 import { LOCO_EST, MG90S } from "../octopus/loco.js";
 import { parseNL } from "../octopus/nl.js";
+import GaitEditor from "../../gait/GaitEditor.jsx";
+import { preset, OCTO_NAMES, OCTO_SIDE, octoFirmwareGait, sanitizeGait, toFirmwareHeader } from "../../gait/gait.js";
+import { octoRowGait } from "../../gait/octo-best.js";
+import { runGait } from "../../gait/octo-measure.js";
 
 let detach = null;
 export function octoDetach() { detach?.(); detach = null; }
@@ -69,6 +73,31 @@ function TopView({ snap, plan }) {
 }
 
 // v9：走路物理的读数（Rapier 刚体 + 接触摩擦）
+// v13：八爪鱼的步态预设（我的补充）。左右舷按 cos(安装角) 加权，前后两条触手权重 0（和固件默认步态同一个约定）
+const OCTO_PRESETS = [
+  { k: "firmware", zh: "固件默认", make: octoFirmwareGait },
+  { k: "row", zh: "同步划桨（搜索最优）", make: octoRowGait },
+  { k: "alternating", zh: "交替", make: () => preset("alternating", OCTO_NAMES, { amp: 40, freq: 0.8, weights: OCTO_SIDE }) },
+  { k: "wave", zh: "波浪", make: () => preset("wave", OCTO_NAMES, { amp: 40, freq: 0.8, weights: OCTO_SIDE }) },
+  { k: "tripod", zh: "三组轮换（类三足）", make: () => preset("tripod", OCTO_NAMES, { amp: 40, freq: 0.8, weights: OCTO_SIDE }) },
+];
+function OctoGait({ variant, plan, mu, send }) {
+  const [g, setG] = useState(octoRowGait);
+  const [on, setOn] = useState(false);
+  return <GaitEditor gait={g} setGait={setG} presets={OCTO_PRESETS} rateLimit={300} tid="octo-gait"
+    time={on ? octoSim.rt?.body?.custom_t_ ?? null : null}
+    onRun={(x) => { octoSim.rt?.body?.SetCustomGait(sanitizeGait(x, 8)); setOn(true); send("GO"); }}
+    onStop={() => { send("STOP"); octoSim.rt?.body?.SetCustomGait(null); setOn(false); }}
+    onMeasure={async (x, o) => {
+      const r = await runGait({ gait: sanitizeGait(x, 8), sec: o.sec, mu: o.mu ?? mu, variant, plan, onProgress: o.onProgress });
+      try { r.lp?.world?.free(); } catch { /* 已释放 */ }
+      const { sim, lp, trace, ...rest } = r; void sim; void lp; void trace;
+      window.__octoGaitLast = rest;
+      return rest;
+    }}
+    exports={[{ k: "h", zh: "固件头文件 octopus_gait_custom.h", make: (x) => ({ name: "octopus_gait_custom.h", text: toFirmwareHeader(sanitizeGait(x, 8), { stamp: new Date().toISOString().slice(0, 10) }) }) }]}
+    note={`“在台面上跑”= 相当于把导出的 octopus_gait_custom.h 编进固件再发 GO（固件孪生里调 Body.SetCustomGait），照样过防碰撞、限位 90±55°、限速 300 °/s；“停”回到固件默认步态。测量在后台另开一个同配置（${variant} · 方案 ${plan}）的台面跑，桌面 μ 用上面的滑杆（冰面对照用 0）。同步划桨是 scripts/gait-search.mjs 仿真搜出来的（我的补充，未上实机）。`} />;
+}
 function LocoBox({ L, mu, setMu }) {
   const g = (kg) => (kg * 1000).toFixed(0);
   return (
@@ -270,6 +299,7 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
         {!noBody && <TopView snap={snap} plan={plan} />}
         {built && <div className="flex flex-wrap items-center gap-1" data-testid="octo-cams"><span>镜头：</span>{CAMS.map((c) => <Btn key={c.k} t={`cam-${c.k}`} on={() => setCam(c.k, handle.current?.motion)}>{c.zh}</Btn>)}</div>}
         {built && B3 && snap.loco && <LocoBox L={snap.loco} mu={mu} setMu={setMu} />}
+        {built && B3 && snap.loco && <OctoGait variant={variant} plan={plan} mu={mu} send={send} />}
         {built && B3 && (handle.current?.motion?.taut || 0) >= TAUT && <p className="text-amber-700" data-testid="octo-tether">实物里导线会在这附近拉紧（{handle.current.motion.tautCable}：两端直线距离已到线长的 {Math.round(handle.current.motion.taut * 100)}%）；v9 仿真不让导线拽机身，机身照样按触手摩擦走。</p>}
         {!noBody && <details data-testid="octo-adv-ch">
           <summary className="cursor-pointer font-medium">{variant === "v10" ? "通道监视（QT Py LEDC GPIO → 舵机）" : "通道监视（PCA9685 → 舵机）"}</summary>

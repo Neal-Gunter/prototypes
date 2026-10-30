@@ -2,6 +2,7 @@
 import { zipStore, unzip } from "./zip.js";
 import { FUNC_KINDS, MATERIALS, newId, PALETTE } from "./modules.js";
 import { LIMITS, MODEL_EXT, extOf, mb } from "./limits.js";
+import { sanitizeProjectGait } from "../gait/gait.js";
 
 export const SCHEMA = "proto-modellab/1";
 export function emptyProject(name = "未命名工程") {
@@ -86,6 +87,9 @@ export function sanitize(j) {
   const tl = j.timeline && typeof j.timeline === "object" ? j.timeline : {};
   p.timeline = { loop: tl.loop === true, keys: (Array.isArray(tl.keys) ? tl.keys : []).slice(0, 200).filter((k) => pIds.has(k?.pose)).map((k) => ({ t: num(k.t, 0, 600, 0), pose: k.pose })).sort((a, b) => a.t - b.t) };
   p.sim = { fixBase: j.sim?.fixBase === true };
+  if (j.sim?.roundHulls === true) p.sim.roundHulls = true; // v13
+  const gt = sanitizeProjectGait(j.gait, jIds); // v13：步态
+  if (gt) p.gait = gt;
   const blk = vec(j.sim?.block, null);
   if (blk) p.sim.block = blk;
   return p;

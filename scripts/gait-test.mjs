@@ -41,7 +41,28 @@ ok(Math.abs(z0.fwd) < 0.5 && Math.abs(z1.fwd) < 0.5, `μ = 0 对照：基线 ${z
 const iso0 = await runGait({ pad: [0.45, 0.45] }), iso1 = await runGait({ gait: octoRowGait(), pad: [0.45, 0.45] }), rev = await runGait({ gait: octoRowGait(), pad: [0.45, 0.15] });
 ok(Math.abs(iso0.fwd) < 1.5 && rev.fwd < 0, `脚垫换成各向同性：基线 ${iso0.fwd.toFixed(2)} cm、同步划桨 ${iso1.fwd.toFixed(2)} cm；脚垫装反：同步划桨 ${rev.fwd.toFixed(2)} cm（倒退）→ 主要推进力来自单向脚垫`);
 out.numbers = { base: fmt(base), row: fmt(row), mu0: { base: fmt(z0), row: fmt(z1) }, padIso: { base: fmt(iso0), row: fmt(iso1) }, padReversed: { row: fmt(rev) } };
+// 8 模型实验室：四足示例（通用步态，任何带驱动关节的上传模型都走这条路）
+{
+  const R = (await import("@dimforge/rapier3d-compat")).default;
+  const { quadSetup } = await import("./quad-search.mjs");
+  const { gaitForProject, gaitToProject, measureArtic, sanitizeProjectGait, drivenJoints } = await import("../src/gait/artic-gait.js");
+  const { sanitize } = await import("../src/modellab/project.js");
+  const S = await quadSetup(), g = gaitForProject(S.project);
+  ok(drivenJoints(S.project).length === 8 && g.joints.length === 8 && g.joints.every((J) => J.jid), "四足示例：8 个驱动关节 → 编辑器 8 行（按关节 id）");
+  const back = sanitize({ ...S.project, gait: { ...gaitToProject(g), joints: [...gaitToProject(g).joints, { jid: "不存在", amp: 10 }, { jid: S.project.joints[0].id, amp: 999, wave: "怪", freq: 99 }] } });
+  ok(back.gait.joints.length === 9 && back.gait.joints[8].amp === 90 && back.gait.joints[8].wave === "sine" && back.gait.joints[8].freq === 3 && !back.gait.joints.some((J) => J.jid === "不存在"), "工程 gait 读回：丢掉不存在的关节，幅度 / 频率 / 波形夹住");
+  ok(sanitizeProjectGait(null, new Set()) === undefined && sanitize({ ...S.project, gait: "x" }).gait === undefined, "没有 / 坏的 gait 字段：工程照常打开");
+  const q = await measureArtic(R, S.project, S.an, S.X.M, g, { sec: 10 });
+  ok(q.speed > 3 && Math.abs(q.dx) < 3 && Math.abs(q.dh) < 10 && q.pen < 0.05, `四足对角小跑 10 s：${q.speed.toFixed(2)} cm/s，dx ${q.dx.toFixed(2)} cm，dh ${q.dh.toFixed(1)}°，最大穿模 ${q.pen.toFixed(3)} cm`);
+  const qi = await measureArtic(R, S.project, S.an, S.X.M, g, { sec: 10, mu: 0 });
+  const qs = await measureArtic(R, { ...S.project, sim: { ...S.project.sim, roundHulls: false } }, S.an, S.X.M, g, { sec: 10, mu: 0 });
+  ok(Math.abs(qi.fwd) < 0.5, `四足 μ = 0 对照（圆角碰撞体）：${qi.fwd.toFixed(3)} cm / 10 s；不圆角时 ${qs.fwd.toFixed(2)} cm（已知的尖角接触误差，记在 LIMITS）`);
+  const nl = await measureArtic(R, S.project, S.an, S.X.M, { ...g, joints: g.joints.map((J) => (/lift/.test(J.jid) ? { ...J, amp: 0 } : J)) }, { sec: 10 });
+  ok(nl.fwd < 0.3 * q.fwd, `四足不抬腿只扭：${nl.fwd.toFixed(2)} cm（迈步 ${q.fwd.toFixed(2)} cm）→ 位移来自迈步`);
+  out.numbers.quad = { trot: f3(q), mu0Round: f3(qi), mu0Sharp: f3(qs), noLift: f3(nl) };
+}
 fs.mkdirSync("/workspace/proto-site/v13/logs", { recursive: true });
 try { fs.writeFileSync("/workspace/proto-site/v13/logs/gait-test.json", JSON.stringify(out, null, 1)); } catch {}
+function f3(r) { return Object.fromEntries(["fwd", "speed", "dx", "dh", "slip", "contactsAvg", "tiltMax", "marginMin", "energyJ", "powerW", "peakTorque", "pen"].map((k) => [k, r[k] == null ? null : +r[k].toFixed(3)])); }
 console.log(`gait-test: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -11,6 +11,10 @@ import { deleteProject, listProjects, loadProject, saveProject } from "../modell
 import { loadDiagramFile, pdfPageToPng } from "../modellab/diagram.js";
 import { loadBuiltinDemo } from "../modellab/demo.js";
 import JointControls from "../modellab/ui/JointControls.jsx";
+import GaitEditor from "../gait/GaitEditor.jsx";
+import { drivenJoints, gaitForProject, gaitToProject, playGait, measureArtic } from "../gait/artic-gait.js";
+import { preset } from "../gait/gait.js";
+import { driveParams } from "../modellab/servos.js";
 import { JOINT_TYPES, DRIVES, addBlock, axisToRaw, benchToRaw, buildGroups, mobility, createLabWorld, effLimits, jointToBench, labPenetration, newJoint, unitOf } from "../modellab/artic.js";
 import { LIMITS, MODEL_EXT, extOf, mb } from "../modellab/limits.js";
 
@@ -23,6 +27,8 @@ export const LAB_SIMPLIFICATIONS = [
   "关节两侧的两块之间不算碰撞（铰接处本来就贴在一起，否则一动就互相顶开）；其他任意两块之间、和地面 / 测试方块之间都正常碰撞、有摩擦",
   "舵机：MG90S / SG51R 的堵转扭矩、空载速度、质量取 datasheet（4.8 V / 6 V；SG51R 只有 4.8 V 数据，没外推）；马达刚度、阻尼、转子惯量、“负载%”是估算；不模拟电流、发热、齿轮间隙、死区",
   "闭环连杆（v13）：一块挂两个父关节就成环（四连杆、曲柄滑块、平行连杆），多出来的关节在 Rapier 里是额外的冲量约束，迭代求解，会有很小的漂移（四连杆示例 < 0.01 mm）；自由度用 Grübler 公式 + 当前姿态的旋量矩阵秩估，只对当前姿态成立，奇异位置可能判断不准（我的补充）；关节点 / 轴存在原始模型坐标里，换单位 / 缩放 / 朝上时跟着模型走",
+  "步态（v13，我的补充）：每个驱动关节一条周期曲线（开环，没有传感器反馈）；测量在后台另开一个物理世界跑，整机质心 −z 为前；能量 = ∫|扭矩 × 角速度| dt，扭矩按跟随误差 × 刚度截到舵机上限（估算，偏大）；速度数字只用来比较步态，不是实物速度",
+  "圆角碰撞体（v13，我的补充，默认关）：凸包内收 0.5 mm 再加 0.5 mm 圆角，避免尖角和地面接触时偶尔出现的歪法向（冰面上也会把机身推着走）；会让刚好贴着的零件互相碰到",
   "质量 = 体积 × 材料密度（估算）：闭合网格用真实体积，不闭合用凸包体积（偏大）；3D 打印件按实心算；可以直接填实测质量",
   "功能图热点是矩形框；功能 ↔ 模块绑定和引脚标注只是标签，不做电路仿真（八爪鱼示例的电路仿真在装配台的“八爪鱼”页）",
   "自动拆分按组名 / 网格；“按连通块拆”按顶点位置焊接后找连通块，相互接触但不共用顶点的零件不会被合并",
@@ -33,6 +39,25 @@ const clone = (p) => structuredClone(p);
 const fmt = (v, d = 1) => (Number.isFinite(v) ? v.toFixed(d) : "—");
 const btn = "min-h-9 border border-line bg-white px-2.5 text-sm hover:border-copper disabled:opacity-40";
 const btnOn = "min-h-9 border border-copper bg-copper px-2.5 text-sm text-white";
+
+// v13：通用步态编辑器（任何带驱动关节的模型）。预设按“驱动关节的顺序”排相位；前后对比 / 冰面对照见 GaitEditor
+function LabGait({ lab, project, R, an, M, save }) {
+  const [g, setG] = useState(() => gaitForProject(project));
+  const js = drivenJoints(project);
+  const amp0 = (i) => Math.abs(gaitForProject(project).joints[i]?.amp || 10);
+  const mk = (kind) => () => { const p = preset(kind, js.map((j) => j.name), { amp: 1, freq: 0.5, wave: "sine" }); return { name: p.name, joints: p.joints.map((J, i) => ({ ...J, amp: amp0(i), name: js[i].name, jid: js[i].id, unit: js[i].type === "prismatic" ? "mm" : "°" })) }; };
+  const presets = [
+    { k: "saved", zh: project.gait ? "工程里存的" : "默认", make: () => gaitForProject(project) },
+    { k: "alternating", zh: "交替", make: mk("alternating") }, { k: "wave", zh: "波浪", make: mk("wave") }, { k: "tripod", zh: "三组轮换", make: mk("tripod") },
+  ];
+  const rate = Math.min(...js.map((j) => { const d = driveParams(j); return d.lin ? d.speed * 10 : (d.speed * 180) / Math.PI; }).filter((x) => x > 0), 600);
+  useEffect(() => { window.__labGait = { g, set: setG }; });
+  return <div className="mt-2 border border-line bg-white p-2" data-testid="lab-gait"><GaitEditor gait={g} setGait={setG} presets={presets} rateLimit={rate} tid="lab-gait" measureSec={10}
+    onRun={(x) => { lab.follow = !project.sim?.fixBase; playGait(lab.core, project, x); }} onStop={() => { lab.follow = false; lab.core.stop(); }}
+    onMeasure={async (x, o) => { const r = await measureArtic(R, project, an, M, x, { sec: o.sec, mu: o.mu, onProgress: o.onProgress }); window.__labGaitLast = r; return r; }}
+    exports={[{ k: "save", zh: "存进工程", make: (x) => { save(x); return null; } }]}
+    note={`值 = 关节回中位置 + 步态值（° 或 mm），再按限位截断；舵机按 datasheet 速度追（这台最慢的驱动约 ${Math.round(rate)} /s，超过的行标“快”）。测量另开一个看不见的物理世界跑，整机质心 −z 为前；${project.sim?.fixBase ? "现在底座固定，走不了——只测能量和力矩" : project.sim?.roundHulls ? "已用圆角碰撞体" : "没勾“圆角碰撞体”时冰面对照可能也有几 cm 漂移（Rapier 尖角接触的数值误差，见上面复选框说明）"}。简化仿真，未上实机。`} /></div>;
+}
 
 export default function ModelLabPage() {
   const [project, setProject] = useState(null);
@@ -426,6 +451,7 @@ export default function ModelLabPage() {
           <span className="font-medium">关节与运动</span><span className="text-xs text-ink-soft">{js.length} 个关节 · {groups?.groups.length || 0} 个刚体组</span>
           <button className={simOn ? btnOn : btn} data-testid="sim-toggle" disabled={mode === "joint"} onClick={() => setSimOn(!simOn)}>{simOn ? (lab ? "■ 停止运动" : "启动中…") : "▶ 运动（物理仿真）"}</button>
           <label className="flex items-center gap-1 text-xs"><input type="checkbox" data-testid="fix-base" checked={!!project.sim?.fixBase} onChange={(e) => upd((p) => { p.sim.fixBase = e.target.checked; })} />底座固定在桌上</label>
+          <label className="flex items-center gap-1 text-xs" title="我的补充（v13）：Rapier 的尖角凸包和地面接触偶尔给出歪的法向，冰面上也会把机身推着走；圆角 0.5 mm 后冰面对照只漂约 0.04 cm / 10 s。会让本来刚好贴着的零件互相碰到，所以默认关，四足示例默认开"><input type="checkbox" data-testid="round-hulls" checked={!!project.sim?.roundHulls} onChange={(e) => upd((p) => { if (e.target.checked) p.sim.roundHulls = true; else delete p.sim.roundHulls; })} />圆角碰撞体（走路测量更准）</label>
           <button className={btn} data-testid="drop-block" disabled={!lab} onClick={dropBlock}>放测试方块</button>
           <label className="flex items-center gap-1 text-xs"><input type="checkbox" checked={showJoints} onChange={(e) => setShowJoints(e.target.checked)} />显示关节标记</label>
         </div>
@@ -439,6 +465,7 @@ export default function ModelLabPage() {
         {Ed()}
         {lab && <div className="mt-2"><JointControls core={lab.core} project={project} pen={() => labPenetration(lab)} onSavePose={savePose} /></div>}
         {lab && project.poses.length > 0 && TimelineEd()}
+        {lab && drivenJoints(project).length > 0 && <LabGait key={project.id + ":" + drivenJoints(project).map((j) => j.id).join(",")} lab={lab} project={project} R={RRef.current} an={an} M={X.M} save={(g) => { upd((p) => { p.gait = gaitToProject(g); }); setNote(`步态“${g.name}”已存进工程（导出 .zip 会带上）`); }} />}
         {!lab && js.length > 0 && <p className="mt-1 text-xs text-ink-soft">打开“运动”后：每个关节一个滑块和“测试”按钮，可以存姿态、编时间轴、放测试方块看能不能推动。</p>}
         {!js.length && <p className="mt-1 text-xs text-ink-soft">还没有关节：整个模型是一块。点“+ 在 3D 里加关节”，依次点父模块、子模块、表面上的铰接点；转轴默认取点到的表面法线（太接近竖直时取 Y），之后可改。</p>}
       </div>
@@ -494,6 +521,7 @@ export default function ModelLabPage() {
         <button className={btn} data-testid="load-demo" onClick={() => openDemo("octo")}>内置示例：八爪鱼</button>
         <button className={btn} data-testid="load-demo-arm" onClick={() => openDemo("arm")}>内置示例：机械臂</button>
         <button className={btn} data-testid="load-demo-fourbar" onClick={() => openDemo("fourbar")}>内置示例：四连杆</button>
+        <button className={btn} data-testid="load-demo-quad" onClick={() => openDemo("quad")}>内置示例：四足爬行</button>
         <label className={btn + " inline-flex cursor-pointer items-center"}>导入工程 .zip<input data-testid="import-input" type="file" accept=".zip,application/zip" className="sr-only" onChange={(e) => { onImport(e.target.files[0]); e.target.value = ""; }} /></label>
         <button className={btn} data-testid="export" disabled={!project} onClick={onExport}>导出工程 .zip</button>
         <button className={btn} data-testid="to-bench" disabled={!parsed || !project?.modules.length} onClick={toBench}>放到装配台 →</button>

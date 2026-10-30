@@ -93,6 +93,11 @@ v5 新增的程序零件（同样是本项目自制、CC0）：
 - `loco.js` 物理行走用 `@dimforge/rapier3d-compat`（Apache-2.0，已在上面列出）；舵机参数引自 MG90S 公开规格（堵转扭矩、速度、质量），只引用数字。
 - 走查录屏用 Playwright（Apache-2.0）和 ffmpeg（LGPL/GPL），只在本地使用，不随项目分发。
 
+## v13：闭环连杆 + 步态编辑器
+
+- `public/demo/fourbar.obj`、`fourbar-functions.svg`、`fourbar.project.json`（`scripts/make-fourbar-demo.mjs`）和 `public/demo/quad.obj`、`quad-functions.svg`、`quad.project.json`（`scripts/make-quad-demo.mjs`）：本项目自制示例，**CC0**。四足的舵机是按 MG90S datasheet 外形尺寸画的简化方块，不是厂家 CAD。
+- 步态编辑器、测量、固件头文件生成都是本项目代码（`src/gait/`），没有引入新的第三方库。
+
 ## v12：关节 + 运动
 
 - `public/demo/arm2dof.obj`、`arm2dof-functions.svg`、`arm2dof.project.json`：本项目用 `scripts/make-arm-demo.mjs` 自制的 2 自由度机械臂示例，**CC0**（可以随便用）。舵机外形是按 datasheet 外形尺寸画的简化方块，不是厂家 CAD。

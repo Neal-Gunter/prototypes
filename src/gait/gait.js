@@ -2,7 +2,8 @@
 //   值(t) = offset + amp · wave(frac(t·freq + phase/360), duty)
 // wave：sine = cos(2πp)（p=0 时 +1，和固件三角波同相位起点）、tri = 固件 octopus_gait.h 的三角波（duty 内从 +1 降到 −1，其余时间回来）、
 //       square（duty 内 +1，其余 −1）、saw（1 → −1 线性，然后跳回）。
-// 同一套公式在 C++ 里是 octopus_gait_custom.h（toFirmwareHeader 生成），scripts/gait-test.mjs 用 g++ 把两边逐点对一遍。
+// 同一套公式在 C++ 里是 octopus_gait_custom.h（toFirmwareHeader 生成）。scripts/gait-test.mjs 把头文件里的数组读回来、按同一公式和编辑器逐点对一遍
+// （本机没有 g++ 跑主机测试；头文件能编进固件由 scripts/fw-compile.sh 的 arduino-cli 编译证明）。
 export const WAVES = { sine: "正弦", tri: "三角（固件默认）", square: "方波", saw: "锯齿" };
 export const frac = (x) => x - Math.floor(x);
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
@@ -82,4 +83,11 @@ inline float Yaw(int arm, float t, float amp_scale) {
 }
 }}  // namespace octo::custom_gait
 `;
+}
+// 模型实验室工程里存的步态（按关节 id）
+export function sanitizeProjectGait(raw, jointIds) {
+  if (!raw || typeof raw !== "object" || !Array.isArray(raw.joints)) return undefined;
+  const js = raw.joints.filter((x) => x && jointIds.has(x.jid)).slice(0, 200);
+  const s = sanitizeGait({ name: raw.name, joints: js.map((x) => ({ name: x.jid, amp: x.amp, phase: x.phase, offset: x.offset, freq: x.freq, wave: x.wave, duty: x.duty })) }, js.length);
+  return { name: typeof raw.name === "string" ? raw.name.slice(0, 40) : "步态", joints: s.joints.map((J, i) => ({ jid: js[i].jid, amp: J.amp, phase: J.phase, offset: J.offset, freq: J.freq, wave: J.wave, duty: J.duty })) };
 }

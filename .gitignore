@@ -5,3 +5,4 @@ dist
 .vite
 e2e-shots/
 .tmp/
+.scratch/
