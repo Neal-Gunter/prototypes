@@ -15,6 +15,8 @@ export const octoSim = new OctoSim({ plan: "A", phase: 3 });
 const fx = (v, d) => (typeof v === "number" && isFinite(v) ? v.toFixed(d) : "—");
 // 镜头预设（cm）：机身会爬，机身相关的镜头跟着机身走
 export const CAMS = [
+  // v8：装好后的默认镜头——斜上方跟着机身，整只（躯干 10 cm + 触手 9 cm，约 28 cm 宽）都在画面里
+  { k: "auto", zh: "默认", pos: [14, 24, 28], tgt: [0, 2, 0], body: true },
   { k: "overview", zh: "总览", pos: [2, 42, 52], tgt: [0, 0, 0] },
   { k: "top", zh: "俯视", pos: [0, 58, 0.01], tgt: [0, 0, 0], body: true },
   { k: "body", zh: "机身特写", pos: [12, 13, 16], tgt: [0, 3, 0], body: true },
@@ -110,7 +112,8 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
     setBuilt(true);
     setSnap(octoSim.snapshot());
     setDemo({ text: `${title}：装好了（${engine.parts.size} 个零件，${engine.cables.length} 根线；${PHASES.find((p) => p.k === cfg.phase).zh}）`, done: true });
-    setTimeout(() => setCam(cfg.plan === "B" ? "body" : "body", h.motion), 50);
+    setTimeout(() => setCam(o.cam || "auto", h.motion), 50);
+    if (o.go) setTimeout(() => { octoSim.send("GO"); setSnap(octoSim.snapshot()); }, 1500);
     window.__octoBuilt = { variant: cfg.variant, plan: cfg.plan, phase: cfg.phase, fault: cfg.fault, parts: engine.parts.size, cables: engine.cables.length };
     return window.__octoBuilt;
   }
@@ -137,6 +140,15 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
     <div className="flex flex-col gap-3 text-xs" data-testid="octo-panel">
       <p className="rounded bg-amber-50 px-1 text-amber-800">早期原型，简化仿真</p>
       <p className="leading-5 text-ink-soft">照你给的 md（octopus-ai）复刻：零件、接线、供电、固件都按文档；文档没写的标“文档未写”，数字是推出来的标“估算”。语音、大模型、WiFi / 蓝牙都是<b className="text-ink">模拟</b>。</p>
+      <fieldset className="flex flex-col gap-1 border border-copper p-2" data-testid="octo-quick">
+        <legend className="font-medium text-copper">一键开始</legend>
+        <span className="text-ink-soft">装好完善版（我的补充）→ 通电 → 自动发 GO 往前爬；镜头跟着机身。想停就点下面的 STOP。</span>
+        <div className="grid grid-cols-2 gap-1">
+          <Btn t="octo-quickstart" dis={!ready || busy || building} on={() => build({ plan: "A", phase: 3, fault: "none", variant: "plus", mode: "ino", go: true })} cls="border-copper bg-copper/10 py-2 font-medium">▶ 方案A 完善版<br /><span className="font-normal text-ink-soft">8 舵机，直行 + 转弯</span></Btn>
+          <Btn t="octo-quickstart-B" dis={!ready || busy || building} on={() => build({ plan: "B", phase: 3, fault: "none", variant: "plus", mode: "ino", go: true })} cls="border-copper bg-copper/10 py-2 font-medium">▶ 方案B 完善版<br /><span className="font-normal text-ink-soft">16 舵机，摆 + 抬</span></Btn>
+        </div>
+        {building && <p className="text-ink-soft" data-testid="octo-building">正在装配（16 舵机版约 10–20 秒）…</p>}
+      </fieldset>
       <fieldset className="flex flex-col gap-1">
         <legend className="font-medium">预设</legend>
         <span className="text-ink-soft">md 原样（照文档，固件修正可开关）</span>
@@ -146,6 +158,9 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
         <Btn t="octo-preset-A-plus" dis={!ready || busy || building} on={() => build({ plan: "A", phase: 3, fault: "none", variant: "plus" })} cls="border-copper text-left">方案A · 完善版（我的补充：3S 电池、镜像步态、万向球脚，能直行和转弯）</Btn>
         <Btn t="octo-preset-B-plus" dis={!ready || busy || building} on={() => build({ plan: "B", phase: 3, fault: "none", variant: "plus" })} cls="border-copper text-left">方案B · 完善版（我的补充：防撞、同步划水、原地转圈）</Btn>
         {variant === "plus" && <p className="text-copper" data-testid="octo-variant-tip">{VARIANTS.find((v) => v.k === "plus")?.tip}</p>}
+        <details data-testid="octo-adv">
+        <summary className="cursor-pointer text-ink-soft">高级设置：阶段 / 故障场景 / 固件模式 / 固件修正开关</summary>
+        <div className="mt-1 flex flex-col gap-1">
         <label className="mt-1">按 md 的阶段装：
           <select value={phase} onChange={(e) => setPhase(+e.target.value)} className="ml-1 w-full border border-line bg-white" data-testid="octo-phase">{PHASES.map((p) => <option key={p.k} value={p.k}>{p.zh}</option>)}</select>
         </label>
@@ -162,6 +177,8 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
           <summary className="cursor-pointer">固件修正（{Object.values(F).filter(Boolean).length}/{FIX_LIST.length} 项打开；全关 = md 原样）</summary>
           <div className="mt-1 flex flex-wrap gap-1"><Btn on={() => setF(fixesAll(true))} t="octo-fix-all">全部修正（md 的 bug）</Btn><Btn on={() => setF(fixesPlus())} t="octo-fix-plus">再加上我的补充</Btn><Btn on={() => setF(fixesAll(false))} t="octo-fix-none">全部原样（md 代码）</Btn></div>
           {FIX_LIST.map((f) => <label key={f.k} className={`mt-1 flex gap-1 leading-4 ${f.plus ? "text-copper" : ""}`}><input type="checkbox" checked={!!F[f.k]} onChange={(e) => setF({ ...F, [f.k]: e.target.checked })} /><span>{f.zh}<span className="text-ink-soft">（{f.md}）</span></span></label>)}
+        </details>
+        </div>
         </details>
         <Btn t="octo-build" dis={!ready || busy || building} on={() => build()} cls="border-ink">按上面的设置重新装（方案{plan}{variant === "plus" ? " · 完善版" : ""}）</Btn>
       </fieldset>
@@ -194,6 +211,9 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
             {["GO", "LEFT", "RIGHT", "STOP", "HOME"].map((c) => <Btn key={c} t={`ser-${c}`} on={() => send(c)}>{c}</Btn>)}
             <Btn t="ser-WAVE" on={() => send(`WAVE ${wave}`)}>WAVE {wave}</Btn><Btn t="ser-PULSE" on={() => send("PULSE 2")}>PULSE 2</Btn>
           </div>}
+          <details data-testid="octo-adv-gait">
+          <summary className="cursor-pointer text-ink-soft">高级：挥手触手 / 步态参数 / 串口一行</summary>
+          <div className="mt-1 flex flex-col gap-1">
           <label>挥手用哪条：<input type="range" min="0" max="7" value={wave} onChange={(e) => setWave(+e.target.value)} /> {wave} 号</label>
           <div className="grid grid-cols-[4rem_1fr_2.5rem] items-center gap-x-1">
             <span>频率</span><input type="range" min="2" max="20" value={gait.freq} onChange={(e) => setGait({ ...gait, freq: +e.target.value })} /><span>{(gait.freq / 10).toFixed(1)} Hz</span>
@@ -204,6 +224,8 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
           {mode === "ino" && <form className="flex gap-1" onSubmit={(e) => { e.preventDefault(); if (line.trim()) send(line); setLine(""); }}>
             <input value={line} onChange={(e) => setLine(e.target.value)} placeholder="串口一行，例如 GAIT F=0.8 YAW=30" className="min-w-0 flex-1 border border-line px-1 font-mono" data-testid="octo-serial" /><Btn submit t="octo-serial-send">发送</Btn>
           </form>}
+          </div>
+          </details>
           <form className="mt-1 flex flex-col gap-1" onSubmit={(e) => { e.preventDefault(); talk(say); }}>
             <span>对它说一句（<b>模拟</b>：真实小智是 语音 → 云端识别 + 大模型 → MCP；这里用关键词规则代替）</span>
             <div className="flex gap-1"><input value={say} onChange={(e) => setSay(e.target.value)} className="min-w-0 flex-1 border border-line px-1" data-testid="octo-nl" /><Btn submit t="octo-nl-send">说</Btn></div>
@@ -213,7 +235,7 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
         {!noBody && <TopView snap={snap} plan={plan} />}
         {built && <div className="flex flex-wrap items-center gap-1" data-testid="octo-cams"><span>镜头：</span>{CAMS.map((c) => <Btn key={c.k} t={`cam-${c.k}`} on={() => setCam(c.k, handle.current?.motion)}>{c.zh}</Btn>)}</div>}
         {built && B3 && handle.current?.motion?.clamped && <p className="text-amber-700" data-testid="octo-tether">导线拉紧：3D 机身最多离开原位 {TETHER.r} cm、转 ±{Math.round((TETHER.h * 180) / Math.PI)}°（估算，按 20–30 cm 杜邦线），之后的位移只在俯视轨迹里继续算。</p>}
-        {!noBody && <details open>
+        {!noBody && <details data-testid="octo-adv-ch">
           <summary className="cursor-pointer font-medium">通道监视（PCA9685 → 舵机）</summary>
           <table className="mt-1 w-full font-mono text-[10px]" data-testid="octo-channels"><thead><tr className="text-ink-soft"><th>通道</th><th>舵机</th><th>脉宽 µs</th><th>指令°</th><th>实际°</th><th>A</th><th /></tr></thead><tbody>
             {snap.servos.map((s) => <tr key={s.role} className={s.buzz || s.collide ? "text-red-700" : ""}><td>{s.ch}</td><td>{s.role}{s.type === "360" ? "(360°)" : ""}</td><td>{s.us ? s.us.toFixed(0) : "—"}</td><td>{s.cmd == null ? "—" : s.cmd.toFixed(0)}</td><td>{s.ang.toFixed(0)}</td><td>{s.I.toFixed(2)}</td><td>{s.collide ? "碰" : s.buzz ? "响" : ""}</td></tr>)}

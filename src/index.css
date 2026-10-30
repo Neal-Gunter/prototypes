@@ -84,3 +84,6 @@ input[type="range"] {
   .guide tr, .guide li { break-inside: avoid; }
   @page { margin: 14mm; }
 }
+
+/* v8：指南目录跳转时别被顶部横幅挡住 */
+h2[id] { scroll-margin-top: 5rem; }
