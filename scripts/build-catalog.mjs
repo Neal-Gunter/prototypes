@@ -9,6 +9,11 @@ const LIB = path.resolve("../libsrc");
 const OUT = path.resolve("public/lib");
 const man = JSON.parse(fs.readFileSync(path.join(LIB, "manifest.json"), "utf8"));
 const r2 = (v) => Math.round(v * 100) / 100;
+// v22：引脚物理位置（scripts/build-physpins.mjs 产出）→ 挂到对应 CAD 模型的目录条目上：pins = [x, y, z (mm), 引脚号, 名称, 类型, tht, w, h, 估算?]
+const PHYS = {};
+{ const pd = path.resolve("public/pinouts/phys"); if (fs.existsSync(path.join(pd, "index.json"))) { const pi = JSON.parse(fs.readFileSync(path.join(pd, "index.json"), "utf8"));
+  for (const [mid, bid] of Object.entries(pi.models)) { const b = JSON.parse(fs.readFileSync(path.join(pd, bid + ".json"), "utf8")); const v = b.models[mid];
+    PHYS[mid] = { b: bid, mode: b.mode, tf: v.transform || null, pitch: v.pitch, err_max: v.err_max, pins: v.pads.map((q) => [q.p[0], q.p[1], q.p[2], q.num, q.name, q.role, q.tht ? 1 : 0, q.w, q.h, q.est ? 1 : 0, q.axis ? 1 : 0]) }; } } }
 // v20：来源短码和许可短码（索引里用来筛选）
 export const SRC_KEY = { "Adafruit CAD Parts": "ada", "KiCad packages3D": "kicad", "SparkFun KiCad Libraries": "sfe", "Espressif KiCad Libraries": "esp", "Seeed Studio OPL KiCad Library": "seeed", "FreeCAD-library": "freecad" };
 const licKey = (l) => (l.startsWith("MIT") ? "MIT" : l.startsWith("CC-BY-4.0") ? "CC-BY-4.0" : l.startsWith("CC-BY-3.0") ? "CC-BY-3.0" : "CC-BY-SA-4.0");
@@ -100,6 +105,7 @@ for (const m of man) {
     mass: null, // 质量没有核实来源：页面上按碰撞盒体积 × 材料密度显示“估算”
   };
   OVERRIDE[m.id]?.(e);
+  if (PHYS[m.id]) e.phys = PHYS[m.id];
   const tg = tagsOf(e);
   e.iface = tg.iface.length ? tg.iface : undefined;
   e.volts = tg.volts.length ? tg.volts : undefined;

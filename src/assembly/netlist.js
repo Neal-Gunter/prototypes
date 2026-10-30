@@ -339,15 +339,19 @@ export function termLabel(engine, term) {
   if (!P) return term;
   const ref = P.state.ref || "";
   const kind = elemKind(P.def);
+  const pp = P.def.physPins?.[k]; // v22：引脚物理位置表里的名字
+  if (k.startsWith("s")) return pp ? `${ref} ${pp.name}（贴片焊盘 ${pp.num}）` : `${ref} 焊盘 ${+k.slice(1) + 1}`;
   if (k.startsWith("p")) {
     const pin = boardPins(P.def)[+k.slice(1)];
     if (pin) return `${ref} ${pin.label}${pin.gpio != null && !/^GP/.test(pin.label) ? `（GPIO${pin.gpio}）` : ""}`;
+    if (pp) return `${ref} ${pp.name}（引脚 ${pp.num}）`;
     return `${ref} 焊盘 ${+k.slice(1) + 1}`;
   }
   if (k.startsWith("n:")) return `面包板 ${k.slice(2).replace(/^L/, "左 ").replace(/^R/, "右 ").replace("rail", "电源轨 ")} 列`;
   if (k.startsWith("l")) {
     const i = +k.slice(1);
     const nm = legNames(P.def)[i];
+    if (pp && kind !== "header") return `${ref} ${pp.name}（引脚 ${pp.num}）`;
     if (kind === "header") return `${ref} 第 ${i + 1} 针`;
     return `${ref} ${LEGZH[nm] || nm}`;
   }
@@ -363,6 +367,7 @@ export function terminalAt(engine, wp, r = 0.25) {
     let term = null;
     if (f.t === "pinhole") term = `${f.uid}|p${f.i}`;
     else if (f.t === "pin-up" || f.t === "leg") term = `${f.uid}|l${f.i}`;
+    else if (f.t === "pad") term = `${f.uid}|s${f.i}`;
     else if (f.t === "bbhole") term = `${f.uid}|n:${f.net}`;
     else if (f.t === "dupont-m" || f.t === "dupont-f") term = `${f.uid}|c${f.k || 0}`;
     if (term && (!best || d < best.d)) best = { d, term, f };

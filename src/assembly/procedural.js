@@ -4,6 +4,7 @@
 // 坐标：零件自身坐标系，y 朝上、底面 y = 0、xz 居中；单位 cm（与场景一致）；dims_mm 用 mm 给人看。
 
 import { STD_PROCEDURAL } from "./procedural2.js";
+import { FP_PROCEDURAL } from "./fpBoards.js";
 export const LIC_SELF = "本项目自制（程序生成，CC0）";
 
 // ISO 7045 盘头十字螺钉：dk 头径、k 头高；ISO 261 粗牙螺距；ISO 273 中等过孔
@@ -524,6 +525,7 @@ export const PROCEDURAL = [
   ...["M4", "M5", "M6", "M8"].flatMap((s) => [nut(s), washer(s), ...[8, 10, 12, 16, 20, 25, 30].map((l) => capScrew(s, l)), ...[8, 12, 16, 20].map((l) => screw(s, l))]),
   ...[["M2", 4], ["M2", 8], ["M2", 12], ["M2.5", 8], ["M2.5", 12], ["M2.5", 16], ["M3", 4], ["M3", 5], ["M3", 25], ["M3", 30], ["M3", 35], ["M3", 40]].map(([a, b]) => capScrew(a, b)),
   ...STD_PROCEDURAL,
+  ...FP_PROCEDURAL, // v22：按 KiCad 封装生成的 12 块板/模块（引脚物理位置）
 ].map((d) => ({ ...d, licence: LIC_SELF, kind: "proc", thumb: `/lib/thumbs/${d.id}.webp` }));
 
 export const PROC_BY_ID = Object.fromEntries(PROCEDURAL.map((d) => [d.id, d]));

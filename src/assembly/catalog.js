@@ -1,5 +1,6 @@
 // 零件目录：真实 CAD 模型按分类懒加载（public/lib/catalog/<分类>.json），再并上程序生成的零件。
 import { PROCEDURAL, PROC_BY_ID, DENSITY } from "./procedural";
+import { attachPhys } from "./physpins.js";
 
 let indexP = null;
 const catP = {};
@@ -102,6 +103,7 @@ export function toDef(e, flip = false) {
     def.anchors.push({ t: "servo-body", p: [0, 0, 0] });
   }
   if (e.board === "pico" || def.board === "pico") def.pinNames = PICO_PINS;
+  if (e.phys) attachPhys(def, e.phys, F); // v22：引脚物理位置（见 physpins.js）
   def.mass_est = massOf(def);
   return def;
 }

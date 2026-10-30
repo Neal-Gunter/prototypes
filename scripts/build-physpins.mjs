@@ -195,7 +195,7 @@ for (const bi of pinIdx.boards) {
     }
   }
   // 引脚间距：所有引脚的最近邻间距（中位数）对比数据手册 / 封装间距
-  for (const [id, v] of Object.entries(res.models)) { if (!v.unmapped) modelMap[id] = bi.id; const pts = v.pads.filter((p) => !p.est).map((p) => p.p); const nn = nnPitch(pts); v.pitch = { ...nn, expected: B.pitch, ok: Math.abs(nn.mode - B.pitch) <= 0.05, breadboard: Math.abs(nn.mode - 2.54) <= 0.05 && v.pads.every((q) => q.tht) }; if (!v.pitch.ok) v.pitch.note = bi.id === "hc-sr04" ? "CAD 模型把排针间距画成了 2.0 mm（实物 2.54 mm）：这是模型简化，界面照实提示" : "间距和数据手册不一致"; }
+  for (const [id, v] of Object.entries(res.models)) { if (!v.unmapped) modelMap[id] = bi.id; const pts = v.pads.filter((p) => !p.est).map((p) => p.p); const nn = nnPitch(pts); v.pitch = { ...nn, expected: B.pitch, ok: Math.abs(nn.mode - B.pitch) <= 0.05, breadboard: Math.abs(nn.mode - 2.54) <= 0.05 && v.pads.every((q) => q.tht) && B.gen?.ic !== "multiwatt" }; if (!v.pitch.ok) v.pitch.note = bi.id === "hc-sr04" ? "CAD 模型把排针间距画成了 2.0 mm（实物 2.54 mm）：这是模型简化，界面照实提示" : "间距和数据手册不一致"; }
   report.boards.push(res);
   fs.writeFileSync(path.join(OUT, bi.id + ".json"), JSON.stringify(res));
 }
@@ -275,7 +275,7 @@ function makeGen(bi, B, fp, pp) {
 }
 fs.writeFileSync(path.join(OUT, "index.json"), JSON.stringify({ generated: report.generated, tol_mm: TOL, footprints: report.footprints, models: modelMap,
   boards: report.boards.map((b) => ({ id: b.id, mode: b.mode, models: Object.keys(b.models), n: Object.values(b.models)[0]?.n, fail: Object.values(b.models).reduce((s, v) => s + v.fail, 0), err_max: Math.max(...Object.values(b.models).map((v) => v.err_max)) })) }));
-const compact = gen.map((g) => ({ id: g.id, board: g.board, zh: g.name_zh, cat: g.cat, fp: g.footprint.name, url: g.footprint.url, W: g.W, D: g.D, t: g.t, H: g.H, lift: g.lift, ic: g.ic || null, color: g.color,
+const compact = gen.map((g) => ({ id: g.id, board: g.board, zh: g.name_zh, cat: g.cat, fp: g.footprint.name, url: g.footprint.url, W: g.W, D: g.D, t: g.t, H: g.H, lift: g.lift, ic: g.ic || null, color: g.color, pitch: (({ mode, expected, ok, breadboard }) => ({ mode, expected, ok, breadboard }))(report.boards.find((b) => b.id === g.board).models[g.id].pitch),
   pads: g.pads.map((q) => [q.p[0], q.p[1], q.p[2], q.w, q.h, q.tht ? 1 : 0, q.d, q.num, q.name, q.role]) }));
 fs.writeFileSync(path.join(ROOT, "src/assembly/fpBoards.gen.js"), "// 由 scripts/build-physpins.mjs 生成（v22）：只有 KiCad 封装、没有 CAD 模型的板 → 按封装生成的近似外形（mm）。不要手改。\n// pads: [x, y, z, w, h, tht, drill, 引脚号, 名称, 类型]\nexport const FP_BOARDS = " + JSON.stringify(compact) + ";\n");
 // 日志

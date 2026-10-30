@@ -13,6 +13,8 @@ npx esbuild src/assembly/procedural.js --bundle --format=esm --platform=node --o
 node e2e/elec-node.mjs
 # v21：引脚表 + 引脚冲突 / 3V3-5V 电平
 NOBUNDLE=1 node scripts/pinout-test.mjs || exit 1
+# v22：引脚物理位置（CAD / 封装）
+NOBUNDLE=1 node scripts/physpins-test.mjs > /dev/null && echo "physpins-test ok" || { node scripts/physpins-test.mjs NOBUNDLE=1; exit 1; }
 node scripts/octo-test.mjs || exit 1
 # v11：模型 + 功能图（解析、拆分、工程 ZIP、上传零件进引擎碰撞）
 node scripts/modellab-test.mjs || exit 1
