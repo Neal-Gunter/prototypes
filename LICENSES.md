@@ -70,3 +70,9 @@ v5 新增的程序零件（同样是本项目自制、CC0）：
 - 桌面工具：镊子、斜口钳、剥线钳、万用表、吸锡器、焊锡卷（外形估算）。
 
 物理引擎：`@dimforge/rapier3d-compat`，Apache-2.0。
+
+## v6：小智八爪鱼
+
+- `src/assembly/octopus/md/` 里的 9 个文件（README、`.ino`、`octopus_*.h`、`octopus_mcp.cpp`、3 份中文 md）是项目所有者自己提供的资料。原样收录，一字未改，用于对照和导出指南。
+- 新增 10 个程序零件（ESP32‑S3‑DevKitC‑1 板、INMP441、0.96" OLED、2 块 XL4015、2S 锂电池，以及躯干、触手、俯仰支架、B 型触手）由本项目用代码生成（CC0），尺寸按数据手册或 md，未核实的标“估算”。
+- 用到的已有真实模型：Adafruit 815 / 3006 / 3923 / 1143（Adafruit_CAD_Parts，见上文），以及 KiCad 的 ESP32‑S3‑WROOM‑1 和 CP_Radial_D6.3mm（KiCad 库许可，见上文）。

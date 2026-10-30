@@ -10,3 +10,4 @@ npx esbuild src/assembly/procedural.js --bundle --format=esm --platform=node --o
 [ "$1" = "elec" ] || node e2e/engine-node.mjs
 [ "$1" = "elec" ] || node e2e/engine-v5.mjs
 node e2e/elec-node.mjs
+node scripts/octo-test.mjs || exit 1
