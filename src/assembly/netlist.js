@@ -101,7 +101,7 @@ class UF {
 
 // 焊点：{p:[x,y,z]（板子局部坐标）, q:'good'|'cold'|'bridge'|'burnt', bridge?: 相邻孔号}；旧格式 [x,y,z] = 好焊点
 export const jointOf = (j) => (Array.isArray(j) ? { p: j, q: "good" } : j);
-export const JOINT_ZH = { good: "合格", cold: "虚焊", bridge: "连锡", burnt: "焊盘烫坏" };
+export const JOINT_ZH = { good: "合格", cold: "虚焊", bridge: "连锡", burnt: "焊盘烫坏", lifted: "焊盘翘起" };
 function jointAt(part, a, k) {
   for (const j0 of part.state.solder || []) {
     const j = jointOf(j0);
@@ -163,7 +163,8 @@ export function buildCircuit(engine, opt = {}) {
     t.joint = j;
     const term = T(t.board, `${t.k || "p"}${t.i}`);
     if (j && (j.q === "good" || j.q === "bridge")) uf.union(t.term, term);
-    joints.push({ board: t.board, i: t.i, k: t.k, term, other: t.other, q: j ? j.q : "none" });
+    { const L = parts.get(t.board)?.state.lifted || []; const lk = t.k === "t" ? `t${t.i}` : t.i; // v24：焊盘翘起 = 开路
+      joints.push({ board: t.board, i: t.i, k: t.k, term, other: t.other, q: j ? j.q : L.includes(lk) ? "lifted" : "none" }); }
   }
   // v23：转接板走线：焊盘 k ↔ 排针 k（排针的下针 / 上针同一个序号 l{k}）
   for (const P of parts.values()) if (P.def.breakout) for (const a of P.def.anchors) if (a.t === "land") uf.union(T(P.uid, `t${a.i}`), T(P.uid, `l${a.i}`));
@@ -449,6 +450,7 @@ export function checks(cir, sol, fw = {}) {
     if (noneT.length) add("warn", `${ref(b)} 转接板上有 ${noneT.length} 个贴片焊盘还没焊（芯片只是放着，不导通）`, [b], "涂助焊剂，烙铁尖碰焊盘和芯片引脚约 1 秒；细间距容易连锡，别停太久");
     for (const j of js.filter((j) => j.q === "cold")) add("error", `${ref(b)} ${nm(j.i, j.k)} 虚焊：焊锡没润湿焊盘，不导通`, [b], "涂助焊剂后再用烙铁补焊这个点");
     for (const j0 of P.state.solder || []) { const j = jointOf(j0); if (j.q === "bridge" && j.i != null) add("error", `${ref(b)} ${nm(j.i, j.k)} 和 ${nm(j.bridge, j.k)} 连锡：两个脚被锡短路了`, [b], "涂助焊剂后补焊把锡拉开；或 Shift + 烙铁拆焊重焊"); }
+    for (const j of js.filter((j) => j.q === "lifted")) add("error", `${ref(b)} ${nm(j.i, j.k)} 焊盘翘起（返修太多次或拆焊加热过久），这个脚开路`, [b], "真实中要刮出走线、焊一根飞线；这里在零件面板点“飞线补救”后再焊");
     for (const j of js.filter((j) => j.q === "burnt")) add("error", `${ref(b)} ${nm(j.i, j.k)} 焊盘烫坏（加热过久），不导通`, [b], "真实中要用飞线补救；这里可 Shift + 烙铁拆掉，再从面包板另一侧接线");
   }
   // 供电
@@ -649,5 +651,6 @@ export function generateSketch(cir, uid) {
 export function jointGrades(engine, uid) {
   const o = { good: 0, cold: 0, bridge: 0, burnt: 0 };
   for (const j0 of engine.parts.get(uid)?.state.solder || []) o[jointOf(j0).q] = (o[jointOf(j0).q] || 0) + 1;
+  const L = engine.parts.get(uid)?.state.lifted || []; if (L.length) o.lifted = L.length; // v24
   return o;
 }

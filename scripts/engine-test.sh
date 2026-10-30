@@ -49,3 +49,4 @@ OUT=${OUT:-/tmp/v21coll} node scripts/collider-test.mjs >/dev/null || exit 1
 node e2e/collider-engine.mjs >/dev/null || exit 1
 # v23：贴片转接板（封装来自 KiCad，贴片 → 焊 → 排针 → 面包板导通 / 虚焊 / 连锡 / 方向）
 node scripts/breakout-test.mjs > /tmp/breakout-test.log && tail -1 /tmp/breakout-test.log || { cat /tmp/breakout-test.log | grep -v ^PASS; exit 1; }
+node scripts/rework-test.mjs > /tmp/rework-test.log && tail -1 /tmp/rework-test.log || { cat /tmp/rework-test.log | grep -v ^PASS; exit 1; }

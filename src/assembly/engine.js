@@ -25,6 +25,8 @@ function yawOf(q) {
   const f = new THREE.Vector3(1, 0, 0).applyQuaternion(q);
   return Math.atan2(-f.z, f.x);
 }
+// v24 拆焊返修（简化规则，阈值为估算，不是实测）
+export const PAD_REWORK_MAX = 3, DESOLDER_OVERHEAT_S = 4, PART_HEAT_MAX_S = 30;
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 
 // 凸包往中心缩 shr（cm），用来做“放下去会不会穿模”的预检（和方块的缩边一样）
@@ -68,6 +70,7 @@ class Engine {
     this.version = 0;
     this.log = [];
     this.history = []; // 装配步骤记录（导出装配指南用）
+    this.rework = []; // v24：拆焊记录 {board, i, k, wear, lifted, why, t}
     this.noContact = new Set(); // v12：关节连着的刚体对（"h1:h2"）
   }
   async init() {
@@ -1675,6 +1678,69 @@ Object.assign(Engine.prototype, {
     if (t < 3.5 * need) return hasNeighbor ? "bridge" : "good";
     return "burnt";
   },
+  // v24：零件累计受热（估算，秒）。超过 PART_HEAT_MAX_S 只提示“可能受热损坏”，不改电路
+  addHeat(uid, t) {
+    const P = this.parts.get(uid);
+    if (!P) return;
+    P.state.heat = +((P.state.heat || 0) + t).toFixed(2);
+    if (P.state.heat > PART_HEAT_MAX_S && !P.state.heatWarned) { P.state.heatWarned = true; this.toast(`${P.state.ref || P.def.name_zh || "零件"} 累计受热 ${P.state.heat.toFixed(0)} s（估算上限 ${PART_HEAT_MAX_S} s）：真实中可能已经受热损坏`, "warn"); }
+  },
+  // v24：这个零件和板子之间的全部焊点（每项 {board, wp, k, i}）
+  jointsOf(uid) {
+    const out = [];
+    for (const B of this.parts.values()) {
+      for (const q of B.state.solder || []) {
+        if (Array.isArray(q) || (q.other !== uid && B.uid !== uid)) continue;
+        const w = this.worldPose(B.uid);
+        out.push({ board: B.uid, other: q.other, i: q.i, k: q.k, wp: new THREE.Vector3(...q.p).applyQuaternion(w.q).add(w.p) });
+      }
+    }
+    return out;
+  },
+  // v24：拆焊模式——把 uid 的焊点逐个吸掉（每点 hold 秒）。返回 {n, lifted}
+  desolderAll(uid, { hold = 1.2 } = {}) {
+    let n = 0, lifted = 0;
+    for (const J of this.jointsOf(uid)) {
+      const B = this.parts.get(J.board);
+      const lk = J.k === "t" ? `t${J.i}` : J.i;
+      const before = (B.state.lifted || []).includes(lk);
+      const op = this.holdSolder(J.wp, { desolder: true, hold });
+      if (!op) continue;
+      this.finishOpNow(op, hold);
+      n++;
+      if (!before && (B.state.lifted || []).includes(lk)) lifted++;
+    }
+    return { n, lifted };
+  },
+  // v24：拿下零件重复使用。还有焊点（fasten 焊接边）就拒绝
+  liftOff(uid, to = null) {
+    const P = this.parts.get(uid);
+    if (!P) return { ok: false, why: "没有这个零件" };
+    const left = this.jointsOf(uid).length;
+    if (left) return { ok: false, why: `还有 ${left} 个焊点没拆，拿不下来（先用拆焊工具）`, left };
+    for (const e of this.edges) if ((e.a === uid || e.b === uid) && e.why === "solder") { e.kind = "seat"; e.why = e.smd ? "smd" : "onpins"; }
+    const group = this.carryGroup(uid);
+    const bid = this.detach(group);
+    const pose = this.bodyPose(bid);
+    const p = to || pose.p.clone().add(new THREE.Vector3(0, 3, 0));
+    const rb = this.bodies.get(bid).rb;
+    rb.setTranslation({ x: p.x, y: p.y, z: p.z }, true);
+    rb.setLinvel({ x: 0, y: 0, z: 0 }, true);
+    this.emit();
+    return { ok: true, group: [...group], heat: P.state.heat || 0 };
+  },
+  // v24：翘起的焊盘做飞线补救——之后可以重新焊（netlist 照常导通，检查面板注明“飞线”）
+  repairPad(boardUid, lift) {
+    const B = this.parts.get(boardUid);
+    if (!B || !(B.state.lifted || []).includes(lift)) return false;
+    B.state.lifted = B.state.lifted.filter((x) => x !== lift);
+    (B.state.flywire ||= []).push(lift);
+    if (B.state.rework) B.state.rework[lift] = 0;
+    this.history.push({ t: "flywire", board: boardUid, lift });
+    this.toast("飞线补救：刮出走线、焊上一根细线到这个脚（之后可以重新焊）", "ok");
+    this.emit();
+    return true;
+  },
   holdSolder(wp, { flux = true, hold = null, desolder = false } = {}) {
     const j = this.findSolderJoint(wp);
     if (!j) {
@@ -1722,18 +1788,31 @@ Object.assign(Engine.prototype, {
       if (desolder) {
         if (op.t < 0.8) { e.toast("吸锡时间太短，锡还没化开", "warn"); return; }
         p.state.solder.splice(p.state.solder.indexOf(op.entry), 1);
-        if (old.q === "burnt" && !p.state.lifted.includes(lift)) p.state.lifted.push(lift);
+        // v24（我的补充，简化规则，阈值为估算）：同一个焊盘每拆一次磨损 +1；第 3 次拆、或一次吸锡加热超过 4 s、或拆的是烫坏的焊点 → 焊盘翘起
+        p.state.rework ||= {};
+        const wear = (p.state.rework[lift] = (p.state.rework[lift] || 0) + 1);
+        const why = old.q === "burnt" ? "burnt" : op.t > DESOLDER_OVERHEAT_S ? "heat" : wear >= PAD_REWORK_MAX ? "wear" : null;
+        if (why && !p.state.lifted.includes(lift)) p.state.lifted.push(lift);
+        e.addHeat(j.other, op.t);
+        e.rework.push({ board: j.board, i: j.f.i, k: K, wear, lifted: !!why, why, t: +op.t.toFixed(2) });
         // 这两个零件之间没有焊点了：恢复成“只是插着”
         if (!p.state.solder.some((q) => !Array.isArray(q) && q.other === j.other)) {
           const ed = e.edges.find((x) => (x.a === j.board && x.b === j.other) || (x.b === j.board && x.a === j.other));
           if (ed && ed.why === "solder") { ed.kind = "seat"; ed.why = ed.smd ? "smd" : "onpins"; }
         }
-        e.toast(old.q === "burnt" ? "拆下烫坏的焊点：这个焊盘已经不能再焊（真实中需要飞线）" : "拆焊完成（吸锡）", old.q === "burnt" ? "warn" : "ok");
-        e.history.push({ t: "desolder", board: j.board, i: j.f.i });
+        const left = p.state.solder.filter((q) => !Array.isArray(q) && q.other === j.other).length;
+        e.toast(
+          why === "burnt" ? "拆下烫坏的焊点：这个焊盘已经不能再焊（真实中需要飞线）"
+          : why === "heat" ? `吸锡加热 ${op.t.toFixed(1)} s 太久：焊盘翘起来了（开路，需要飞线）`
+          : why === "wear" ? `这个焊盘已经返修 ${wear} 次：铜箔翘起（开路，需要飞线）`
+          : `拆焊完成（${j.land ? "吸锡带" : "吸锡器"}）${wear === PAD_REWORK_MAX - 1 ? `——这个焊盘已返修 ${wear} 次，再拆一次会翘起` : ""}${left ? `，还剩 ${left} 个焊点` : "，零件可以拿下来重复使用了"}`,
+          why ? "warn" : "ok");
+        e.history.push({ t: "desolder", board: j.board, i: j.f.i, k: K, wear, lifted: !!why });
         e.emit();
         return;
       }
       let q = e.solderGrade(op.t, flux, !!nb);
+      if (q) e.addHeat(j.other, op.t);
       if (old) {
         // 补焊：有助焊剂可以把虚焊、连锡修好；没有助焊剂连锡拉不开
         if (!q) { e.toast("补焊时间太短", "warn"); return; }
@@ -1772,8 +1851,9 @@ Object.assign(Engine.prototype, {
       step: (e, dt) => {
         op.t += dt;
         op.progress = Math.min(1, op.t / (desolder ? 0.8 : need));
+        if (desolder) op.over = op.t > DESOLDER_OVERHEAT_S;
         op.grade = desolder ? null : e.solderGrade(op.t, flux, !!nb);
-        if ((hold != null && op.t >= hold - 1e-6) || (!desolder && op.t >= 3.5 * need) || (desolder && op.t >= 0.8 && hold == null)) finish(e);
+        if ((hold != null && op.t >= hold - 1e-6) || (!desolder && op.t >= 3.5 * need) || (desolder && op.t >= 6 && hold == null)) finish(e);
       },
       onRelease: (e) => finish(e),
     };
@@ -1789,7 +1869,7 @@ Object.assign(Engine.prototype, {
     const bid = P.body, tbid = B.body;
     if (bid === tbid) return { ok: false, why: "已经在这块板上了" };
     const D = this.features(bid).filter((f) => f.t === "pad" && f.pkg === pk);
-    const Tw = this.worldFeatures(tbid).filter((f) => f.t === "land" && f.pkg === pk);
+    const Tw = this.worldFeatures(tbid).filter((f) => f.t === "land" && f.pkg === pk && f.uid === boUid); // v24：同一刚体上可能有两块同封装的转接板
     const tyaw = yawOf(this.bodyPose(tbid).q);
     let best = null;
     for (let k = 0; k < 4; k++) {
