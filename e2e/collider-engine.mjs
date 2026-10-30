@@ -39,9 +39,30 @@ for (const [base, small] of pairs) {
   const top = Math.max(...bd.colliders.map((c) => c.c[1] + c.h[1]));
   const tc = bd.colliders.filter((c) => c.c[1] + c.h[1] > top - 0.02).sort((a, c) => c.h[0] * c.h[2] - a.h[0] * a.h[2])[0];
   const bp = engine.worldPose(b).p;
-  const s = engine.addPart(sd, P(bp.x + tc.c[0], bp.y + top + 1.5, bp.z + tc.c[2])); run(2, `stack ${base}+${small}`);
-  const ys = engine.worldPose(s).p.y;
-  check(`${small} 落到 ${base} 顶面盒子上，停在上面、不穿模`, fin(pen(`stack ${base}`)) < TOL_MM && ys > bp.y + top - 0.05, `小件底 y=${ys.toFixed(3)} cm，底件顶面 ${(bp.y + top).toFixed(3)} cm`);
+  // v24：凸包的外接盒中心下面不一定有实体（斜面 / 开口外壳）。用向下射线在顶面盒子范围里找真正的实体顶面，落点和判定都用射线打到的高度
+  let dx = tc.c[0], dz = tc.c[2], surf = top;
+  if (bd.colliders.some((c) => c.hull)) {
+    // 候选点：中心和周围 ±0.35 cm 四点都打到同一高度（整块实体面，小件不会掉进孔或滚下斜边），取最高、再取离中心最近的
+    const ray = (x, z) => { const h = engine.world.castRay({ origin: { x: bp.x + x, y: bp.y + top + 1, z: bp.z + z }, dir: { x: 0, y: -1, z: 0 } }, 3, true); return h ? top + 1 - (h.timeOfImpact ?? h.toi) : -Infinity; };
+    let best = -Infinity, bestD = Infinity;
+    // 搜索范围：所有顶面盒子的外包络（不只最大那块），离零件中心越近越优先（小件落下后滚出窄条的机会最小）
+    const tops = bd.colliders.filter((c) => c.c[1] + c.h[1] > top - 0.02);
+    const x0 = Math.min(...tops.map((c) => c.c[0] - c.h[0])), x1 = Math.max(...tops.map((c) => c.c[0] + c.h[0]));
+    const z0 = Math.min(...tops.map((c) => c.c[2] - c.h[2])), z1 = Math.max(...tops.map((c) => c.c[2] + c.h[2]));
+    const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+    for (let i = -6; i <= 6; i++) for (let k = -6; k <= 6; k++) {
+      const x = cx + (i / 6.5) * (x1 - x0) / 2, z = cz + (k / 6.5) * (z1 - z0) / 2, r = 0.35;
+      const hs = [ray(x, z), ray(x + r, z), ray(x - r, z), ray(x, z + r), ray(x, z - r)];
+      const hy = Math.min(...hs); if (Math.max(...hs) - hy > 0.01) continue;
+      const d = Math.hypot(x - cx, z - cz);
+      if (hy > best + 0.01 || (Math.abs(hy - best) <= 0.01 && d < bestD)) { best = hy; bestD = d; dx = x; dz = z; }
+    }
+    surf = best;
+  }
+  const s = engine.addPart(sd, P(bp.x + dx, bp.y + top + 1.5, bp.z + dz)); run(2, `stack ${base}+${small}`);
+  const ys = engine.worldPose(s).p.y, sp = engine.worldPose(s).p;
+  if (process.env.DBG) console.log("DBG", base, "drop", (bp.x+dx).toFixed(2), (bp.z+dz).toFixed(2), "end", sp.x.toFixed(2), sp.y.toFixed(2), sp.z.toFixed(2), "surf", surf.toFixed(3), "half", tc.h.map(v=>v.toFixed(2)).join(","));
+  check(`${small} 落到 ${base} 顶面${surf < top ? "（射线找到的实体面）" : "盒子"}上，停在上面、不穿模`, fin(pen(`stack ${base}`)) < TOL_MM && ys > bp.y + surf - 0.05, `小件底 y=${ys.toFixed(3)} cm，底件顶面 ${(bp.y + surf).toFixed(3)} cm`);
   engine.removePart(s); engine.removePart(b);
 }
 // 3) 按尺寸排序后每 5 个一组（尺寸相近的叠在一起）。

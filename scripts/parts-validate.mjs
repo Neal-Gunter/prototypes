@@ -49,7 +49,7 @@ ok("真实 CAD 都有来源链接、作者、来源名", nUrl === 0, nUrl);
 ok("真实 CAD 的 GLB 和缩略图文件都存在", nMiss === 0, nMiss);
 ok("每个零件都有碰撞盒", nColl === 0, nColl);
 ok("碰撞盒都在包围盒内（0.3 mm + 2% 容差）", nOutside === 0, nOutside + (nOutside ? "：" + bad.filter((b) => /超出/.test(b.why)).slice(0, 3).map((b) => b.id + " " + b.why).join("；") : ""));
-ok("所有零件（含真实 CAD 凸分解）的碰撞盒互不重叠（体积和 ≤ 包围盒 × 1.05）", nOver === 0, nOver + (nOver ? "：" + bad.filter((b) => /重叠/.test(b.why)).slice(0, 3).map((b) => b.id + " " + b.why).join("；") : ""));
+ok("所有零件（含真实 CAD 凸分解）的碰撞盒互不重叠（体积和 ≤ 包围盒 × 1.05）", nOver === 0, nOver + (nOver ? "：" + bad.filter((b) => /重叠/.test(b.why)).slice(0, 10).map((b) => b.id + " " + b.why).join("；") : ""));
 // 署名：每个来源在 LICENSES.md 和 CreditsPage 都要出现
 const licMd = fs.readFileSync(path.join(ROOT, "LICENSES.md"), "utf8");
 const credits = fs.readFileSync(path.join(ROOT, "src/pages/CreditsPage.jsx"), "utf8");
