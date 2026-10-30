@@ -114,6 +114,18 @@ for (const g of SMD_PKGS) {
   const m = engine.mountSMD(u, bo.uid);
   ok(m.ok && m.err_mm < 0.1, `用“贴到转接板上”自动摆正：误差 ${m.err_mm?.toFixed(3)} mm`);
 }
+// ⑥ 预设清单“贴片转接板练习”
+{
+  clear();
+  const r = await X.buildFromList(engine, X.PRESETS.smd.text, { run });
+  await run(0.5);
+  const cir = X.buildCircuit(engine); const sol = X.solve(cir);
+  const msgs = X.checks(cir, sol).map((c) => c.msg || c.text || JSON.stringify(c)).join(" | ");
+  const pen = engine.overlapTest();
+  ok(r.fails.length === 0 && engine.parts.size === 9, `预设“贴片转接板练习”：${engine.parts.size} 个零件，无失败步骤`, r.fails.join(" | "));
+  ok(/虚焊/.test(msgs) && /连锡/.test(msgs), "预设里故意留的虚焊 + 连锡被检查面板找到", msgs.slice(0, 200));
+  ok(pen.maxPenetrationMm < 0.1, `预设搭好后不穿模 ${pen.maxPenetrationMm.toFixed(3)} mm`, pen.worstPair?.join("/") || "");
+}
 // ⑤ L298N
 {
   const e = await C.getEntry("p-fp-l298n-ic"); const d = e && C.toDef(e);

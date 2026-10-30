@@ -259,11 +259,23 @@ const BASE = `# 早期原型，简化仿真。每行一个零件；这张清单�
 导线 W8 dupont-mm b23 a1
 导线 W9 dupont-mm b24 a20
 USB U1`;
+// v23（我的补充）：贴片转接板练习——三种贴片芯片先焊到转接板，再按 DIP 插面包板；TSSOP 故意留一个虚焊、一个连锡给检查面板找
+const SMD_LIST = `# 早期原型，简化仿真。贴片芯片 → 转接板 → 面包板
+面包板 BB1 p-breadboard-half 0,-4
+# TSSOP-16（0.65 mm 间距）：转接板两排 15.24 mm，跨中间槽插 b/f 两排；3 脚虚焊、6 脚连锡（演示）
+转接板 U1 kc-tssop-16_4.4x5mm_p0.65mm 1脚=b9 16脚=f9 虚焊=3 连锡=6
+# SOIC-8（1.27 mm）：焊盘外沿 6.9 mm，放不进 7.62 mm 两排之间，所以转接板两排 15.24 mm，插 b/f
+转接板 U2 p-smd-soic-8 1脚=b15 8脚=f15
+# SOT-23（3 脚）：3 脚在 1 脚对面
+转接板 Q1 kc-sot-23 1脚=e20 3脚=f20
+# 0805 电阻：两个焊盘 → 两根针
+转接板 R1 kc-r_0805_2012metric 1脚=e25 2脚=f25`;
 export const PRESETS = {
   electrics: { zh: "电路练习：Pico + LED + 按键 + 电位器 + 舵机", text: BASE.replace("{COLD}", "").replace("{LED}", "g25 g24") },
   fault: { zh: "排错练习：有 1 个虚焊、1 个装反的零件", text: BASE.replace("{COLD}", " 虚焊=20").replace("{LED}", "g24 g25") },
 };
 // 文本清单 → 步骤；每行一个零件。“#” 后面是注释
+PRESETS.smd = { zh: "贴片转接板练习：TSSOP-16 + SOIC-8 + SOT-23 + 0805", text: SMD_LIST };
 export function parseList(text) {
   const steps = [], errors = [];
   text.split(/\r?\n/).forEach((raw, n) => {

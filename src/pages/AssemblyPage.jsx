@@ -16,6 +16,36 @@ import { octoGuide } from "../assembly/octopus/spec.js";
 import JointControls from "../modellab/ui/JointControls.jsx";
 import Tour from "../assembly/ui/Tour.jsx";
 // v11：上传模型（模型 + 功能图工程）放到台面上；v12：有关节时每个刚体组一个刚体 + 关节 / 舵机
+// v23（我的补充）：选中贴片芯片 → “贴到转接板上”（桌上没有同封装的空转接板就放一块在旁边）
+function SmdTools({ sel }) {
+  const P = engine.parts.get(sel);
+  const [msg, setMsg] = useState("");
+  if (!P) return null;
+  const d = P.def;
+  if (d.mountNote) return <p className="border-l-2 border-amber-700 pl-2 text-xs leading-5 text-ink" data-testid="mount-note">{d.mountNote}</p>;
+  if (!d.smdPkg) return null;
+  const mounted = engine.edges.some((e) => (e.a === sel || e.b === sel) && e.why === "smd");
+  const go = async () => {
+    const pk = d.smdPkg;
+    const busy = new Set(engine.edges.filter((e) => e.why === "smd").flatMap((e) => [e.a, e.b]));
+    let bo = [...engine.parts.values()].find((q) => q.def.breakout === pk && !busy.has(q.uid))?.uid;
+    if (!bo) {
+      const wp = engine.worldPose(sel).p;
+      bo = engine.addPart(toDef(await getEntry(`p-bo-${pk}`)), { p: new THREE.Vector3(Math.min(25, wp.x + 4), 0.02, wp.z), q: new THREE.Quaternion() });
+      for (let i = 0; i < 30; i++) engine.update(1 / 120);
+    }
+    const r = engine.mountSMD(sel, bo);
+    setMsg(r.ok ? `已贴到转接板上（对位误差 ${r.err_mm.toFixed(2)} mm）。下一步：选烙铁，在每个焊盘上按住约 1 秒；细间距别停太久，容易连锡。` : r.why);
+  };
+  return (
+    <div className="text-xs leading-5" data-testid="smd-tools">
+      <p className="text-ink-soft">贴片封装 {d.smdPkg.toUpperCase()}：脚太细，不能直接插面包板，要先焊到转接板上（转接板的排针按 2.54 mm 插面包板 / 接杜邦线）。</p>
+      <button type="button" onClick={go} disabled={mounted} className="mt-1 min-h-9 border border-ink px-3 hover:bg-ink hover:text-paper-2 disabled:opacity-50" data-testid="smd-mount">{mounted ? "已在转接板上" : "贴到转接板上"}</button>
+      {msg && <p className="mt-1" role="status">{msg}</p>}
+    </div>
+  );
+}
+
 async function addCustomProject(project, bytes, opts = {}) {
   const { addCustomToBench } = await import("../modellab/benchArtic.js");
   return addCustomToBench(engine, project, bytes, opts);
@@ -80,6 +110,7 @@ export default function AssemblyPage() {
       setReady(true);
       window.__asm = { engine, overlapTest: () => engine.overlapTest(), snapshot: () => engine.snapshot(), build: (t) => buildList(t), addAt: async (id, x, z, y = 0.02) => engine.addPart(toDef(await getEntry(id)), { p: new THREE.Vector3(x, y, z), q: new THREE.Quaternion() }) };
       window.__asm.addCustom = addCustomProject;
+      window.__asm.select = (u) => setSel(u); // v23：测试用
       const cu = params.get("custom");
       if (cu) {
         (async () => {
@@ -280,6 +311,7 @@ export default function AssemblyPage() {
           <ul className="mt-1 list-disc pl-4 text-ink-soft">{ASM_SIMPLIFICATIONS.map((s) => <li key={s}>{s}</li>)}</ul>
         </details>
         {sel && <p className="text-xs text-ink-soft">选中：{engine.parts.get(sel)?.def.name_zh || sel}</p>}
+        {sel && <SmdTools sel={sel} />}
         </div>
       </aside>
     </section>

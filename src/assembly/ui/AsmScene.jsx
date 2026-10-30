@@ -26,7 +26,7 @@ export function pinAt(uid, wp, r = 0.25) {
   let best = null;
   for (const f of engine.worldFeatures(P.body)) {
     if (f.uid !== uid) continue;
-    const k = f.t === "pinhole" ? `p${f.i}` : f.t === "pad" ? `s${f.i}` : f.t === "pin-up" || f.t === "leg" ? `l${f.i}` : null;
+    const k = f.t === "pinhole" ? `p${f.i}` : f.t === "pad" ? `s${f.i}` : f.t === "land" ? `t${f.i}` : f.t === "pin-up" || f.t === "leg" ? `l${f.i}` : null;
     if (!k || !P.def.physPins[k]) continue;
     const d = Math.hypot(f.wp.x - wp.x, f.wp.z - wp.z);
     if (d < r && (!best || d < best.d)) best = { d, k, f };
@@ -64,7 +64,7 @@ function PinHook() {
     };
     window.__pinScreen = (uid, k) => {
       const P = engine.parts.get(uid); if (!P) return null;
-      const f = engine.worldFeatures(P.body).find((f) => f.uid === uid && ((f.t === "pinhole" && "p" + f.i === k) || (f.t === "pad" && "s" + f.i === k) || ((f.t === "pin-up" || f.t === "leg") && "l" + f.i === k)));
+      const f = engine.worldFeatures(P.body).find((f) => f.uid === uid && ((f.t === "pinhole" && "p" + f.i === k) || (f.t === "pad" && "s" + f.i === k) || (f.t === "land" && "t" + f.i === k) || ((f.t === "pin-up" || f.t === "leg") && "l" + f.i === k)));
       if (!f) return null;
       const cands = [f.wp.clone()];
       if (f.t === "pad") { // 贴片焊盘在底面：从上面悬停 → 投到零件顶面，并往零件中心收一点（邮票孔焊盘在边缘）
@@ -77,8 +77,12 @@ function PinHook() {
         const top = (P.def.dims_mm?.y || 3) / 10 - 0.02;
         for (const dy of [top, top / 2, 0.02]) for (const dn of [0.1, 0.18, 0.05, 0]) cands.push(f.wp.clone().add(new THREE.Vector3(0, dy, 0)).add(n.clone().multiplyScalar(dn)));
       }
+      if (f.t === "land") { // 转接板焊盘：中间被芯片脚 / 焊点盖住 → 往外侧（远离板中心）找露出来的那一截
+        const c = engine.worldPose(uid).p, d = f.wp.clone().sub(c).setY(0); const ax = Math.abs(d.x) >= Math.abs(d.z) ? new THREE.Vector3(Math.sign(d.x), 0, 0) : new THREE.Vector3(0, 0, Math.sign(d.z));
+        for (const dn of [0.04, 0.07, 0.1, 0.02]) cands.push(f.wp.clone().add(ax.clone().multiplyScalar(dn)).add(new THREE.Vector3(0, 0.005, 0)));
+      }
       const sps = cands.map(toScreen);
-      const good = sps.find((sp) => hits(uid, k, sp)) || sps[f.t === "pad" ? 1 : 0];
+      const good = sps.find((sp) => hits(uid, k, sp)) || sps[f.t === "pad" || f.t === "land" ? 1 : 0];
       return { x: good.x, y: good.y, checked: sps.some((sp) => hits(uid, k, sp)) };
     };
     return () => { delete window.__pinScreen; };
@@ -133,7 +137,7 @@ function Part({ uid, onDown }) {
         const j = jointOf(q0);
         // 合格：光亮小锥；虚焊：发灰、球状；连锡：拉长到旁边焊盘；烫坏：焦黑
         return (
-          <mesh key={i} position={j.p} material={MAT[j.q === "good" ? "solder" : j.q] || MAT.solder} scale={j.q === "bridge" ? [2.2, 1, 1] : j.q === "cold" ? [1.15, 1.15, 1.15] : [1, 0.8, 1]}>
+          <mesh key={i} position={j.p} material={MAT[j.q === "good" ? "solder" : j.q] || MAT.solder} scale={(j.q === "bridge" ? [2.2, 1, 1] : j.q === "cold" ? [1.15, 1.15, 1.15] : [1, 0.8, 1]).map((v) => v * (j.s || 1))}>
             {j.q === "good" ? <coneGeometry args={[0.07, 0.1, 12]} /> : <sphereGeometry args={[0.065, 10, 8]} />}
           </mesh>
         );
