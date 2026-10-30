@@ -82,3 +82,8 @@ v5 新增的程序零件（同样是本项目自制、CC0）：
 - `src/assembly/octopus/plus/` 里的固件和 md 是在项目所有者提供的 md 基础上改写的（每处标“我的补充”），和 md 原件同样归项目所有者。
 - 引用的事实来自公开数据手册：Espressif ESP32-S3 技术规格书 / DevKitC-1 用户指南、NXP PCA9685 数据手册、XL4015、TP4056 规格书，以及 Nordic UART Service UUID。只引用参数，没有复制文档内容。
 - 编译用 arduino-cli（GPL-3.0）和 arduino-esp32 core（LGPL-2.1），只在本地使用，没有随项目分发。
+
+## v8
+
+- `plus/xiaozhi/stub_compile/` 是本项目写的桩（CC0），用于单独检查 `octopus_mcp.cpp` 能否编译。小智工程（xiaozhi-esp32，MIT）的头文件由 `scripts/fw-compile.sh` 在编译时从上游下载，不收录、不分发。
+- 第 12 节的安全提示：“md / 完善版写到的”引自项目所有者的 md；其余是通用安全常识，标“我的补充”，没有复制任何文档。
