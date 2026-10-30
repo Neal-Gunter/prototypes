@@ -172,6 +172,21 @@ The script uses `window.__wb` test hooks only to find where things are on the sc
   - 电流是估算值。
   - 只做直流层面的电压、电流检查。
 
+## v12：上传模型的关节 + 运动（`/assembly/model` 和装配台，早期原型，简化仿真）
+
+**网址**：https://neal-gunter.github.io/prototypes/assembly/model?demo=arm （内置 2 自由度机械臂）；装配台 `/assembly?custom=demo-arm`。
+
+- **关节**：转动（铰链）、滑动（导轨）、球关节、固定。“加关节”模式：点父模块 → 子模块 → 表面上的铰接点（转轴默认取表面法线）；也可以全用数字填：铰接点（mm）、轴（X / Y / Z 按钮或三个分量）、限位、回中位置。一块只能有一个父关节（树形），会提示双父 / 成环 / 引用不存在。关节存在原始模型坐标里，改单位 / 缩放 / 朝上时跟着走。
+- **舵机**：MG90S（Tower Pro datasheet：1.8 kgf·cm、0.10 s/60° @4.8 V；2.2 kgf·cm、0.08 s/60° @6 V）、SG51R（0.6 kgf·cm、0.1 s/60° @4.8 V，不外推）；自定义电机 / 直线推杆的数字由用户填，标“估算”。马达刚度 / 阻尼 / 转子惯量 / “负载%”是估算。
+- **运动（Rapier）**：每个刚体组一个刚体，关节用 Rapier 原生关节 + 原生限位（`setLimits`），舵机是按 datasheet 速度追目标的力控位置马达；凸包碰撞、摩擦，和地面 / 测试方块 / 其他模块碰撞（关节两侧那一对不算）。每个关节一个滑块 + “测试”扫描；“负载”“堵转 / 被挡住”提示；穿透读数；起始重叠警告。
+- **功能 ↔ 关节**：功能面板勾选关节；运动开着时选中功能 = 播放它的关节，“▶ 播放”会自动打开运动。
+- **姿态 + 时间轴**：存 / 调 / 改名 / 删除姿态；关键帧（时间 + 姿态）线性插值，可循环。
+- **导出 / 导入**：关节、姿态、时间轴、`sim`（固定底座、测试方块位置）都在 `project.json` 里；v11 的工程包照常能导入（没有关节 = 一块）。
+- **装配台**：带关节的工程每个刚体组一个刚体，左侧出现关节面板（滑块、测试、功能、姿态、时间轴）；底座可固定在桌上；删掉其中一块后关节失效并提示。
+- **内置示例**：八爪鱼（8 个偏航关节，SG51R）；2 自由度机械臂（本项目自制，CC0：`public/demo/arm2dof.*`，`node scripts/make-arm-demo.mjs` 生成）。
+- **老实说的限制**：球关节没有马达，摆角限位是自写的软限位；Rapier 限位是软约束（用超过堵转扭矩的力硬扳时会超出几度，测试里 ≤4°）；关节两侧那一对不碰撞；不支持闭环连杆；碰撞是凸包，不是逐三角形；不模拟电流、发热、齿轮间隙；装配台上关节面板只能调用 / 播放，编辑要回模型页。
+- **测试**：`node scripts/artic-test.mjs`（38 项，含限位、速度、碰地堵转、推方块、球关节、滑动、zip 往返、v11 兼容）、`node e2e/artic-bench.mjs`（12 项，装配台）、浏览器走查 `node e2e/artic-lab.mjs`（32 项：3D 里点出关节、数字编辑、滑块、测试、姿态、时间轴推方块、功能播放、导出再导入、装配台关节面板）。`sh scripts/engine-test.sh` 全部包含前两个。
+
 ## v11：模型 + 功能图（`/assembly/model`，早期原型，简化仿真）
 
 上传自己的 3D 模型和一张功能图，把两者结合起来：模型拆成模块，功能图上画热点，功能 ↔ 模块绑定、双向高亮，再把模型放上装配台做碰撞（不穿模）。
@@ -182,7 +197,7 @@ The script uses `window.__wb` test hooks only to find where things are on the sc
 - **模块**：按组 / 网格自动拆、按连通块拆、选网格拆出新模块、移动网格、合并、改名、改色；每个模块的碰撞体（凸包 / 方块）、材料（估算质量）、实测质量。
 - **功能图**：PNG / JPG / SVG（拒绝脚本、事件属性和外链）、PDF 的一页（`pdfjs-dist`，转 PNG）。矩形热点 → 功能（名称、类型、说明、引脚 / 信号）。
 - **结合**：绑定模式（点热点再点模块）或列表勾选；点热点 ↔ 点模块双向高亮；隐藏 / 隔离模块、隔离功能、按模块 / 按功能爆炸；树：功能 → 模块 → 网格。
-- **装配台**：`/assembly?custom=<工程 id>` 或 `?custom=demo`，整个模型一个刚体，每个模块一个碰撞体（`engine.addAssembly` 会把它抬出重叠）。
+- **装配台**：`/assembly?custom=<工程 id>` 或 `?custom=demo`，没有关节时整个模型一个刚体（v12 起有关节时见上），每个模块一个碰撞体（`engine.addAssembly` 会把它抬出重叠）。
 - **内置示例**：v10 八爪鱼（`public/demo/`，本项目自制）：27 个模块、9 个功能，162 × 61 × 162 mm，质量按 v10 质量表 116.8 g（估算）。重做：`npx vite build && npx vite preview --port 4173`，`npx esbuild scripts/gltfx-entry.js --bundle --format=iife --outfile=.tmp/gx.js`，`node scripts/export-demo-glb.mjs`，`node scripts/compress-glb.mjs /tmp/octo-v10-raw.glb public/demo/octo-v10.glb`，`node scripts/make-demo-project.mjs`。
 - **简化（老实说）**：碰撞是凸包 / 方块，不是逐三角形；质量是体积 × 密度估算；绑定只是标签，不做电路仿真；单位靠猜；贴图 / 动画忽略；爆炸图是示意。
 - **测试**：`sh scripts/engine-test.sh`（含 `modellab-test` 33 项、`modellab-engine` 9 项）；浏览器走查 `node e2e/modellab.mjs`（先 `npx vite build && npx vite preview --port 4173`，40 项：GLB / OBJ / STL / STEP + SVG / PNG / PDF 上传、画热点、绑定、拆分 / 合并、隔离 / 爆炸、导出再导入、坏文件、装配台碰撞）。样例在 `e2e/fixtures/v11/`（CC0，`node scripts/make-v11-samples.mjs` 生成）。

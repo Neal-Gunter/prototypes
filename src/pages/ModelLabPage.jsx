@@ -10,13 +10,19 @@ import { emptyProject, exportZip, importZip, newFunction } from "../modellab/pro
 import { deleteProject, listProjects, loadProject, saveProject } from "../modellab/idb.js";
 import { loadDiagramFile, pdfPageToPng } from "../modellab/diagram.js";
 import { loadBuiltinDemo } from "../modellab/demo.js";
+import JointControls from "../modellab/ui/JointControls.jsx";
+import { JOINT_TYPES, DRIVES, addBlock, axisToRaw, benchToRaw, buildGroups, createLabWorld, effLimits, jointToBench, labPenetration, newJoint, unitOf } from "../modellab/artic.js";
 import { LIMITS, MODEL_EXT, extOf, mb } from "../modellab/limits.js";
 
 export const LAB_SIMPLIFICATIONS = [
   "全部在本机浏览器里解析：不上传文件，也不会去下载模型里引用的外部 .bin / 贴图（这种 glTF 会提示改用 GLB）",
   "只读三角网格和颜色；贴图、动画、骨骼、灯光、相机都忽略；NURBS（STEP）按 occt 三角化后的网格算",
   "单位靠猜（glTF 默认米，STL / OBJ 默认毫米，按最长边判断），猜错请手动改；STL / STEP 默认按 Z 朝上",
-  "碰撞形状：每个模块一个凸包（凹进去的地方被填平）或一个轴对齐方块，不是逐三角形；整个模型在装配台上是一个刚体（各模块固定在一起）",
+  "碰撞形状：每个模块一个凸包（凹进去的地方被填平）或一个轴对齐方块，不是逐三角形；没有关节时整个模型是一个刚体，有关节时每个“刚体组”一个刚体",
+  "关节（v12）：转动 / 滑动用 Rapier 原生关节和原生限位（软约束：用超过堵转的力硬扳时可能超出几度）；球关节没有马达，摆角限位是自写的软限位；固定关节把两块并成一个刚体",
+  "关节两侧的两块之间不算碰撞（铰接处本来就贴在一起，否则一动就互相顶开）；其他任意两块之间、和地面 / 测试方块之间都正常碰撞、有摩擦",
+  "舵机：MG90S / SG51R 的堵转扭矩、空载速度、质量取 datasheet（4.8 V / 6 V；SG51R 只有 4.8 V 数据，没外推）；马达刚度、阻尼、转子惯量、“负载%”是估算；不模拟电流、发热、齿轮间隙、死区",
+  "一块只能挂在一个父关节上（树形结构，不支持闭环连杆）；关节点 / 轴存在原始模型坐标里，换单位 / 缩放 / 朝上时跟着模型走",
   "质量 = 体积 × 材料密度（估算）：闭合网格用真实体积，不闭合用凸包体积（偏大）；3D 打印件按实心算；可以直接填实测质量",
   "功能图热点是矩形框；功能 ↔ 模块绑定和引脚标注只是标签，不做电路仿真（八爪鱼示例的电路仿真在装配台的“八爪鱼”页）",
   "自动拆分按组名 / 网格；“按连通块拆”按顶点位置焊接后找连通块，相互接触但不共用顶点的零件不会被合并",
@@ -49,6 +55,15 @@ export default function ModelLabPage() {
   const nav = useNavigate();
   const saveT = useRef(0);
   const anCache = useRef(new Map());
+  // v12：关节 / 运动
+  const [simOn, setSimOn] = useState(false);
+  const [lab, setLab] = useState(null);
+  const [jd, setJd] = useState(null); // 建关节的草稿：{parent, child, point, normal}
+  const [selJoint, setSelJoint] = useState(null);
+  const [newType, setNewType] = useState("revolute");
+  const [blocks, setBlocks] = useState(0);
+  const [showJoints, setShowJoints] = useState(true);
+  const RRef = useRef(null);
 
   const refreshList = () => listProjects().then(setList).catch(() => setList([]));
   const fail = (e) => { console.warn(e); setErr(String(e?.message || e)); setBusy(""); };
@@ -61,14 +76,15 @@ export default function ModelLabPage() {
       anCache.current.clear();
       setProject(p); setAssets(a); setParsed(pr);
       setSelMods(new Set()); setSelFn(null); setSelMeshes(new Set()); setIsolate(null); setPdf(null);
+      setSimOn(false); setJd(null); setSelJoint(null); setBlocks(0);
       setNote(msg || (pr?.warnings?.length ? pr.warnings.join("；") : ""));
       localStorage.setItem("modellab-last", p.id);
     } catch (e) { fail(e); return; }
     setBusy("");
   }
-  async function openDemo() {
+  async function openDemo(name = "octo") {
     setBusy("正在读取内置示例…");
-    try { const d = await loadBuiltinDemo(); await openProject(d.project, d.assets, "内置示例：v10 八爪鱼。点功能图上的框，或点 3D 里的零件试试双向高亮"); } catch (e) { fail(e); }
+    try { const d = await loadBuiltinDemo(name); await openProject(d.project, d.assets, d.msg); } catch (e) { fail(e); }
   }
   async function openSaved(id) {
     try { const r = await loadProject(id); if (!r) throw new Error("本机没有这个工程（可能已删除）"); await openProject(r.project, { model: r.model, diagram: r.diagram }); } catch (e) { fail(e); }
@@ -77,7 +93,7 @@ export default function ModelLabPage() {
     document.title = "模型 + 功能图 · 硬件工作台";
     refreshList();
     const id = params.get("p"), last = localStorage.getItem("modellab-last");
-    if (params.get("demo") != null) openDemo();
+    if (params.get("demo") != null) openDemo(params.get("demo") || "octo");
     else if (id) openSaved(id);
     else if (last) loadProject(last).then((r) => r ? openProject(r.project, { model: r.model, diagram: r.diagram }) : null).catch(() => {});
   }, []);
@@ -184,10 +200,28 @@ export default function ModelLabPage() {
   const hlFns = useMemo(() => new Set([...selMods].flatMap((m) => fnOfMod.get(m) || [])), [selMods, fnOfMod]);
   const visible = useMemo(() => new Set((project?.modules || []).filter((m) => !m.hidden && (!isolate || isolate.ids.includes(m.id))).map((m) => m.id)), [project?.modules, isolate]);
   const offsets = useMemo(() => {
-    if (!project || !X || explode.mode === "none") return new Map();
+    if (!project || !X || explode.mode === "none" || simOn || mode === "joint") return new Map();
     const centers = new Map([...an].filter(([id]) => visible.has(id)).map(([id, a]) => [id, a.center]));
     return explodeOffsets(project, centers, explode.mode, explode.amount * Math.max(X.sizeCm.x, X.sizeCm.z, 4) * 0.6);
-  }, [project?.functions, an, explode, visible, X]);
+  }, [project?.functions, an, explode, visible, X, simOn, mode]);
+  // v12：刚体分组（显示关节错误）和仿真世界（关节 / 模块 / 碰撞体 / 固定底座变了就重建）
+  const groups = useMemo(() => (project ? buildGroups(project) : null), [project?.joints, project?.modules]);
+  const simKey = project && X ? JSON.stringify([project.joints, project.modules.map((m) => [m.id, m.meshes, m.collider, m.material, m.massG]), project.sim, project.model.units, project.model.scale, project.model.upAxis]) : "";
+  useEffect(() => {
+    if (!simOn || !X || !an.size) { setLab(null); return; }
+    let dead = false, made = null;
+    (async () => {
+      if (!RRef.current) { const R = (await import("@dimforge/rapier3d-compat")).default; await R.init(); RRef.current = R; }
+      if (dead) return;
+      try {
+        made = createLabWorld(RRef.current, project, an, X.M, { fixBase: !!project.sim?.fixBase });
+        setLab(made); setBlocks(0);
+        if (made.restOverlaps.length) setNote(`⚠ 起始就重叠的模块（不是关节两端，一开动会互相顶开）：${made.restOverlaps.slice(0, 4).map((o) => `${o.a} × ${o.b} ${o.mm} mm`).join("；")}`);
+      } catch (e) { fail(e); setSimOn(false); }
+    })();
+    return () => { dead = true; if (made) { made.core.stop(); setTimeout(() => { try { made.world.free(); } catch {} }, 100); } };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [simOn, simKey, an.size > 0, parsed]); // 只在关节 / 碰撞相关数据变了时重建（改名、存姿态、编时间轴不重建）
   const diagramUrl = useMemo(() => (assets.diagram ? URL.createObjectURL(assets.diagram) : null), [assets.diagram]);
   useEffect(() => () => diagramUrl && URL.revokeObjectURL(diagramUrl), [diagramUrl]);
   const totalMass = [...an.values()].reduce((s, a) => s + a.massG, 0);
@@ -196,11 +230,20 @@ export default function ModelLabPage() {
 
   // 测试钩子
   useEffect(() => {
-    window.__lab = { project, hl: [...hl], hlFns: [...hlFns], visible: [...visible], selMods: [...selMods], selFn, selMeshes: [...selMeshes], mode, isolate, explode, offsets: offsets.size, size: X ? X.sizeMm.toArray() : null, mass: totalMass, busy, err, meshes: parsed?.meshes.length || 0 };
+    window.__lab = { project, hl: [...hl], hlFns: [...hlFns], visible: [...visible], selMods: [...selMods], selFn, selMeshes: [...selMeshes], mode, isolate, explode, offsets: offsets.size, size: X ? X.sizeMm.toArray() : null, mass: totalMass, busy, err, meshes: parsed?.meshes.length || 0, simOn, sim: !!lab, jd, selJoint, groups: groups ? { n: groups.groups.length, joints: groups.joints.length, errors: groups.errors } : null, blocks };
+    window.__labSim = lab ? { lab, core: lab.core, target: (id, v) => lab.core.setTarget(id, v), value: (id) => lab.core.value(id), stats: () => lab.core.stats(), pen: () => labPenetration(lab), playing: () => lab.core.playing(), block: (i = 0) => { const b = lab.blocks[i]; if (!b) return null; const t = b.rb.translation(); return [t.x, t.y, t.z]; } } : null;
   });
 
   // ---------- 操作 ----------
-  function onPick(mod, mesh, ev) {
+  function onPick(mod, mesh, ev, hit) {
+    if (mode === "joint") {
+      if (!mod) return;
+      if (jd?.reanchor) { if (hit?.point) { updJoint(jd.reanchor, (x) => { x.anchor = benchToRaw(hit.point, X.M).map((t) => +t.toFixed(5)); }); setSelJoint(jd.reanchor); setJd(null); setMode("view"); setNote("铰接点已改"); } return; }
+      if (!jd?.parent) { setJd({ parent: mod }); return; }
+      if (!jd.child) { if (mod === jd.parent) return setNote("子模块不能和父模块是同一个"); setJd({ ...jd, child: mod }); return; }
+      if (hit?.point) addJointAt(jd.parent, jd.child, hit.point, hit.normal);
+      return;
+    }
     if (!mod) { if (mode === "view") { setSelMods(new Set()); setSelFn(null); } return; }
     if (mode === "bind") {
       if (!selFn) return setNote("先在功能图上点一个热点，或在左边的列表里选一个功能，再点模块绑定");
@@ -211,7 +254,39 @@ export default function ModelLabPage() {
     if (ev?.shiftKey || ev?.ctrlKey || ev?.metaKey) setSelMods((s) => { const t = new Set(s); t.has(mod) ? t.delete(mod) : t.add(mod); return t; });
     else { setSelMods(new Set([mod])); setSelFn(null); }
   }
-  const selectFn = (id) => { setSelFn(id); if (mode !== "bind") setSelMods(new Set()); };
+  const selectFn = (id) => {
+    setSelFn(id); if (mode !== "bind") setSelMods(new Set());
+    // v12：运动开着时，选中绑定了关节的功能 = 直接播放这些关节；没开时在功能面板里点“▶ 播放”（会自动打开运动）
+    const f = project?.functions.find((x) => x.id === id);
+    if (f?.joints?.length && lab && mode !== "bind" && mode !== "draw") lab.core.playFunction(f);
+  };
+  const playFn = (f) => { if (lab) lab.core.playFunction(f); else { pendingFn.current = f.id; setSimOn(true); } };
+  const pendingFn = useRef(null);
+  useEffect(() => { if (lab && pendingFn.current) { const f = project.functions.find((x) => x.id === pendingFn.current); pendingFn.current = null; if (f) lab.core.playFunction(f); } }, [lab]);
+  // ---------- 关节 ----------
+  function addJointAt(parent, child, point, normal) {
+    const P = new THREE.Vector3(...(Array.isArray(point) ? point : point.toArray()));
+    let ax = new THREE.Vector3(0, 1, 0);
+    if (newType === "ball" && an.get(child)) ax = an.get(child).center.clone().sub(P).normalize();
+    else if (normal && Math.abs(normal.y) < 0.9) ax = normal.clone().normalize();
+    const j = newJoint(parent, child, benchToRaw(P, X.M), axisToRaw(ax, X.M), project.joints.length, newType);
+    const pn = project.modules.find((m) => m.id === parent)?.name, cn = project.modules.find((m) => m.id === child)?.name;
+    j.name = `${pn} → ${cn}`.slice(0, 40);
+    upd((p) => { p.joints.push(j); });
+    setJd(null); setSelJoint(j.id); setMode("view");
+    setNote(`已建关节“${j.name}”（${JOINT_TYPES[j.type]}）：铰接点 ${P.toArray().map((v) => (v * 10).toFixed(1)).join(", ")} mm。右边可以改轴、限位、驱动；打开“运动”试试`);
+    return j.id;
+  }
+  const updJoint = (id, f) => upd((p) => { const j = p.joints.find((x) => x.id === id); if (j) f(j); });
+  const delJoint = (id) => { upd((p) => { p.joints = p.joints.filter((j) => j.id !== id); p.functions.forEach((f) => { f.joints = (f.joints || []).filter((x) => x !== id); }); p.poses.forEach((q) => { delete q.values[id]; }); }); setSelJoint(null); };
+  const savePose = (values) => upd((p) => { p.poses.push({ id: newId("ps"), name: `姿态 ${p.poses.length + 1}`, values }); });
+  const dropBlock = () => {
+    if (!lab) return;
+    const raw = project.sim?.block;
+    const p = raw ? new THREE.Vector3(...raw).applyMatrix4(X.M) : new THREE.Vector3(X.sizeCm.x / 2 + 2, 0, 0);
+    addBlock(RRef.current, lab, [p.x, Math.max(1.02, p.y), p.z]);
+    setBlocks(lab.blocks.length);
+  };
   function onDraw(r) {
     const reg = { x: +r.x.toFixed(4), y: +r.y.toFixed(4), w: +r.w.toFixed(4), h: +r.h.toFixed(4) };
     const has = project.functions.some((x) => x.id === selFn);
@@ -291,6 +366,103 @@ export default function ModelLabPage() {
       <button className="text-xs text-ink-soft" onClick={() => updMod(m.id, (x) => { x.hidden = !x.hidden; })} aria-label={m.hidden ? "显示" : "隐藏"} data-testid="eye">{m.hidden ? "◌" : "●"}</button>
     </div>
   );
+  const jdHl = mode === "joint" && jd ? new Set([jd.parent, jd.child].filter(Boolean)) : null;
+  // v12：关节面板（列表 + 编辑 + 运动开关 + 运行控制）
+  const JointsPanel = () => {
+    const js = project.joints, jSel = js.find((j) => j.id === selJoint);
+    const mods = project.modules;
+    const num = "w-16 border border-line bg-white px-1";
+    const Ed = () => {
+      const j = jSel; if (!j) return null;
+      const b = jointToBench(j, X.M), pmm = b.p.clone().multiplyScalar(10), L = effLimits(j), u = unitOf(j.type);
+      const setP = (i, v) => updJoint(j.id, (x) => { const q = pmm.clone(); q.setComponent(i, v); x.anchor = benchToRaw(q.multiplyScalar(0.1), X.M).map((t) => +t.toFixed(5)); });
+      const setA = (v) => { const a = new THREE.Vector3(...v); if (a.lengthSq() < 1e-9) return; a.normalize(); updJoint(j.id, (x) => { x.axis = axisToRaw(a, X.M).map((t) => +t.toFixed(5)); }); };
+      const kinds = j.type === "revolute" ? ["none", "sg51r", "mg90s", "custom"] : j.type === "prismatic" ? ["none", "linear"] : ["none"];
+      const D = DRIVES[j.drive?.preset] || DRIVES.none;
+      return (
+        <div className="mt-2 border border-copper bg-white p-2 text-xs" data-testid="joint-editor">
+          <div className="flex flex-wrap items-center gap-1">
+            <input aria-label="关节名" data-testid="joint-name" className="min-w-0 flex-1 border border-line px-1" value={j.name} onChange={(e) => updJoint(j.id, (x) => { x.name = e.target.value.slice(0, 40); })} />
+            <select aria-label="关节类型" data-testid="joint-type" className="border border-line bg-white" value={j.type} onChange={(e) => updJoint(j.id, (x) => {
+              x.type = e.target.value; const d = newJoint(x.parent, x.child, x.anchor, x.axis, 0, x.type); x.limits = d.limits; x.home = 0;
+              x.drive = { ...x.drive, preset: x.type === "revolute" ? (["sg51r", "mg90s", "custom"].includes(x.drive.preset) ? x.drive.preset : "sg51r") : x.type === "prismatic" ? "linear" : "none" };
+              if (x.type === "ball" && an.get(x.child)) x.axis = axisToRaw(an.get(x.child).center.clone().sub(b.p).normalize(), X.M);
+            })}>{Object.entries(JOINT_TYPES).map(([k, zh]) => <option key={k} value={k}>{zh}</option>)}</select>
+            <button className={btn} data-testid="joint-del" onClick={() => delJoint(j.id)}>删除关节</button>
+          </div>
+          <div className="mt-1 flex flex-wrap gap-2">
+            <label>父 <select className="max-w-32 border border-line bg-white" value={j.parent} onChange={(e) => updJoint(j.id, (x) => { x.parent = e.target.value; })}>{mods.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></label>
+            <label>子 <select className="max-w-32 border border-line bg-white" value={j.child} onChange={(e) => updJoint(j.id, (x) => { x.child = e.target.value; })}>{mods.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></label>
+          </div>
+          <div className="mt-1 flex flex-wrap items-center gap-1">铰接点（mm，装配台坐标）
+            {["x", "y", "z"].map((k, i) => <input key={k} aria-label={`铰接点 ${k}`} data-testid={`anchor-${k}`} type="number" step="0.5" className={num} value={+pmm.getComponent(i).toFixed(2)} onChange={(e) => e.target.value !== "" && setP(i, +e.target.value)} />)}
+            <button className={btn} data-testid="reanchor" onClick={() => { setSimOn(false); setMode("joint"); setJd({ parent: j.parent, child: j.child, reanchor: j.id }); }}>在 3D 里重点</button>
+          </div>
+          {j.type !== "fixed" && <div className="mt-1 flex flex-wrap items-center gap-1">{j.type === "ball" ? "中心轴（摆角从这根轴量）" : j.type === "prismatic" ? "滑动方向" : "转轴"}
+            {["x", "y", "z"].map((k, i) => <input key={k} aria-label={`轴 ${k}`} data-testid={`axis-${k}`} type="number" step="0.1" className="w-14 border border-line bg-white px-1" value={+b.axis.getComponent(i).toFixed(3)} onChange={(e) => { if (e.target.value === "") return; const a = b.axis.toArray(); a[i] = +e.target.value; setA(a); }} />)}
+            {[["X", [1, 0, 0]], ["Y", [0, 1, 0]], ["Z", [0, 0, 1]]].map(([k, v]) => <button key={k} className={btn} data-testid={`axis-btn-${k}`} onClick={() => setA(v)}>{k}</button>)}
+            <button className={btn} onClick={() => setA(b.axis.clone().negate().toArray())}>反向</button>
+          </div>}
+          {j.type !== "fixed" && <div className="mt-1 flex flex-wrap items-center gap-1">
+            {j.type === "ball" ? <>摆角上限 <input aria-label="摆角上限" data-testid="lim-max" type="number" className={num} value={j.limits.max} onChange={(e) => updJoint(j.id, (x) => { x.limits.max = Math.max(1, Math.min(170, +e.target.value || 1)); })} />°</> : <>
+              限位 <input aria-label="限位下限" data-testid="lim-min" type="number" className={num} value={j.limits.min} onChange={(e) => updJoint(j.id, (x) => { x.limits.min = +e.target.value || 0; })} />…<input aria-label="限位上限" data-testid="lim-max" type="number" className={num} value={j.limits.max} onChange={(e) => updJoint(j.id, (x) => { x.limits.max = +e.target.value || 0; })} />{u}
+              · 回中位置 <input aria-label="回中位置" type="number" className={num} value={j.home} onChange={(e) => updJoint(j.id, (x) => { x.home = +e.target.value || 0; })} />{u}
+              {(L.min !== j.limits.min || L.max !== j.limits.max) && <span className="text-mark">实际用 {L.min}…{L.max}{u}</span>}</>}
+          </div>}
+          {L.notes.length > 0 && <p className="text-mark">{L.notes.join("；")}</p>}
+          {j.type !== "fixed" && <div className="mt-1 flex flex-wrap items-center gap-1">驱动 <select aria-label="驱动" data-testid="joint-drive" className="border border-line bg-white" value={j.drive.preset} onChange={(e) => updJoint(j.id, (x) => { x.drive.preset = e.target.value; })}>{kinds.map((k) => <option key={k} value={k}>{DRIVES[k].zh}</option>)}</select>
+            {D.volts?.length > 1 && <label>电压 <select aria-label="电压" data-testid="joint-volt" className="border border-line bg-white" value={j.drive.volt} onChange={(e) => updJoint(j.id, (x) => { x.drive.volt = +e.target.value; })}>{D.volts.map((v) => <option key={v} value={v}>{v} V</option>)}</select></label>}
+            {j.drive.preset === "custom" && <>扭矩 <input aria-label="扭矩" type="number" step="0.1" className={num} value={j.drive.torque} onChange={(e) => updJoint(j.id, (x) => { x.drive.torque = +e.target.value; })} />kgf·cm 速度 <input aria-label="速度" type="number" className={num} value={j.drive.speed} onChange={(e) => updJoint(j.id, (x) => { x.drive.speed = +e.target.value; })} />°/s（估算）</>}
+            {j.drive.preset === "linear" && <>推力 <input aria-label="推力" type="number" step="0.5" className={num} value={j.drive.forceN} onChange={(e) => updJoint(j.id, (x) => { x.drive.forceN = +e.target.value; })} />N 速度 <input aria-label="速度" type="number" className={num} value={j.drive.speedMm} onChange={(e) => updJoint(j.id, (x) => { x.drive.speedMm = +e.target.value; })} />mm/s（估算）</>}
+          </div>}
+          {D.src && <p className="mt-0.5 text-ink-soft" data-testid="drive-src">数据来源：{D.src}{D.note ? `；${D.note}` : ""}{D.est?.length ? `；估算：${D.est.join("，")}` : ""}</p>}
+        </div>
+      );
+    };
+    return (
+      <div className="mt-2 border border-line bg-paper-2 p-2 text-sm" data-testid="joints-panel">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="font-medium">关节与运动</span><span className="text-xs text-ink-soft">{js.length} 个关节 · {groups?.groups.length || 0} 个刚体组</span>
+          <button className={simOn ? btnOn : btn} data-testid="sim-toggle" disabled={mode === "joint"} onClick={() => setSimOn(!simOn)}>{simOn ? (lab ? "■ 停止运动" : "启动中…") : "▶ 运动（物理仿真）"}</button>
+          <label className="flex items-center gap-1 text-xs"><input type="checkbox" data-testid="fix-base" checked={!!project.sim?.fixBase} onChange={(e) => upd((p) => { p.sim.fixBase = e.target.checked; })} />底座固定在桌上</label>
+          <button className={btn} data-testid="drop-block" disabled={!lab} onClick={dropBlock}>放测试方块</button>
+          <label className="flex items-center gap-1 text-xs"><input type="checkbox" checked={showJoints} onChange={(e) => setShowJoints(e.target.checked)} />显示关节标记</label>
+        </div>
+        <div className="mt-1 flex flex-wrap items-center gap-1 text-xs">新关节类型 <select aria-label="新关节类型" data-testid="new-joint-type" className="border border-line bg-white" value={newType} onChange={(e) => setNewType(e.target.value)}>{Object.entries(JOINT_TYPES).map(([k, zh]) => <option key={k} value={k}>{zh}</option>)}</select>
+          <button className={btn} data-testid="add-joint" onClick={() => { setSimOn(false); setMode("joint"); setJd(null); }}>+ 在 3D 里加关节</button>
+          <button className={btn} data-testid="add-joint-num" disabled={mods.length < 2} onClick={() => { const pa = selMods.size === 2 ? [...selMods] : [mods[0].id, mods[1].id]; const c = an.get(pa[1])?.center || new THREE.Vector3(); setMode("view"); addJointAt(pa[0], pa[1], c.toArray(), null); }}>+ 用数字加（{selMods.size === 2 ? "选中的两块" : "前两块"}，再改数）</button>
+        </div>
+        {groups?.errors.length > 0 && <ul className="mt-1 text-xs text-mark" data-testid="joint-errors">{groups.errors.map((e) => <li key={e}>⚠ {e}</li>)}</ul>}
+        {js.length > 0 && <ul className="mt-1 flex flex-wrap gap-1 text-xs">{js.map((j) => <li key={j.id}><button data-testid={`joint-${j.id}`} className={(selJoint === j.id ? btnOn : btn)} onClick={() => setSelJoint(selJoint === j.id ? null : j.id)}>{j.name} · {JOINT_TYPES[j.type].slice(0, 2)}</button></li>)}</ul>}
+        {Ed()}
+        {lab && <div className="mt-2"><JointControls core={lab.core} project={project} pen={() => labPenetration(lab)} onSavePose={savePose} /></div>}
+        {lab && project.poses.length > 0 && TimelineEd()}
+        {!lab && js.length > 0 && <p className="mt-1 text-xs text-ink-soft">打开“运动”后：每个关节一个滑块和“测试”按钮，可以存姿态、编时间轴、放测试方块看能不能推动。</p>}
+        {!js.length && <p className="mt-1 text-xs text-ink-soft">还没有关节：整个模型是一块。点“+ 在 3D 里加关节”，依次点父模块、子模块、表面上的铰接点；转轴默认取点到的表面法线（太接近竖直时取 Y），之后可改。</p>}
+      </div>
+    );
+  };
+  const TimelineEd = () => {
+    const keys = project.timeline.keys;
+    return (
+      <div className="mt-2 border border-line bg-white p-2 text-xs" data-testid="timeline-ed">
+        <div className="flex flex-wrap items-center gap-1"><span className="font-medium">时间轴关键帧</span>
+          <label className="flex items-center gap-0.5"><input type="checkbox" checked={project.timeline.loop} onChange={(e) => upd((p) => { p.timeline.loop = e.target.checked; })} />循环</label>
+          <button className={btn} data-testid="add-key" onClick={() => upd((p) => { const k = p.timeline.keys; k.push({ t: k.length ? +(k[k.length - 1].t + 1).toFixed(2) : 0, pose: p.poses[p.poses.length - 1].id }); })}>+ 关键帧</button>
+          <button className={btn} onClick={() => upd((p) => { p.timeline.keys = []; })}>清空</button></div>
+        <ul className="mt-1 space-y-0.5">{keys.map((k, i) => (
+          <li key={i} className="flex items-center gap-1">
+            <input aria-label="时间" type="number" step="0.1" min="0" className="w-16 border border-line px-1" value={k.t} onChange={(e) => upd((p) => { p.timeline.keys[i].t = Math.max(0, +e.target.value || 0); p.timeline.keys.sort((a, b) => a.t - b.t); })} />s
+            <select aria-label="姿态" className="border border-line bg-white" value={k.pose} onChange={(e) => upd((p) => { p.timeline.keys[i].pose = e.target.value; })}>{project.poses.map((q) => <option key={q.id} value={q.id}>{q.name}</option>)}</select>
+            <button onClick={() => upd((p) => { p.timeline.keys.splice(i, 1); })} aria-label="删除关键帧">×</button>
+          </li>))}</ul>
+        <details className="mt-1"><summary className="cursor-pointer">姿态改名 / 删除（{project.poses.length}）</summary>
+          <ul>{project.poses.map((q, i) => <li key={q.id} className="flex gap-1"><input aria-label="姿态名" className="min-w-0 flex-1 border border-line px-1" value={q.name} onChange={(e) => upd((p) => { p.poses[i].name = e.target.value.slice(0, 30); })} />
+            <button onClick={() => upd((p) => { p.poses.splice(i, 1); p.timeline.keys = p.timeline.keys.filter((k) => k.pose !== q.id); })} aria-label="删除姿态">×</button></li>)}</ul></details>
+        <p className="mt-0.5 text-ink-soft">关键帧之间线性插值目标角度；舵机按 datasheet 速度追，追不上就落后（这是真实效果）。</p>
+      </div>
+    );
+  };
   const Meshes = ({ m }) => (
     <details className="ml-6 text-xs">
       <summary className="cursor-pointer text-ink-soft">{m.meshes.length} 个网格</summary>
@@ -317,7 +489,8 @@ export default function ModelLabPage() {
           {list.filter((r) => r.id !== project?.id).map((r) => <option key={r.id} value={r.id}>{r.name}（{r.mods} 模块 · {r.fns} 功能）</option>)}
         </select>
         <button className={btn} onClick={newBlank}>新建</button>
-        <button className={btn} data-testid="load-demo" onClick={openDemo}>内置示例：八爪鱼</button>
+        <button className={btn} data-testid="load-demo" onClick={() => openDemo("octo")}>内置示例：八爪鱼</button>
+        <button className={btn} data-testid="load-demo-arm" onClick={() => openDemo("arm")}>内置示例：机械臂</button>
         <label className={btn + " inline-flex cursor-pointer items-center"}>导入工程 .zip<input data-testid="import-input" type="file" accept=".zip,application/zip" className="sr-only" onChange={(e) => { onImport(e.target.files[0]); e.target.value = ""; }} /></label>
         <button className={btn} data-testid="export" disabled={!project} onClick={onExport}>导出工程 .zip</button>
         <button className={btn} data-testid="to-bench" disabled={!parsed || !project?.modules.length} onClick={toBench}>放到装配台 →</button>
@@ -331,8 +504,8 @@ export default function ModelLabPage() {
         <label className={btn + " inline-flex cursor-pointer items-center"}>② 上传功能图<input data-testid="diagram-input" type="file" accept=".png,.jpg,.jpeg,.svg,.pdf" className="sr-only" onChange={(e) => { onDiagramFile(e.target.files[0]); e.target.value = ""; }} /></label>
         <span className="text-xs text-ink-soft">PNG / JPG / SVG ≤ {mb(LIMITS.imageBytes)}，PDF ≤ {mb(LIMITS.pdfBytes)}（选一页）</span>
         <span className="mx-1 h-6 w-px bg-line" />
-        {[["view", "查看"], ["bind", "绑定：点功能再点模块"], ["mesh", "选网格（拆分）"], ["draw", "画热点框"]].map(([k, zh]) => (
-          <button key={k} data-testid={`mode-${k}`} className={mode === k ? btnOn : btn} onClick={() => setMode(k)}>{zh}</button>
+        {[["view", "查看"], ["bind", "绑定：点功能再点模块"], ["mesh", "选网格（拆分）"], ["draw", "画热点框"], ["joint", "加关节：父 → 子 → 铰接点"]].map(([k, zh]) => (
+          <button key={k} data-testid={`mode-${k}`} className={mode === k ? btnOn : btn} onClick={() => { setMode(k); setJd(null); if (k === "joint") setSimOn(false); }}>{zh}</button>
         ))}
       </div>
       {busy && <p className="mt-2 border border-line bg-white p-2 text-sm" role="status">{busy}</p>}
@@ -342,7 +515,7 @@ export default function ModelLabPage() {
       {!project && !busy && (
         <div className="mt-6 border border-dashed border-line bg-paper-2 p-6 text-sm">
           <p className="font-medium">还没有打开工程。</p>
-          <p className="mt-1">上传自己的 3D 模型（会按组名 / 网格自动拆成模块）和一张功能图（框图、原理图截图、PDF 某页），把“功能”框在图上，再绑定到模型的模块。也可以先看看 <button className="underline" onClick={openDemo}>内置的八爪鱼示例</button>。</p>
+          <p className="mt-1">上传自己的 3D 模型（会按组名 / 网格自动拆成模块）和一张功能图（框图、原理图截图、PDF 某页），把“功能”框在图上，再绑定到模型的模块。也可以先看看 <button className="underline" onClick={() => openDemo("octo")}>内置的八爪鱼示例</button>，或带关节的 <button className="underline" onClick={() => openDemo("arm")}>2 自由度机械臂</button>。</p>
         </div>
       )}
 
@@ -396,12 +569,14 @@ export default function ModelLabPage() {
             {isolate && <p className="mt-1 text-xs" data-testid="isolate-note">正在隔离：{isolate.zh}（{isolate.ids.length} 个模块） <button className="underline" onClick={() => setIsolate(null)}>取消隔离</button></p>}
             <div className="relative mt-1 h-[58vh] min-h-[360px] border border-line bg-paper-2" data-testid="viewer">
               {parsed && X ? (
-                <LabScene meshes={parsed.meshes} M={X.M} project={project} modOf={modOf} visible={visible} hl={hl} selMeshes={selMeshes} offsets={offsets} sizeCm={X.sizeCm} showCard={showCard} onPick={onPick} wire={wire} />
+                <LabScene meshes={parsed.meshes} M={X.M} project={project} modOf={modOf} visible={visible} hl={jdHl || hl} selMeshes={selMeshes} offsets={offsets} sizeCm={X.sizeCm} showCard={showCard} onPick={onPick} wire={wire}
+                  lab={lab} joints={project.joints} showJoints={showJoints} selJoint={selJoint} onJoint={(id) => setSelJoint(id)} blocks={blocks} />
               ) : (
                 <div className="flex h-full items-center justify-center p-6 text-center text-sm text-ink-soft">还没有 3D 模型。点“① 上传 3D 模型”（只在本机解析）</div>
               )}
-              {mode !== "view" && <div className="pointer-events-none absolute left-2 top-2 bg-white/90 px-2 py-1 text-xs">{mode === "bind" ? (fnSel ? `绑定到“${fnSel.name}”：点模块 = 加入 / 移出` : "先点功能图上的热点或左边的功能") : mode === "mesh" ? `已选 ${selMeshes.size} 个网格（点网格切换）` : "在右边功能图上拖框"}</div>}
+              {mode !== "view" && <div className="pointer-events-none absolute left-2 top-2 bg-white/90 px-2 py-1 text-xs" data-testid="mode-hint">{mode === "joint" ? (jd?.reanchor ? "点模型表面 = 新的铰接点" : !jd?.parent ? "① 点父模块（不动的那块，比如底座）" : !jd.child ? "② 点子模块（会动的那块）" : `③ 点表面上的铰接点（新关节类型：${JOINT_TYPES[newType]}）`) : mode === "bind" ? (fnSel ? `绑定到“${fnSel.name}”：点模块 = 加入 / 移出` : "先点功能图上的热点或左边的功能") : mode === "mesh" ? `已选 ${selMeshes.size} 个网格（点网格切换）` : "在右边功能图上拖框"}</div>}
             </div>
+            {parsed && X && JointsPanel()}
             {parsed && X && (
               <div className="mt-2 grid gap-2 border border-line bg-paper-2 p-2 text-sm sm:grid-cols-2" data-testid="size-panel">
                 <div>
@@ -467,6 +642,9 @@ export default function ModelLabPage() {
                     </li>))}</ul>
                   <button className="mt-1 text-xs underline" data-testid="add-pin" onClick={() => updFn(fnSel.id, (f) => { f.pins.push({ label: `P${f.pins.length + 1}`, signal: "" }); })}>+ 引脚</button>
                 </details>
+                {project.joints.length > 0 && <div className="mt-1 text-xs" data-testid="fn-joints"><span className="font-medium">绑定关节（选中这个功能 = 播放这些关节）：</span>{project.joints.filter((j) => j.type !== "fixed").map((j) => (
+                  <label key={j.id} className="mr-2 inline-flex items-center gap-0.5"><input type="checkbox" data-testid={`fn-joint-${j.id}`} checked={(fnSel.joints || []).includes(j.id)} onChange={() => updFn(fnSel.id, (f) => { const a = f.joints || []; f.joints = a.includes(j.id) ? a.filter((x) => x !== j.id) : [...a, j.id]; })} />{j.name}</label>))}
+                  {(fnSel.joints || []).length > 0 && <button className={btn + " ml-1"} data-testid="fn-play" onClick={() => playFn(fnSel)}>▶ 播放{lab ? "" : "（打开运动）"}</button>}</div>}
                 <details className="mt-1">
                   <summary className="cursor-pointer text-xs font-medium">从列表里选模块</summary>
                   <ul className="mt-1 max-h-40 overflow-auto text-xs">{project.modules.map((m) => (

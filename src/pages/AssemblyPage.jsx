@@ -12,14 +12,11 @@ import { PRESETS, buildFromList, parseList } from "../assembly/builder.js";
 import { makeGuide } from "../assembly/guide.js";
 import OctoPanel, { octoDetach, octoSim } from "../assembly/ui/OctoPanel.jsx";
 import { octoGuide } from "../assembly/octopus/spec.js";
-// v11：上传模型（模型 + 功能图工程）放到台面上
-async function addCustomProject(project, bytes, { x = 0, z = 0, y = 1 } = {}) {
-  const { engineFromProject } = await import("../modellab/workspace.js");
-  const key = `${project.id}-${Date.now().toString(36)}`;
-  const { defs } = await engineFromProject(project, bytes, key);
-  if (!defs.length) throw new Error("这个工程没有可用的模块");
-  const uids = engine.addAssembly(defs.map((d) => ({ def: d, p: new THREE.Vector3(x, y, z), q: new THREE.Quaternion(), label: d.name_zh })), { why: `上传模型“${project.name}”（各模块固定在一起）` });
-  return { uids, defs };
+import JointControls from "../modellab/ui/JointControls.jsx";
+// v11：上传模型（模型 + 功能图工程）放到台面上；v12：有关节时每个刚体组一个刚体 + 关节 / 舵机
+async function addCustomProject(project, bytes, opts = {}) {
+  const { addCustomToBench } = await import("../modellab/benchArtic.js");
+  return addCustomToBench(engine, project, bytes, opts);
 }
 
 export const ASM_SIMPLIFICATIONS = [
@@ -33,6 +30,7 @@ export const ASM_SIMPLIFICATIONS = [
   "焊接只判断“烙铁下面有穿过针脚的焊盘孔 + 按住时间”，有没有助焊剂只改变所需时间；焊点质量（合格 / 虚焊 / 连锡 / 烫坏）由按住时间、助焊剂和邻近焊盘决定，是规则判断，不是热仿真",
   "通电：台面上真实的插接和焊点 → 网表 → 直流电阻网络求解（LED 用分段线性模型，舵机按 PWM 信号直接给角度），不模拟瞬态、电容、芯片内部",
   "固件由 JS 迷你解释器运行（Arduino 风格子集），不是真实 RP2040 / ESP32 仿真；舵机转动只改画面，不推动刚体",
+  "上传模型（v12）：有关节的工程每个刚体组一个刚体，关节用 Rapier 原生关节 + 力控位置马达（MG90S / SG51R 取 datasheet，其他估算）；关节两侧那一对不互相碰撞，和台面、其他零件正常碰撞；整组用“删除”去掉一块时，相连关节一起失效",
   "八爪鱼：md 的 C++ 固件逐行移植成 JS（协程代替 FreeRTOS 任务），I2C 写到寄存器级的 PCA9685 替身；语音、大模型、WiFi / 蓝牙都是模拟",
   "八爪鱼：电压 / 电流 / 掉电复位是估算模型；桌面爬行用二维库仑摩擦估算，3D 机身不跟着走（位移看俯视轨迹）；预设整只装好，触手之间用夹角判断碰撞",
 ];
@@ -59,6 +57,7 @@ export default function AssemblyPage() {
   const [listText, setListText] = useState(PRESETS.electrics.text);
   const [listErr, setListErr] = useState([]);
   const [customMsg, setCustomMsg] = useState(null);
+  const [artic, setArtic] = useState(null);
   const [params] = useSearchParams();
   const nav = useNavigate();
   const lastList = useRef(null);
@@ -83,11 +82,16 @@ export default function AssemblyPage() {
         (async () => {
           try {
             let pj, bytes;
-            if (cu === "demo") { const { loadBuiltinDemo } = await import("../modellab/demo.js"); const d = await loadBuiltinDemo(); pj = d.project; bytes = d.assets.model; }
+            if (cu === "demo" || cu.startsWith("demo-")) { const { loadBuiltinDemo } = await import("../modellab/demo.js"); const d = await loadBuiltinDemo(cu === "demo" ? "octo" : cu.slice(5)); pj = d.project; bytes = d.assets.model; }
             else { const { loadProject } = await import("../modellab/idb.js"); const r = await loadProject(cu); if (!r?.model) throw new Error("本机浏览器里找不到这个工程（或它没有模型）"); pj = r.project; bytes = r.model; }
-            const { uids } = await addCustomProject(pj, bytes);
-            setCustomMsg({ ok: true, text: `已放入上传模型“${pj.name}”：${uids.length} 个模块组成一个刚体，参与碰撞、不穿模（凸包 / 方块近似）`, id: cu });
-            window.__asmCustom = { parts: uids.length, name: pj.name };
+            const r = await addCustomProject(pj, bytes);
+            const { uids } = r;
+            if (r.core) {
+              setArtic({ core: r.core, project: r.project });
+              setCustomMsg({ ok: true, text: `已放入上传模型“${pj.name}”：${uids.length} 个模块、${r.G.groups.length} 个刚体组、${r.G.joints.length} 个关节${pj.sim?.fixBase ? "（底座固定在桌上）" : ""}；参与碰撞、不穿模（凸包 / 方块近似）。关节控制在下面`, id: cu });
+              window.__asmArtic = r.core;
+            } else setCustomMsg({ ok: true, text: `已放入上传模型“${pj.name}”：${uids.length} 个模块组成一个刚体，参与碰撞、不穿模（凸包 / 方块近似）`, id: cu });
+            window.__asmCustom = { parts: uids.length, name: pj.name, groups: r.G?.groups.length || 1, joints: r.G?.joints.length || 0 };
           } catch (e) { setCustomMsg({ ok: false, text: "上传模型放不进来：" + (e?.message || e) }); window.__asmCustom = { error: String(e?.message || e) }; }
         })();
       }
@@ -181,17 +185,24 @@ export default function AssemblyPage() {
 
   return (
     <section className="flex flex-col gap-3 px-3 py-3 lg:h-[calc(100vh-7.5rem)] lg:flex-row" data-testid="assembly">
-      <aside className="flex min-h-0 flex-col gap-2 lg:w-80">
+      <aside className="flex min-h-0 flex-col gap-2 overflow-y-auto lg:w-80">
         <h1 className="text-xl font-medium">装配台 <span className="ml-1 border border-copper px-1.5 py-0.5 align-middle text-xs text-copper">早期原型，简化仿真</span></h1>
         <p className="text-xs leading-5 text-ink-soft">零件有真实尺寸（毫米），由 Rapier 刚体引擎做碰撞：零件不会互相穿过去，拖着的零件会被挡住或推开别的零件。</p>
         <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={flip} onChange={(e) => setFlip(e.target.checked)} />排针翻面放（长针朝下，用来插面包板）</label>
-        <div className="border border-line bg-white p-2 text-xs leading-5">
+        <div className="shrink-0 border border-line bg-white p-2 text-xs leading-5">
           <Link to="/assembly/model" className="font-medium underline">上传自己的 3D 模型 + 功能图 →</Link>
           <span className="text-ink-soft">（拆模块、绑定功能，再放到这里做碰撞）</span>
-          {customMsg && <p data-testid="custom-msg" className={customMsg.ok ? "mt-1" : "mt-1 text-mark"}>{customMsg.text}{customMsg.id && <> · <Link className="underline" to={customMsg.id === "demo" ? "/assembly/model?demo" : `/assembly/model?p=${encodeURIComponent(customMsg.id)}`}>回去编辑</Link></>}</p>}
+          {customMsg && <p data-testid="custom-msg" className={customMsg.ok ? "mt-1" : "mt-1 text-mark"}>{customMsg.text}{customMsg.id && <> · <Link className="underline" to={customMsg.id.startsWith("demo") ? `/assembly/model?demo${customMsg.id === "demo" ? "" : "=" + customMsg.id.slice(5)}` : `/assembly/model?p=${encodeURIComponent(customMsg.id)}`}>回去编辑</Link></>}</p>}
         </div>
+        {artic && (
+          <div className="max-h-[38vh] shrink-0 overflow-auto border border-line bg-white p-2" data-testid="bench-joints">
+            <div className="mb-1 text-xs font-medium">上传模型的关节：{artic.project.name}</div>
+            <JointControls core={artic.core} project={artic.project} compact />
+            <button className="mt-1 text-xs underline" onClick={() => setArtic(null)}>收起</button>
+          </div>
+        )}
         <PartsBrowser compact onAdd={add} onPick={setSel} />
-        <Link to="/parts" className="text-xs underline">打开完整零件库（看尺寸、孔位、许可）</Link>
+        <Link to="/parts" className="shrink-0 text-xs underline">打开完整零件库（看尺寸、孔位、许可）</Link>
       </aside>
       <div className="relative min-h-[60vh] flex-1 border border-line bg-paper-2">
         {ready ? <AsmScene uids={uids} tool={tool} debug={debug} flux={flux} vis={vis} onTick={onTick} onSelect={setSel} probes={probes} onProbe={(k, t) => setProbes((p) => ({ ...p, [k]: t }))} /> : <p className="p-6 text-ink-soft">正在加载物理引擎…</p>}

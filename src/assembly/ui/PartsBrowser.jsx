@@ -45,7 +45,7 @@ export default function PartsBrowser({ onAdd, compact = false, onPick }) {
   const limit = compact ? 60 : 300;
   if (!idx) return <p className="text-sm text-ink-soft">正在加载零件目录…</p>;
   return (
-    <div className="flex min-h-0 flex-col gap-2" data-testid="parts-browser">
+    <div className={`flex min-h-0 flex-col gap-2 ${compact ? "shrink-0" : ""}`} data-testid="parts-browser">
       <label className="text-sm">
         <span className="sr-only">搜索零件</span>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="搜索：pico、舵机、M3、排针、OLED…" className="w-full border border-line bg-white px-2 py-1.5 text-sm" data-testid="parts-search" />
@@ -65,7 +65,7 @@ export default function PartsBrowser({ onAdd, compact = false, onPick }) {
         </select>
       </div>
       <p className="text-xs text-ink-soft">找到 {list.length} 个{list.length > limit ? `，先显示前 ${limit} 个` : ""}。尺寸为 长 × 宽 × 高。</p>
-      <ul className={`min-h-0 flex-1 divide-y divide-line overflow-y-auto border border-line bg-white ${compact ? "max-h-[46vh]" : ""}`}>
+      <ul className={`min-h-0 flex-1 divide-y divide-line overflow-y-auto border border-line bg-white ${compact ? "max-h-[46vh] min-h-[9rem]" : ""}`}>
         {list.slice(0, limit).map((r) => (
           <li key={r.id} className="flex items-center gap-2 px-2 py-1.5">
             <Thumb id={r.id} real={r.real} />

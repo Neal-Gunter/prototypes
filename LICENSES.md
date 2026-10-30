@@ -93,6 +93,11 @@ v5 新增的程序零件（同样是本项目自制、CC0）：
 - `loco.js` 物理行走用 `@dimforge/rapier3d-compat`（Apache-2.0，已在上面列出）；舵机参数引自 MG90S 公开规格（堵转扭矩、速度、质量），只引用数字。
 - 走查录屏用 Playwright（Apache-2.0）和 ffmpeg（LGPL/GPL），只在本地使用，不随项目分发。
 
+## v12：关节 + 运动
+
+- `public/demo/arm2dof.obj`、`arm2dof-functions.svg`、`arm2dof.project.json`：本项目用 `scripts/make-arm-demo.mjs` 自制的 2 自由度机械臂示例，**CC0**（可以随便用）。舵机外形是按 datasheet 外形尺寸画的简化方块，不是厂家 CAD。
+- 舵机参数出处：Tower Pro MG90S datasheet、SG51R 商品 / 数据页（见 `src/modellab/servos.js` 里的 `src` 字段）；只引用数字，不包含它们的文件。
+
 ## v11：模型 + 功能图（`/assembly/model`）
 
 - `occt-import-js`（LGPL-2.1）：v11 起也在网页里用（读上传的 STEP）。作为单独的 JS + wasm 文件、第一次上传 STEP 时才从本站加载，未修改，用户可以替换成自己编译的版本；源码：https://github.com/kovacsv/occt-import-js 。

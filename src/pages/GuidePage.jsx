@@ -110,7 +110,7 @@ export default function GuidePage() {
       )}
 
       <section id="model-lab" className="mt-6 border border-line bg-white p-3" data-testid="guide-model-lab">
-        <h2 className="text-lg font-medium">模型 + 功能图（v11，早期原型，简化仿真）</h2>
+        <h2 className="text-lg font-medium">模型 + 功能图 + 关节（v11–v12，早期原型，简化仿真）</h2>
         <p className="text-xs text-ink-soft">在 <Link className="underline" to="/assembly/model">/assembly/model</Link> 上传自己的 3D 模型和一张功能图，把“哪个功能由哪些模块组成”画出来，再把模型放到装配台上做碰撞。🔒 文件只在本机浏览器里解析，不上传；工程存在本机 IndexedDB。</p>
         <ol className="mt-2 list-decimal pl-5 text-xs leading-5">
           <li><b>上传 3D 模型</b>：GLB / glTF（内嵌资源）/ OBJ / STL / STEP。上限：GLB 40 MB、STEP 15 MB。检查“尺寸和单位”：单位（毫米 / 厘米 / 米 / 英寸）、缩放、哪个轴朝上；旁边的蓝色卡片是一张银行卡（85.60 × 53.98 mm），用来目测尺寸对不对。</li>
@@ -122,8 +122,11 @@ export default function GuidePage() {
           <li><b>导出 / 导入</b>：“导出工程 .zip”= project.json + 模型 + 功能图，可以在别的电脑上“导入工程 .zip”。</li>
           <li><b>放到装配台</b>：整个模型作为一个刚体放上桌面，每个模块一个凸包或方块碰撞体，和桌面、其他零件碰撞，不穿模。</li>
           <li><b>内置示例</b>：“内置示例：八爪鱼”= v10 紧凑无线版，27 个模块、9 个功能（示意图，不是原理图），质量按 v10 质量表约 117 g（估算）。</li>
+          <li><b>关节（v12）</b>：点“加关节”，依次点父模块（不动的，比如底座）→ 子模块（会动的）→ 表面上的铰接点。类型：转动 / 滑动 / 球关节 / 固定。右边改铰接点（mm）、轴（X / Y / Z 或数字）、限位、驱动（MG90S / SG51R 用 datasheet 数字，自定义的标估算）。</li>
+          <li><b>运动</b>：点“▶ 运动”，每个关节一个滑块和“测试”；“放测试方块”看能不能推动东西；压到地面会显示“堵转 / 被挡住”。</li>
+          <li><b>功能 ↔ 关节 / 姿态 / 时间轴</b>：在功能面板勾关节，选中功能就播放它的关节；“存当前姿态”，再用关键帧排成时间轴播放。关节、姿态、时间轴都跟着工程 .zip 导出，放到装配台后也能操作。</li>
         </ol>
-        <p className="mt-2 text-xs text-ink-soft">简化：碰撞是凸包 / 方块（凹处被填平）；质量是体积 × 密度的估算；功能绑定只是标签，不做电路仿真；单位靠猜，猜错请手动改；贴图、动画忽略；Draco 压缩和引用外部文件的 glTF 不支持。</p>
+        <p className="mt-2 text-xs text-ink-soft">简化：球关节没有马达，限位是软的（硬扳能超出几度）；关节两侧那一对不互相碰撞；碰撞是凸包 / 方块（凹处被填平）；质量是体积 × 密度的估算；功能绑定只是标签，不做电路仿真；单位靠猜，猜错请手动改；贴图、动画忽略；Draco 压缩和引用外部文件的 glTF 不支持。</p>
       </section>
 
       <section className="mt-6 break-inside-avoid border border-copper p-3" data-testid="guide-safety">
