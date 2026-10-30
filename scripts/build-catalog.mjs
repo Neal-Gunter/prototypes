@@ -80,6 +80,7 @@ for (const m of man) {
     tris: meta.tris,
     kb: Math.round(meta.glb_bytes / 1024),
     colliders: meta.colliders,
+    ...(meta.collider_decomp ? { collider_decomp: meta.collider_decomp } : {}),
     legs: meta.legs?.length ? meta.legs : undefined,
     pcb_top_y: meta.pcb_top_y ?? undefined,
     holes: meta.holes?.length ? meta.holes : undefined,

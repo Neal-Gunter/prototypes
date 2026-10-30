@@ -10,7 +10,7 @@ const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies(
 const idx = JSON.parse(fs.readFileSync(path.join(ROOT, "public/lib/index.json"), "utf8"));
 const all = []; for (const c of idx.cats) { const f = path.join(ROOT, "public/lib/catalog", c.key + ".json"); if (fs.existsSync(f)) all.push(...JSON.parse(fs.readFileSync(f, "utf8"))); }
 // 已知：这 2 个在减面时丢了薄零件（PyPortal Titano 外框、RGB 点阵背后的支架），网格比 CAD 包围盒小 3–5 mm，碰撞盒仍按 CAD 包围盒（记为警告，不算失败）
-const KNOWN = new Set(["ada-4444", "ada-5036"]); const warn = [];
+const KNOWN = new Set([]); const warn = [];
 const t0 = Date.now(); let okN = 0; const bad = []; let bytes = 0, tris = 0, maxKb = 0;
 for (const e of all) {
   try {

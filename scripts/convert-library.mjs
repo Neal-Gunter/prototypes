@@ -16,7 +16,7 @@ const META = path.join(LIB, "meta");
 fs.mkdirSync(META, { recursive: true });
 const manifest = JSON.parse(fs.readFileSync(path.join(LIB, "manifest.json"), "utf8"));
 const start = +(process.argv[2] || 0), count = +(process.argv[3] || manifest.length);
-const MAX_TRIS = 9000;
+const MAX_TRIS = +(process.env.MAX_TRIS || 9000); // v21：个别零件减面会丢薄件，可单独调高（见 KEEP_THIN）
 const MAX_BOXES = 14;
 
 await MeshoptEncoder.ready;
@@ -243,7 +243,8 @@ for (const E of manifest.slice(start, start + count)) {
     const countTris = () => { let n = 0; for (const m of doc.getRoot().listMeshes()) for (const p of m.listPrimitives()) n += (p.getIndices()?.getCount() || 0) / 3; return n; };
     let outTris = countTris();
     // 误差上限挡住了简化时，逐步放宽（仍以 CAD 尺寸为准，包围盒不变）
-    for (const err of [0.01, 0.025]) {
+    // v21：KEEP_THIN=1 时不再放宽误差（放宽会把 PyPortal Titano 外框、RGB 点阵支架这类薄件简化掉）
+    for (const err of process.env.KEEP_THIN ? [] : [0.01, 0.025]) {
       if (outTris <= MAX_TRIS * 1.4) break;
       await doc.transform(simplify({ simplifier: MeshoptSimplifier, ratio: Math.min(1, MAX_TRIS / outTris), error: err, lockBorder: false }), prune());
       outTris = countTris();

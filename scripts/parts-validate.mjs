@@ -40,7 +40,7 @@ for (const e of all) {
   const span = [0, 1, 2].map((i) => hi[i] - lo[i]).sort((a, b) => a - b), dm = [d.x, d.y, d.z].map((v) => v / 10).sort((a, b) => a - b);
   if (span.some((s, i) => s > dm[i] * 1.02 + 0.03)) { nOutside++; err(e, `碰撞盒超出包围盒：${span.map((v) => (v * 10).toFixed(1)).join("×")} mm vs ${dm.map((v) => (v * 10).toFixed(1)).join("×")} mm`); }
   const bv = dm[0] * dm[1] * dm[2];
-  if (vol > bv * 1.05 + 1e-4 && cs.length > 1) { if (e._real) { warnOver.push(e.id); continue; } nOver++; err(e, `碰撞盒体积和 ${(vol * 1000).toFixed(0)} mm³ > 包围盒 ${(bv * 1000).toFixed(0)} mm³（有重叠）`); }
+  if (vol > bv * 1.05 + 1e-4 && cs.length > 1) { nOver++; err(e, `碰撞盒体积和 ${(vol * 1000).toFixed(0)} mm³ > 包围盒 ${(bv * 1000).toFixed(0)} mm³（有重叠）`); }
 }
 ok("必填字段齐全", nField === 0, nField);
 ok("许可证都在白名单（MIT / CC0 / CC BY / CC BY-SA / Apache）", nLic === 0, nLic);
@@ -49,8 +49,7 @@ ok("真实 CAD 都有来源链接、作者、来源名", nUrl === 0, nUrl);
 ok("真实 CAD 的 GLB 和缩略图文件都存在", nMiss === 0, nMiss);
 ok("每个零件都有碰撞盒", nColl === 0, nColl);
 ok("碰撞盒都在包围盒内（0.3 mm + 2% 容差）", nOutside === 0, nOutside + (nOutside ? "：" + bad.filter((b) => /超出/.test(b.why)).slice(0, 3).map((b) => b.id + " " + b.why).join("；") : ""));
-ok("程序生成零件的默认碰撞盒不重叠（体积和 ≤ 包围盒 × 1.05）", nOver === 0, nOver + (nOver ? "：" + bad.filter((b) => /重叠/.test(b.why)).slice(0, 3).map((b) => b.id + " " + b.why).join("；") : ""));
-console.log(`  提示：${warnOver.length} 个真实 CAD 的自动碰撞盒（同一刚体的复合盒）内部有重叠，不影响和别的零件碰撞：${warnOver.join(", ")}`);
+ok("所有零件（含真实 CAD 凸分解）的碰撞盒互不重叠（体积和 ≤ 包围盒 × 1.05）", nOver === 0, nOver + (nOver ? "：" + bad.filter((b) => /重叠/.test(b.why)).slice(0, 3).map((b) => b.id + " " + b.why).join("；") : ""));
 // 署名：每个来源在 LICENSES.md 和 CreditsPage 都要出现
 const licMd = fs.readFileSync(path.join(ROOT, "LICENSES.md"), "utf8");
 const credits = fs.readFileSync(path.join(ROOT, "src/pages/CreditsPage.jsx"), "utf8");
