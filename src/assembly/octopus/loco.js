@@ -52,9 +52,9 @@ export class LocoPhys {
   // 浏览器和 node 都能用：先 init Rapier（只做一次），再建
   static async create(sim, opts) { await (rapierReady ||= RAPIER.init()); return new LocoPhys(RAPIER, sim, opts); }
   // R = 已 init 的 RAPIER；sim = OctoSim；c = 机身中心在世界里的位置（cm，y = 桌面）
-  constructor(R, sim, { c = [0, 0, 0], mu = 0.5, dt = 1 / 240, tanOff = 1.52 } = {}) {
+  constructor(R, sim, { c = [0, 0, 0], mu = 0.5, dt = 1 / 240, tanOff = 1.52, pad = [0.15, 0.45] } = {}) {
     this.tanOff = tanOff; // B 俯仰舵机轴的切向偏置（CAD：+1.52 cm，八条同一侧）
-    this.R = R; this.sim = sim; this.c = c; this.mu = mu; this.dt = dt;
+    this.pad = pad; /* v13：单向脚垫 [逆向, 顺向] 摩擦（估算，灵敏度测试用） */ this.R = R; this.sim = sim; this.c = c; this.mu = mu; this.dt = dt;
     const B = sim.bench; this.plan = B.plan; this.variant = B.variant; this.hw = B.plusHw || {};
     this.plusB = this.plan === "B" && this.variant === "plus";
     this.world = new R.World({ x: 0, y: -G, z: 0 });
@@ -141,6 +141,7 @@ export class LocoPhys {
     const p = this.body.translation();
     this.start = { x: p.x, z: p.z, h: this.heading(), hAcc: this.hAcc || 0 };
     this.acc = 0; this.t = 0; this.pen = 0; this.slipD = 0; this.strokeD = 0; this.cycles = []; this.lastPhase = null; this.cycStart = null;
+    this.gm = { n: 0, minMargin: Infinity, sumMargin: 0, nMargin: 0, outside: 0, maxTilt: 0, sumTilt: 0, energy: 0, sumContacts: 0, sumAll: 0, lastAng: new Map(), margin: null }; // v13 步态测量
     this.meas = { v: 0, slip: 0, contacts: 0, load: Array(8).fill(0), torque: Array(8).fill(0), bodyLoad: 0, maxTorquePct: 0, peakTorque: 0, lag: 0, y: 0, tilt: 0 };
   }
   setMu(mu) {
@@ -176,7 +177,7 @@ export class LocoPhys {
         const tp = worldPoint(L.arm, L.tipLocal), vt = L.arm.velocityAtPoint(tp);
         const bz = rotVec(this.body.rotation(), [0, 0, 1]);
         const along = vt.x * bz[0] + vt.z * bz[2];
-        const sp = Math.hypot(vt.x, vt.z), mu = 0.15 + 0.3 * 0.5 * (1 + Math.tanh((4 * along) / Math.max(0.05, sp)));
+        const sp = Math.hypot(vt.x, vt.z), mu = this.pad[0] + (this.pad[1] - this.pad[0]) * 0.5 * (1 + Math.tanh((4 * along) / Math.max(0.05, sp)));
         L.tipCol.setFriction(mu * (this.mu / 0.5)); L.segCol.setFriction(mu * (this.mu / 0.5));
       }
     }
@@ -202,6 +203,7 @@ export class LocoPhys {
     }
     let nb = 0; for (const col of [this.plate, ...this.casters]) this.world.contactPair(this.ground, col, (man) => { for (let i = 0; i < man.numContacts(); i++) nb += man.contactImpulse(i); });
     this.slipD += slip; this.strokeD += stroke;
+    this.gaitMetrics(T, dt, contacts);
     const p = this.body.translation();
     const fwd = this.fwd();
     // 周期：按固件步态相位回绕计
@@ -221,6 +223,39 @@ export class LocoPhys {
     m.slip = this.strokeD > 0.05 ? this.slipD / this.strokeD : 0;
     m.contacts = contacts; m.load = load; m.bodyLoad = nb / dt / G; m.lag = (lag * 180) / Math.PI; m.y = p.y; m.tilt = tiltDeg(bq); m.pen = Math.max(this.pen || 0, -p.y + (this.casters.length ? 0.3 - 0.3 : 0));
     m.torque = torque; m.peakTorque = Math.max(m.peakTorque || 0, maxPct); m.maxTorquePct = maxPct;
+  }
+  // v13（我的补充）：步态测量 —— 支撑多边形裕度（整机质心投影到所有触地点凸包的有符号距离，cm，正 = 在里面）、
+  // 机身倾角、着地触手数、关节机械功 ∑|τ·ω|·dt（估算：τ 用位置环 k·误差 夹在堵转扭矩，非电功）
+  gaitMetrics(T, dt, contacts) {
+    const g = this.gm; if (!g) return;
+    g.n++; g.sumContacts += contacts;
+    let e = 0;
+    for (const L of this.legs) for (const J of L.joints) {
+      const a = jointAngle(J), last = g.lastAng.get(J); g.lastAng.set(J, a);
+      if (last == null) continue;
+      const tau = Math.min(T, (J.k || 0) * Math.abs(a - J.tgt)), w = Math.abs(a - last) / dt;
+      e += tau * w * dt;
+    }
+    g.energy += e; // kg·cm²/s² ×1e-4 = J
+    const tl = tiltDeg(this.body.rotation()); g.maxTilt = Math.max(g.maxTilt, tl); g.sumTilt += tl;
+    if (g.n % 4) return; // 凸包每 4 个子步算一次（60 Hz）
+    const pts = [];
+    for (const col of [this.plate, ...this.casters, ...this.legs.flatMap((L) => [L.tipCol, L.segCol])]) this.world.contactPair(this.ground, col, (man) => {
+      for (let i = 0; i < man.numSolverContacts(); i++) { const q = man.solverContactPoint(i); pts.push([q.x, q.z]); }
+    });
+    let M = 0, cx = 0, cz = 0;
+    for (const b of [this.body, ...this.legs.flatMap((L) => L.links)]) { const m = b.mass(), c = b.worldCom(); M += m; cx += m * c.x; cz += m * c.z; }
+    cx /= M; cz /= M;
+    const mg = supportMargin(pts, [cx, cz]);
+    g.margin = mg;
+    if (mg == null) return;
+    g.minMargin = Math.min(g.minMargin, mg); g.sumMargin += mg; g.nMargin++; if (mg < 0) g.outside++;
+  }
+  gaitReport() {
+    const g = this.gm, s = this.snapshot(), t = Math.max(1e-6, s.t);
+    return { t: s.t, fwd: s.fwd, speed: s.fwd / t, dx: s.dx, drift: s.dx, dh: s.dh, slip: s.slip, contactsAvg: g.n ? g.sumContacts / g.n : 0, tiltMax: g.maxTilt, tiltAvg: g.n ? g.sumTilt / g.n : 0,
+      marginMin: Number.isFinite(g.minMargin) ? g.minMargin : null, marginAvg: g.nMargin ? g.sumMargin / g.nMargin : null, outsideFrac: g.nMargin ? g.outside / g.nMargin : null,
+      energyJ: g.energy * 1e-4, powerW: (g.energy * 1e-4) / t, costOfTransport: s.fwd > 0.05 ? (g.energy * 1e-4) / (this.m.total * 9.81 * (s.fwd / 100)) : null, peakTorque: s.peakTorque, pen: s.pen, y: s.y, mu: s.mu, mass: s.mass };
   }
   // 从起点沿起始前方（−z）走了多远
   fwd() { const p = this.body.translation(); return -(p.z - this.start.z); }
@@ -247,6 +282,27 @@ function worldPoint(rb, l) { const t = rb.translation(), r = rotVec(rb.rotation(
 function pose(rb) { const t = rb.translation(), q = rb.rotation(); return { p: [t.x, t.y, t.z], q: [q.x, q.y, q.z, q.w] }; }
 function tiltDeg(q) { const u = rotVec(q, [0, 1, 0]); return (Math.acos(Math.max(-1, Math.min(1, u[1]))) * 180) / Math.PI; }
 // 关节实际角：子连杆相对父连杆绕关节轴的转角（建的时候两边都不转，所以相对旋转就是关节角）
+// 2D 凸包（单调链）+ 点到凸包边界的有符号距离（里面为正）；点数 < 3 返回 null
+export function convexHull(P) {
+  const p = P.map((q) => [+q[0].toFixed(4), +q[1].toFixed(4)]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lo = [], up = [];
+  for (const q of p) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
+  for (let i = p.length - 1; i >= 0; i--) { const q = p[i]; while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
+  return lo.slice(0, -1).concat(up.slice(0, -1));
+}
+export function supportMargin(P, c) {
+  const h = convexHull(P); if (h.length < 3) return null;
+  let inside = true, d = Infinity;
+  for (let i = 0; i < h.length; i++) {
+    const a = h[i], b = h[(i + 1) % h.length], ex = b[0] - a[0], ez = b[1] - a[1], L = Math.hypot(ex, ez) || 1e-9;
+    const sd = (ex * (c[1] - a[1]) - ez * (c[0] - a[0])) / L; // 逆时针凸包：左侧（里面）为正
+    if (sd < 0) inside = false;
+    const t = Math.max(0, Math.min(1, ((c[0] - a[0]) * ex + (c[1] - a[1]) * ez) / (L * L)));
+    d = Math.min(d, Math.hypot(c[0] - a[0] - t * ex, c[1] - a[1] - t * ez));
+  }
+  return inside ? d : -d;
+}
 export function jointAngle(J) {
   const qp = J.parent.rotation(), qc = J.child.rotation();
   const rel = mulQ({ w: qp.w, x: -qp.x, y: -qp.y, z: -qp.z }, qc);

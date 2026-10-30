@@ -14,6 +14,12 @@
 
 #include "octopus_gait.h"
 #include "octopus_bus.h"
+// v13 我的补充：台面步态编辑器导出的自定义步态表（有这个文件就用它，没有就是默认步态）
+#if defined(__has_include)
+#if __has_include("octopus_gait_custom.h")
+#include "octopus_gait_custom.h"
+#endif
+#endif
 
 namespace octo {
 
@@ -173,6 +179,7 @@ private:
                 gait_.SetSteer(c.steer);
                 cycles_left_ = c.n;
                 cycle_mark_ = gait_.Cycles();
+                if (mode_ != Mode::kGait) custom_t_ = 0.0f;  // v13：自定义步态从 t = 0 开始
                 Enter(Mode::kGait);
                 break;
             case CmdType::kRest:
@@ -258,7 +265,12 @@ private:
             return;
         }
         float yaw[kArmCount];
+#ifdef OCTO_GAIT_CUSTOM
+        custom_t_ += dt;
+        for (int a = 0; a < kArmCount; a++) yaw[a] = custom_gait::Yaw(a, custom_t_, gait_.CustomScale(a));
+#else
         for (int a = 0; a < kArmCount; a++) yaw[a] = gait_.Yaw(a);
+#endif
         // 我的补充：邻臂防撞
 #if OCTO_V10
         AntiCollide(yaw, kMinGapV10);
@@ -328,6 +340,7 @@ private:
 
     bool want_relax_ = false;
     float idle_t_ = 0.0f;
+    float custom_t_ = 0.0f;  // v13：自定义步态的时间（秒）
     int cycles_left_ = 0;
     uint32_t cycle_mark_ = 0;
     int home_idx_ = 0;

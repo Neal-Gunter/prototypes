@@ -86,6 +86,12 @@ public:
         return std::cos(MountAngle(arm) * static_cast<float>(M_PI) / 180.0f);
     }
 
+    // v13 我的补充：自定义步态的摆幅缩放 = 油门 ×（转弯时内侧一舷缩小，同 Sweep 的差速思路）
+    float CustomScale(int arm) const {
+        const float c = Side(arm), sg = c > 1e-3f ? 1.0f : (c < -1e-3f ? -1.0f : 0.0f);
+        return Clamp(1.0f - steer_ * sg, 0.0f, 1.0f) * throttle_;
+    }
+
 private:
     // 我的补充：镜像扫动（替代 md 的 Gain()）
     float Sweep(int arm) const {

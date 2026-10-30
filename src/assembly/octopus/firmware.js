@@ -83,6 +83,8 @@ export class Gait {
   }
   IsPowerStroke(arm) { return this.Phase01(arm) < this.params_.duty; }
   static MountAngle(arm) { return -90 + arm * 45; }
+  // v13 我的补充（octopus_gait.h CustomScale）：自定义步态的摆幅缩放
+  CustomScale(arm) { const c = Math.cos((Gait.MountAngle(arm) * Math.PI) / 180), sg = c > 1e-3 ? 1 : c < -1e-3 ? -1 : 0; return clamp(1 - this.steer_ * sg, 0, 1) * this.throttle_; }
   Lateriality(arm) { const a = (Gait.MountAngle(arm) * Math.PI) / 180; return this.F.lat ? Math.cos(a) : Math.sin(a); }
   Gain(arm) { return 1 + this.steer_ * this.Lateriality(arm) * 0.85; }
 }
@@ -190,7 +192,9 @@ export class OctopusBody {
     this.idleT = still ? (this.idleT || 0) + dt : 0;
     if (this.idleT >= 1 && !this.relaxed_) { this.relaxed_ = true; for (let i = 0; i < this.channels_; i++) this.boards_[Math.floor(i / 16)].SetRaw(i % 16, 0, 0x1000); this.rt.log("Rest：PWM 全部 FULL OFF（舵机放松，我的补充）"); }
   }
-  SetVelocity(t, s) { this.gait_.SetThrottle(t); this.gait_.SetSteer(s); this.mode_ = "gait"; this.wantRelax = false; }
+  SetVelocity(t, s) { this.gait_.SetThrottle(t); this.gait_.SetSteer(s); if (this.mode_ !== "gait") this.custom_t_ = 0; this.mode_ = "gait"; this.wantRelax = false; }
+  // v13：相当于把 octopus_gait_custom.h 编进固件（null = 默认步态）。g 的格式见 src/gait/gait.js
+  SetCustomGait(g) { this.custom_ = g || null; this.custom_t_ = 0; }
   SetGaitParams(p) { this.gait_.SetParams(p); }
   GaitParamsSnapshot() { return { ...this.gait_.Params() }; }
   Rest() { this.mode_ = "idle"; this.crawlCycles = null; this.wantRelax = true; this.ReleaseHard(); }
@@ -222,7 +226,9 @@ export class OctopusBody {
     const before = this.gait_.phase_;
     this.gait_.Tick(dt);
     if (this.crawlCycles != null && this.gait_.phase_ < before) { if (--this.crawlCycles <= 0) { this.crawlCycles = null; this.mode_ = "idle"; this.bank_.ReleaseAll(); return; } }
-    const yaw = Array.from({ length: kArmCount }, (_, a) => this.gait_.Yaw(a));
+    let yaw;
+    if (this.custom_) { this.custom_t_ = (this.custom_t_ || 0) + dt; yaw = Array.from({ length: kArmCount }, (_, a) => customYaw(this.custom_.joints[a], this.custom_t_, this.gait_.CustomScale(a))); }
+    else yaw = Array.from({ length: kArmCount }, (_, a) => this.gait_.Yaw(a));
     if (this.F.antiCollide) AntiCollide(yaw, this.rt.board === "v10" ? MIN_GAP.v10 : MIN_GAP[this.rt.plan] + 3);
     for (let a = 0; a < kArmCount; a++) this.WriteArm(a, yaw[a], this.gait_.Lift(a));
   }
@@ -249,6 +255,13 @@ export class OctopusBody {
 }
 
 // 我的补充：相邻两条触手的夹角 = 45° − yaw[i+1] + yaw[i]（同一个约定见 sim.js），小于 gmin 就两边各退一半；迭代几轮收敛
+// octopus_gait_custom.h custom_gait::Yaw 的 JS 版（与 src/gait/gait.js jointValue 同式，只多一个摆幅缩放）
+export function customYaw(J, t, k = 1) {
+  if (!J) return 0;
+  const x = t * J.freq + J.phase / 360, p = x - Math.floor(x), d = clamp(J.duty, 0.05, 0.95);
+  const w = J.wave === "sine" ? Math.cos(2 * Math.PI * p) : J.wave === "square" ? (p < d ? 1 : -1) : J.wave === "saw" ? 1 - 2 * p : p < d ? 1 - 2 * (p / d) : -1 + 2 * ((p - d) / (1 - d));
+  return (J.offset || 0) + J.amp * k * w;
+}
 export function AntiCollide(yaw, gmin) {
   for (let it = 0; it < 40; it++) for (let a = 0; a < kArmCount; a++) {
     const b = (a + 1) % kArmCount, gap = 45 - yaw[b] + yaw[a];
