@@ -174,6 +174,19 @@ The script uses `window.__wb` test hooks only to find where things are on the sc
   - 电流是估算值。
   - 只做直流层面的电压、电流检查。
 
+## v22：29 块板的物理引脚位置 + 大件碰撞体细分 + 新手导览 + Ctrl/⌘ K 命令面板（早期原型，简化仿真）
+
+- **物理引脚位置**（`scripts/build-physpins.mjs` → `src/assembly/fpBoards.gen.js` + catalog `phys`）：引脚表的 29 块板 / 模块全部在台面上有物理引脚，导线 / 表笔落在真实针脚或焊盘上。来源逐块写在 catalog 和悬停提示里：
+  - **KiCad 封装焊盘 → 真实 CAD 模型（逐个核对落在模型上）15 块**：Pico、Pico W、Feather HUZZAH32 / HUZZAH8266 / M0 Express（28/28 焊盘对上 CAD 孔）、ESP32-WROOM-32E / WROOM-32、ESP32-S3-WROOM-1、ESP32-S3-MINI-1、ESP32-C3-WROOM-02、ESP32-C6-MINI-1、ESP-12F、TB6612FNG、DRV8833PW、VL53L1X。
+  - **直接从 CAD 网格量出 2 块**：HC-SR04（CAD 模型把排针画成 2.0 mm 间距，实物 2.54 mm——照实提示，不改模型）、L298N 模块（13 根排针 / 端子，其中 7 个接线端子位置是估算）。
+  - **只有封装（数据手册焊盘图），外形厚度估算 12 块**：Arduino UNO R3 / Nano / Nano Every / Leonardo / Nano ESP32 / Nano RP2040、ESP32-C3-DevKitM-1、ESP-01、A4988、DRV8825、L298N 芯片（Multiwatt15）、VL53L0X。
+  - 悬停显示“名字（引脚 n）· 来源 · 间距”；间距逐块和数据手册比对。`node scripts/physpins-test.mjs`：211/0（引擎里 994 个有名字的引脚，每个都在模型上、容差内）。SparkFun 的 S3-MINI 模型坐标系不一致（54/65 偏出），没有映射。
+- **碰撞体细分**（`TARGET=3 node scripts/decompose-colliders.mjs`）：外扩改用固定细参考网格实测（v21 的度量对薄片低估）。实测下 v21 分解有 13/34 件 > 3 mm；v22 对这 13 件提高分辨率（每件 ≤ 300 盒），结果 33/34 件 ≤ 3 mm，只剩 ada-1185（100 mm 大按钮，261 盒，3.70 mm：圆弧面需要更多盒子）。逐件最大 / 中位外扩写在 catalog `collider_decomp`（`exMax_mm` / `p50_mm`）。`node scripts/collider-test.mjs`，`node e2e/collider-engine.mjs`（落桌测试）。
+- **新手导览**：装配台第一次打开时 8 步（装配、接线、万用表、示波器、维修模式、零件库、上传模型、连接实物），可跳过，关闭记在本机 localStorage（`asm-tour-v22-done`）；“新手导览”按钮或 `?tour=1` 重新打开。自动化浏览器（webdriver）下不自动弹出，避免挡住旧测试。
+- **命令面板**：任意页面 Ctrl/⌘ K（或页头“搜索跳转”），跳到页面、零件（`/parts?id=`）、预设场景（`/assembly?scene=`）、维修题（`/repair?s=`）。
+- **测试**：`e2e/v22-bench.mjs`（35/0）。
+- **限制（我的补充）**：贴片焊盘只能用表笔点，不能插线；L298N 芯片（Multiwatt）不能插面包板；12 块只有封装的板外形是估算；程序生成件没有缩略图；碰撞体仍是体素长方体。
+
 ## v21：真实 CAD 替换近似件 + 引脚表与引脚冲突 / 电平检查 + 碰撞体凸分解 + 首屏预算（早期原型，简化仿真）
 
 - **真实 CAD 替换（FreeCAD-library，CC BY 3.0，逐件署名）**：零件库 3081 个（真实 CAD 2556 + 程序生成 525）。运动 / 机械类替换情况（替换 / 仍为近似）：舵机 2 / 6，舵盘 1 / 0，步进电机 4 / 14，直流电机 3 / 11，轴承与直线轴承 7 / 21，光轴 0 / 18，齿轮 0 / 40，同步带轮 1 / 9，型材 / 角码 / T 螺母 63 / 25，无刷电机 0 / 11；合计替换 81、仍近似 155，另新增 21 个真实件。没找到许可干净的真实模型的件保留程序生成，列表里标“近似形状（程序生成）”，有真实版本的会给出“真实 CAD：…”链接。
