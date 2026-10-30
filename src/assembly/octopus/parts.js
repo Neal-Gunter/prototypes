@@ -218,7 +218,57 @@ function armB() {
     density: 1.24,
   });
 }
-export const OCTO_PROCEDURAL = [devkit(), inmp441(), oled(), xl4015("6v"), xl4015("5v"), battery(), pack3s(), vdiv(), frame(), arm(), bracketB(), armB()];
+
+// ---------- v10 紧凑无线版（我的补充）：骨架、短触手、1S 分压板 ----------
+// SG51R（库里 ada-2201 的 CAD）：机身中心到输出轴 0.605 cm、轴顶 2.49 cm、长 3.01 × 宽 1.18 cm。舵机竖装、长边沿径向、轴朝外。
+export const SG51R_GEO = { shaftX: 0.605, shaftTop: 2.49, halfL: 1.505, halfW: 0.59, bodyTop: 2.23 };
+export const FRAME_V10 = { R: 4.5, t: 0.25, servoR: 3.2, yawR: 3.2 + 0.605, postR: 1.2, deckY: 3.3, deckT: 0.2, deckR: 4.0 };
+// 触手：根部在舵盘上，先平着越过舵机外端（0.9 cm），再往下到桌面；末端 4.4 cm（估算，见 dims_src）
+export const ARM_V10 = { tip: [4.4, -2.57], seg: [[1.3, -0.45], [4.0, -2.3]], boxes: [[0.3, 1.35, 0.12, 0.2, 0.45], [1.3, 2.4, -0.6, 0.18, 0.42], [2.35, 3.45, -1.45, 0.16, 0.36], [3.4, 4.45, -2.3, 0.15, 0.3]] };
+function frameV10() {
+  const F = FRAME_V10;
+  const cols = [box(-F.R * 0.92, F.R * 0.92, 0, F.t, -F.R * 0.38, F.R * 0.38), box(-F.R * 0.38, F.R * 0.38, 0, F.t, -F.R * 0.92, F.R * 0.92), box(-F.R * 0.7, F.R * 0.7, 0, F.t, -F.R * 0.7, F.R * 0.7)];
+  const prims = [{ k: "cyl", c: [0, F.t / 2, 0], r: F.R, h: F.t, m: "white" }];
+  for (let k = 0; k < 4; k++) {
+    const a = ((22.5 + 90 * k) * Math.PI) / 180, x = F.postR * Math.cos(a), z = F.postR * Math.sin(a);
+    const b = box(x - 0.25, x + 0.25, F.t, F.deckY, z - 0.25, z + 0.25);
+    cols.push(b); prims.push(B(b, "white"));
+  }
+  const y0 = F.deckY, y1 = F.deckY + F.deckT;
+  cols.push(box(-F.deckR * 0.92, F.deckR * 0.92, y0, y1, -F.deckR * 0.38, F.deckR * 0.38), box(-F.deckR * 0.38, F.deckR * 0.38, y0, y1, -F.deckR * 0.92, F.deckR * 0.92), box(-F.deckR * 0.7, F.deckR * 0.7, y0, y1, -F.deckR * 0.7, F.deckR * 0.7));
+  prims.push({ k: "cyl", c: [0, (y0 + y1) / 2, 0], r: F.deckR, h: F.deckT, m: "white" });
+  return base("p-octo-frame-v10", "v10 紧凑骨架（底板 Φ9 cm + 4 根立柱 + Φ8 cm 上层板，我的补充）", "Octopus v10 compact frame (our design)", "enclosure", cols, prims, {
+    dims_src: "我的补充：8 个 SG51R（Adafruit 2201，30.1 × 11.8 mm）竖装、轴朝外，舵机中心在半径 3.2 cm——8 个挤在一圈时内端不互相碰的最小值（半宽 0.59 cm / sin 22.5° ≈ 1.54 cm，加内端 1.5 cm → ≥ 3.05 cm）。底板 Φ9 cm 托住舵机外端；上层板高 3.3 cm，在触手根部（顶 ≈ 3.06 cm）上面，放电池和电路板。厚度、立柱为估算",
+    spec: "3D 打印（PLA）；底板 2.5 mm、上层板 2 mm；4 根立柱在相邻舵机之间。实体体积约 29 cm³（≈ 36 g 实心，按 60% 填充折算约 22 g，估算）",
+    est: ["全部结构尺寸", "质量"],
+    density: 1.24 * 0.6,
+  });
+}
+function armV10() {
+  const cols = [], prims = [{ k: "cyl", c: [0, 0.12, 0], r: 0.5, h: 0.24, m: "orange" }];
+  for (const [x0, x1, y, hh, w] of ARM_V10.boxes) { const b = box(x0, x1, y - hh, y + hh, -w / 2, w / 2); cols.push(b); prims.push(B(b, "orange")); }
+  cols.push(box(-0.5, 0.5, 0, 0.24, -0.5, 0.5));
+  prims.push({ k: "cyl", c: [ARM_V10.tip[0], ARM_V10.tip[1], 0], r: 0.15, h: 0.3, m: "black" });
+  return base("p-octo-arm-v10", "v10 短触手（舵盘 + 4 节，4.4 cm，自制打印）", "Octopus v10 short tentacle (our design)", "enclosure", cols, prims, {
+    dims_src: "我的补充：SG51R 堵转只有 0.6 kgf·cm（Adafruit 2201 页面，4.8 V），力臂越短末端推力越大；4.4 cm 时末端最大推力 ≈ 0.6 / 4.4 ≈ 0.14 kgf ≈ 1.3 N。根部先平着越过舵机外端，再斜下到桌面。全部结构尺寸估算",
+    spec: "套在 SG51R 输出轴上（舵盘一体）；末端 Φ3 mm 圆头 + 硅胶脚垫（估算）",
+    est: ["全部结构尺寸"],
+    density: 1.24,
+  });
+}
+function vdiv1s() {
+  const pcb = box(-0.8, 0.8, 0, 0.16, -0.55, 0.55);
+  const cols = [pcb];
+  const prims = [B(pcb, "green"), { k: "cyl", c: [-0.3, 0.26, -0.15], r: 0.07, h: 0.5, m: "brown", ax: "x" }, { k: "cyl", c: [0.3, 0.26, -0.15], r: 0.07, h: 0.5, m: "brown", ax: "x" }, B(box(-0.1, 0.1, 0.16, 0.3, 0.2, 0.35), "yellow")];
+  const pins = { IN: { p: [-0.6, 0.16, 0.3], label: "IN（开关后的电池 +）" }, GND: { p: [0, 0.16, 0.3], label: "GND" }, OUT: { p: [0.6, 0.16, 0.3], label: "OUT → A3" } };
+  return base("p-octo-vdiv-1s", "1S 电池分压板（100k / 100k + 0.1 µF，我的补充）", "1S battery divider 100k/100k + 0.1uF", "sensor", cols, prims, {
+    dims_src: "洞洞板 16 × 11 mm（估算）；分压比 1/2：4.2 V → 2.1 V，低于 ESP32‑S3 ADC 11 dB 衰减的校准量程 2900 mV（乐鑫文档）",
+    spec: "IN 接开关后的电池 +，OUT 接 QT Py A3（GPIO8，ADC1）。静态电流约 4.2 V / 200 kΩ ≈ 21 µA；开关关掉时不耗电",
+    est: ["外形"],
+    octo: { pins, ties: [] },
+  });
+}
+export const OCTO_PROCEDURAL = [devkit(), inmp441(), oled(), xl4015("6v"), xl4015("5v"), battery(), pack3s(), vdiv(), frame(), arm(), bracketB(), armB(), frameV10(), armV10(), vdiv1s()];
 
 // ---------- 库里真实零件的引脚表（零件局部坐标，cm） ----------
 // PCA9685（ada-815）：两端各一排 6 针控制排针（GND OE SCL SDA VCC V+），16 路 × 3 排舵机排针，中间螺丝端子 V+ / GND。
@@ -257,6 +307,26 @@ export const OCTO_PINS = {
   "ada-3923": { pins: { "+": { p: [0.22, 0.6, -1.37], label: "+" }, "-": { p: [-0.22, 0.6, -1.37], label: "−" } }, ties: [] },
   "ada-1143": { pins: { LEAD: { p: [0, 0.45, -1.2], label: "引线（棕 GND / 红 V+ / 橙 PWM）" } }, ties: [] },
   "kc-cp_radial_d6.3mm_p2.50mm": { pins: {}, ties: [] },
+  // —— v10（我的补充）：库里真实 CAD 的焊盘位置；按 CAD 碰撞盒推的估算位置 ——
+  // QT Py ESP32‑S3（ada-5426）：两排各 7 个邮票孔，USB‑C 一端为 1 号。左排 A0 A1 A2 A3 SDA SCL TX、右排 5V GND 3V3 MO MI SCK RX（Adafruit 引脚图）；背面 BAT / GND 焊盘
+  "ada-5426": (() => {
+    const L = ["A0", "A1", "A2", "A3", "SDA", "SCL", "TX"], R = ["5V", "GND", "3V3", "MO", "MI", "SCK", "RX"], pins = {};
+    L.forEach((n, i) => { pins[n] = { p: [-0.762, 0.27, -0.709 + i * P], label: n }; });
+    R.forEach((n, i) => { pins[n] = { p: [0.762, 0.27, -0.709 + i * P], label: n }; });
+    pins.BAT = { p: [-0.2, 0.11, 0.75], label: "背面 BAT 焊盘（3–6 V）" };
+    pins.BGND = { p: [0.2, 0.11, 0.75], label: "背面 GND 焊盘" };
+    return { pins, ties: [["GND", "BGND"]] };
+  })(),
+  // MiniBoost 5V（ada-4654）：一排 4 孔 IN / GND / EN / OUT（顺序为估算，以丝印为准）
+  "ada-4654": (() => { const pins = {}; ["IN", "GND", "EN", "OUT"].forEach((n, i) => { pins[n] = { p: [-0.381 + i * P, 0.16, -0.7], label: n }; }); return { pins, ties: [] }; })(),
+  // Micro‑Lipo USB‑C 充电板（ada-4410）：USB‑C 在 −x 端、JST 电池座在 +x 端；侧边焊盘 BAT / GND（位置估算）
+  "ada-4410": { pins: { "JST+": { p: [0.9, 0.4, -0.15], label: "JST 电池座 +" }, "JST-": { p: [0.9, 0.4, 0.15], label: "JST 电池座 −" }, BAT: { p: [0.2, 0.16, -0.8], label: "BAT 焊盘（= 电池 +）" }, GND: { p: [0.2, 0.16, 0.8], label: "GND 焊盘" } }, ties: [["JST+", "BAT"], ["JST-", "GND"]] },
+  // 1200 mAh LiPo（ada-258）：JST‑PH 2 针出线在 −z 端（保护板那头）
+  "ada-258": { pins: { "BAT+": { p: [-0.15, 0.35, -2.9], label: "红 +" }, "BAT-": { p: [0.15, 0.35, -2.9], label: "黑 −" } }, ties: [], volts: 3.7 },
+  // 拨动开关（ada-805）：3 脚 1 / COM / 3，间距 2.54 mm
+  "ada-805": { pins: { "1": { p: [-P, 0, 0], label: "1" }, COM: { p: [0, 0, 0], label: "COM（中脚）" }, "3": { p: [P, 0, 0], label: "3" } }, ties: [] },
+  "kc-cp_radial_d6.3mm_p2.50mm": { pins: { "+": { p: [0.125, 0.19, 0], label: "+（长脚，极性按 KiCad 1 脚估算）" }, "-": { p: [-0.125, 0.19, 0], label: "−" } }, ties: [] },
+  "ada-2201": { pins: { LEAD: { p: [-1.5, 0.45, 0], label: "引线（棕 GND / 红 V+ / 橙 PWM）" } }, ties: [] },
 };
 export function pinsOf(def) {
   return def.octo || OCTO_PINS[def.id] || { pins: {}, ties: [] };

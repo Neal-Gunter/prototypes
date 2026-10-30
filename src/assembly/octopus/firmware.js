@@ -33,7 +33,18 @@ export const fixesPlus = () => Object.fromEntries(FIX_LIST.map((f) => [f.k, true
 // v9（我的补充）：B 改成两组交替（phase 180 → 偶数号一组、奇数号一组）、duty 0.55（两组各有 10% 时间同时着地），支撑相俯仰下压 press 20°。
 // 物理仿真实测：v8 的 B（phase 0、支撑相 lift = 0）触手尖离桌 1.2 mm，机身整个压在底板上，触手推不动（0 cm/周期）。
 export const plusGait = (plan) => (plan === "B" ? { freq_hz: 0.6, yaw_amp_deg: 20, lift_amp_deg: 25, phase_deg: 180, duty: 0.55, press_deg: 20 } : { freq_hz: 0.6, yaw_amp_deg: 30, lift_amp_deg: 20, phase_deg: 45, duty: 0.6 });
-export const MIN_GAP = { A: 12, B: 16 }; // 相邻触手机械间隙（°）。B：v8 在 3D 碰撞体上实测相邻模块 13° 才接触，+3° 余量 = 16（v7 估算 40 过于保守）
+export const MIN_GAP = { A: 12, B: 16, v10: -30 }; // v10：2D 触手轮廓扫描 −35° 才碰（v10.js V10_EST.gap），+5° 余量 = −30（等于软件限位内不需要防撞） // 相邻触手机械间隙（°）。B：v8 在 3D 碰撞体上实测相邻模块 13° 才接触，+3° 余量 = 16（v7 估算 40 过于保守）
+
+// v10（我的补充）：QT Py ESP32‑S3 没有 PCA9685，8 个舵机直接用 LEDC（50 Hz、14 位）。
+// 给 ServoBank 一个和 Pca9685 同样接口的“板子”，这样 octopus_body / gait 不用改。
+// 脉宽按 SG51R 页面：0.75–2.25 ms 对应全行程。
+export class LedcBoard {
+  constructor(pins, us0 = 750, us1 = 2250) { this.pins = pins; this.us0 = us0; this.us1 = us1; this.write_ = null; }
+  Init(ctx, rt) { this.rt = rt; for (const p of this.pins) if (!rt.ledcAttach(p, 50, 14)) return false; return true; }
+  Duty(us) { return Math.round((us / 20000) * 16383); }
+  SetAngle(ch, deg) { const d = clamp(deg, 0, 180); return this.rt.ledcWrite(this.pins[ch], this.Duty(this.us0 + ((this.us1 - this.us0) * d) / 180)); }
+  SetRaw(ch, on, off) { return this.rt.ledcWrite(this.pins[ch], off & 0x1000 ? 0 : this.Duty(((off - on) / 4096) * 20000)); }
+}
 
 // ---------------- octopus_gait.h ----------------
 export const kArmCount = 8;
@@ -130,7 +141,11 @@ export class OctopusBody {
   Init(rig, write) {
     this.rig_ = rig; this.channels_ = ChannelsFor(rig);
     const n = Math.ceil(this.channels_ / 16);
-    for (let i = 0; i < n; i++) {
+    if (this.rt.board === "v10") {
+      this.boards_[0] = new LedcBoard(this.rt.servoPins);
+      if (!this.boards_[0].Init(null, this.rt)) { this.rt.log("E OctopusBody: ledcAttach 失败"); return false; }
+      this.rt.log(`I OctopusBody: LEDC 8 路就绪（GPIO ${this.rt.servoPins.join(" ")}，50 Hz / 14 位）`);
+    } else for (let i = 0; i < n; i++) {
       this.boards_[i] = new Pca9685(0x40 + i);
       if (this.F.pulse) this.boards_[i].SetPulseRange(102, 512);
       if (!this.boards_[i].Init(null, write, 50, this.rt.skipPrescale)) { this.rt.log(`E OctopusBody: PCA9685 #${i} (0x${(0x40 + i).toString(16).toUpperCase()}) 初始化失败`); return false; }
@@ -206,7 +221,7 @@ export class OctopusBody {
     this.gait_.Tick(dt);
     if (this.crawlCycles != null && this.gait_.phase_ < before) { if (--this.crawlCycles <= 0) { this.crawlCycles = null; this.mode_ = "idle"; this.bank_.ReleaseAll(); return; } }
     const yaw = Array.from({ length: kArmCount }, (_, a) => this.gait_.Yaw(a));
-    if (this.F.antiCollide) AntiCollide(yaw, MIN_GAP[this.rt.plan] + 3);
+    if (this.F.antiCollide) AntiCollide(yaw, this.rt.board === "v10" ? MIN_GAP.v10 : MIN_GAP[this.rt.plan] + 3);
     for (let a = 0; a < kArmCount; a++) this.WriteArm(a, yaw[a], this.gait_.Lift(a));
   }
   StepWave(dt) {
@@ -242,11 +257,14 @@ export function AntiCollide(yaw, gmin) {
 
 // ---------------- 运行时（调度器 + Arduino 外设替身） ----------------
 export class Runtime {
-  constructor({ F, i2cWrite, log, skipPrescale = false, mode = "ino", plan = "A", adcMv = null }) {
+  constructor({ F, i2cWrite, log, skipPrescale = false, mode = "ino", plan = "A", adcMv = null, board = "pca", servoPins = null, ledcWrite = null }) {
+    this.board = board; this.servoPins = servoPins; this.ledcWriteFn = ledcWrite || (() => 0);
     this.adcMv = adcMv || (() => 0); this.vbat = null; this.lowBatt = false;
     this.F = F; this.i2cWrite = i2cWrite; this.logFn = log || (() => {}); this.skipPrescale = skipPrescale; this.mode = mode; this.plan = plan;
     this.now = 0; this.tasks = []; this.lines = []; this.out = []; this.body = new OctopusBody(this); this.lastCmdMs = 0; this.halted = null; this.boots = 0;
   }
+  ledcAttach(pin, freq, bits) { this.ledcFreq = freq; this.ledcBits = bits; this.ledcWriteFn(pin, 0, freq, bits); return true; }
+  ledcWrite(pin, duty) { return this.ledcWriteFn(pin, duty, this.ledcFreq, this.ledcBits) !== false; }
   log(t) { this.out.push(`[${(this.now / 1000).toFixed(2)}s] ${t}`); if (this.out.length > 200) this.out.shift(); this.logFn(t); }
   millis() { return Math.floor(this.now); }
   spawn(name, gen) { this.tasks.push({ name, gen, wake: this.now }); }
@@ -259,7 +277,7 @@ export class Runtime {
     this.log("ESP-ROM: boot（模拟）");
     const rig = this.plan === "B" ? RIG.kDual16 : this.F.rig8 ? RIG.kSingle8 : RIG.kDual16;
     if (!this.body.Init(rig, this.i2cWrite)) {
-      this.log("PCA9685 初始化失败！检查 SDA/SCL 接线、供电、I2C 地址");
+      this.log(this.board === "v10" ? "LEDC 初始化失败" : "PCA9685 初始化失败！检查 SDA/SCL 接线、供电、I2C 地址");
       this.halted = "PCA9685 初始化失败，程序停在 while(1)";
       while (true) yield 1000;
     }
@@ -287,10 +305,12 @@ export class Runtime {
     while (true) yield 50;
   }
   // 我的补充：GPIO10 电池检测。analogReadMilliVolts（11 dB 衰减，校准后 0–2900 mV）× (100k+22k)/22k，16 次平均，9.6 V 停、10.2 V 恢复（估算）
+  // v10：GPIO8（A3），100k/100k → K = 2，3.55 V 停、3.75 V 恢复（估算）
   *battTask() {
-    const K = 122 / 22, CUT = 9.6, RESUME = 10.2;
+    const v10 = this.board === "v10";
+    const K = v10 ? 2 : 122 / 22, CUT = v10 ? 3.55 : 9.6, RESUME = v10 ? 3.75 : 10.2, PIN = v10 ? 8 : 10;
     while (true) {
-      let mv = 0; for (let i = 0; i < 16; i++) mv += Math.min(2900, Math.max(0, this.adcMv(10)));
+      let mv = 0; for (let i = 0; i < 16; i++) mv += Math.min(2900, Math.max(0, this.adcMv(PIN)));
       const v = (mv / 16 / 1000) * K;
       this.vbat = v;
       if (!this.lowBatt && v < CUT) { this.lowBatt = true; this.body.Rest(); this.log(`电池 ${v.toFixed(2)} V < ${CUT} V：停止运动，请充电（我的补充）`); }

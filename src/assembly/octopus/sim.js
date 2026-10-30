@@ -3,6 +3,16 @@
 import { benchSpec } from "./bench.js";
 import { evaluate } from "./circuit.js";
 import { Runtime, Pca9685Dev, fixesAll, fixesPlus, Gait } from "./firmware.js";
+import { SG51R, SERVO_PINS, BATT_PIN } from "./v10.js";
+
+// v10：LEDC 替身。记下每个 GPIO 最近一次写的占空比（14 位、50 Hz），按“哪个舵机的橙线接在哪个焊盘”读出来
+export class LedcDev {
+  constructor() { this.reset(); }
+  reset() { this.duty = new Map(); this.freqHz = 50; this.bits = 14; this.writes = 0; }
+  write(pin, duty, freq, bits) { this.duty.set(pin, duty); if (freq) this.freqHz = freq; if (bits) this.bits = bits; this.writes++; return 0; }
+  get freq() { return this.freqHz; }
+  gpio(pin) { const d = this.duty.get(pin) || 0; return { us: (d / ((1 << this.bits) - 1)) * (1e6 / this.freqHz) }; }
+}
 
 export const EST = {
   pulse: "舵机脉宽 0.5–2.5 ms ↔ 0–180°（MG90S 常见标定，估算）",
@@ -16,23 +26,25 @@ export const EST = {
 const GAP = 12;
 // 方案 B：v7 用 2·atan(1.55/4.27) ≈ 40° 估算（把模块当成绕躯干中心转，偏保守）。
 // v8：每个模块其实绕自己的偏航轴（离中心 3.8 cm）转，在 3D 碰撞体上让相邻两模块相向转，夹角缩到 13° 才第一次接触（1 号触手碰 2 号俯仰舵机）。
+export const GAP_V10 = -35; // v10：2D 触手轮廓扫描（scripts/octo-test.mjs 复算），夹角 < −35° 才碰
 export const GAP_B = 13; // v8：3D 碰撞体实测（e2e/gapB.mjs），相邻 B 模块夹角 < 13° 时俯仰舵机碰到邻臂触手
 function rng(seed) { let s = seed >>> 0 || 1; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
 const wrap = (d) => ((d % 360) + 540) % 360 - 180;
 
 export class OctoSim {
-  constructor(o = {}) { this.o = { plan: "A", phase: 3, fault: "none", mode: "ino", variant: "md", seed: 7, tipShare: 0.15, ...o }; if (!this.o.F) this.o.F = this.o.variant === "plus" ? fixesPlus() : fixesAll(false); this.rebuild(); }
+  constructor(o = {}) { this.o = { plan: "A", phase: 3, fault: "none", mode: "ino", variant: "md", seed: 7, tipShare: 0.15, ...o }; if (!this.o.F) this.o.F = this.o.variant === "plus" || this.o.variant === "v10" ? fixesPlus() : fixesAll(false); this.rebuild(); }
   set(o) { Object.assign(this.o, o); this.rebuild(); }
   rebuild() {
     const o = this.o;
     this.bench = benchSpec(o);
     this.r = rng(o.seed);
-    this.dev = new Pca9685Dev(0x40);
+    this.v10 = this.bench.board === "v10";
+    this.dev = this.v10 ? new LedcDev() : new Pca9685Dev(0x40);
     this.t = 0; this.servoI = 0; this.peakI = 0; this.events = []; this.phys = null; this.pose = { x: 0, z: 0, h: 0 }; this.trace = [{ x: 0, z: 0, h: 0, t: 0 }];
     this.servos = this.bench.servos.map((s) => ({ ...s, chN: +s.ch.slice(2), ang: 72 + this.r() * 36, w: 0, cmd: null, us: 0, I: 0, stall: false, buzz: false, collide: false }));
     this.res = evaluate(this.bench, { servoI: 0, micSpkCm: o.micSpkCm });
     this.espOn = false; this.offFor = 1e9; this.boots = 0; this.scenarioDone = false;
-    this.rt = this.bench.phase === 0 ? null : new Runtime({ F: o.F, mode: o.mode, plan: o.plan, skipPrescale: o.fault === "pwm200", i2cWrite: (addr, reg, data) => this.i2c(addr, reg, data), adcMv: (gpio) => this.adcMv(gpio) });
+    this.rt = this.bench.phase === 0 ? null : new Runtime({ F: o.F, mode: o.mode, plan: o.plan, skipPrescale: o.fault === "pwm200", i2cWrite: (addr, reg, data) => this.i2c(addr, reg, data), adcMv: (gpio) => this.adcMv(gpio), ...(this.v10 ? { board: "v10", servoPins: SERVO_PINS.map((p) => p.gpio), ledcWrite: (pin, duty, f, b) => (this.espOn ? this.dev.write(pin, duty, f, b) : false) } : {}) });
     this.step(0.001);
   }
   i2c(addr, reg, data) {
@@ -45,6 +57,7 @@ export class OctoSim {
   // 模拟 analogReadMilliVolts：只有接了分压（DIV.OUT → GPIO10）才有读数
   adcMv(gpio) {
     const R = this.res.rails;
+    if (this.v10) return gpio === BATT_PIN.gpio && R.battSense && R.espOn ? Math.min(2900, (R.vbatSw / BATT_PIN.ratio) * 1000 + (this.r() - 0.5) * 10) : 0;
     if (gpio !== 10 || !R.battSense || !R.espOn) return 0;
     return Math.min(2900, ((R.vbat * 22) / 122) * 1000 + (this.r() - 0.5) * 20);
   }
@@ -58,12 +71,12 @@ export class OctoSim {
   sub(dt) {
     this.t += dt;
     const o = this.o, B = this.bench;
-    this.res = evaluate(B, { servoI: this.servoI, micSpkCm: o.micSpkCm });
+    this.res = evaluate(B, { servoI: this.servoI, micSpkCm: o.micSpkCm, railI: this.v10 ? Object.fromEntries(this.servos.map((s) => [s.role, s.I])) : null });
     const R = this.res.rails;
     // ESP32 上电 / 掉电复位
     if (this.rt) {
       if (R.espOn && !this.espOn && this.offFor > 0.3) { this.espOn = true; this.boots++; this.dev.reset(); this.rt.now = this.t * 1000; this.rt.boot(); if (this.boots > 1) this.ev(`ESP32 重新启动（第 ${this.boots} 次）`); this.scenarioDone = false; }
-      else if (!R.espOn && this.espOn) { this.espOn = false; this.offFor = 0; this.ev(`ESP32 5V 掉到 ${R.espIn.toFixed(2)} V → 欠压复位`); if (!R.vpFromU1) this.dev.reset(); }
+      else if (!R.espOn && this.espOn) { this.espOn = false; this.offFor = 0; this.ev(this.v10 ? `QT Py 电源掉到 ${R.espIn.toFixed(2)} V → 欠压复位` : `ESP32 5V 掉到 ${R.espIn.toFixed(2)} V → 欠压复位`); if (!R.vpFromU1) this.dev.reset(); }
       if (!this.espOn) this.offFor += dt;
       if (this.espOn) {
         this.rt.step(dt * 1000);
@@ -77,20 +90,24 @@ export class OctoSim {
     // 舵机
     const period = 1e6 / this.dev.freq, vs = R.vservo;
     const frameOk = period >= 10000 && period <= 30000;
-    const wmax = vs < 3.5 ? 0 : 600 + (Math.min(vs, 6.5) - 4.8) * 125;
+    // v10 SG51R：页面 0.1 s/60° @4.8 V = 600°/s；低于 4.8 V 按电压比例降、高于 4.8 V 不外推（估算）
+    const wmaxOf = (v) => (this.v10 ? (v < 3.5 ? 0 : SG51R.speed48 * Math.min(1, v / 4.8)) : v < 3.5 ? 0 : 600 + (Math.min(v, 6.5) - 4.8) * 125);
+    const wmax = wmaxOf(vs);
     let I = 0;
     for (const s of this.servos) {
-      const c = R.pcaLogic || R.vpFromU1 ? this.dev.channel(s.chN) : { us: 0 };
+      const g = this.v10 ? R.pwmGpio?.[s.role] : null;
+      const c = this.v10 ? (g != null && R.espOn ? this.dev.gpio(g) : { us: 0 }) : R.pcaLogic || R.vpFromU1 ? this.dev.channel(s.chN) : { us: 0 };
+      const wm = this.v10 ? wmaxOf(R.vservoOf?.[s.role] ?? vs) : wmax; s.wmax = wm;
       s.us = c.us; s.stall = false; s.buzz = false;
-      const valid = frameOk && c.us >= 400 && c.us <= 2700 && wmax > 0;
-      s.cmd = valid ? ((c.us - 500) / 2000) * 180 : null;
+      const valid = frameOk && c.us >= 400 && c.us <= 2700 && wm > 0;
+      s.cmd = valid ? (this.v10 ? ((c.us - SG51R.us0) / (SG51R.us1 - SG51R.us0)) * 180 : ((c.us - 500) / 2000) * 180) : null;
       let w = 0;
       if (s.type === "360") {
         if (valid && Math.abs(c.us - 1500) > 20) w = Math.max(-1, Math.min(1, (c.us - 1500) / 500)) * 780 * (wmax / 750);
         s.ang += w * dt;
       } else if (s.cmd != null) {
         const tgt = Math.max(-3, Math.min(183, s.cmd));
-        const e = tgt - s.ang, stepMax = wmax * dt;
+        const e = tgt - s.ang, stepMax = wm * dt;
         const d = Math.abs(e) <= stepMax ? e : Math.sign(e) * stepMax;
         s.ang += d; w = d / dt;
         if ((s.cmd > 183.5 || s.cmd < -3.5) && Math.abs(e) < 0.5) { s.stall = true; s.buzz = true; }
@@ -103,15 +120,17 @@ export class OctoSim {
     if (yaws.length === 8) for (let a = 0; a < 8; a++) {
       const s1 = yaws[a], s2 = yaws[(a + 1) % 8];
       const gap = 45 - (s2.ang - 90) + (s1.ang - 90); // φ = θ − yaw
-      const G = this.bench.plan === "B" && this.bench.robot ? GAP_B : GAP;
+      const G = this.v10 ? GAP_V10 : this.bench.plan === "B" && this.bench.robot ? GAP_B : GAP;
       if (gap < G) { const fix = (G - gap) / 2; s1.ang += fix; s2.ang -= fix; s1.stall = s2.stall = true; s1.collide = s2.collide = true; s1.buzz = s2.buzz = true; }
     }
     for (const s of this.servos) {
-      s.I = s.stall ? 0.7 * Math.min(1, vs / 6) : wmax > 0 ? 0.01 + (Math.abs(s.w) > 1 ? 0.12 + 0.45 * Math.min(1, Math.abs(s.w) / wmax) : 0) : 0;
+      if (this.v10) { const wm = s.wmax || 0, v = R.vservoOf?.[s.role] ?? vs; s.I = s.stall ? 0.233 * Math.min(1, v / 4.8) : wm > 0 ? 0.0033 + (Math.abs(s.w) > 1 ? 0.04 + 0.15 * Math.min(1, Math.abs(s.w) / wm) : 0) : 0; } // V10_EST.current（估算）
+      else s.I = s.stall ? 0.7 * Math.min(1, vs / 6) : wmax > 0 ? 0.01 + (Math.abs(s.w) > 1 ? 0.12 + 0.45 * Math.min(1, Math.abs(s.w) / wmax) : 0) : 0;
       if (o.plan === "B" && s.slot === 1 && this.stanceArm(s.arm)) s.I += 0.15;
       I += s.I;
     }
     this.servoI = I; this.avgI = (this.avgI || 0) + (I - (this.avgI || 0)) * Math.min(1, dt / 0.2); this.peakI = Math.max(this.peakI, this.avgI); this.peakInst = Math.max(this.peakInst || 0, I);
+    if (this.v10) { this.eJ = (this.eJ || 0) + (R.pBat || 0) * dt; this.eT = (this.eT || 0) + dt; }
     if (B.robot && this.phys) { this.phys.step(dt); this.pose = this.phys.pose2d(); const m = this.phys.meas; this.vel = { v: m.v, slip: m.slip }; }
     if (this.t - (this.trace.at(-1)?.t || 0) > 0.05) { this.trace.push({ ...this.pose, t: this.t }); if (this.trace.length > 3000) this.trace.shift(); }
   }
@@ -126,7 +145,7 @@ export class OctoSim {
     return {
       t: this.t, espOn: this.espOn, boots: this.boots, halted: this.rt?.halted || null, rails: R, checks: this.res.checks, warn: this.res.warn,
       servos: this.servos.map((s) => ({ role: s.role, ch: s.ch, arm: s.arm, slot: s.slot, us: s.us, ang: s.ang, cmd: s.cmd, I: s.I, stall: s.stall, buzz: s.buzz, collide: s.collide, type: s.type })),
-      servoI: this.servoI, avgI: this.avgI || 0, peakI: this.peakI, peakInst: this.peakInst || 0, vel: this.vel, freq: this.dev.freq, pose: { ...this.pose }, loco: this.phys ? this.phys.snapshot() : null, log: this.rt ? this.rt.out.slice(-40) : [], events: this.events.slice(-20), mode: this.rt?.body.mode_, gait: this.rt?.body.GaitParamsSnapshot?.(),
+      pBatAvg: this.v10 && this.eT ? this.eJ / this.eT : null, servoI: this.servoI, avgI: this.avgI || 0, peakI: this.peakI, peakInst: this.peakInst || 0, vel: this.vel, freq: this.dev.freq, pose: { ...this.pose }, loco: this.phys ? this.phys.snapshot() : null, log: this.rt ? this.rt.out.slice(-40) : [], events: this.events.slice(-20), mode: this.rt?.body.mode_, gait: this.rt?.body.GaitParamsSnapshot?.(),
     };
   }
 }

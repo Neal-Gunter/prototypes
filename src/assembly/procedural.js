@@ -533,5 +533,10 @@ export const CABLES = {
   "octo-dupont-30": { zh: "杜邦线 母‑母 30 cm（md 采购清单）", ends: ["p-dupont-f1", "p-dupont-f1"], len: 30, r: 0.08 },
   "octo-servo": { zh: "MG90S 舵机引线（棕 GND / 红 V+ / 橙 PWM）", ends: [null, "p-dupont-f3"], len: 25, est: true, r: 0.12 },
   "octo-wire": { zh: "电源线 20AWG 硅胶线（线径文档未写，估算）", ends: [null, null], len: 15, est: true, r: 0.1 },
+  // v10（我的补充）：机身上直接焊的短线；SG51R 自带引线长度页面没写（估算 15 cm，多余的在底板下扎好）
+  "octo-v10-wire": { zh: "硅胶线 26AWG（机身上直接焊，估算）", ends: [null, null], len: 10, est: true, r: 0.06 },
+  "octo-v10-power": { zh: "硅胶线 22AWG（电池 / 升压大电流，估算）", ends: [null, null], len: 10, est: true, r: 0.08 },
+  "octo-v10-servo": { zh: "SG51R 舵机引线（棕 GND / 红 V+ / 橙 PWM，长度估算）", ends: [null, null], len: 15, est: true, r: 0.09 },
+  "octo-jst": { zh: "电池自带 JST‑PH 2P 引线", ends: [null, null], len: 8, est: true, r: 0.08 },
   "micro-usb": { zh: "Micro‑USB 数据线（接电脑）", ends: ["p-plug-micro-usb", null], len: 30, r: 0.17, est: true },
 };

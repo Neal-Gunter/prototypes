@@ -83,6 +83,26 @@ ok(new OctoSim({ phase: 3, variant: "md" }).bench.vbat === 7.4 && !new OctoSim({
 const y = AntiCollide([0, 30, -30, 0, 0, 0, 0, 0], 43); ok(y.every((v, a) => 45 - y[(a + 1) % 8] + v >= 42.9), "anti-collide gap");
 ok(MD_ISSUES.length === 29 && MD_ISSUES.every((_, i) => PLUS_CHANGES.some((c) => c.issues.includes(i))), "every MD issue mapped in changelog");
 ok(FIX_LIST.filter((f) => f.plus).every((f) => f.zh.includes("我的补充")), "plus fixes labelled");
+// v10 紧凑无线版（我的补充）：电池在机身上，没有 USB / 墙插
+{
+  const { massV10, LIPO, GEO_V10 } = await import("../src/assembly/octopus/v10.js");
+  const { AntiCollide: AC } = await import("../src/assembly/octopus/firmware.js");
+  let r = await go({ variant: "v10", plan: "A" }, "GO", 15);
+  ok(r.fwd > 4 && Math.abs(r.dx) < 4 && r.col === 0, `v10 crawls forward from friction fwd=${r.fwd.toFixed(1)} dx=${r.dx.toFixed(1)} col=${r.col}`);
+  ok(r.t.res.errCount === 0, "v10 no electrical errors " + JSON.stringify(r.t.res.checks.filter((c) => !c.ok).map((c) => c.zh)));
+  ok(r.t.res.rails.espOn && !r.t.bench.usb && r.t.snapshot().log.filter((l) => l.includes("ESP-ROM")).length === 1, "v10 boots once on battery, no USB");
+  ok(r.L.mass < 0.15 && Math.abs(r.L.mass - massV10()) < 1e-9, "v10 mass " + (r.L.mass * 1000).toFixed(1) + " g");
+  ok(r.L.pen < 0.1, `v10 tip sink < 1 mm: ${(r.L.pen * 10).toFixed(2)} mm`);
+  ok(r.t.peakI < 2, "v10 battery-side servo current under 2 A cable rating " + r.t.peakI.toFixed(2));
+  const pb = r.t.snapshot().pBatAvg; ok(pb > 0.3 && pb < 4, "v10 avg battery power " + pb.toFixed(2) + " W ⇒ " + (LIPO.wh / pb).toFixed(1) + " h（估算）");
+  const z = await go({ variant: "v10", plan: "A" }, "GO", 8, 0); ok(Math.abs(z.fwd) < 0.5 && Math.hypot(z.dx, z.dz) < 0.5, `μ=0 ⇒ v10 no advance fwd=${z.fwd.toFixed(2)}`);
+  const L = await go({ variant: "v10", plan: "A" }, "LEFT", 10); ok(L.dh < -15, `v10 LEFT turns dh=${L.dh.toFixed(0)}`);
+  let t = new OctoSim({ phase: 3, variant: "v10", fault: "lowbat" }); run(t, 4); t.send("GO"); run(t, 2); ok(t.rt.lowBatt && t.rt.body.mode_ === "idle", "v10 low-batt cutoff 3.55 V");
+  t = new OctoSim({ phase: 3, variant: "v10", fault: "swoff" }); run(t, 3); ok(!t.res.rails.espOn && t.servos.every((x) => x.us === 0), "v10 switch off ⇒ nothing runs");
+  t = new OctoSim({ phase: 3, variant: "v10", fault: "nognd" }); run(t, 3); ok(t.res.errCount > 0, "v10 missing GND flagged");
+  t = new OctoSim({ phase: 3, variant: "v10" }); run(t, 4); ok(Math.abs(t.servos[0].us - 1500) < 6, "v10 LEDC pulse centre 1.5 ms " + t.servos[0].us);
+  const y = AC([0, 40, -40, 0, 0, 0, 0, 0], -30); ok(y.every((v, a) => 45 - y[(a + 1) % 8] + v >= -30.1), "v10 anti-collide gap");
+}
 // 完善版固件文件：静态检查（真正的编译检查用 arduino-cli，见 README）
 {
   const R = (f) => readFileSync(new URL("../src/assembly/octopus/plus/" + f, import.meta.url), "utf8");

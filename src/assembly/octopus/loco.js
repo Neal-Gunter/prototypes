@@ -4,6 +4,7 @@
 import RAPIER from "@dimforge/rapier3d-compat";
 import { Gait } from "./firmware.js";
 import { FRAME } from "./parts.js";
+import { GEO_V10, massV10, MASS_V10, SG51R } from "./v10.js";
 
 export const MG90S = {
   src: "Tower Pro MG90S datasheet：堵转扭矩 1.8 kgf·cm @4.8 V、2.2 kgf·cm @6 V；0.10 s/60° @4.8 V、0.08 s/60° @6 V；13.4 g",
@@ -26,6 +27,10 @@ export const LOCO_EST = {
 };
 
 export function bodyMassKg(plan, variant) {
+  if (variant === "v10") { // v10：全部板载（v10.js 质量表，页面数字 + 估算）；触手 PLA 12 g / 8、尖球分 30%
+    const total = massV10(), arm = (MASS_V10.find((r) => r.k.startsWith("PLA 触手")).g / 1000) / 8;
+    return { total, torso: total - 8 * arm, arm, link: 0 };
+  }
   // md 采购清单：PLA 150–250 g。方案 A 没有俯仰支架，取下限 150 g；方案 B 取中间 200 g（估算）
   const servoOnBody = 8 * MG90S.mass, pca = 0.015, wire = 0.02;
   const pla = plan === "B" ? 0.2 : 0.15, armPla = plan === "B" ? 8 * 0.004 : 8 * 0.005, bracket = plan === "B" ? 8 * 0.002 : 0;
@@ -57,30 +62,32 @@ export class LocoPhys {
     const gb = this.world.createRigidBody(R.RigidBodyDesc.fixed());
     this.ground = this.world.createCollider(R.ColliderDesc.cuboid(300, 1, 300).setTranslation(c[0], -1, c[2]).setFriction(1).setFrictionCombineRule(R.CoefficientCombineRule.Min).setCollisionGroups(groups(GRP_GROUND, GRP_ROBOT)), gb);
     this.m = bodyMassKg(this.plan, this.variant);
+    // 几何：v9 = md 方案 A/B（FRAME、MG90S）；v10 = 紧凑无线版（GEO_V10，和 3D 装配同一份 CAD 尺寸）
+    this.geo = this.variant === "v10" ? GEO_V10 : { plateR: FRAME.R, plateT: FRAME.t, yawR: 3.8, yawH: FRAME.t + 3.07, tip: [8.75, -3.2], seg: [[1.0, 0.15], [7.3, -2.5]], segR: 0.18, horn: [0.6, 0.2, 0.3], hornAt: 0.6, armI: ARM_I, comY: 2, rg: 5, stall: stallKgfCm, servoMass: MG90S.mass };
     this.build();
     this.reset();
   }
   build() {
-    const R = this.R, W = this.world, [cx, , cz] = this.c, m = this.m;
+    const R = this.R, W = this.world, [cx, , cz] = this.c, m = this.m, GE = this.geo;
     const cg = groups(GRP_ROBOT, GRP_GROUND);
     // 机身：底板 Φ10 cm；质量集中在 8 个舵机 + 上层板（质心约 2 cm 高，估算）
     const lift0 = this.hw.casters ? 0.3 : 0;
-    const body = W.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(cx, lift0, cz).setAdditionalMassProperties(m.torso, { x: 0, y: 2, z: 0 }, { x: m.torso * (3 * 25 + 25) / 12, y: m.torso * 12.5, z: m.torso * (3 * 25 + 25) / 12 }, { w: 1, x: 0, y: 0, z: 0 }).setCanSleep(false));
-    this.plate = W.createCollider(R.ColliderDesc.cylinder(FRAME.t / 2, FRAME.R).setTranslation(0, FRAME.t / 2, 0).setDensity(0).setFriction(this.mu).setCollisionGroups(cg), body);
+    const body = W.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(cx, lift0, cz).setAdditionalMassProperties(m.torso, { x: 0, y: GE.comY, z: 0 }, { x: m.torso * (3 * GE.rg ** 2 + 25) / 12, y: m.torso * GE.rg ** 2 / 2, z: m.torso * (3 * GE.rg ** 2 + 25) / 12 }, { w: 1, x: 0, y: 0, z: 0 }).setCanSleep(false));
+    this.plate = W.createCollider(R.ColliderDesc.cylinder(GE.plateT / 2, GE.plateR).setTranslation(0, GE.plateT / 2, 0).setDensity(0).setFriction(this.mu).setCollisionGroups(cg), body);
     this.casters = [];
-    if (this.hw.casters) for (let k = 0; k < 3; k++) { const a = (k * 2 * Math.PI) / 3 + Math.PI / 2; this.casters.push(W.createCollider(R.ColliderDesc.ball(0.4).setTranslation(2.5 * Math.cos(a), 0.1, 2.5 * Math.sin(a)).setDensity(0).setFriction(0.02).setFrictionCombineRule(R.CoefficientCombineRule.Min).setCollisionGroups(cg), body)); }
+    if (this.hw.casters) for (let k = 0; k < 3; k++) { const a = (k * 2 * Math.PI) / 3 + Math.PI / 2, cr = this.variant === "v10" ? 2.0 : 2.5; this.casters.push(W.createCollider(R.ColliderDesc.ball(0.4).setTranslation(cr * Math.cos(a), 0.1, cr * Math.sin(a)).setDensity(0).setFriction(0.02).setFrictionCombineRule(R.CoefficientCombineRule.Min).setCollisionGroups(cg), body)); }
     this.body = body;
-    const T = stallKgfCm(6);
+    const T = GE.stall(6);
     this.legs = [];
     for (let a = 0; a < 8; a++) {
       const th = (Gait.MountAngle(a) * Math.PI) / 180, dir = [Math.cos(th), 0, Math.sin(th)], tan = [-Math.sin(th), 0, Math.cos(th)];
-      const yawP = [dir[0] * 3.8, FRAME.t + 3.07 + lift0, dir[2] * 3.8]; // 偏航舵机输出轴（与 3D 装配一致）
+      const yawP = [dir[0] * GE.yawR, GE.yawH + lift0, dir[2] * GE.yawR]; // 偏航舵机输出轴（与 3D 装配一致）
       const leg = { a, th, dir, tan, yawP };
       const q = quatY(-th); // 径向坐标系 → 世界：局部 x = 径向、局部 z = 切向
       // 连杆刚体都用“不转”的姿态建，碰撞体自己带旋转：这样关节角 0 = 装配姿态，马达目标 = 舵机角 − 90°
       const L = (x, y) => { const r = rotVec(q, [x, y, 0]); return { x: r[0], y: r[1], z: r[2] }; };
       // 每个连杆加一点转动惯量 = 舵机减速箱的反射惯量（估算 ARM_I），也让求解器收敛（质量比太悬殊时马达推不动）
-      const mk = (P) => W.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(cx + P[0], P[1], cz + P[2]).setAdditionalMassProperties(0, { x: 0, y: 0, z: 0 }, { x: ARM_I, y: ARM_I, z: ARM_I }, { w: 1, x: 0, y: 0, z: 0 }).setCanSleep(false));
+      const mk = (P) => W.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(cx + P[0], P[1], cz + P[2]).setAdditionalMassProperties(0, { x: 0, y: 0, z: 0 }, { x: GE.armI, y: GE.armI, z: GE.armI }, { w: 1, x: 0, y: 0, z: 0 }).setCanSleep(false));
       const tipBall = (rb, tip) => { leg.tipLocal = L(tip[0], tip[1] - 0.15); return W.createCollider(R.ColliderDesc.ball(0.15).setTranslation(...v3(L(tip[0], tip[1]))).setMass(m.arm * 0.3).setFriction(this.mu).setCollisionGroups(cg), rb); };
       if (this.plan === "B") {
         // 偏航连杆 = 支架 + 侧躺的俯仰舵机；俯仰轴在径向 5.92、切向 +1.52、高 4.22 cm（与 build3d 一致）
@@ -99,11 +106,11 @@ export class LocoPhys {
       } else {
         // 方案 A 只有偏航（1 自由度）。触手根部再加一个“被动弹性”俯仰：代表 6 节 PLA 触手的弯曲柔度（估算），没有舵机
         const horn = mk(yawP);
-        W.createCollider(R.ColliderDesc.cuboid(0.6, 0.2, 0.3).setTranslation(...v3(L(0.6, 0))).setRotation(q).setMass(m.arm * 0.3).setCollisionGroups(groups(GRP_ROBOT, 0)), horn);
+        W.createCollider(R.ColliderDesc.cuboid(...GE.horn).setTranslation(...v3(L(GE.hornAt, 0))).setRotation(q).setMass(m.arm * 0.3).setCollisionGroups(groups(GRP_ROBOT, 0)), horn);
         const arm = mk(yawP);
         // 触手 A：6 节，从轴往外 8.75 cm、往下 3.2 cm 到尖球心（与 p-octo-arm 一致）
-        leg.tipCol = tipBall(arm, [8.75, -3.2]);
-        leg.segCol = capsuleBetween(R, W, arm, q, [1.0, 0.15], [7.3, -2.5], 0.18, m.arm * 0.4, this.mu, cg);
+        leg.tipCol = tipBall(arm, GE.tip);
+        leg.segCol = capsuleBetween(R, W, arm, q, GE.seg[0], GE.seg[1], GE.segR, m.arm * 0.4, this.mu, cg);
         const jy = W.createImpulseJoint(R.JointData.revolute({ x: yawP[0], y: yawP[1] - lift0, z: yawP[2] }, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 }), body, horn, true);
         const jf = W.createImpulseJoint(R.JointData.revolute({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }, { x: tan[0], y: 0, z: tan[2] }), horn, arm, true);
         leg.joints = [{ j: jy, slot: 0, sign: 1, axis: [0, 1, 0], parent: body, child: horn }];
@@ -112,7 +119,7 @@ export class LocoPhys {
         // 完善版 A：触手尖要压在桌上分担 tipShare 的重量（v7 的设计，我的补充）。按柔度算出需要的“预弯”角：
         // 先把尖放到桌面（万向珠把机身抬高了 lift0），再多压 FLEX_DEG
         const share = this.hw.tipShare || 0;
-        const lever = 8.75, gapDeg = (Math.atan2(lift0 + 0.02, lever) * 180) / Math.PI;
+        const lever = GE.tip[0], gapDeg = (Math.atan2(lift0 + 0.02, lever) * 180) / Math.PI;
         const Mneed = (share * m.total) / 8 * lever * G; // 每条腿需要的力矩 kg·cm²/s²
         leg.flexK = Mneed > 0 ? Mneed / ((FLEX_DEG * Math.PI) / 180) : FLEX_K0;
         leg.flexTgt = share > 0 ? -((gapDeg + FLEX_DEG) * Math.PI) / 180 : 0;
@@ -147,7 +154,7 @@ export class LocoPhys {
   step(dtSim) {
     this.acc += dtSim;
     const vs = this.sim.res?.rails?.vservo ?? 6;
-    const T = kgfcm(stallKgfCm(vs));
+    const T = kgfcm(this.geo.stall(vs));
     while (this.acc >= this.dt) { this.acc -= this.dt; this.sub(T); }
   }
   sub(T) {
@@ -221,7 +228,7 @@ export class LocoPhys {
     const p = this.body.translation();
     const cyc = this.cycles.slice(-5);
     const perCycle = cyc.length ? cyc.reduce((s, c) => s + c.fwd, 0) / cyc.length : null;
-    return { t: this.t, dx: p.x - this.start.x, dz: p.z - this.start.z, fwd: this.fwd(), dh: ((this.hAcc - this.start.hAcc) * 180) / Math.PI, y: p.y, ...this.meas, load: [...this.meas.load], torque: [...(this.meas.torque || [])], perCycle, cycles: this.cycles.length, mu: this.mu, mass: this.m.total, stall: stallKgfCm(this.sim.res?.rails?.vservo ?? 6) };
+    return { t: this.t, dx: p.x - this.start.x, dz: p.z - this.start.z, fwd: this.fwd(), dh: ((this.hAcc - this.start.hAcc) * 180) / Math.PI, y: p.y, ...this.meas, load: [...this.meas.load], torque: [...(this.meas.torque || [])], perCycle, cycles: this.cycles.length, mu: this.mu, mass: this.m.total, stall: this.geo.stall(this.sim.res?.rails?.vservo ?? 6), servoSrc: this.variant === "v10" ? SG51R.src : MG90S.src };
   }
 }
 function capsuleBetween(R, W, rb, qr, p0, p1, r, mass, mu, cg) {
