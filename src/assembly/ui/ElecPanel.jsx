@@ -4,6 +4,8 @@ import { engine } from "../engine.js";
 import { elec } from "../elecStore.js";
 import { meter, termLabel } from "../netlist.js";
 import { makeGuide } from "../guide.js";
+import { Link } from "react-router-dom";
+import { benchToDesc, BENCH_KEY } from "../../repair/benchImport.js";
 
 const LV = { error: "border-red-700 bg-red-50", warn: "border-amber-500 bg-amber-50", info: "border-line bg-white", ok: "border-emerald-700 bg-emerald-50" };
 
@@ -57,6 +59,12 @@ export default function ElecPanel({ probes, setProbes, tool, setTool }) {
             <span className={b.powered ? "text-emerald-700" : "text-ink-soft"} data-testid="power-state">{b.powered ? `已通电（${b.via || "USB"}）` : "未通电"}</span>
           </button>
         ))}
+        {boards.some((b) => b.powered) && (
+          <Link to="/repair?tab=editor&import=bench" className="mt-1 inline-block text-xs underline" data-testid="to-repair"
+            onClick={() => { try { const d = benchToDesc(elec.last?.cir); if (d) localStorage.setItem(BENCH_KEY, JSON.stringify(d)); } catch (e) { console.warn(e); } }}>
+            把这个电路做成维修关卡 →
+          </Link>
+        )}
       </section>
 
       {cur && (

@@ -2,6 +2,8 @@
 // 唯一的数据来源是装配引擎（零件位姿 + 边 + 焊点 + 线缆），不另存一份接线表。
 // 早期原型，简化仿真：只算稳态直流（节点电压法），数值标“估算”的没有查到对应型号的数据手册。
 import { PICO_PINS } from "./catalog.js";
+import { gauss, ohmsBetween, BEEP_OHM, fmtOhm, LED_VF, LED_RS, LED_OVER_MA, LED_BURN_MA, SERVO_MIN_V } from "./dcmath.js";
+export { LED_VF, LED_RS, LED_OVER_MA, LED_BURN_MA, SERVO_MIN_V };
 import { PART_TYPES } from "../workbench/parts.js";
 
 const base = (id) => id.replace(/:flip$/, "");
@@ -74,10 +76,6 @@ export function ensureRefs(engine) {
     used.add(p.state.ref);
   }
 }
-export const LED_VF = 2.0; // 估算：红色 LED 典型正向压降
-export const LED_RS = 15; // 估算：LED 导通后的等效串联电阻
-export const LED_OVER_MA = 20, LED_BURN_MA = 50; // 20 mA 为常见 5 mm LED 的额定电流；50 mA 烧坏阈值为估算
-export const SERVO_MIN_V = 4.5; // 估算：微型舵机常见工作电压 4.8–6 V，低于约 4.5 V 这里就不动
 export const SHORT_A = 0.5;
 
 // 腿的语义：LED 腿 0 = 焊盘 1 = 阴极 K（KiCad 惯例），腿 1 = 阳极 A；电位器按 x 排序：两端 + 中间滑片
@@ -250,30 +248,6 @@ function boardSources(cir, fw) {
   return { src, boards };
 }
 
-// 解线性方程组（高斯消元，部分主元）
-function gauss(A, b) {
-  const n = b.length;
-  for (let c = 0; c < n; c++) {
-    let p = c;
-    for (let r = c + 1; r < n; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
-    if (Math.abs(A[p][c]) < 1e-15) continue;
-    [A[c], A[p]] = [A[p], A[c]];
-    [b[c], b[p]] = [b[p], b[c]];
-    for (let r = c + 1; r < n; r++) {
-      const f = A[r][c] / A[c][c];
-      if (!f) continue;
-      for (let k = c; k < n; k++) A[r][k] -= f * A[c][k];
-      b[r] -= f * b[c];
-    }
-  }
-  const x = new Array(n).fill(0);
-  for (let r = n - 1; r >= 0; r--) {
-    let s = b[r];
-    for (let k = r + 1; k < n; k++) s -= A[r][k] * x[k];
-    x[r] = Math.abs(A[r][r]) < 1e-15 ? 0 : s / A[r][r];
-  }
-  return x;
-}
 
 // 直流求解：所有电源都是“对地的戴维南等效”（电压 + 内阻），所以只要节点导纳矩阵
 export function solve(cir, fw = {}) {
@@ -344,31 +318,12 @@ export function meter(cir, sol, red, black, mode) {
     return { text: `${(va - vb).toFixed(2)} V`, value: va - vb };
   }
   if (a === b) return { text: mode === "beep" ? "嘀——（导通，≈0 Ω）" : "0.0 Ω", value: 0, beep: true };
-  // 无源网络：从 a 注入 1 A，b 接地
-  const R = cir.els.filter((e) => e.t === "R").map((e) => ({ na: N(e.a), nb: N(e.b), r: e.r }));
-  const adj = new Map();
-  for (const r of R) { (adj.get(r.na) || adj.set(r.na, []).get(r.na)).push(r.nb); (adj.get(r.nb) || adj.set(r.nb, []).get(r.nb)).push(r.na); }
-  const seen = new Set([a]);
-  const st = [a];
-  while (st.length) { const x = st.pop(); for (const y of adj.get(x) || []) if (!seen.has(y)) { seen.add(y); st.push(y); } }
-  if (!seen.has(b)) return { text: mode === "beep" ? "不响（不通，OL）" : "OL（开路）", value: Infinity };
-  const nodes = [...seen].filter((n) => n !== b);
-  const idx = new Map(nodes.map((n, i) => [n, i]));
-  const A = Array.from({ length: nodes.length }, () => new Array(nodes.length).fill(0));
-  const rhs = new Array(nodes.length).fill(0);
-  for (const r of R) {
-    if (!seen.has(r.na)) continue;
-    const g = 1 / r.r, i = idx.get(r.na), j = idx.get(r.nb);
-    if (i != null) A[i][i] += g;
-    if (j != null) A[j][j] += g;
-    if (i != null && j != null) { A[i][j] -= g; A[j][i] -= g; }
-  }
-  rhs[idx.get(a)] = 1;
-  const x = gauss(A, rhs);
-  const ohm = x[idx.get(a)];
+  // 无源网络：从 a 注入 1 A，b 接地（算法在 dcmath.js，维修关卡共用）
+  const ohm = ohmsBetween(cir.els.filter((e) => e.t === "R").map((e) => ({ na: N(e.a), nb: N(e.b), r: e.r })), a, b);
+  if (ohm === Infinity) return { text: mode === "beep" ? "不响（不通，OL）" : "OL（开路）", value: Infinity };
   const powered = sol.boards.some((b0) => b0.powered);
-  const txt = ohm < 1000 ? `${ohm.toFixed(1)} Ω` : ohm < 1e6 ? `${(ohm / 1000).toFixed(2)} kΩ` : `${(ohm / 1e6).toFixed(2)} MΩ`;
-  if (mode === "beep") return { text: ohm < 30 ? `嘀——（${txt}）` : `不响（${txt}）`, value: ohm, beep: ohm < 30, warn: powered ? "通电时量电阻/通断，真实万用表读数会不准" : null };
+  const txt = fmtOhm(ohm);
+  if (mode === "beep") return { text: ohm < BEEP_OHM ? `嘀——（${txt}）` : `不响（${txt}）`, value: ohm, beep: ohm < BEEP_OHM, warn: powered ? "通电时量电阻/通断，真实万用表读数会不准" : null };
   return { text: txt, value: ohm, warn: powered ? "通电时量电阻，真实万用表读数会不准（模拟里只算无源元件）" : null };
 }
 

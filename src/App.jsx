@@ -9,6 +9,7 @@ const PartsPage = lazy(() => import("./pages/PartsPage"));
 const GuidePage = lazy(() => import("./pages/GuidePage"));
 const OctoGuidePage = lazy(() => import("./pages/OctoGuidePage"));
 const ModelLabPage = lazy(() => import("./pages/ModelLabPage"));
+const RepairPage = lazy(() => import("./pages/RepairPage"));
 import NotFoundPage from "./pages/NotFoundPage";
 import CreditsPage from "./pages/CreditsPage";
 
@@ -64,6 +65,14 @@ export default function App() {
             element={
               <Suspense fallback={<p className="p-8 text-ink-soft">正在加载模型 + 功能图…</p>}>
                 <ModelLabPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/repair"
+            element={
+              <Suspense fallback={<p className="p-8 text-ink-soft">正在加载维修关卡…</p>}>
+                <RepairPage />
               </Suspense>
             }
           />

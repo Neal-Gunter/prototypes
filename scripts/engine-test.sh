@@ -28,3 +28,5 @@ node scripts/ctrl-test.mjs || exit 1
 node scripts/v15-test.mjs || exit 1
 # v16：实物连接 OCTL/1（协议 / C 对拍 / 安全层 / 模拟设备 / 会话 / 校准）
 node scripts/link-test.mjs || exit 1
+# v17：维修关卡（12 关：故障读数 / 预期修法 / 打乱顺序 / 错误修法 / 有序关卡 / 编辑器）
+node scripts/repair-test.mjs || exit 1
