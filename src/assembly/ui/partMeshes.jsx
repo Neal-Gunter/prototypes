@@ -2,6 +2,15 @@
 import { useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
+import { ConvexGeometry } from "three/examples/jsm/geometries/ConvexGeometry.js";
+// v23：凸包碰撞体（c.hull = 相对 c.c 的顶点，cm）→ 凸多面体几何；缓存在条目对象上
+const _hg = new WeakMap();
+export function hullGeom(c) {
+  if (_hg.has(c)) return _hg.get(c);
+  const P = []; for (let i = 0; i < c.hull.length; i += 3) P.push(new THREE.Vector3(c.hull[i], c.hull[i + 1], c.hull[i + 2]));
+  let g = null; try { g = new ConvexGeometry(P); } catch { g = null; }
+  _hg.set(c, g); return g;
+}
 export const MAT = {
   steel: new THREE.MeshStandardMaterial({ color: "#b8bcc2", metalness: 0.85, roughness: 0.32 }),
   brass: new THREE.MeshStandardMaterial({ color: "#c9a24a", metalness: 0.8, roughness: 0.3 }),
@@ -25,11 +34,14 @@ export const MAT = {
 export const PROC_MAT = { screw: "steel", nut: "steel", standoff: "brass", plate: "acrylic", breadboard: "white", bracket: "black", horn: "white", tentacle: "orange", dupont: "black", plug: "black", tool: "blue" };
 
 export function Boxes({ cols, mat }) {
-  return cols.map((c, i) => (
-    <mesh key={i} position={c.c} material={MAT[mat] || MAT.white} castShadow receiveShadow>
-      <boxGeometry args={[c.h[0] * 2, c.h[1] * 2, c.h[2] * 2]} />
-    </mesh>
-  ));
+  return cols.map((c, i) => {
+    const g = c.hull ? hullGeom(c) : null;
+    return g ? <mesh key={i} position={c.c} geometry={g} material={MAT[mat] || MAT.white} castShadow receiveShadow /> : (
+      <mesh key={i} position={c.c} material={MAT[mat] || MAT.white} castShadow receiveShadow>
+        <boxGeometry args={[c.h[0] * 2, c.h[1] * 2, c.h[2] * 2]} />
+      </mesh>
+    );
+  });
 }
 // 紧固件画成圆柱 / 六角（碰撞仍用方块，见“简化”）
 export function ProcMesh({ def }) {

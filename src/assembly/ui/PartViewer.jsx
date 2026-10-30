@@ -3,7 +3,8 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Html, Line } from "@react-three/drei";
 import { getEntry, toDef } from "../catalog.js";
-import { ProcMesh, Glb } from "./partMeshes.jsx";
+import * as THREE from "three";
+import { ProcMesh, Glb, hullGeom } from "./partMeshes.jsx";
 
 function tickStep(mm) { return mm <= 12 ? 1 : mm <= 60 ? 5 : mm <= 250 ? 10 : 50; }
 function Axis({ from, dir, len, label, side }) {
@@ -44,6 +45,12 @@ const BOX_EDGES = [[0, 1], [1, 3], [3, 2], [2, 0], [4, 5], [5, 7], [7, 6], [6, 4
 function ColliderOverlay({ cols }) {
   // 每个碰撞盒 {c 中心, h 半边长}（cm）画 12 条边；颜色区分相邻块
   const segs = useMemo(() => cols.map((b) => {
+    const g = b.hull ? hullGeom(b) : null;
+    if (g) { // v23：凸包画棱线（相邻面夹角 > 20°）
+      const a = new THREE.EdgesGeometry(g, 20).attributes.position, out = [];
+      for (let i = 0; i < a.count; i++) out.push([b.c[0] + a.getX(i), b.c[1] + a.getY(i), b.c[2] + a.getZ(i)]);
+      return out;
+    }
     const v = [];
     for (let i = 0; i < 8; i++) v.push([b.c[0] + (i & 1 ? 1 : -1) * b.h[0], b.c[1] + (i & 2 ? 1 : -1) * b.h[1], b.c[2] + (i & 4 ? 1 : -1) * b.h[2]]);
     return BOX_EDGES.flatMap(([a, c]) => [v[a], v[c]]);
@@ -83,8 +90,10 @@ export default function PartViewer({ id }) {
       </div>
       {coll && (
         <p className="mt-1 text-[11px] leading-snug text-ink-soft" data-testid="collider-info">
-          碰撞体：{def.colliders.length} 个盒（物理引擎按这些凸块算碰撞）。
-          {def.collider_decomp
+          碰撞体：{def.colliders.filter((c) => c.hull).length ? `${def.colliders.length} 个凸包` : `${def.colliders.length} 个盒`}（物理引擎按这些凸块算碰撞）。
+          {def.collider_decomp?.hull
+            ? <>凸包分解（构建时，我的补充）：原来 {def.collider_decomp.hull.boxes} 个体素盒 → {def.collider_decomp.hull.n} 个凸包；比可见网格最多外扩 {def.collider_decomp.hull.box_exMax_mm} → {def.collider_decomp.hull.exMax_mm} mm（中位 {def.collider_decomp.hull.p50_mm} mm），网格顶点全部被覆盖。</>
+            : def.collider_decomp
             ? <>体素凸分解（构建时，我的补充）：体素 {def.collider_decomp.cell_mm} mm，盒子比可见网格最多外扩 {def.collider_decomp.exMax_mm} mm（容差 {def.collider_decomp.tol_mm} mm = 体素对角线），网格表面全部被覆盖。</>
             : def.kind === "glb" ? <>由模型各部件的包围盒自动生成，可能比外形稍大（估算）。</> : <>程序生成零件，碰撞盒即外形（近似）。</>}
         </p>

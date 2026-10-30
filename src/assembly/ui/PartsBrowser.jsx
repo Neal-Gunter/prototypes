@@ -12,7 +12,7 @@ const fmt = (d) => (d ? `${d.x} × ${d.z} × ${d.y} mm` : "—");
 export function estMassG(e) {
   if (e.mass) return { g: e.mass, est: false };
   const dens = e.density || (e.cat === "motor" ? 1.6 : e.cat === "connector" ? 1.2 : 1.85);
-  const v = (e.colliders || []).reduce((s, c) => s + 8 * c.h[0] * c.h[1] * c.h[2], 0);
+  const v = (e.colliders || []).reduce((s, c) => s + (c.vol ?? 8 * c.h[0] * c.h[1] * c.h[2]), 0); // v23：凸包带体积 vol（cm³）
   return { g: +(v * dens).toFixed(v * dens < 1 ? 2 : 1), est: true };
 }
 // v20：收藏和最近使用存在浏览器 localStorage（不上传）

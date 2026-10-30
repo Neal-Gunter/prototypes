@@ -4,6 +4,16 @@
 import fs from "node:fs";
 import path from "node:path";
 import { CATS } from "./lib/manifest.mjs";
+import { ConvexHull } from "three/examples/jsm/math/ConvexHull.js";
+import { Vector3 } from "three";
+// v23：凸包碰撞体补上体积 vol（cm³，三角扇求和），零件库按体积估质量时不再用包围盒
+const withVol = (cols) => cols?.map((c) => {
+  if (!c.hull || c.vol != null) return c;
+  const P = []; for (let i = 0; i < c.hull.length; i += 3) P.push(new Vector3(c.hull[i], c.hull[i + 1], c.hull[i + 2]));
+  const H = new ConvexHull().setFromPoints(P); let v = 0;
+  for (const f of H.faces) { let e = f.edge; const a = e.head().point; e = e.next; while (e.next !== f.edge) { v += a.dot(new Vector3().crossVectors(e.head().point, e.next.head().point)) / 6; e = e.next; } }
+  return { ...c, vol: +Math.abs(v).toFixed(5) };
+});
 
 const LIB = path.resolve("../libsrc");
 const OUT = path.resolve("public/lib");
@@ -84,7 +94,7 @@ for (const m of man) {
     dims_src: meta.dims_src,
     tris: meta.tris,
     kb: Math.round(meta.glb_bytes / 1024),
-    colliders: meta.colliders,
+    colliders: withVol(meta.colliders),
     ...(meta.collider_decomp ? { collider_decomp: meta.collider_decomp } : {}),
     legs: meta.legs?.length ? meta.legs : undefined,
     pcb_top_y: meta.pcb_top_y ?? undefined,
