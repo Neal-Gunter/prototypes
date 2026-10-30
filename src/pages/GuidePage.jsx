@@ -158,6 +158,18 @@ export default function GuidePage() {
         <p className="mt-2 text-xs text-ink-soft">简化（我的补充）：理想元件，没有 EMI、温度、PCB 寄生，只算写明的 ESR、线阻、端子接触电阻、电池内阻；升压和舵机是行为模型，数值多为估算。</p>
       </section>
 
+      <section id="bench-netlist" className="mt-6 border border-line bg-white p-3" data-testid="guide-bench-netlist">
+        <h2 className="text-lg font-medium">示波器看我的电路（v19，早期原型，简化仿真）</h2>
+        <p className="text-xs text-ink-soft">在 <Link className="underline" to="/assembly?scene=electrics">装配台</Link> 的“电”页签打开示波器，默认是“我的电路（台面）”：程序按你在 3D 台面上实际放的零件和接的线生成电路再仿真。原来的参考板示波器保留为“备用”，它不是你的台面电路。</p>
+        <ol className="mt-2 list-decimal pl-5 text-xs leading-5">
+          <li><b>先看网表检查</b>：有<b>悬空</b>网络（线没接到电源或地）、短路、缺地、不支持的零件会直接写出来；有致命错误就不仿真。</li>
+          <li><b>探头</b>：任意零件脚或导线端点都能夹。</li>
+          <li><b>实时改</b>：换电容、电池新旧、每根线的线规、拔掉一根线，波形自动重抓；灰色虚线是改之前的波形；“撤销”一步步退回。</li>
+          <li><b>自适应步长</b>：勾上后求解器按误差自己调步长，并在开关、欠压复位、限流这些事件处对齐；结果和固定步长接近，但不一定更快。</li>
+          <li><b>八爪鱼 what-if</b>：选电容 / 电池 / 线规组合，表里给出复位次数、最低电压、舵机起步跌落、电池峰值电流。</li>
+        </ol>
+        <p className="mt-2 text-xs text-ink-soft">简化（我的补充）：线阻、端子接触电阻、主控和 LDO 电流、舵机电流、电池老化内阻都是<b>估算</b>；面包板上的传感器等未建模零件只提示、不参与仿真；同一台面多块主控时只有第一块驱动舵机信号。读数不是实测，<b>不替代真实安全培训</b>。</p>
+      </section>
       <section className="mt-6 break-inside-avoid border border-copper p-3" data-testid="guide-safety">
         <h2 className="font-medium">安全提示</h2>
         <p className="text-xs text-copper">{SAFETY[0]}</p>
