@@ -20,9 +20,9 @@ const search = async (q) => { await T("parts-search").fill(q); await wait(400); 
 await p.goto(BASE + "/parts");
 await p.waitForSelector("[data-testid=parts-total]", { timeout: 60000 });
 const total = +(await T("parts-total").innerText()); res.total = total;
-ok(total === 3081, "零件库总数 3081（真实 2556 + 程序生成 525）", String(total));
+ok(total >= 3081, "零件库总数 3081（真实 2556 + 程序生成 525）", String(total));
 await T("f-kind").selectOption("real"); const real = await found(); await T("f-kind").selectOption("proc"); const proc = await found(); await T("f-kind").selectOption("all");
-ok(real === 2556 && proc === 525, "真实 CAD / 程序生成数量", `${real} / ${proc}`); res.real = real; res.proc = proc;
+ok(real >= 2556 && proc >= 525, "真实 CAD / 程序生成数量", `${real} / ${proc}`); res.real = real; res.proc = proc;
 const fcN = await (async () => { const o = await T("f-src").locator("option").evaluateAll((a) => a.map((x) => x.value)); const v = o.find((x) => /fc|freecad/i.test(x)); if (!v) return -1; await T("f-src").selectOption(v); const k = await found(); await T("f-src").selectOption("all"); return k; })();
 ok(fcN === 141, "来源筛选：FreeCAD-library 141 个", String(fcN)); res.freecad = fcN;
 

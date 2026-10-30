@@ -55,6 +55,7 @@ export default function AssemblyPage() {
   const [sel, setSel] = useState(null);
   const [tab, setTab] = useState("tools");
   const [probes, setProbes] = useState({});
+  const [pin, setPin] = useState(null); // v22：悬停的物理引脚
   const [listText, setListText] = useState(PRESETS.electrics.text);
   const [listErr, setListErr] = useState([]);
   const [customMsg, setCustomMsg] = useState(null);
@@ -206,7 +207,15 @@ export default function AssemblyPage() {
         <Link to="/parts" className="shrink-0 text-xs underline">打开完整零件库（看尺寸、孔位、许可）</Link>
       </aside>
       <div className="relative min-h-[60vh] flex-1 border border-line bg-paper-2">
-        {ready ? <AsmScene uids={uids} tool={tool} debug={debug} flux={flux} vis={vis} onTick={onTick} onSelect={setSel} probes={probes} onProbe={(k, t) => setProbes((p) => ({ ...p, [k]: t }))} /> : <p className="p-6 text-ink-soft">正在加载物理引擎…</p>}
+        {ready ? <AsmScene uids={uids} tool={tool} debug={debug} flux={flux} vis={vis} onTick={onTick} onSelect={setSel} probes={probes} onProbe={(k, t) => setProbes((p) => ({ ...p, [k]: t }))} onPin={setPin} /> : <p className="p-6 text-ink-soft">正在加载物理引擎…</p>}
+        {pin && (
+          <div className="pointer-events-none fixed z-50 max-w-xs border border-ink/30 bg-paper-2/95 px-2 py-1 text-xs shadow" style={{ left: pin.x + 14, top: pin.y + 10 }} data-testid="pin-hover">
+            <div className="font-semibold text-ink">{pin.ref ? pin.ref + " · " : ""}{pin.title}</div>
+            <div className="text-ink-soft">{pin.sub}</div>
+            {pin.pitch && <div className="text-ink-soft" data-testid="pin-pitch">{pin.pitch}</div>}
+            <div className="text-[10px] text-ink-soft">我的补充 · 早期原型，简化仿真</div>
+          </div>
+        )}
         <div className="pointer-events-none absolute left-2 top-2 flex max-w-md flex-col gap-1" aria-live="polite" data-testid="toasts">
           {demo && <div className="bg-ink/85 px-2 py-1 text-sm text-paper-2" data-testid="demo-step">{demo.text}</div>}
           {toasts.map((t) => (

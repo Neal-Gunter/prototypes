@@ -8,6 +8,7 @@ import { engine, BENCH } from "../engine.js";
 import { PROC_BY_ID } from "../procedural.js";
 import { elec } from "../elecStore.js";
 import { elemKind, jointOf, terminalAt } from "../netlist.js";
+import { pinLabel } from "../physpins.js";
 
 import { MAT, PROC_MAT, Boxes, ProcMesh, Glb } from "./partMeshes.jsx";
 export { ProcMesh, Glb };
@@ -19,6 +20,60 @@ function CustomMesh({ def }) {
   return <mesh geometry={g.geom} material={mat} castShadow receiveShadow />;
 }
 const _q = new THREE.Quaternion(), _p = new THREE.Vector3();
+// v22：零件上离指针最近的“有名字的物理引脚”（通孔 / 排针 / 贴片焊盘 / 腿）
+export function pinAt(uid, wp, r = 0.25) {
+  const P = engine.parts.get(uid); if (!P?.def.physPins) return null;
+  let best = null;
+  for (const f of engine.worldFeatures(P.body)) {
+    if (f.uid !== uid) continue;
+    const k = f.t === "pinhole" ? `p${f.i}` : f.t === "pad" ? `s${f.i}` : f.t === "pin-up" || f.t === "leg" ? `l${f.i}` : null;
+    if (!k || !P.def.physPins[k]) continue;
+    const d = Math.hypot(f.wp.x - wp.x, f.wp.z - wp.z);
+    if (d < r && (!best || d < best.d)) best = { d, k, f };
+  }
+  return best;
+}
+const pinState = { key: null, set: null, marker: null };
+function hoverPin(e, uid) {
+  const b = pinAt(uid, e.point);
+  const key = b ? uid + "|" + b.k : null;
+  if (pinState.marker) { pinState.marker.visible = !!b; if (b) pinState.marker.position.copy(b.f.wp); }
+  if (key === pinState.key && !b) return;
+  pinState.key = key;
+  if (!b) return pinState.set?.(null);
+  const P = engine.parts.get(uid); const L = pinLabel(P.def, b.k);
+  pinState.set?.({ x: e.nativeEvent.clientX, y: e.nativeEvent.clientY, uid, key: b.k, ref: P.state.ref || "", ...L, note: P.def.physInfo?.pitch?.note || "" });
+}
+function PinMarker() {
+  const m = useRef();
+  useEffect(() => { pinState.marker = m.current; return () => { pinState.marker = null; }; }, []);
+  return <mesh ref={m} visible={false} renderOrder={10}><sphereGeometry args={[0.09, 12, 8]} /><meshBasicMaterial color="#ffd400" depthTest={false} transparent opacity={0.9} /></mesh>;
+}
+// 测试 / 导览用：某个零件某个引脚在屏幕上的位置
+function PinHook() {
+  const { camera, gl } = useThree();
+  useEffect(() => {
+    window.__pinScreen = (uid, k) => {
+      const P = engine.parts.get(uid); if (!P) return null;
+      const f = engine.worldFeatures(P.body).find((f) => f.uid === uid && ((f.t === "pinhole" && "p" + f.i === k) || (f.t === "pad" && "s" + f.i === k) || ((f.t === "pin-up" || f.t === "leg") && "l" + f.i === k)));
+      if (!f) return null; const w = f.wp.clone(); if (f.t === "pad") { // 贴片焊盘在底面：从上面悬停 → 投到零件顶面，并往零件中心收一点（邮票孔焊盘在边缘）
+        w.y += (P.def.dims_mm?.y || 3) / 10 - 0.02;
+        // 沿零件自身坐标里"离边最近"的那根轴往里收 1 mm，避免跑到相邻焊盘
+        const q = engine.worldPose(uid).q, qi = new THREE.Quaternion().copy(q).invert();
+        const all = engine.worldFeatures(P.body).filter((g) => g.uid === uid && g.t === "pad").map((g) => g.wp.clone().applyQuaternion(qi));
+        const lo = all.reduce((a, v) => a.min(v), all[0].clone()), hi = all.reduce((a, v) => a.max(v), all[0].clone());
+        const c = lo.clone().add(hi).multiplyScalar(0.5), hx = (hi.x - lo.x) / 2 || 1, hz = (hi.z - lo.z) / 2 || 1;
+        const l = f.wp.clone().applyQuaternion(qi), ox = (l.x - c.x) / hx, oz = (l.z - c.z) / hz;
+        const n = Math.abs(ox) >= Math.abs(oz) ? new THREE.Vector3(-Math.sign(ox), 0, 0) : new THREE.Vector3(0, 0, -Math.sign(oz));
+        w.add(n.applyQuaternion(q).multiplyScalar(0.1));
+      }
+      const v = w.project(camera); const r = gl.domElement.getBoundingClientRect();
+      return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height };
+    };
+    return () => { delete window.__pinScreen; };
+  }, [camera, gl]);
+  return null;
+}
 function Part({ uid, onDown }) {
   const ref = useRef();
   const glow = useRef();
@@ -55,7 +110,7 @@ function Part({ uid, onDown }) {
   const def = p.def;
   const H = (def.dims_mm?.y || 8) / 10;
   return (
-    <group ref={ref} onPointerDown={(e) => onDown(e, uid)} name={uid}>
+    <group ref={ref} onPointerDown={(e) => onDown(e, uid)} onPointerMove={def.physPins ? (e) => hoverPin(e, uid) : undefined} onPointerOut={def.physPins ? () => { pinState.key = null; pinState.set?.(null); if (pinState.marker) pinState.marker.visible = false; } : undefined} name={uid}>
       {def.kind === "glb" ? (
         <Suspense fallback={<Boxes cols={def.colliders} mat="white" />}><Glb def={def} /></Suspense>
       ) : def.kind === "custom" ? (
@@ -250,7 +305,8 @@ function SceneHook() {
   useEffect(() => { window.__asmScene = scene; return () => { if (window.__asmScene === scene) window.__asmScene = null; }; }, [scene]);
   return null;
 }
-export default function AsmScene({ uids, tool, debug, flux, vis, onTick, onSelect, probes, onProbe }) {
+export default function AsmScene({ uids, tool, debug, flux, vis, onTick, onSelect, probes, onProbe, onPin }) {
+  pinState.set = onPin;
   const toolRef = useRef(tool);
   toolRef.current = tool;
   const fluxRef = useRef(flux);
@@ -268,6 +324,8 @@ export default function AsmScene({ uids, tool, debug, flux, vis, onTick, onSelec
       <ToolMesh vis={vis} />
       <DebugColliders on={debug} />
       <Probes probes={probes} />
+      <PinMarker />
+      <PinHook />
       <Interact toolRef={toolRef} vis={vis} flux={fluxRef} controls={controls} onProbe={onProbe} />
       <Loop onTick={onTick} />
       <CamHook controls={controls} />
