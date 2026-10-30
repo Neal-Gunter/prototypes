@@ -11,7 +11,7 @@ export const IMU_EST = {
   mount: "安装：IMU 平放在机身中心，X = 机身前方、Y = 左、Z = 上（我的补充）",
 };
 export const DEFAULT_IMU = { gyroNoise: 0.1, accNoise: 0.004, delay: 0.02, rate: 100, seed: 7 };
-export const DEFAULT_CTRL = { kpH: 0.04, kdH: 0.004, kpT: 0, kdT: 0, uMax: 0.5, offMax: 15, turnSign: 1, alpha: 0.98, adapt: false, flipT: 1.0, flipDeg: 2, slopeFlipDeg: 0 };
+export const DEFAULT_CTRL = { kpH: 0.04, kdH: 0.004, kpT: 0, kdT: 0, uMax: 0.5, offMax: 15, turnSign: 1, alpha: 0.98, adapt: false, flipT: 1.0, flipDeg: 2, slopeFlipDeg: 0, crab: 0, kPath: 0, kiPath: 0, pathMax: 30 };
 // 八爪鱼的默认（我的补充）：横坡换号打开（见 TiltCtrl 注释）；倾斜项默认关（八爪鱼趴在万向珠上，倾角本来就很小）
 // v14：adapt 打开——坡道换号规则是用同步划桨标定的，换成 v14 搜索步态时符号会反；自适应翻号兜底（见 v14-test）
 export const OCTO_CTRL = { ...DEFAULT_CTRL, slopeFlipDeg: 1.5, adapt: true };
@@ -50,7 +50,15 @@ export class TiltCtrl {
   step(sample, dt) {
     const a = this.att.update(sample, dt), o = this.o;
     if (this.yaw0 == null && a.init) this.yaw0 = a.yaw;
-    const eH = (this.yaw0 ?? 0) - a.yaw; // rad；机身右转了 → yaw 变小 → eH > 0 → 往左修
+    // v15（我的补充）：航向设定值不再固定是起步航向——
+    //  crab：横坡“蟹行”前馈：设定值 = 起步航向 + crab × 横滚（°/°）。只用 IMU，固件能做
+    //  kPath / kiPath：路径保持（PI）：设定值再加 kPath·横向偏移(cm，右为正 → 设定值往左) + kiPath·∫横向偏移，夹在 ±pathMax°。横向偏移要外部测（光流 / 摄像头 / UWB），
+    //  仿真里用真值（简化）；固件留了 SetLateral() 口（octopus_ctrl.h）
+    let sp = 0;
+    if (o.crab) sp += o.crab * a.roll;
+    if ((o.kPath || o.kiPath) && this.lateral != null) { this.iLat = (this.iLat || 0) + this.lateral * dt; sp += clamp(o.kPath * this.lateral + o.kiPath * this.iLat, -o.pathMax, o.pathMax) * Math.PI / 180; }
+    this.sp = sp;
+    const eH = (this.yaw0 ?? 0) + sp - a.yaw; // rad；机身右转了 → yaw 变小 → eH > 0 → 往左修
     let u = clamp((o.kpH * eH * 180) / Math.PI - (o.kdH * a.rate[2] * 180) / Math.PI, -o.uMax, o.uMax) * this.sign;
     // 自适应转向符号（我的补充）：仿真里发现“差速缩摆幅往哪边转”在平地和横坡上相反（横坡上机身在万向珠上往下滑，触手推力的力臂变了）。
     // 规则：控制量顶到上限超过 flipT 秒、航向误差反而又变大了 flipDeg 度 → 认为符号反了，翻过来。

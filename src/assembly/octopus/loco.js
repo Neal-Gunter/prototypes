@@ -26,6 +26,14 @@ export const LOCO_EST = {
   limits: "没算：导线拉力、舵机内部回差、PLA 弯曲变形；相邻触手互碰由固件防撞处理，这里触手只和桌面碰",
 };
 
+// v15（我的补充）：机身底下 3 个支点。数字都是估算，没有实测：
+export const CASTERS = {
+  ball: { zh: "万向珠（原来的）", mu: () => 0.02, note: "滚动阻力等效摩擦 0.02（估算），各方向都能滚 → 横坡上整机往下滑" },
+  lock: { zh: "万向珠 + 顶丝锁死", mu: () => 0.3, note: "珠子不转，变成钢珠在桌面上滑：摩擦 0.3（估算，钢 / 木）；前后左右一样大" },
+  rubber: { zh: "硅胶脚垫", mu: (m) => Math.max(0.6, m), note: "硅胶对木桌：摩擦 0.6 以上（估算）；前后左右一样大" },
+  wheel: { zh: "定向小轮（只沿前后滚）", roll: 0.02, side: 0.5, mu: () => 0.02, note: "前后方向滚动阻力 0.02、侧向 0.5（估算，按桌面 μ 缩放）；侧向摩擦用显式库仑冲量近似（Rapier 只有各向同性摩擦，简化）" },
+};
+
 export function bodyMassKg(plan, variant) {
   if (variant === "v10") { // v10：全部板载（v10.js 质量表，页面数字 + 估算）；触手 PLA 12 g / 8、尖球分 30%
     const total = massV10(), arm = (MASS_V10.find((r) => r.k.startsWith("PLA 触手")).g / 1000) / 8;
@@ -52,7 +60,9 @@ export class LocoPhys {
   // 浏览器和 node 都能用：先 init Rapier（只做一次），再建
   static async create(sim, opts) { await (rapierReady ||= RAPIER.init()); return new LocoPhys(RAPIER, sim, opts); }
   // R = 已 init 的 RAPIER；sim = OctoSim；c = 机身中心在世界里的位置（cm，y = 桌面）
-  constructor(R, sim, { c = [0, 0, 0], mu = 0.5, dt = 1 / 240, tanOff = 1.52, pad = [0.15, 0.45], massScale = 1, trimDeg = null, slope = null } = {}) {
+  constructor(R, sim, { c = [0, 0, 0], mu = 0.5, dt = 1 / 240, tanOff = 1.52, pad = [0.15, 0.45], massScale = 1, trimDeg = null, slope = null, caster = null } = {}) {
+    // v15（我的补充）：caster = 机身底下 3 个支点的类型（见 CASTERS）；null = 原来的万向珠
+    this.casterKind = CASTERS[caster] ? caster : "ball";
     // v14（我的补充）：鲁棒性测试用 —— massScale = 机身质量倍数；trimDeg[a] = 第 a 条触手偏航舵机的装配零位误差（°）；slope = {deg, dir} 斜坡
     this.massScale = massScale; this.trim = trimDeg;
     this.tanOff = tanOff; // B 俯仰舵机轴的切向偏置（CAD：+1.52 cm，八条同一侧）
@@ -101,7 +111,7 @@ export class LocoPhys {
     const body = W.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(cx, lift0, cz).setAdditionalMassProperties(m.torso, { x: 0, y: GE.comY, z: 0 }, { x: m.torso * (3 * GE.rg ** 2 + 25) / 12, y: m.torso * GE.rg ** 2 / 2, z: m.torso * (3 * GE.rg ** 2 + 25) / 12 }, { w: 1, x: 0, y: 0, z: 0 }).setCanSleep(false));
     this.plate = W.createCollider(R.ColliderDesc.cylinder(GE.plateT / 2, GE.plateR).setTranslation(0, GE.plateT / 2, 0).setDensity(0).setFriction(this.mu).setCollisionGroups(cg), body);
     this.casters = [];
-    if (this.hw.casters) for (let k = 0; k < 3; k++) { const a = (k * 2 * Math.PI) / 3 + Math.PI / 2, cr = this.variant === "v10" ? 2.0 : 2.5; this.casters.push(W.createCollider(R.ColliderDesc.ball(0.4).setTranslation(cr * Math.cos(a), 0.1, cr * Math.sin(a)).setDensity(0).setFriction(0.02).setFrictionCombineRule(R.CoefficientCombineRule.Min).setCollisionGroups(cg), body)); }
+    if (this.hw.casters) for (let k = 0; k < 3; k++) { const a = (k * 2 * Math.PI) / 3 + Math.PI / 2, cr = this.variant === "v10" ? 2.0 : 2.5; this.casters.push(W.createCollider(R.ColliderDesc.ball(0.4).setTranslation(cr * Math.cos(a), 0.1, cr * Math.sin(a)).setDensity(0).setFriction(CASTERS[this.casterKind].mu(this.mu)).setFrictionCombineRule(R.CoefficientCombineRule.Min).setCollisionGroups(cg), body)); }
     this.body = body;
     const T = GE.stall(6);
     this.legs = [];
@@ -221,9 +231,22 @@ export class LocoPhys {
         L.tipCol.setFriction(mu * (this.mu / 0.5)); L.segCol.setFriction(mu * (this.mu / 0.5));
       }
     }
+    // v15：定向轮（只沿机身前后滚）：Rapier 的摩擦是各向同性的，所以轮子本身按滚动阻力 0.02 设，
+    // 侧向另外加一个“显式库仑摩擦”冲量：J = −min(μ侧·N·dt, m_eff·|v侧|)·sign(v侧)，N 用上一子步的接触冲量（简化，我的补充）
+    if (this.casterKind === "wheel" && this.casters.length) {
+      const C = CASTERS.wheel, bq0 = this.body.rotation(), bz = rotVec(bq0, [0, 0, 1]), lx = bz[2], lz = -bz[0], mEff = this.body.mass() / 3, muS = C.side * Math.min(1, this.mu / 0.5);
+      this.casterN ||= this.casters.map(() => 0);
+      this.casters.forEach((col, k) => {
+        const Nimp = this.casterN[k]; if (!(Nimp > 0)) return;
+        const t = col.translation(), vt = this.body.velocityAtPoint(t), vl = vt.x * lx + vt.z * lz;
+        const J = -Math.sign(vl) * Math.min(muS * Nimp, mEff * Math.abs(vl));
+        this.body.applyImpulseAtPoint({ x: J * lx, y: 0, z: J * lz }, t, true);
+      });
+    }
     const v0 = this.body.linvel();
     this.world.step();
     this.t += dt;
+    if (this.casterKind === "wheel") this.casterN = this.casters.map((col) => { let n = 0; this.world.contactPair(this.ground, col, (man) => { for (let i = 0; i < man.numContacts(); i++) n += man.contactImpulse(i); }); return n; });
     { const v1 = this.body.linvel(), g = this.world.gravity; this.aW = { x: (v1.x - v0.x) / dt - g.x, y: (v1.y - v0.y) / dt - g.y, z: (v1.z - v0.z) / dt - g.z }; } // v14：比力（世界系，cm/s²）
     { const h = this.heading(); let d = h - this.hLast; d = ((d + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; this.hAcc += d; this.hLast = h; }
     // —— 测量 ——
