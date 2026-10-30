@@ -57,6 +57,22 @@ await p.goto(BASE + "/parts"); await T("parts-search").waitFor({ timeout: 60000 
 const cnt = await p.locator("[data-testid=parts-page] >> text=/转接板/").count();
 ok(cnt >= 1, `零件库搜“转接板”有结果（${cnt} 处）`);
 await shot("parts-breakout");
+// 6) 键盘：命令面板（Ctrl+K 打开、Tab 困在面板里、Esc 关、焦点回原处）和新手导览（←/→、Esc）
+await p.goto(BASE + "/assembly?tour=1"); await T("tour").waitFor({ timeout: 60000 }); await wait(600);
+const tf = await p.evaluate(() => document.activeElement?.dataset?.testid); ok(tf === "tour-next", "导览打开后焦点在“下一步”", tf);
+const t1 = await T("tour-title").innerText(); await p.keyboard.press("ArrowRight"); await wait(300); const t2 = await T("tour-title").innerText();
+await p.keyboard.press("ArrowLeft"); await wait(300); const t3 = await T("tour-title").innerText();
+ok(t1 !== t2 && t3 === t1, "导览 → 下一步、← 上一步", `${t1} → ${t2} → ${t3}`);
+await p.keyboard.press("Escape"); await wait(300); ok(!(await T("tour").count()), "Esc 跳过导览");
+await p.locator("[data-testid=lang-note]").scrollIntoViewIfNeeded(); const ln = await p.locator("[data-testid=lang-note]").innerText().catch(() => "");
+ok(/中文为主/.test(ln) && /Chinese-first/.test(ln), "页脚有语言说明（中文为主）");
+await p.locator("[data-testid=parts-search], input").first().focus(); const before = await p.evaluate(() => { const a = document.activeElement; a.dataset.kbmark = "1"; return a.tagName; });
+await p.keyboard.press("Control+k"); await T("palette").waitFor({ timeout: 5000 }); await wait(200);
+let inside = true; for (let k = 0; k < 6; k++) { await p.keyboard.press(k % 2 ? "Shift+Tab" : "Tab"); inside &&= await p.evaluate(() => !!document.activeElement?.closest("[data-testid=palette]")); }
+ok(inside, "Tab / Shift+Tab 不会跑出命令面板");
+await p.keyboard.press("Escape"); await wait(300);
+const back = await p.evaluate(() => document.activeElement?.dataset?.kbmark === "1");
+ok(!(await T("palette").count()) && back, "Esc 关面板，焦点回到打开前的位置", before);
 ok(!errs.length, "页面无报错", errs.slice(0, 2).join(" | "));
 fs.writeFileSync(`${OUT}/logs/v23-bench.json`, JSON.stringify({ pass, fail, res, errs }, null, 1));
 await ctx.close(); await b.close();
