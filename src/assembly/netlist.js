@@ -102,9 +102,10 @@ class UF {
 // 焊点：{p:[x,y,z]（板子局部坐标）, q:'good'|'cold'|'bridge'|'burnt', bridge?: 相邻孔号}；旧格式 [x,y,z] = 好焊点
 export const jointOf = (j) => (Array.isArray(j) ? { p: j, q: "good" } : j);
 export const JOINT_ZH = { good: "合格", cold: "虚焊", bridge: "连锡", burnt: "焊盘烫坏" };
-function jointAt(part, a) {
+function jointAt(part, a, k) {
   for (const j0 of part.state.solder || []) {
     const j = jointOf(j0);
+    if (k === "t" || j.k === "t") { if (k === "t" && j.k === "t" && j.i === a.i) return j; continue; } // v23：转接板焊盘按焊盘号
     if (Math.hypot(j.p[0] - a.p[0], j.p[2] - a.p[2]) < 0.06) return j;
   }
   return null;
@@ -145,6 +146,8 @@ export function buildCircuit(engine, opt = {}) {
           const term = T(x, `l${f.i}`);
           for (const g of feats(y)) if (g.t === "pinhole" && near(f, g)) thru.push({ board: y, i: g.i, term, other: x, a: Y.def.anchors.find((a) => a.t === "pinhole" && a.i === g.i) });
         }
+        // v23：贴片焊盘压在转接板焊盘上（同一封装、对齐 0.3 mm 内）——焊好才导通
+        if (f.t === "pad" && f.pkg) for (const g of feats(y)) if (g.t === "land" && g.pkg === f.pkg && Math.hypot(f.wp.x - g.wp.x, f.wp.z - g.wp.z) < 0.03) thru.push({ board: y, i: g.i, k: "t", term: T(x, `s${f.i}`), other: x, a: Y.def.anchors.find((a) => a.t === "land" && a.i === g.i) });
         if (f.t === "dupont-m") for (const g of feats(y)) if (g.t === "bbhole" && near(f, g)) { uf.union(T(x, "c0"), T(y, `n:${g.net}`)); placements.push({ uid: x, term: T(x, "c0"), at: y, hole: g.name }); }
         if (f.t === "dupont-f") for (const g of feats(y)) if (g.t === "pin-up" && near(f, g)) { uf.union(T(x, `c${f.k || 0}`), T(y, `l${g.i}`)); placements.push({ uid: x, term: T(x, `c${f.k || 0}`), at: y, pin: g.i }); }
         if (f.t === "plug" && kx === "plug" && e.why === "plug") for (const g of feats(y)) if (g.t === "port" && g.kind === f.kind && Math.hypot(f.wp.x - g.wp.x, f.wp.z - g.wp.z) < 1.0) plugs.push({ plug: x, board: y, kind: f.kind });
@@ -156,14 +159,16 @@ export function buildCircuit(engine, opt = {}) {
   const joints = [];
   for (const t of thru) {
     const B = parts.get(t.board);
-    const j = t.a && jointAt(B, t.a);
+    const j = t.a && jointAt(B, t.a, t.k);
     t.joint = j;
-    const term = T(t.board, `p${t.i}`);
+    const term = T(t.board, `${t.k || "p"}${t.i}`);
     if (j && (j.q === "good" || j.q === "bridge")) uf.union(t.term, term);
-    joints.push({ board: t.board, i: t.i, term, other: t.other, q: j ? j.q : "none" });
+    joints.push({ board: t.board, i: t.i, k: t.k, term, other: t.other, q: j ? j.q : "none" });
   }
+  // v23：转接板走线：焊盘 k ↔ 排针 k（排针的下针 / 上针同一个序号 l{k}）
+  for (const P of parts.values()) if (P.def.breakout) for (const a of P.def.anchors) if (a.t === "land") uf.union(T(P.uid, `t${a.i}`), T(P.uid, `l${a.i}`));
   // 连锡：相邻焊盘被锡连在一起
-  for (const P of parts.values()) for (const j0 of P.state.solder || []) { const j = jointOf(j0); if (j.q === "bridge" && j.bridge != null && j.i != null) uf.union(T(P.uid, `p${j.i}`), T(P.uid, `p${j.bridge}`)); }
+  for (const P of parts.values()) for (const j0 of P.state.solder || []) { const j = jointOf(j0); if (j.q === "bridge" && j.bridge != null && j.i != null) uf.union(T(P.uid, `${j.k || "p"}${j.i}`), T(P.uid, `${j.k || "p"}${j.bridge}`)); }
   // 线缆两端：杜邦线 = 两个插头的触点相连；舵机线 = 舵机三根线接到母头三个触点
   const wires = [];
   for (const c of engine.cables) {
@@ -368,6 +373,7 @@ export function terminalAt(engine, wp, r = 0.25) {
     if (f.t === "pinhole") term = `${f.uid}|p${f.i}`;
     else if (f.t === "pin-up" || f.t === "leg") term = `${f.uid}|l${f.i}`;
     else if (f.t === "pad") term = `${f.uid}|s${f.i}`;
+    else if (f.t === "land") term = `${f.uid}|t${f.i}`;
     else if (f.t === "bbhole") term = `${f.uid}|n:${f.net}`;
     else if (f.t === "dupont-m" || f.t === "dupont-f") term = `${f.uid}|c${f.k || 0}`;
     if (term && (!best || d < best.d)) best = { d, term, f };
@@ -435,11 +441,14 @@ export function checks(cir, sol, fw = {}) {
     const none = js.filter((j) => j.q === "none");
     const P = E.parts.get(b);
     const pins = boardPins(P.def);
-    const nm = (i) => pins[i]?.label || `焊盘 ${i + 1}`;
-    if (none.length) add("warn", `${ref(b)} 有 ${none.length} 个针脚只是穿在孔里、没焊（模拟里按不导通算；真实中接触时好时坏）`, [b], "选烙铁，涂助焊剂，在每个焊盘上按住约 1 秒");
-    for (const j of js.filter((j) => j.q === "cold")) add("error", `${ref(b)} ${nm(j.i)} 虚焊：焊锡没润湿焊盘，不导通`, [b], "涂助焊剂后再用烙铁补焊这个点");
-    for (const j0 of P.state.solder || []) { const j = jointOf(j0); if (j.q === "bridge" && j.i != null) add("error", `${ref(b)} ${nm(j.i)} 和 ${nm(j.bridge)} 连锡：两个脚被锡短路了`, [b], "涂助焊剂后补焊把锡拉开；或 Shift + 烙铁拆焊重焊"); }
-    for (const j of js.filter((j) => j.q === "burnt")) add("error", `${ref(b)} ${nm(j.i)} 焊盘烫坏（加热过久），不导通`, [b], "真实中要用飞线补救；这里可 Shift + 烙铁拆掉，再从面包板另一侧接线");
+    const nm0 = (i) => pins[i]?.label || `焊盘 ${i + 1}`;
+    const nm = (i, k) => (k === "t" ? `转接板焊盘 ${i + 1}` : nm0(i));
+    const noneT = none.filter((j) => j.k === "t"), noneP = none.filter((j) => j.k !== "t");
+    if (noneP.length) add("warn", `${ref(b)} 有 ${noneP.length} 个针脚只是穿在孔里、没焊（模拟里按不导通算；真实中接触时好时坏）`, [b], "选烙铁，涂助焊剂，在每个焊盘上按住约 1 秒");
+    if (noneT.length) add("warn", `${ref(b)} 转接板上有 ${noneT.length} 个贴片焊盘还没焊（芯片只是放着，不导通）`, [b], "涂助焊剂，烙铁尖碰焊盘和芯片引脚约 1 秒；细间距容易连锡，别停太久");
+    for (const j of js.filter((j) => j.q === "cold")) add("error", `${ref(b)} ${nm(j.i, j.k)} 虚焊：焊锡没润湿焊盘，不导通`, [b], "涂助焊剂后再用烙铁补焊这个点");
+    for (const j0 of P.state.solder || []) { const j = jointOf(j0); if (j.q === "bridge" && j.i != null) add("error", `${ref(b)} ${nm(j.i, j.k)} 和 ${nm(j.bridge, j.k)} 连锡：两个脚被锡短路了`, [b], "涂助焊剂后补焊把锡拉开；或 Shift + 烙铁拆焊重焊"); }
+    for (const j of js.filter((j) => j.q === "burnt")) add("error", `${ref(b)} ${nm(j.i, j.k)} 焊盘烫坏（加热过久），不导通`, [b], "真实中要用飞线补救；这里可 Shift + 烙铁拆掉，再从面包板另一侧接线");
   }
   // 供电
   for (const b of sol.boards) {

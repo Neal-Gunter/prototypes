@@ -569,6 +569,7 @@ class Engine {
         if (!tset.length) continue;
         for (let k = 0; k < 4; k += rule.halfTurns ? 2 : 1) {
           const yaw = rule.freeYaw ? yaw0 : tyaw + (k * Math.PI) / 2;
+          if (rule.nearYaw && Math.abs(wrap(yaw - yaw0)) > Math.PI / 4 + 1e-6) continue; // v23：贴片不自动转向（1 脚方向要自己摆对）
           const c = this.matchPattern(rule, dset, tset, pose.p, yaw, bottom, pose.q);
           if (c) cands.push({ ...c, rule, tbid, yaw, dyaw: Math.abs(wrap(yaw - yaw0)) });
           if (rule.freeYaw) break;
@@ -1351,6 +1352,28 @@ export const RULES = [
     },
   },
   {
+    // v23：贴片零件的焊盘对上转接板焊盘（同一 KiCad 封装）；1 脚要对 1 号焊盘
+    name: "smd",
+    prio: 6,
+    nearYaw: true,
+    tol: 0.035,
+    reach: 1.2,
+    above: 1.6,
+    d: (f) => f.t === "pad" && !!f.pkg,
+    t: (f, d) => f.t === "land" && f.pkg === d.pkg,
+    accept: (n, total) => n === total,
+    y: (d, t) => t.wp.y - d.lp.y,
+    flatY: true,
+    check: (e, c, bid) => {
+      const bad = c.pairs.filter(([d, t]) => d.num !== t.num);
+      if (bad.length) return `方向不对：芯片 ${bad[0][0].num} 脚落在 ${bad[0][1].num} 号焊盘上——把 1 脚（圆点）对准转接板的 1 号焊盘`;
+      const bo = c.pairs[0][1].uid;
+      const other = e.edges.find((x) => x.b === bo && (x.why === "smd" || x.smd) && !e.bodies.get(bid).parts.has(x.a));
+      return other ? "这块转接板上已经贴了芯片" : null;
+    },
+    msg: (e, c, lead) => `${lead.def.name_zh} 贴到转接板上了（${c.count} 个焊盘对齐）：选烙铁逐个焊`,
+  },
+  {
     name: "bb-area",
     prio: 2,
     tol: 3.0,
@@ -1611,7 +1634,19 @@ Object.assign(Engine.prototype, {
   findSolderJoint(wp) {
     let best = null;
     for (const b of this.bodies.keys()) {
-      for (const f of this.worldFeatures(b)) {
+      const wfb = this.worldFeatures(b);
+      for (const f of wfb) {
+        if (f.t === "land") {
+          // v23：转接板焊盘——上面贴着芯片、芯片的焊盘正好压在这个焊盘上
+          const dist = Math.hypot(f.wp.x - wp.x, f.wp.z - wp.z);
+          if (dist > 0.12 || Math.abs(f.wp.y - wp.y) > 0.6) continue;
+          const other = this.edges
+            .filter((e) => (e.a === f.uid || e.b === f.uid) && (e.why === "smd" || e.smd))
+            .map((e) => (e.a === f.uid ? e.b : e.a))
+            .find((o) => wfb.some((g) => g.uid === o && g.t === "pad" && g.pkg === f.pkg && Math.hypot(g.wp.x - f.wp.x, g.wp.z - f.wp.z) < 0.03));
+          if (other && (!best || dist < best.dist)) best = { dist, board: f.uid, other, f, land: true };
+          continue;
+        }
         if (f.t !== "pinhole") continue;
         const dist = Math.hypot(f.wp.x - wp.x, f.wp.z - wp.z);
         if (dist > 0.2 || Math.abs(f.wp.y - wp.y) > 0.6) continue;
@@ -1643,7 +1678,7 @@ Object.assign(Engine.prototype, {
   holdSolder(wp, { flux = true, hold = null, desolder = false } = {}) {
     const j = this.findSolderJoint(wp);
     if (!j) {
-      this.toast("烙铁下面没有穿着针脚的焊盘孔", "warn");
+      this.toast("烙铁下面没有穿着针脚的焊盘孔（或贴着芯片的转接板焊盘）", "warn");
       return false;
     }
     const p = this.parts.get(j.board);
@@ -1651,9 +1686,11 @@ Object.assign(Engine.prototype, {
     p.state.lifted ||= [];
     const lp = this.toLocal(j.board, j.f.wp);
     const at = (q) => (Array.isArray(q) ? q : q.p);
-    const idx = p.state.solder.findIndex((q) => Math.hypot(at(q)[0] - lp.x, at(q)[2] - lp.z) < 0.05);
+    const K = j.land ? "t" : undefined; // v23：转接板焊盘的焊点按焊盘号匹配（细间距时按位置会串到隔壁）
+    const lift = j.land ? `t${j.f.i}` : j.f.i;
+    const idx = j.land ? p.state.solder.findIndex((q) => !Array.isArray(q) && q.k === "t" && q.i === j.f.i) : p.state.solder.findIndex((q) => !(q.k === "t") && Math.hypot(at(q)[0] - lp.x, at(q)[2] - lp.z) < 0.05);
     const old = idx >= 0 ? (Array.isArray(p.state.solder[idx]) ? { p: p.state.solder[idx], q: "good" } : p.state.solder[idx]) : null;
-    if (p.state.lifted.includes(j.f.i) && !desolder) {
+    if (p.state.lifted.includes(lift) && !desolder) {
       this.toast("这个焊盘已经烫掉了：真实中只能刮开铜箔或用飞线补救", "error");
       return false;
     }
@@ -1671,10 +1708,11 @@ Object.assign(Engine.prototype, {
     }
     // 最近的相邻焊盘（连锡对象）
     let nb = null;
+    const nbR = j.land ? ((p.def.boPitch || 1.27) / 10) * 1.6 : 0.27;
     for (const a of p.def.anchors || []) {
-      if (a.t !== "pinhole" || a.i === j.f.i) continue;
+      if (a.t !== j.f.t || a.i === j.f.i) continue;
       const d = Math.hypot(a.p[0] - j.f.p[0], a.p[2] - j.f.p[2]);
-      if (d < 0.27 && (!nb || d < nb.d)) nb = { d, i: a.i };
+      if (d < nbR && (!nb || d < nb.d)) nb = { d, i: a.i };
     }
     const need = flux ? 0.6 : 1.4;
     const finish = (e) => {
@@ -1684,11 +1722,11 @@ Object.assign(Engine.prototype, {
       if (desolder) {
         if (op.t < 0.8) { e.toast("吸锡时间太短，锡还没化开", "warn"); return; }
         p.state.solder.splice(p.state.solder.indexOf(op.entry), 1);
-        if (old.q === "burnt" && !p.state.lifted.includes(j.f.i)) p.state.lifted.push(j.f.i);
+        if (old.q === "burnt" && !p.state.lifted.includes(lift)) p.state.lifted.push(lift);
         // 这两个零件之间没有焊点了：恢复成“只是插着”
         if (!p.state.solder.some((q) => !Array.isArray(q) && q.other === j.other)) {
           const ed = e.edges.find((x) => (x.a === j.board && x.b === j.other) || (x.b === j.board && x.a === j.other));
-          if (ed && ed.why === "solder") { ed.kind = "seat"; ed.why = "onpins"; }
+          if (ed && ed.why === "solder") { ed.kind = "seat"; ed.why = ed.smd ? "smd" : "onpins"; }
         }
         e.toast(old.q === "burnt" ? "拆下烫坏的焊点：这个焊盘已经不能再焊（真实中需要飞线）" : "拆焊完成（吸锡）", old.q === "burnt" ? "warn" : "ok");
         e.history.push({ t: "desolder", board: j.board, i: j.f.i });
@@ -1708,7 +1746,9 @@ Object.assign(Engine.prototype, {
         e.toast(q === "good" ? "补焊成功：焊点变成光亮的小锥形" : `补焊后仍是「${{ cold: "虚焊", bridge: "连锡", burnt: "焊盘烫坏" }[q]}」`, q === "good" ? "ok" : "warn");
       } else {
         if (!q) { e.toast("时间太短，锡没熔到焊盘上", "warn"); return; }
-        p.state.solder.push({ p: [lp.x, lp.y + 0.02, lp.z], q, i: j.f.i, other: j.other, bridge: q === "bridge" ? nb?.i : undefined });
+        p.state.solder.push({ p: [lp.x, lp.y + (j.land ? 0.005 : 0.02), lp.z], q, i: j.f.i, other: j.other, bridge: q === "bridge" ? nb?.i : undefined, ...(j.land ? { k: K, s: Math.min(1, Math.max(0.25, (p.def.boPitch || 1.27) / 2.54)) } : {}) });
+        const ed0 = e.edges.find((x) => (x.a === j.board && x.b === j.other) || (x.b === j.board && x.a === j.other));
+        if (j.land && ed0) ed0.smd = true;
         e.link(j.board, j.other, "fasten", "solder");
         const n = p.state.solder.length;
         const msg = {
@@ -1719,7 +1759,7 @@ Object.assign(Engine.prototype, {
         }[q];
         e.toast(msg, q === "good" ? "ok" : q === "burnt" ? "error" : "warn");
       }
-      e.history.push({ t: "solder", board: j.board, i: j.f.i, q: old ? old.q : q });
+      e.history.push({ t: "solder", board: j.board, i: j.f.i, k: K, q: old ? old.q : q });
       e.emit();
     };
     const op = {
@@ -1739,6 +1779,38 @@ Object.assign(Engine.prototype, {
     };
     this.startOp(op);
     return op;
+  },
+  // v23：把贴片零件按焊盘号对齐贴到转接板上（程序 / 按钮用；拖拽时走 smd 吸附规则）。返回最大对齐误差（mm）
+  mountSMD(partUid, boUid) {
+    const P = this.parts.get(partUid), B = this.parts.get(boUid);
+    if (!P || !B) return { ok: false, why: "没有这个零件" };
+    const pk = P.def.smdPkg;
+    if (!pk || B.def.breakout !== pk) return { ok: false, why: `封装不一致（${pk || "不是贴片"} ≠ ${B.def.breakout || "不是转接板"}）` };
+    const bid = P.body, tbid = B.body;
+    if (bid === tbid) return { ok: false, why: "已经在这块板上了" };
+    const D = this.features(bid).filter((f) => f.t === "pad" && f.pkg === pk);
+    const Tw = this.worldFeatures(tbid).filter((f) => f.t === "land" && f.pkg === pk);
+    const tyaw = yawOf(this.bodyPose(tbid).q);
+    let best = null;
+    for (let k = 0; k < 4; k++) {
+      const yaw = tyaw + (k * Math.PI) / 2, q = yawQ(yaw);
+      const pairs = D.map((d) => [d, Tw.find((t) => t.num === d.num)]).filter(([, t]) => t);
+      if (pairs.length !== D.length) continue;
+      let ax = 0, az = 0;
+      for (const [d, t] of pairs) { const r = d.lp.clone().applyQuaternion(q); ax += t.wp.x - r.x; az += t.wp.z - r.z; }
+      ax /= pairs.length; az /= pairs.length;
+      let err = 0;
+      for (const [d, t] of pairs) { const r = d.lp.clone().applyQuaternion(q); err = Math.max(err, Math.hypot(t.wp.x - (ax + r.x), t.wp.z - (az + r.z))); }
+      const y = Math.max(...pairs.map(([d, t]) => t.wp.y - d.lp.y));
+      if (!best || err < best.err) best = { err, yaw, pos: new THREE.Vector3(ax, y, az), pairs };
+    }
+    if (!best || best.err > 0.03) return { ok: false, why: `焊盘对不齐（最大偏差 ${best ? (best.err * 10).toFixed(2) : "?"} mm）`, err_mm: best ? best.err * 10 : null };
+    const rule = RULES.find((r) => r.name === "smd");
+    const c = { pos: best.pos, yaw: best.yaw, count: best.pairs.length, err: best.err, pairs: best.pairs, involved: new Set([boUid]), rule, tbid };
+    const why = rule.check(this, c, bid);
+    if (why) return { ok: false, why };
+    this.applySnap(bid, c);
+    return { ok: true, err_mm: best.err * 10, pads: best.pairs.length };
   },
   toLocal(uid, wp) {
     const w = this.worldPose(uid);

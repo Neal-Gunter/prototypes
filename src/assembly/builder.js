@@ -138,6 +138,36 @@ export function makeBuilder(engine, { run = async () => {}, log = () => {} } = {
     }
     engine.toast(`${engine.parts.get(uid).state.ref || ""} 焊完 ${(engine.parts.get(uid).state.solder || []).length} 个点`, "ok");
   }
+  // v23（我的补充）：贴片芯片 → 转接板。a/b：两个“排针号 → 面包板孔”（定位转接板）；芯片按焊盘号贴到转接板上，再逐个焊
+  //   plan：{ cold: [焊盘号], bridge: [焊盘号], skip: [焊盘号] }（演示虚焊 / 连锡）
+  async function breakout(ref, chipId, a, b, { solder = true, cold = [], bridge = [], skip = [] } = {}) {
+    const cd = await def(chipId);
+    if (!cd.smdPkg) throw new Error(`${ref}：「${chipId}」不是贴片封装（直插件直接插面包板）`);
+    const boId = `p-bo-${cd.smdPkg}`;
+    const ia = +a[0] - 1, ib = +b[0] - 1;
+    const bo = await place(boId, [[(f) => f.t === "leg" && f.i === ia, holeOf(S.bb, a[1])], [(f) => f.t === "leg" && f.i === ib, holeOf(S.bb, b[1])]], { ref: `${ref}-BO` });
+    if (!bo.ok) throw new Error(`${ref}：转接板没插进面包板（${bo.why || "对不上孔"}）`);
+    const bw = engine.worldPose(bo.uid).p;
+    const chip = engine.addPart(cd, { p: V(bw.x + 4, 0.3, bw.z), q: yawQ(0) }, { allowOverlap: true });
+    await run(0.1);
+    setRef(chip, ref);
+    const m = engine.mountSMD(chip, bo.uid);
+    if (!m.ok) throw new Error(`${ref}：${m.why}`);
+    await run(0.1);
+    if (solder) await solderLands(bo.uid, { cold, bridge, skip });
+    return { uid: chip, bo: bo.uid, err_mm: m.err_mm };
+  }
+  async function solderLands(boUid, { cold = [], bridge = [], skip = [], flux = true } = {}) {
+    const lands = feats(boUid, "land");
+    for (const f of lands) {
+      const n = +f.num;
+      if (skip.includes(n)) continue;
+      const want = cold.includes(n) ? "cold" : bridge.includes(n) ? "bridge" : "good";
+      const hold = want === "cold" ? 0.9 : want === "bridge" ? 2.6 : 0.8;
+      const op = engine.holdSolder(f.wp, { flux: want === "good" ? flux : false, hold });
+      if (op) engine.finishOpNow(op, hold);
+    }
+  }
   // 两脚/多脚元件：holes 按脚的顺序
   async function part(ref, id, holes, opts = {}) {
     const d = await def(id);
@@ -198,7 +228,7 @@ export function makeBuilder(engine, { run = async () => {}, log = () => {} } = {
     await run(0.5);
     return sv;
   }
-  return { def, feats, place, free, breadboard, board, part, jumper, wire, usb, servo, solderBoard, S, holeOf, done: () => ensureRefs(engine) };
+  return { def, feats, place, free, breadboard, board, part, jumper, wire, usb, servo, solderBoard, breakout, solderLands, S, holeOf, done: () => ensureRefs(engine) };
 }
 
 // ---------------- 预设 ----------------
@@ -241,12 +271,13 @@ export function parseList(text) {
     const bad = (m) => errors.push(`第 ${n + 1} 行：${m}`);
     if (kw === "面包板") { const [x, z] = (t[3] || "0,0").split(",").map(Number); steps.push({ k: "bb", ref: t[1], id: t[2], x, z }); }
     else if (kw === "板子") { const kv = t.slice(3).map((s) => s.split("=")); if (kv.length < 2) return bad("板子需要两个“脚=孔”，例如 1脚=h1 20脚=h20"); const cold = (kv.find((x) => x[0] === "虚焊")?.[1] || "").split(",").filter(Boolean).map(Number); steps.push({ k: "board", ref: t[1], id: t[2], a: [kv[0][0].replace(/脚$/, ""), kv[0][1]], b: [kv[1][0].replace(/脚$/, ""), kv[1][1]], solder: t.includes("不焊") ? false : "all", cold }); }
+    else if (kw === "转接板") { const kv = t.slice(3).filter((x) => x.includes("=")).map((s) => s.split("=")); if (kv.length < 2) return bad("转接板需要两个“排针=孔”，例如 1脚=e10 16脚=f10"); const L = (k) => (kv.find((x) => x[0] === k)?.[1] || "").split(",").filter(Boolean).map(Number); steps.push({ k: "breakout", ref: t[1], id: t[2], a: [kv[0][0].replace(/脚$/, ""), kv[0][1]], b: [kv[1][0].replace(/脚$/, ""), kv[1][1]], solder: !t.includes("不焊"), cold: L("虚焊"), bridge: L("连锡") }); }
     else if (kw === "零件") { if (t.length < 5) return bad("零件需要：编号 零件id 孔1 孔2 …"); steps.push({ k: "part", ref: t[1], id: t[2], holes: t.slice(3) }); }
     else if (kw === "跳线") steps.push({ k: "jumper", ref: t[1], a: t[2], b: t[3] });
     else if (kw === "导线") steps.push({ k: "wire", ref: t[1], kind: t[2], a: t[3], b: t[4] });
     else if (kw === "舵机") { const [x, z] = t[3].split(",").map(Number); steps.push({ k: "servo", ref: t[1], id: t[2], x, z, holes: t[4].split(",") }); }
     else if (kw === "USB" || kw === "usb") steps.push({ k: "usb", ref: t[1] });
-    else bad(`看不懂“${kw}”（可用：面包板 / 板子 / 零件 / 跳线 / 导线 / 舵机 / USB）`);
+    else bad(`看不懂“${kw}”（可用：面包板 / 板子 / 转接板 / 零件 / 跳线 / 导线 / 舵机 / USB）`);
   });
   return { steps, errors };
 }
@@ -262,6 +293,7 @@ export async function buildFromList(engine, text, opts = {}) {
       else if (!B.S.bb && s.k !== "usb") throw new Error("请先放面包板");
       else if (s.k === "board") await B.board(s.ref, s.id, s.a, s.b, { solder: s.solder, cold: s.cold });
       else if (s.k === "part") await B.part(s.ref, s.id, s.holes);
+      else if (s.k === "breakout") await B.breakout(s.ref, s.id, s.a, s.b, { solder: s.solder, cold: s.cold, bridge: s.bridge });
       else if (s.k === "jumper") await B.jumper(s.ref, s.a, s.b);
       else if (s.k === "wire") await B.wire(s.ref, s.kind, s.a, s.b);
       else if (s.k === "servo") await B.servo(s.ref, s.id, s.x, s.z, s.holes);
