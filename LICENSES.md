@@ -71,6 +71,46 @@ v5 新增的程序零件（同样是本项目自制、CC0）：
 
 物理引擎：`@dimforge/rapier3d-compat`，Apache-2.0。
 
+## v20：零件库扩充到 2942 个（真实 CAD 2415 + 程序生成 527）
+
+每个真实 CAD 零件的来源链接（`url`）、作者（`author`）、来源名（`source`）和许可证（`licence`）都写在 `public/lib/catalog/<分类>.json` 里，`scripts/parts-validate.mjs` 会逐条检查。只收了许可证清楚、允许商用的来源；许可证不清楚或禁止商用的一律没收。
+
+| 来源 | 数量 | 许可证（已在仓库 LICENSE 文件核对） | 署名 | 文件 |
+|---|---|---|---|---|
+| Adafruit CAD Parts（https://github.com/adafruit/Adafruit_CAD_Parts） | 465 | MIT | Copyright (c) 2016 Adafruit Industries | `ada-*.glb` |
+| KiCad packages3D（https://gitlab.com/kicad/libraries/kicad-packages3D） | 1728 | CC BY-SA 4.0 + KiCad 例外条款 | KiCad Library Team 及贡献者 | `kc-*.glb` |
+| SparkFun KiCad Libraries（https://github.com/sparkfun/SparkFun-KiCad-Libraries） | 193 | CC-BY-4.0（README 写明 CC BY 4.0，允许商用） | SparkFun Electronics | `sfe-*.glb` |
+| Espressif KiCad Libraries（https://github.com/espressif/kicad-libraries） | 25 | CC-BY-SA-4.0 + 与 KiCad 相同的例外条款（LICENSE.md） | Espressif Systems | `esp-*.glb` |
+| Seeed Studio OPL KiCad Library（https://github.com/Seeed-Studio/OPL_Kicad_Library） | 4 | CC-BY-SA-4.0（LICENSE） | Seeed Studio | `seeed-*.glb` |
+| 本项目程序生成（`src/assembly/procedural*.js`） | 527 | CC0 | — | 代码 |
+
+改动内容（所有 CAD 来源相同）：STEP/WRL → GLB 转换、网格减面、材质合并、单位换算、meshopt 压缩，另由 GLB 渲染 256 px 缩略图（`public/lib/thumbs/*.webp`，许可证随原模型）。CC BY-SA 来源的改编 GLB 同样以 CC BY-SA 4.0 发布；CC BY 4.0 的 SparkFun 模型保留署名。许可证全文：`licenses/CC-BY-4.0.txt`、`licenses/CC-BY-SA-4.0.txt`、`licenses/KiCad-packages3D-LICENSE.md`、`licenses/Espressif-kicad-libraries-LICENSE.md`、`licenses/Seeed-OPL-LICENSE.txt`。
+
+按分类 / 来源：
+
+| 分类 | 合计 | Adafruit | KiCad | SparkFun | Espressif | Seeed | 程序生成 |
+|---|---|---|---|---|---|---|---|
+| 主控板 / MCU 模块 | 101 | 83 | 15 | 2 | 0 | 0 | 1 |
+| 传感器 | 151 | 76 | 55 | 15 | 0 | 1 | 4 |
+| 显示屏 | 126 | 46 | 76 | 3 | 0 | 0 | 1 |
+| 电机 / 舵机 / 步进 | 61 | 10 | 0 | 0 | 0 | 0 | 51 |
+| 驱动 / 扩展板 | 128 | 41 | 81 | 6 | 0 | 0 | 0 |
+| 电源 / 电池 | 162 | 43 | 81 | 1 | 0 | 0 | 37 |
+| 无源器件 | 208 | 0 | 187 | 1 | 0 | 0 | 20 |
+| 分立半导体 / 芯片封装 | 194 | 0 | 194 | 0 | 0 | 0 | 0 |
+| LED / 灯 | 117 | 15 | 90 | 12 | 0 | 0 | 0 |
+| 开关 / 按键 / 输入 | 301 | 37 | 238 | 26 | 0 | 0 | 0 |
+| 连接器 / 排针 | 828 | 23 | 667 | 94 | 0 | 0 | 44 |
+| 面包板 / 洞洞板 | 17 | 14 | 0 | 0 | 0 | 0 | 3 |
+| 导线 / 线缆 | 21 | 5 | 0 | 0 | 0 | 0 | 16 |
+| 通信 / 音频 / 存储模块 | 136 | 52 | 29 | 27 | 25 | 3 | 0 |
+| 紧固件 | 138 | 0 | 1 | 6 | 0 | 0 | 131 |
+| 轴承 / 齿轮 / 带轮 / 型材 | 182 | 0 | 0 | 0 | 0 | 0 | 182 |
+| 外壳 / 结构件 | 60 | 20 | 14 | 0 | 0 | 0 | 26 |
+| 工具 | 11 | 0 | 0 | 0 | 0 | 0 | 11 |
+| **合计** | **2942** | 465 | 1728 | 193 | 25 | 4 | 527 |
+
+
 ## v6：小智八爪鱼
 
 - `src/assembly/octopus/md/` 里的 9 个文件（README、`.ino`、`octopus_*.h`、`octopus_mcp.cpp`、3 份中文 md）是项目所有者自己提供的资料。原样收录，一字未改，用于对照和导出指南。

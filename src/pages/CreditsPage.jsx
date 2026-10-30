@@ -39,18 +39,39 @@ const ROWS = [
     lic: "CC0 1.0（公共领域）",
   },
   {
-    what: "零件库：开发板、传感器、显示屏、电机、连接器等 450 个（/parts、/assembly）",
+    what: "零件库：开发板、传感器、显示屏、电机、连接器等 465 个（/parts、/assembly）",
     file: "public/lib/*/ada-*.glb、public/lib/thumbs/ada-*.webp",
     from: "Adafruit CAD Parts（STEP），转换为 GLB、减面、meshopt 压缩；缩略图由这些 GLB 渲染",
     url: "https://github.com/adafruit/Adafruit_CAD_Parts",
     lic: "MIT License · Copyright (c) 2016 Adafruit Industries",
   },
   {
-    what: "零件库：排针、JST 座、USB 座、LED、电阻、按键等封装 114 个（/parts、/assembly）",
+    what: "零件库：排针、JST 座、USB 座、LED、电阻、按键、IC 封装等 1728 个（/parts、/assembly）",
     file: "public/lib/*/kc-*.glb、public/lib/thumbs/kc-*.webp",
-    from: "KiCad packages3D（KiCad Libraries Team 及贡献者），转换为 GLB、减面；缩略图由这些 GLB 渲染",
+    from: "KiCad packages3D（KiCad Library Team 及贡献者），转换为 GLB、减面；缩略图由这些 GLB 渲染",
     url: "https://gitlab.com/kicad/libraries/kicad-packages3D",
     lic: "CC BY-SA 4.0（附 KiCad 例外条款）；改编后的 GLB 同样以 CC BY-SA 4.0 发布",
+  },
+  {
+    what: "零件库（v20）：SparkFun 开发板、Qwiic 传感器、连接器、按键等 193 个",
+    file: "public/lib/*/sfe-*.glb、public/lib/thumbs/sfe-*.webp",
+    from: "SparkFun KiCad Libraries（SparkFun Electronics），STEP 转换为 GLB、减面；缩略图由这些 GLB 渲染",
+    url: "https://github.com/sparkfun/SparkFun-KiCad-Libraries",
+    lic: "CC BY 4.0（署名：SparkFun Electronics；改动：格式转换、减面、材质合并）",
+  },
+  {
+    what: "零件库（v20）：ESP32 / ESP32‑S3 / C3 / C6 等模组 25 个",
+    file: "public/lib/*/esp-*.glb、public/lib/thumbs/esp-*.webp",
+    from: "Espressif KiCad Libraries（Espressif Systems），STEP 转换为 GLB、减面",
+    url: "https://github.com/espressif/kicad-libraries",
+    lic: "CC BY-SA 4.0（附与 KiCad 相同的例外条款）；改编后的 GLB 同样以 CC BY-SA 4.0 发布",
+  },
+  {
+    what: "零件库（v20）：Seeed XIAO / Grove 模块 4 个",
+    file: "public/lib/*/seeed-*.glb、public/lib/thumbs/seeed-*.webp",
+    from: "Seeed Studio OPL KiCad Library（Seeed Studio），转换为 GLB、减面",
+    url: "https://github.com/Seeed-Studio/OPL_Kicad_Library",
+    lic: "CC BY-SA 4.0；改编后的 GLB 同样以 CC BY-SA 4.0 发布",
   },
 ];
 
@@ -62,6 +83,7 @@ const PROCEDURAL = [
   "八触手机器人：代码生成",
   "装配台的螺丝、螺母、铜柱（M2 / M2.5 / M3）、底板、杜邦线、触手、工具：src/assembly/procedural.js 代码生成，尺寸参照 ISO/DIN 公称值，未核实的标“估算”（CC0）",
   "内六角圆柱头螺丝 M2/M2.5/M3（按 ISO 4762 头径/头高/内六角公称值）、平垫圈（ISO 7089）、内六角扳手 1.5/2/2.5 mm（ISO 2936）：src/assembly/procedural.js 代码生成（CC0）",
+  "v20 标准件 451 个：深沟球轴承 / LMxUU 直线轴承（ISO 15 / 常见规格外形）、光轴、模数 0.5–2 直齿轮、GT2 带轮、2020–4040 铝型材及角码 / T 型螺母、ISO 7380 半圆头螺丝、热熔螺母、NEMA 8–34 步进、无刷电机、舵机各尺寸级别、直流减速电机、TT 电机、18650 等圆柱电池、纽扣电池、9 V 电池、LiPo 软包、汽车片式 / 玻璃管保险丝、杜邦 / JST XH·PH·SH·ZH / XT30·60·90 连接器、3D 打印底板和 L 型支架：src/assembly/procedural2.js 代码生成（CC0），尺寸按标准或常见规格，未核实的标“估算”",
   "面包板 830 孔 / 400 孔 / 170 孔（孔距 2.54 mm；外形尺寸为估算）、28BYJ‑48 步进电机、NEMA 17 步进电机（42.3 mm 法兰、31 mm 孔距按 NEMA ICS 16；机身长度为常见规格）、N20 / 130 / 扣式振动电机、镊子、斜口钳、剥线钳、万用表、吸锡器、焊锡卷：用基本几何体代码生成，外形为估算（CC0）",
 ];
 
