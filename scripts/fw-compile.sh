@@ -8,6 +8,7 @@ XZ=addb1ed59bd71e09a6a5e0c52ad2f1c474aa8ca1   # xiaozhi-esp32 上游提交（只
 sum() { grep -E "Sketch uses|Global variables" "$1"; echo "  warnings in our files: $(grep -E 'warning' "$1" | grep -cE 'octopus_|mcp_stub|body_firmware')"; grep -E "error:" "$1" | head -${2:-8}; }
 cp -r "$O/plus/octopus_plus" "$W/"
 for rig in 8 16; do echo "== 完善版 octopus_plus  OCTO_RIG=$rig"; "$CLI" compile -b $FQ --warnings all --build-property "compiler.cpp.extra_flags=-DOCTO_RIG=$rig" "$W/octopus_plus" > "$W/plus$rig.log" 2>&1; echo "  exit $?"; sum "$W/plus$rig.log"; done
+echo "== v10 紧凑无线版 octopus_plus  OCTO_V10=1（Adafruit QT Py ESP32-S3 No PSRAM）"; "$CLI" compile -b esp32:esp32:adafruit_qtpy_esp32s3_nopsram --warnings all --build-property "compiler.cpp.extra_flags=-DOCTO_RIG=8 -DOCTO_V10=1" "$W/octopus_plus" > "$W/v10.log" 2>&1; echo "  exit $?"; sum "$W/v10.log"
 mkdir -p "$W/body_firmware_A"; cp "$O/md/"{body_firmware_A.ino,octopus_body.h,octopus_bus.h,octopus_gait.h} "$W/body_firmware_A/"
 echo "== md 原样 body_firmware_A（ESP32-S3）"; "$CLI" compile -b $FQ --warnings all "$W/body_firmware_A" > "$W/md.log" 2>&1; echo "  exit $?"; sum "$W/md.log" 12
 echo "== md 原样 body_firmware_A（经典 ESP32，对照）"; "$CLI" compile -b esp32:esp32:esp32 --warnings all "$W/body_firmware_A" > "$W/md32.log" 2>&1; echo "  exit $?"; sum "$W/md32.log"

@@ -48,6 +48,12 @@ public:
     // 我的补充：相邻触手机械间隙（°，按 3D 结构估算，需实物验证）
     static constexpr float kMinGapA = 12.0f;
     static constexpr float kMinGapB = 16.0f;
+#if OCTO_V10
+    // 我的补充 · v10：舵机橙线接的 QT Py 焊盘 A0 A1 A2 SDA SCL TX RX SCK → GPIO（Adafruit 5426 引脚图）
+    static constexpr uint8_t kV10Pins[8] = {18, 17, 9, 7, 6, 5, 16, 36};
+    // v10 短触手：2D 轮廓扫 ±55°，夹角 < −35° 才碰；+5° 余量 = −30（限位内等于不需要防撞）
+    static constexpr float kMinGapV10 = -30.0f;
+#endif
 
     ~OctopusBody() { Stop(); }
 
@@ -56,6 +62,11 @@ public:
         channels_ = ChannelsFor(rig);
         board_count_ = (channels_ + 15) / 16;
 
+#if OCTO_V10
+        (void)i2c_ctx; (void)write_fn;
+        board_count_ = 1;
+        if (!boards_[0].Init(kV10Pins, 8)) { ESP_LOGE(kTag, "ledcAttach failed"); return false; }
+#else
         for (int i = 0; i < board_count_; i++) {
             boards_[i] = Pca9685(static_cast<uint8_t>(Pca9685::kBaseAddr + i));
             if (!boards_[i].Init(i2c_ctx, write_fn, 50.0f)) {
@@ -63,6 +74,7 @@ public:
                 return false;
             }
         }
+#endif
 
         bank_.Bind(boards_, board_count_);
         bank_.Begin(channels_, kHome);
@@ -110,6 +122,8 @@ public:
     // ---------- 运动指令（线程安全：只入队） ----------
     void SetVelocity(float throttle, float steer, int cycles = 0) { Post({CmdType::kGait, throttle, steer, cycles, {}}); }
     void Rest()                 { Post({CmdType::kRest, 0, 0, 0, {}}); }
+    // 我的补充 · v10 低电：不回中位，立刻停 PWM（舵机放松、不再耗电）。回中位时 8 个舵机一起动的电流会把快没电的单节电池拉到 QT Py 欠压复位（仿真估算）
+    void RelaxNow()             { Post({CmdType::kRelax, 0, 0, 0, {}}); }
     void Home()                 { Post({CmdType::kHome, 0, 0, 0, {}}); }
     void WaveOnce(int arm)      { Post({CmdType::kWave, 0, 0, arm, {}}); }
     void Pulse(int times)       { Post({CmdType::kPulse, 0, 0, times, {}}); }
@@ -124,7 +138,7 @@ public:
 
 private:
     enum class Mode { kIdle, kGait, kWave, kPulse, kHoming };
-    enum class CmdType { kGait, kRest, kHome, kWave, kPulse, kParams };
+    enum class CmdType { kGait, kRest, kHome, kWave, kPulse, kParams, kRelax };
     struct Cmd {
         CmdType type;
         float throttle;
@@ -165,6 +179,11 @@ private:
                 Enter(Mode::kIdle);
                 want_relax_ = true;
                 bank_.ReleaseAll();               // 我的补充：只改目标，由限速慢慢回中位
+                break;
+            case CmdType::kRelax:
+                Enter(Mode::kIdle);
+                want_relax_ = false;
+                bank_.Relax();                     // 我的补充：立刻 FULL OFF / 占空比 0
                 break;
             case CmdType::kHome:
                 Enter(Mode::kHoming);              // 我的补充：先停步态，再一路一路回中位
@@ -241,7 +260,11 @@ private:
         float yaw[kArmCount];
         for (int a = 0; a < kArmCount; a++) yaw[a] = gait_.Yaw(a);
         // 我的补充：邻臂防撞
+#if OCTO_V10
+        AntiCollide(yaw, kMinGapV10);
+#else
         AntiCollide(yaw, (rig_ == RigType::kDual16 ? kMinGapB : kMinGapA) + 3.0f);
+#endif
         for (int a = 0; a < kArmCount; a++) WriteArm(a, yaw[a], gait_.Lift(a));
     }
 
@@ -294,7 +317,7 @@ private:
     int channels_ = 8;
     int board_count_ = 1;
 
-    Pca9685 boards_[3];     // 需要 Pca9685 默认构造（我的补充）
+    BankBoard boards_[3];     // 需要 Pca9685 默认构造（我的补充）
     ServoBank bank_;
     Gait gait_;
 

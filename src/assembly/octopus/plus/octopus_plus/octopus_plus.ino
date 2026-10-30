@@ -25,6 +25,13 @@
 #ifndef OCTO_RIG
 #define OCTO_RIG 8
 #endif
+// 我的补充 · v10 紧凑无线版：-DOCTO_V10=1（板子选 Adafruit QT Py ESP32-S3 No PSRAM）。只支持 8 舵机。
+#ifndef OCTO_V10
+#define OCTO_V10 0
+#endif
+#if OCTO_V10 && OCTO_RIG != 8
+#error "v10 only has 8 servos (OCTO_RIG=8)"
+#endif
 
 #define OCTO_USE_ARDUINO
 #include <Wire.h>
@@ -125,8 +132,10 @@ void setupBle() {
 
 void setup() {
   Serial.begin(115200);
+#if !OCTO_V10
   Wire.begin(I2C_SDA, I2C_SCL);
   Wire.setClock(400000);
+#endif
   batt.Begin();
   lineQueue = xQueueCreate(8, sizeof(Line));
 
@@ -137,14 +146,19 @@ void setup() {
 #endif
 
   if (!body.Init(rig, &Wire, octo::I2cWriteArduino)) {
+#if OCTO_V10
+    Serial.println("LEDC init failed: check servo pins");
+#else
     Serial.println("PCA9685 init failed: check SDA/SCL, V+ / VCC, address 0x40");
+#endif
     while (1) delay(1000);
   }
   body.SoftHomeBlocking();   // 我的补充：真正逐路上电（每路间隔 150 ms）
   body.Start();
 
   setupBle();
-  reply("Octopus ready (plus). BLE name = OctoBrain, rig = " + String(OCTO_RIG));
+  reply(String(OCTO_V10 ? "Octopus ready (v10 wireless)" : "Octopus ready (plus)") + ". BLE name = OctoBrain, rig = " + String(OCTO_RIG));
+  if (batt.Low()) reply("LOW BATTERY " + String(batt.Volts(), 2) + " V - charge first");   // 我的补充：开机就低电
   lastCmdMs = millis();
 }
 
@@ -169,7 +183,14 @@ void loop() {
   if (millis() - lastBattMs > 500) {
     lastBattMs = millis();
     if (batt.Update()) {
-      if (batt.Low()) { body.Rest(); reply("LOW BATTERY " + String(batt.Volts(), 2) + " V - stopped"); }
+      if (batt.Low()) {
+#if OCTO_V10
+        body.RelaxNow();
+#else
+        body.Rest();
+#endif
+        reply("LOW BATTERY " + String(batt.Volts(), 2) + " V - stopped");
+      }
       else reply("battery OK " + String(batt.Volts(), 2) + " V");
     }
   }

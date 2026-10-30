@@ -7,6 +7,11 @@
 
 #include "octopus_gait.h"
 
+// 我的补充 · v10 紧凑无线版：-DOCTO_V10=1 时不用 PCA9685，8 个舵机直接接 QT Py ESP32-S3 的 GPIO，用 LEDC 出 PWM
+#ifndef OCTO_V10
+#define OCTO_V10 0
+#endif
+
 #if defined(OCTO_USE_ESP_IDF)
 #include "esp_err.h"
 #include "esp_log.h"
@@ -107,9 +112,38 @@ private:
     WriteFn write_ = nullptr;
 };
 
+#if OCTO_V10
+// 我的补充 · v10：和 Pca9685 同样的 SetAngle / SetOff 接口，ServoBank / OctopusBody / Gait 不用改。
+// arduino-esp32 3.x 的 LEDC API：ledcAttach(pin, 50 Hz, 14 位) 自动分配通道；ledcWrite(pin, duty)。
+// 脉宽按 SG51R（Adafruit 2201）页面：0.75–2.25 ms 对应全行程。
+class LedcBoard {
+public:
+    static constexpr float kUs0 = 750.0f, kUs1 = 2250.0f;
+    bool Init(const uint8_t* pins, int n) {
+        pins_ = pins; n_ = n;
+        for (int i = 0; i < n; i++) if (!ledcAttach(pins[i], 50, 14)) return false;
+        return true;
+    }
+    static uint32_t Duty(float us) { return static_cast<uint32_t>(std::lround(us / 20000.0f * 16383.0f)); }
+    void SetAngle(int ch, float deg) const {
+        if (ch < 0 || ch >= n_) return;
+        if (deg < 0.0f) deg = 0.0f;
+        if (deg > 180.0f) deg = 180.0f;
+        ledcWrite(pins_[ch], Duty(kUs0 + (kUs1 - kUs0) * deg / 180.0f));
+    }
+    void SetOff(int ch) const { if (ch >= 0 && ch < n_) ledcWrite(pins_[ch], 0); }   // 占空比 0 = 不出脉冲，舵机放松
+private:
+    const uint8_t* pins_ = nullptr;
+    int n_ = 0;
+};
+using BankBoard = LedcBoard;
+#else
+using BankBoard = Pca9685;
+#endif
+
 class ServoBank {
 public:
-    void Bind(const Pca9685* boards, int board_count) { boards_ = boards; board_count_ = board_count; }
+    void Bind(const BankBoard* boards, int board_count) { boards_ = boards; board_count_ = board_count; }
 
     bool Begin(int channels, float home_angle = 90.0f) {
         channels_ = channels;
@@ -198,7 +232,7 @@ private:
         boards_[b].SetAngle(c, deg);
     }
 
-    const Pca9685* boards_ = nullptr;
+    const BankBoard* boards_ = nullptr;
     int board_count_ = 0;
     int channels_ = 0;
     float max_rate_ = 360.0f;

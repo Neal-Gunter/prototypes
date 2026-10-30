@@ -126,6 +126,8 @@ ok(FIX_LIST.filter((f) => f.plus).every((f) => f.zh.includes("我的补充")), "
   ok(gait.includes("Sweep(") && !/float Lateriality/.test(gait), "plus gait: mirrored sweep");
   ok(mcp.includes("b->Home()") && mcp.includes("834"), "plus mcp: home + speed clamp");
   ok([ino, bus, body, gait, batt, mcp, md].every((t) => t.includes("我的补充")), "every plus file labelled 我的补充");
+  ok(/#if OCTO_V10/.test(bus) && bus.includes("ledcAttach(pins[i], 50, 14)") && bus.includes("kUs0 = 750.0f, kUs1 = 2250.0f") && body.includes("{18, 17, 9, 7, 6, 5, 16, 36}"), "v10 C++: LEDC 50 Hz/14-bit, SG51R 750-2250 us, same GPIOs as sim");
+  ok(batt.includes("kPin       = 8") && batt.includes("3.55f") && batt.includes("3.75f") && batt.includes("kRatio     = 2.0f"), "v10 C++ batt: GPIO8, /2, 3.55/3.75 V");
   ok(md.includes("早期原型，简化仿真") && md.includes("立创实战派") && !md.includes("\ufffd"), "plus md: label + no mojibake");
 }
 console.log(`octo tests: ${pass} passed, ${fail} failed`);

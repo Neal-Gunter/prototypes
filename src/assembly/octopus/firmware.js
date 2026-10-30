@@ -194,6 +194,8 @@ export class OctopusBody {
   SetGaitParams(p) { this.gait_.SetParams(p); }
   GaitParamsSnapshot() { return { ...this.gait_.Params() }; }
   Rest() { this.mode_ = "idle"; this.crawlCycles = null; this.wantRelax = true; this.ReleaseHard(); }
+  // 我的补充 · v10 低电：立刻停 PWM，不回中位（octopus_body.h RelaxNow）
+  RelaxNow() { this.mode_ = "idle"; this.crawlCycles = null; this.wantRelax = false; if (!this.relaxed_) { this.relaxed_ = true; for (let i = 0; i < this.channels_; i++) this.boards_[Math.floor(i / 16)].SetRaw(i % 16, 0, 0x1000); this.rt.log("低电：PWM 立刻全部停掉（舵机放松，我的补充）"); } }
   WaveOnce(arm) { this.mode_ = "idle"; this.wave_arm_ = arm % kArmCount; this.wave_timer_ = 0; this.mode_ = "wave"; }
   Pulse(times, period = 0.6) { this.mode_ = "pulse"; this.pulse_left_ = times; this.pulse_period_ = period; this.pulse_timer_ = 0; }
   Step(dt) {
@@ -283,7 +285,7 @@ export class Runtime {
     }
     yield* this.body.SoftHome();
     this.body.Start();
-    if (this.F.batt) this.spawn("batt", this.battTask());
+    if (this.F.batt) { if (this.board === "v10") this.battCheck(); this.spawn("batt", this.battTask()); } // v10：开机先读一次（octopus_batt.h Begin → Update），GO 不会抢在第一次检测前面
     this.log(this.F.compile ? "BLE 串口已广播：OctoBrain（模拟）" : "SerialBT.begin(\"OctoBrain\")（原样在 S3 上编译不过；这里假设已改好，按模拟串口继续）");
     this.log("Octopus body ready. BT name = OctoBrain");
     this.lastCmdMs = this.millis();
@@ -299,24 +301,24 @@ export class Runtime {
     if (!this.body.Init(this.plan === "B" ? RIG.kDual16 : rig, this.i2cWrite)) { this.log("PCA9685 初始化失败"); this.halted = "PCA9685 初始化失败"; while (true) yield 1000; }
     yield* this.body.SoftHome();
     this.body.Start();
-    if (this.F.batt) this.spawn("batt", this.battTask());
+    if (this.F.batt) { if (this.board === "v10") this.battCheck(); this.spawn("batt", this.battTask()); } // v10：开机先读一次（octopus_batt.h Begin → Update），GO 不会抢在第一次检测前面
     this.log("小智固件（模拟）：已注册 self.octopus.action / self.octopus.set_gait");
     this.mcpReady = true;
     while (true) yield 50;
   }
   // 我的补充：GPIO10 电池检测。analogReadMilliVolts（11 dB 衰减，校准后 0–2900 mV）× (100k+22k)/22k，16 次平均，9.6 V 停、10.2 V 恢复（估算）
   // v10：GPIO8（A3），100k/100k → K = 2，3.55 V 停、3.75 V 恢复（估算）
-  *battTask() {
+  battCheck() {
     const v10 = this.board === "v10";
     const K = v10 ? 2 : 122 / 22, CUT = v10 ? 3.55 : 9.6, RESUME = v10 ? 3.75 : 10.2, PIN = v10 ? 8 : 10;
-    while (true) {
-      let mv = 0; for (let i = 0; i < 16; i++) mv += Math.min(2900, Math.max(0, this.adcMv(PIN)));
-      const v = (mv / 16 / 1000) * K;
-      this.vbat = v;
-      if (!this.lowBatt && v < CUT) { this.lowBatt = true; this.body.Rest(); this.log(`电池 ${v.toFixed(2)} V < ${CUT} V：停止运动，请充电（我的补充）`); }
-      else if (this.lowBatt && v > RESUME) { this.lowBatt = false; this.log(`电池回到 ${v.toFixed(2)} V，恢复接受指令`); }
-      yield 500;
-    }
+    let mv = 0; for (let i = 0; i < 16; i++) mv += Math.min(2900, Math.max(0, this.adcMv(PIN)));
+    const v = (mv / 16 / 1000) * K;
+    this.vbat = v;
+    if (!this.lowBatt && v < CUT) { this.lowBatt = true; if (v10) this.body.RelaxNow(); else this.body.Rest(); this.log(`电池 ${v.toFixed(2)} V < ${CUT} V：停止运动，请充电（我的补充）`); }
+    else if (this.lowBatt && v > RESUME) { this.lowBatt = false; this.log(`电池回到 ${v.toFixed(2)} V，恢复接受指令`); }
+  }
+  *battTask() {
+    while (true) { this.battCheck(); yield 500; }
   }
   send(line) { this.lines.push(line); }
   *handleCommand(s0) {

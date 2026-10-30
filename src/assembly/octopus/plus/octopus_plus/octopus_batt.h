@@ -6,19 +6,32 @@
 //   低于 9.6 V（3 × 3.2 V，估算）停运动，回到 10.2 V 才恢复（迟滞，防止反复启停）
 
 #include <Arduino.h>
+#ifndef OCTO_V10
+#define OCTO_V10 0
+#endif
 
 namespace octo {
 
 class Battery {
 public:
+#if OCTO_V10
+    // 我的补充 · v10：1S LiPo，100k / 100k 分压 → A3（GPIO8，ADC1_CH7），4.2 V → 2.1 V。
+    // 3.55 V 停运动、3.75 V 恢复（估算）：保护板 3.0 V 才切，但 BAT 焊盘二极管 + LDO 让 QT Py 在电芯带载约 3.4 V 以下掉电复位，所以提前停
+    static constexpr int   kPin       = 8;
+    static constexpr float kRatio     = 2.0f;
+    static constexpr float kCutoff    = 3.55f;
+    static constexpr float kResume    = 3.75f;
+#else
     static constexpr int   kPin       = 10;
     static constexpr float kRatio     = (100.0f + 22.0f) / 22.0f;
     static constexpr float kCutoff    = 9.6f;
     static constexpr float kResume    = 10.2f;
+#endif
 
     void Begin() {
         pinMode(kPin, INPUT);
         analogSetPinAttenuation(kPin, ADC_11db);
+        Update();   // 我的补充：开机先读一次，电池低就从一开始拒绝动作指令
     }
 
     // 16 次平均，返回电池电压（V）
