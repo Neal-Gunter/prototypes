@@ -105,6 +105,7 @@ export function kicadInfo2(file) {
   else if (D("Connector_USB")) { cat = "connector"; zh = /USB_A/.test(b) ? "USB-A 母座" : /USB_C/.test(b) ? "USB-C 座" : /Micro/.test(b) ? "Micro-USB 母座" : /Mini/.test(b) ? "Mini-USB 母座" : /USB_B/.test(b) ? "USB-B 母座" : "USB 座"; zh += `（${pretty.replace(/^USB /, "")}）`; iface = ["usb"]; }
   else if (D("Connector_IDC")) { cat = "connector"; zh = `IDC 牛角座 ${m(/(2x\d+)/)} ${pitch_mm ?? ""} mm${/Horizontal/.test(b) ? "（弯）" : ""}`; iface = ["header"]; }
   else if (D("Connector_Molex")) { cat = "connector"; const s = m(/Molex_([A-Za-z-]+(?:_\d\.\d+)?)/).replace(/_/g, " "); zh = `Molex ${s} ${pinsN ?? ""} 针`; }
+  else if (D("Package_SO")) { cat = "semi"; zh = `贴片 IC 封装 ${b.split("_")[0]}（${b.split("_").slice(1).join(" ")}，KiCad 通用封装模型）`; } // v22：DRV8833PW / TB6612FNG 引脚映射用
   else if (D("Connector_PinHeader")) { cat = "connector"; zh = `排针 ${m(/(\dx\d+)/)} 2.54 mm${/Horizontal/.test(b) ? "（弯针）" : ""}`; iface = ["header"]; }
   else if (D("Connector_PinSocket")) { cat = "connector"; zh = `排母 ${m(/(\dx\d+)/)} 2.54 mm${/Horizontal/.test(b) ? "（弯）" : ""}`; iface = ["header"]; }
   else if (D("Connector_Card")) { cat = "connector"; zh = `存储卡座（${pretty}）`; iface = ["spi"]; }
