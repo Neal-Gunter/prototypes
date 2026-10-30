@@ -1,0 +1,346 @@
+{
+ "schema": "proto-modellab/1",
+ "id": "builtin-fourbar",
+ "builtin": true,
+ "name": "内置示例：四连杆（曲柄摇杆，闭环）",
+ "updated": 0,
+ "notes": "本项目自制（CC0）。杆长 机架 80 / 曲柄 20 / 连杆 70 / 摇杆 60 mm（我定的）；电机参数是估算。",
+ "model": {
+  "file": "fourbar.obj",
+  "builtin": "demo/fourbar.obj",
+  "units": "mm",
+  "scale": 1,
+  "upAxis": "y",
+  "unitWhy": "画的时候就是毫米",
+  "split": "auto"
+ },
+ "modules": [
+  {
+   "massG": null,
+   "material": "pla",
+   "id": "b0",
+   "name": "机架（底座）",
+   "color": "#c9c2b0",
+   "meshes": [
+    "m0"
+   ],
+   "collider": "hull",
+   "hidden": false
+  },
+  {
+   "massG": null,
+   "material": "pla",
+   "id": "b1",
+   "name": "曲柄",
+   "color": "#2f6fd6",
+   "meshes": [
+    "m1"
+   ],
+   "collider": "hull",
+   "hidden": false
+  },
+  {
+   "massG": null,
+   "material": "pla",
+   "id": "b2",
+   "name": "连杆",
+   "color": "#e0b322",
+   "meshes": [
+    "m2"
+   ],
+   "collider": "hull",
+   "hidden": false
+  },
+  {
+   "massG": null,
+   "material": "pla",
+   "id": "b3",
+   "name": "摇杆（输出）",
+   "color": "#d23a2f",
+   "meshes": [
+    "m3"
+   ],
+   "collider": "hull",
+   "hidden": false
+  }
+ ],
+ "functions": [
+  {
+   "id": "f-crank",
+   "name": "曲柄转动（输入）",
+   "kind": "驱动",
+   "color": "#2f6fd6",
+   "regions": [
+    {
+     "x": 0.04,
+     "y": 0.1774193548387097,
+     "w": 0.28,
+     "h": 0.22580645161290322
+    }
+   ],
+   "pins": [
+    {
+     "label": "M1",
+     "signal": "自定义电机（2 kgf·cm、120 °/s，估算）"
+    }
+   ],
+   "modules": [
+    "b1"
+   ],
+   "joints": [
+    "j-crank"
+   ],
+   "note": "唯一带驱动的关节；四连杆只有 1 个自由度"
+  },
+  {
+   "id": "f-rocker",
+   "name": "摇杆摆动（输出）",
+   "kind": "执行",
+   "color": "#d23a2f",
+   "regions": [
+    {
+     "x": 0.36,
+     "y": 0.1774193548387097,
+     "w": 0.28,
+     "h": 0.22580645161290322
+    }
+   ],
+   "pins": [],
+   "modules": [
+    "b3"
+   ],
+   "joints": [],
+   "note": "被连杆带着来回摆，没有马达"
+  },
+  {
+   "id": "f-loop",
+   "name": "闭环",
+   "kind": "结构",
+   "color": "#e0b322",
+   "regions": [
+    {
+     "x": 0.68,
+     "y": 0.1774193548387097,
+     "w": 0.28,
+     "h": 0.22580645161290322
+    }
+   ],
+   "pins": [],
+   "modules": [
+    "b2"
+   ],
+   "joints": [],
+   "note": "连杆两头都连着：机架 → 曲柄 → 连杆 → 摇杆 → 机架"
+  },
+  {
+   "id": "f-frame",
+   "name": "机架",
+   "kind": "结构",
+   "color": "#a89a7a",
+   "regions": [
+    {
+     "x": 0.04,
+     "y": 0.532258064516129,
+     "w": 0.28,
+     "h": 0.1774193548387097
+    }
+   ],
+   "pins": [],
+   "modules": [
+    "b0"
+   ],
+   "joints": [],
+   "note": "底座固定在地面上"
+  }
+ ],
+ "joints": [
+  {
+   "id": "j-crank",
+   "name": "曲柄转轴（电机）",
+   "type": "revolute",
+   "parent": "b0",
+   "child": "b1",
+   "anchor": [
+    0,
+    6,
+    0
+   ],
+   "axis": [
+    0,
+    1,
+    0
+   ],
+   "limits": {
+    "min": -170,
+    "max": 170
+   },
+   "drive": {
+    "preset": "custom",
+    "volt": 4.8,
+    "torque": 2,
+    "speed": 120,
+    "forceN": 5,
+    "speedMm": 20
+   },
+   "home": 0
+  },
+  {
+   "id": "j-ca",
+   "name": "曲柄—连杆",
+   "type": "revolute",
+   "parent": "b1",
+   "child": "b2",
+   "anchor": [
+    0,
+    10,
+    20
+   ],
+   "axis": [
+    0,
+    1,
+    0
+   ],
+   "limits": {
+    "min": -180,
+    "max": 180
+   },
+   "drive": {
+    "preset": "none",
+    "volt": 4.8,
+    "torque": 1,
+    "speed": 300,
+    "forceN": 5,
+    "speedMm": 20
+   },
+   "home": 0
+  },
+  {
+   "id": "j-rocker",
+   "name": "摇杆转轴",
+   "type": "revolute",
+   "parent": "b0",
+   "child": "b3",
+   "anchor": [
+    80,
+    6,
+    0
+   ],
+   "axis": [
+    0,
+    1,
+    0
+   ],
+   "limits": {
+    "min": -180,
+    "max": 180
+   },
+   "drive": {
+    "preset": "none",
+    "volt": 4.8,
+    "torque": 1,
+    "speed": 300,
+    "forceN": 5,
+    "speedMm": 20
+   },
+   "home": 0
+  },
+  {
+   "id": "j-cb",
+   "name": "连杆—摇杆（闭环）",
+   "type": "revolute",
+   "parent": "b2",
+   "child": "b3",
+   "anchor": [
+    59.7444,
+    10,
+    56.4775
+   ],
+   "axis": [
+    0,
+    1,
+    0
+   ],
+   "limits": {
+    "min": -180,
+    "max": 180
+   },
+   "drive": {
+    "preset": "none",
+    "volt": 4.8,
+    "torque": 1,
+    "speed": 300,
+    "forceN": 5,
+    "speedMm": 20
+   },
+   "home": 0
+  }
+ ],
+ "poses": [
+  {
+   "id": "p-0",
+   "name": "曲柄 0°",
+   "values": {
+    "j-crank": 0
+   }
+  },
+  {
+   "id": "p-90",
+   "name": "曲柄 +90°",
+   "values": {
+    "j-crank": 90
+   }
+  },
+  {
+   "id": "p-m90",
+   "name": "曲柄 −90°",
+   "values": {
+    "j-crank": -90
+   }
+  },
+  {
+   "id": "p-170",
+   "name": "曲柄 +170°",
+   "values": {
+    "j-crank": 170
+   }
+  },
+  {
+   "id": "p-m170",
+   "name": "曲柄 −170°",
+   "values": {
+    "j-crank": -170
+   }
+  }
+ ],
+ "timeline": {
+  "loop": true,
+  "keys": [
+   {
+    "t": 0,
+    "pose": "p-0"
+   },
+   {
+    "t": 1.5,
+    "pose": "p-170"
+   },
+   {
+    "t": 4.5,
+    "pose": "p-m170"
+   },
+   {
+    "t": 6,
+    "pose": "p-0"
+   }
+  ]
+ },
+ "sim": {
+  "fixBase": true
+ },
+ "diagram": {
+  "file": "fourbar-functions.svg",
+  "builtin": "demo/fourbar-functions.svg",
+  "mime": "image/svg+xml",
+  "w": 1000,
+  "h": 620
+ }
+}
