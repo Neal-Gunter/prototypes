@@ -1,3 +1,4 @@
+import { pub } from "../../lib/base";
 // 零件库浏览：搜索、分类、缩略图、真实尺寸（不显示价格）
 import { useEffect, useMemo, useState } from "react";
 import { loadIndex, getEntry } from "../catalog.js";
@@ -25,7 +26,7 @@ export function useLibrary() {
 function Thumb({ id, real }) {
   const [bad, setBad] = useState(false);
   if (bad || !real) return <div aria-hidden="true" className="flex size-12 shrink-0 items-center justify-center border border-line bg-paper-2 text-[10px] text-ink-soft">{real ? "CAD" : "程序"}</div>;
-  return <img src={`/lib/thumbs/${id}.webp`} alt="" loading="lazy" width="48" height="48" className="size-12 shrink-0 border border-line bg-white object-contain" onError={() => setBad(true)} />;
+  return <img src={pub(`/lib/thumbs/${id}.webp`)} alt="" loading="lazy" width="48" height="48" className="size-12 shrink-0 border border-line bg-white object-contain" onError={() => setBad(true)} />;
 }
 export default function PartsBrowser({ onAdd, compact = false, onPick }) {
   const { idx, rows } = useLibrary();

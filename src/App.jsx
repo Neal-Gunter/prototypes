@@ -13,7 +13,7 @@ import CreditsPage from "./pages/CreditsPage";
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, "") || "/"}>
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<LandingPage />} />

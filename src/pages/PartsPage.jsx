@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { pub } from "../lib/base";
 import { Link } from "react-router-dom";
 import { containerClass } from "../container";
 import PartsBrowser, { PartDetail, useLibrary } from "../assembly/ui/PartsBrowser.jsx";
@@ -33,7 +34,7 @@ export default function PartsPage() {
         <div className="flex h-[70vh] flex-col"><PartsBrowser onPick={setSel} /></div>
         <aside className="border border-line bg-white p-3">
           <h2 className="mb-2 font-medium">零件详情</h2>
-          {sel && <img src={`/lib/thumbs/${sel}.webp`} alt="" className="mb-2 aspect-square w-40 border border-line object-contain" onError={(e) => { e.currentTarget.style.display = "none"; }} />}
+          {sel && <img src={pub(`/lib/thumbs/${sel}.webp`)} alt="" className="mb-2 aspect-square w-40 border border-line object-contain" onError={(e) => { e.currentTarget.style.display = "none"; }} />}
           <PartDetail id={sel} />
           <Link to="/assembly" className="mt-4 inline-flex min-h-10 items-center border border-ink px-3 hover:bg-ink hover:text-paper-2">去装配台试装</Link>
         </aside>
