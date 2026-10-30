@@ -30,6 +30,7 @@ export function attachPhys(def, phys, F = (p) => p) {
 export function pinLabel(def, key) {
   const q = def?.physPins?.[key]; if (!q) return null;
   const pitch = def.physInfo?.pitch;
+  if (key[0] === "t" && def.boPitch) return { title: `${q.name}（引脚 ${q.num}）`, sub: `转接板贴片焊盘 · ${q.src}`, pitch: `焊盘间距 ${def.boPitch} mm · 要先把芯片焊上（排针那头才是 2.54 mm）` };
   const pt = pitch ? `间距 ${pitch.mode} mm${pitch.ok ? "" : `（数据手册 ${pitch.expected} mm，不一致${pitch.note ? "：" + pitch.note : ""}）`}${pitch.breadboard ? " · 可插面包板" : ""}` : "";
   return { title: `${q.name}（引脚 ${q.num}）`, sub: `${q.tht ? "通孔 / 排针" : "贴片焊盘"} · ${q.src}${q.est ? " · 估算" : ""}`, pitch: pt };
 }

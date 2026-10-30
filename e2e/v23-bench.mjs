@@ -35,7 +35,7 @@ const bo = await p.evaluate(() => [...window.__asm.engine.parts.values()].find((
 const s = await p.evaluate((u) => window.__pinScreen?.(u, "t11") || null, bo);
 let hv = "none";
 if (s) for (let a = 0; a < 3 && hv === "none"; a++) { await p.mouse.move(s.x - 4, s.y); await p.mouse.move(s.x, s.y); await wait(400); hv = await T("pin-hover").innerText({ timeout: 500 }).catch(() => "none"); }
-ok(/焊盘/.test(hv), "悬停转接板焊盘有名字", hv.replace(/\n/g, " | "));
+ok(/焊盘/.test(hv) && /0\.65 mm/.test(hv) && !/可插面包板/.test(hv), "悬停转接板焊盘：名字 + 0.65 mm 焊盘间距（不说“可插面包板”）", hv.replace(/\n/g, " | "));
 // 3) 新放一颗 LQFP-48，点“贴到转接板上”
 const chip = await p.evaluate(async () => window.__asm.addAt("p-smd-lqfp-48", -6, 12, 0.3)); await wait(1500);
 await p.evaluate((u) => window.__asm.select(u), chip); await wait(300);
