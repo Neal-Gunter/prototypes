@@ -26,3 +26,5 @@ node scripts/v14-test.mjs || exit 1
 node scripts/ctrl-test.mjs || exit 1
 # v15：多工况鲁棒搜索 + 横坡侧滑补偿（定向小轮 / 路径保持）+ 评估池 + 240 °/s 限速
 node scripts/v15-test.mjs || exit 1
+# v16：实物连接 OCTL/1（协议 / C 对拍 / 安全层 / 模拟设备 / 会话 / 校准）
+node scripts/link-test.mjs || exit 1

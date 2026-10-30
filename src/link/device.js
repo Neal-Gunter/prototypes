@@ -112,3 +112,11 @@ export class OctoDevice {
   // 主机侧“仿真值”直接读（不经过帧）
   snapshot() { const b = this.body(); return { up: this.up, vbat: this.rt.vbat ?? this.vbat, roll: this.imu ? this.roll : NaN, pitch: this.imu ? this.pitch : NaN, mode: b.ModeCode(), relaxed: !!b.relaxed_, a: this.angles() }; }
 }
+
+// BLE 断开回调（octopus_plus.ino onDisconnect → Link::OnDisconnect）
+OctoDevice.prototype.disconnect = function () {
+  if (!this.ready || !this.session) return;
+  this.session = false; this.telHz = 0;
+  if (!this.estop) this.body().Rest();
+  this.out(0, "EVT", [2]);
+};
