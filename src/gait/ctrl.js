@@ -13,7 +13,8 @@ export const IMU_EST = {
 export const DEFAULT_IMU = { gyroNoise: 0.1, accNoise: 0.004, delay: 0.02, rate: 100, seed: 7 };
 export const DEFAULT_CTRL = { kpH: 0.04, kdH: 0.004, kpT: 0, kdT: 0, uMax: 0.5, offMax: 15, turnSign: 1, alpha: 0.98, adapt: false, flipT: 1.0, flipDeg: 2, slopeFlipDeg: 0 };
 // 八爪鱼的默认（我的补充）：横坡换号打开（见 TiltCtrl 注释）；倾斜项默认关（八爪鱼趴在万向珠上，倾角本来就很小）
-export const OCTO_CTRL = { ...DEFAULT_CTRL, slopeFlipDeg: 1.5 };
+// v14：adapt 打开——坡道换号规则是用同步划桨标定的，换成 v14 搜索步态时符号会反；自适应翻号兜底（见 v14-test）
+export const OCTO_CTRL = { ...DEFAULT_CTRL, slopeFlipDeg: 1.5, adapt: true };
 // 通用模型（四足等）的默认：先只开倾斜（航向的转向符号因模型而异，要先点“标定转向符号”）
 export const LAB_CTRL = { ...DEFAULT_CTRL, kpH: 0, kdH: 0, kpT: 0.5, kdT: 0.02 };
 
@@ -118,6 +119,9 @@ static constexpr float kOffMax = ${f(o.offMax)}; // 偏置上限（°）
 static constexpr float kTurnSign = ${f(o.turnSign)}; // 仿真标定的转向符号
 static constexpr float kAlpha = ${f(o.alpha)};  // 互补滤波系数
 static constexpr float kSlopeFlipDeg = ${f(o.slopeFlipDeg)}; // 横滚超过这个角度（横坡）转向符号取反（仿真经验规则，0 = 关）
+static constexpr bool kAdapt = ${o.adapt ? "true" : "false"};     // 自适应转向符号（控制量饱和且误差变大 → 翻号）
+static constexpr float kFlipT = ${f(o.flipT)};   // 饱和多少秒才判断
+static constexpr float kFlipDeg = ${f(o.flipDeg)}; // 误差又变大多少度才翻
 }}  // namespace octo::ctrl_cfg
 `;
 }

@@ -26,7 +26,7 @@ const W = ["sine", "tri", "square", "saw"], back = { joints: arr("kAmp").map((am
 let e2 = 0; for (let i = 0; i < 300; i++) for (let a = 0; a < 8; a++) e2 = Math.max(e2, Math.abs(customYaw(back.joints[a], i * 0.021, 1) - jointValue(octoRowGait().joints[a], i * 0.021)));
 ok(/#define OCTO_GAIT_CUSTOM 1/.test(H) && e2 < 1e-3, `导出 octopus_gait_custom.h：常量解析回来与编辑器一致（最大差 ${e2.toExponential(1)}°）`);
 const body = fs.readFileSync("src/assembly/octopus/plus/octopus_plus/octopus_body.h", "utf8");
-ok(/__has_include\("octopus_gait_custom.h"\)/.test(body) && /custom_gait::Yaw\(a, custom_t_, gait_.CustomScale\(a\)\)/.test(body), "octopus_body.h 检测到头文件就用自定义步态（之后仍过 AntiCollide / 限位 / 限速）");
+ok(/__has_include\("octopus_gait_custom.h"\)/.test(body) && /custom_gait::Yaw\(a, custom_t_, gait_.CustomScale\(a\)( \* sc\[a\])?\)/.test(body), "octopus_body.h 检测到头文件就用自定义步态（之后仍过 AntiCollide / 限位 / 限速）");
 // 5 物理：v10 紧凑版前后对比（15 s、μ 0.5，固件 JS 孪生 + Rapier）
 const base = await runGait({}), same = await runGait({ gait: fg }), row = await runGait({ gait: octoRowGait() });
 ok(Math.abs(base.fwd - same.fwd) < 0.01 && Math.abs(base.dx - same.dx) < 0.01, `走“自定义 = 固件默认”与默认固件同一结果 fwd ${base.fwd.toFixed(2)} / ${same.fwd.toFixed(2)} cm`);

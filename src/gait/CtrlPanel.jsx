@@ -30,6 +30,7 @@ export default function CtrlPanel({ defaults, loadKind = "load", onLive, runComp
         <SL zh="倾斜 Kp" k="kpT" c={c} set={setC} min={0} max={3} step={0.05} t={tid} />
         <SL zh="倾斜 Kd" k="kdT" c={c} set={setC} min={0} max={0.2} step={0.005} t={tid} />
         <label className="flex items-center gap-0.5">转向符号<select value={c.turnSign} onChange={(e) => setC({ ...c, turnSign: +e.target.value })} data-testid={`${tid}-turnsign`} className="border border-line bg-white"><option value={1}>+1</option><option value={-1}>−1</option></select></label>
+        <label className="flex items-center gap-0.5"><input type="checkbox" checked={!!c.adapt} onChange={(e) => setC({ ...c, adapt: e.target.checked })} data-testid={`${tid}-adapt`} />自适应转向符号（饱和且越修越偏 → 翻号，我的补充）</label>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <label className="flex items-center gap-0.5">地面坡度<input type="range" min="0" max={slopeMax} step="0.5" value={slope} onChange={(e) => setSlope(+e.target.value)} data-testid={`${tid}-slope`} /><span className="w-10 font-mono" data-testid={`${tid}-slope-val`}>{slope}°</span></label>

@@ -19,8 +19,11 @@ ok(m && m.dims_mm.x === 26 && m.dims_mm.y === 4.6 && m.dims_mm.z === 17.8, "MPU-
 ok(m && m.mass === 0.0018 && IMU_V10.g === 1.8, "MPU-6050 质量 1.8 g");
 ok(m && m.octo.pins.SDA && m.octo.pins.SCL && m.octo.pins.VIN, "MPU-6050 引脚表有 VIN / SDA / SCL");
 const h = toCtrlHeader(OCTO_CTRL, { source: "test" });
-ok(/kSlopeFlipDeg/.test(h) && /namespace ctrl_cfg/.test(h), "闭环头文件含 ctrl_cfg 常量");
+ok(/kSlopeFlipDeg/.test(h) && /kAdapt = true/.test(h) && /namespace ctrl_cfg/.test(h), "闭环头文件含 ctrl_cfg 常量");
 // 舵机限速：v14 每条触手回程速度 < 300 °/s
 const sp = octoV14Gait().joints.map((j) => { const T = 1 / j.freq; return Math.max(2 * Math.abs(j.amp) / (j.duty * T), 2 * Math.abs(j.amp) / ((1 - j.duty) * T)); });
 ok(Math.max(...sp) < 300, `v14 最大角速度 ${Math.max(...sp).toFixed(0)} °/s < 固件限速 300 °/s`);
+// 坡道：v14 步态 3° 横坡，闭环（默认 OCTO_CTRL，含自适应翻号）航向偏差小于开环
+for (const dir of ["cross", "crossL"]) { const o = await runGait({ gait: octoV14Gait(), sec: 15, slope: { deg: 3, dir } }), c = await runGait({ gait: octoV14Gait(), sec: 15, slope: { deg: 3, dir }, ctrl: {} });
+  ok(Math.abs(c.dh) < Math.abs(o.dh) * 0.75, `v14 + 3° ${dir}：闭环航向 ${o.dh.toFixed(1)}° → ${c.dh.toFixed(1)}°（侧滑 ${o.dx.toFixed(1)} → ${c.dx.toFixed(1)} cm，滑移没修）`); }
 console.log(`v14-test: ${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

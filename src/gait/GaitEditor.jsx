@@ -16,7 +16,7 @@ function Overview({ g, range, t }) {
       <line x1="0" x2={W} y1={H / 2} y2={H / 2} stroke="#ddd" />
       {g.joints.map((J, i) => <path key={i} d={curvePath(J, W, H, T, range)} fill="none" stroke={cols[i % cols.length]} strokeWidth="1.2" />)}
       {t != null && <line x1={((t % T) / T) * W} x2={((t % T) / T) * W} y1="0" y2={H} stroke="#333" strokeDasharray="2 2" />}
-      <text x="3" y="10" fontSize="8" fill="#666">±{range}{g.joints[0]?.unit || "°"} · {T.toFixed(1)} s</text>
+      <text x="3" y="10" fontSize="8" fill="#666">±{+(+range).toFixed(1)}{g.joints[0]?.unit || "°"} · {T.toFixed(1)} s</text>
     </svg>
   );
 }

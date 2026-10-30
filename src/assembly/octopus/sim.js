@@ -131,7 +131,7 @@ export class OctoSim {
     }
     this.servoI = I; this.avgI = (this.avgI || 0) + (I - (this.avgI || 0)) * Math.min(1, dt / 0.2); this.peakI = Math.max(this.peakI, this.avgI); this.peakInst = Math.max(this.peakInst || 0, I);
     if (this.v10) { this.eJ = (this.eJ || 0) + (R.pBat || 0) * dt; this.eT = (this.eT || 0) + dt; }
-    if (B.robot && this.phys) { this.phys.step(dt); if (this.imu) this.imu.feed(this.t, this.phys.imuTruth()); /* v14：IMU */ this.pose = this.phys.pose2d(); const m = this.phys.meas; this.vel = { v: m.v, slip: m.slip }; }
+    if (B.robot && this.phys) { this.phys.step(dt); if (this.benchWrap && this.phys.keepOnBench(...this.benchWrap)) this.ev(`走到台边 → 整机搬回起点（第 ${this.phys.wraps} 次；测速和前进距离照常累计，我的补充）`); if (this.imu) this.imu.feed(this.t, this.phys.imuTruth()); /* v14：IMU */ this.pose = this.phys.pose2d(); const m = this.phys.meas; this.vel = { v: m.v, slip: m.slip }; }
     if (this.t - (this.trace.at(-1)?.t || 0) > 0.05) { this.trace.push({ ...this.pose, t: this.t }); if (this.trace.length > 3000) this.trace.shift(); }
   }
   yawServos() { return this.servos.filter((s) => s.slot === 0 && s.arm != null).sort((a, b) => a.arm - b.arm); }

@@ -160,6 +160,20 @@ export class LocoPhys {
     this.rest = this.poses();
     const p0 = this.body.translation();
     this.org = { x: p0.x, z: p0.z }; this.hLast = this.heading(); this.hAcc = 0;
+    this.home = { x: p0.x, z: p0.z }; this.wraps = 0;
+    this.reach = Math.max(4, ...this.legs.map((L) => { const t = worldPoint(L.arm, L.tipLocal); return Math.hypot(t.x - p0.x, t.z - p0.z); }));
+  }
+  // v14（我的补充）：3D 台面只有 BENCH 那么大（物理地面是 6 m 的大平面）。整机（触手尖算进去）快出台边时，
+  // 把所有刚体一起平移回起点（朝向、速度、关节角都不变，相当于把它拎回来放下）；测速 / 轨迹 / 前进距离照常累计，不会因为搬回而清零。
+  keepOnBench(W, D, cx = 0, cz = 0) {
+    const p = this.body.translation(), r = this.reach + 1;
+    if (Math.abs(p.x - cx) < W / 2 - r && Math.abs(p.z - cz) < D / 2 - r) return false;
+    const dx = this.home.x - p.x, dz = this.home.z - p.z;
+    this.world.forEachRigidBody((rb) => { if (!rb.isDynamic()) return; const t = rb.translation(); rb.setTranslation({ x: t.x + dx, y: t.y, z: t.z + dz }, true); });
+    this.org.x += dx; this.org.z += dz;
+    if (this.start) { this.start.x += dx; this.start.z += dz; }
+    this.wraps++;
+    return true;
   }
   // 给 OctoSim / 俯视轨迹用的平面位姿（相对建好时的位置；h 不回绕，右转为正，和 v8 的 sim.pose 一样）
   pose2d() { const p = this.body.translation(); return { x: p.x - this.org.x, z: p.z - this.org.z, h: this.hAcc }; }

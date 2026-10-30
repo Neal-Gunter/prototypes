@@ -4,6 +4,7 @@ import { getEntry, toDef } from "../catalog.js";
 import { pinsOf, FRAME } from "./parts.js";
 import { Gait } from "./firmware.js";
 import { LocoPhys } from "./loco.js";
+import { BENCH } from "../engine.js";
 import { DECK_V10, servoPoseV10, armPoseV10, servoRouteV10, dirOf } from "./layout-v10.js";
 
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -215,7 +216,7 @@ async function finishOcto(engine, sim, roles, rotors) {
   const B = sim.bench;
   // —— v9：走路是物理（loco.js）。3D 画面 = 物理刚体的位姿：机身整体 + 每条触手的连杆（只摆画面/机身刚体，导线不拽机身）——
   let lp = null;
-  if (B.robot) { lp = await LocoPhys.create(sim, { c: [OCTO_C.x, 0, OCTO_C.z], mu: sim.o.mu ?? 0.5 }); sim.attachPhys(lp); }
+  if (B.robot) { lp = await LocoPhys.create(sim, { c: [OCTO_C.x, 0, OCTO_C.z], mu: sim.o.mu ?? 0.5 }); sim.attachPhys(lp); sim.benchWrap = [BENCH.w, BENCH.d]; /* v14：走到台边搬回起点 */ }
   for (const s of sim.servos) if (!B.robot) rotors.push({ s, kind: "yaw", servo: roles[`S${s.arm}`], part: roles[`H${s.arm}`] });
   const base = B.robot ? engine.worldPose(roles.FRAME) : null;
   // 每个跟着物理连杆走的零件：记下建好时的世界位姿 W0 和连杆建好时的位置 L0（连杆建的时候不转）

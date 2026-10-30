@@ -13,7 +13,7 @@ class TiltController {
 public:
     struct Out { float sc[kArmCount]; float off[kArmCount]; float u; float roll_deg; bool slope_mode; };
 
-    void Reset() { init_ = false; yaw0_set_ = false; slope_mode_ = false; prev_ok_ = false; yaw_ = 0.0f; }
+    void Reset() { init_ = false; yaw0_set_ = false; slope_mode_ = false; prev_ok_ = false; yaw_ = 0.0f; sign_ = 1.0f; sat_ = false; }
 
     // dt 秒；返回每条触手的摆幅倍数 sc（只减不增）和偏航偏置 off（°）
     Out Step(const ImuSample& s, float dt) {
@@ -29,13 +29,20 @@ public:
         yaw_ += s.gyro[2] * k * dt;
         if (!yaw0_set_) { yaw0_ = yaw_; yaw0_set_ = true; }
         const float eH = yaw0_ - yaw_;   // 机身右转 → yaw 变小 → eH > 0 → 往左修
-        float u = Clamp(kKpH * eH / k - kKdH * s.gyro[2], -kUMax, kUMax);
+        float u = Clamp(kKpH * eH / k - kKdH * s.gyro[2], -kUMax, kUMax) * sign_;
         // 坡道换号（仿真经验规则，估算）：横滚超过 kSlopeFlipDeg 时转向符号取反（滞回 0.6 倍）
         const float roll_deg = std::fabs(roll_ / k);
         if (kSlopeFlipDeg > 0.0f) {
             slope_mode_ = slope_mode_ ? roll_deg > kSlopeFlipDeg * 0.6f : roll_deg > kSlopeFlipDeg;
             if (slope_mode_) u = -u;
         }
+        // 自适应转向符号（v14，仿真经验规则）：控制量顶到上限超过 kFlipT 秒、航向误差反而又大了 kFlipDeg 度 → 符号翻过来
+        const float eD = std::fabs(eH / k);
+        if (kAdapt && std::fabs(u) >= 0.95f * kUMax) {
+            if (!sat_) { sat_ = true; sat_t_ = 0.0f; sat_e_ = eD; }
+            sat_t_ += dt;
+            if (sat_t_ > kFlipT && eD > sat_e_ + kFlipDeg) { sign_ = -sign_; sat_ = false; u = -u; }
+        } else sat_ = false;
         // 世界“上”方向在传感器系里（小角度）；下坡方向 = −up 的水平分量
         const float up0 = -std::sin(pitch_), up1 = std::sin(roll_) * std::cos(pitch_);
         const float dUp0 = prev_ok_ ? (up0 - prev_up_[0]) / dt : 0.0f, dUp1 = prev_ok_ ? (up1 - prev_up_[1]) / dt : 0.0f;
@@ -55,7 +62,8 @@ public:
 
 private:
     static float Clamp(float v, float a, float b) { return v < a ? a : (v > b ? b : v); }
-    bool init_ = false, yaw0_set_ = false, slope_mode_ = false, prev_ok_ = false;
+    bool init_ = false, yaw0_set_ = false, slope_mode_ = false, prev_ok_ = false, sat_ = false;
+    float sign_ = 1.0f, sat_t_ = 0.0f, sat_e_ = 0.0f;
     float roll_ = 0.0f, pitch_ = 0.0f, yaw_ = 0.0f, yaw0_ = 0.0f, prev_up_[2] = {0.0f, 0.0f};
 };
 
