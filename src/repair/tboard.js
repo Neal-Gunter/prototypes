@@ -48,7 +48,7 @@ export function buildTransient(b, { exp = "steady", run = false } = {}) {
       els.push({ t: "C", a: P(p, "+"), b: P(p, "-"), c: st.c ?? pr.c, esr: st.esr ?? pr.esr ?? 0.01, ref: p.ref });
     }
     if (p.kind === "ldo" || p.kind === "boost") els.push({ t: "R", a: P(p, "IN"), b: P(p, "GND"), r: 1e6 });
-    if (p.kind === "ldo" && !st.burnt) els.push((devs[p.ref] = ldo({ id: p.ref, vin: P(p, "IN"), gnd: P(p, "GND"), vout: P(p, "OUT"), vset: st.vout ?? pr.vout, drop: pr.drop, iq: pr.iq, ilim: pr.ilim, rLoop: pr.rLoop ?? 1, tau: pr.tauLoop ?? 20e-6 })));
+    if (p.kind === "ldo" && !st.burnt) els.push((devs[p.ref] = ldo({ id: p.ref, vin: P(p, "IN"), gnd: P(p, "GND"), vout: P(p, "OUT"), vset: st.vout ?? pr.vout, drop: pr.drop, iq: pr.iq, ilim: pr.ilim, rLoop: pr.rLoop ?? 0.2, tau: pr.tauLoop ?? 20e-6 })));
     else if (p.kind === "boost" && !st.burnt) els.push((devs[p.ref] = boost({ id: p.ref, vin: P(p, "IN"), gnd: P(p, "GND"), vout: P(p, "OUT"), en: P(p, "EN"), v: pr.vout, eff: pr.eff, ilim35: pr.ilim35, uvlo: pr.uvlo, ...(pr.tr || {}) })));
     else if (p.kind === "mcu") {
       const gp = Object.entries(pr.drive || {}).map(([pin, lvl]) => ({ pin, lvl }));
@@ -68,8 +68,8 @@ export function buildTransient(b, { exp = "steady", run = false } = {}) {
     else if (p.kind === "servo") {
       const pin = pr.sigPin;
       const ok = !!(mcuPart && pin && linked(b, pinNode(p.ref, "S"), pinNode(mcuPart.ref, pin)));
-      const delay = stagger * sIdx++;
-      const d = servo({ id: p.ref, v: P(p, "V"), gnd: P(p, "G"), iIdle: pr.iIdle, iRun: pr.iPeak, iInrush: pr.iInrush ?? 0.35, tau: pr.tauInrush ?? 1e-3, iStall: pr.iStall ?? 0.9, stalled: !!st.stalled, cmd: (ctx) => ok && running(ctx.t) && theMcu?.running && theMcu?.motionOk && ctx.t - Math.max(runStart, theMcu.lastBoot) >= delay });
+      const delay = stagger * sIdx++, bootDelay = mcuPart?.props.fw?.startDelay ?? 0; // v18：固件开机后等 startDelay 再动舵机（我的补充）
+      const d = servo({ id: p.ref, v: P(p, "V"), gnd: P(p, "G"), iIdle: pr.iIdle, iRun: pr.iPeak, iInrush: pr.iInrush ?? 0.35, tau: pr.tauInrush ?? 1e-3, iStall: pr.iStall ?? 0.9, stalled: !!st.stalled, cmd: (ctx) => ok && running(ctx.t) && theMcu?.running && theMcu?.motionOk && ctx.t - Math.max(runStart, theMcu.lastBoot + bootDelay) >= delay });
       d.start = () => { if (d.moving) d.since = -Infinity; };
       els.push((devs[p.ref] = d));
     } else if (p.kind === "load") els.push({ t: "R", a: P(p, "1"), b: P(p, "2"), r: pr.ohms });

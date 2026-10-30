@@ -65,7 +65,7 @@ export const FAULTS = {
     cue: (b, f) => ({ mag: 2, text: `${f.target} 插头的金属簧片张开了，插进去几乎没有阻力` }),
   },
   missingPart: {
-    zh: "漏装零件", kinds: ["res", "led", "diode"],
+    zh: "漏装零件", kinds: ["res", "led", "diode", "cap"],
     apply: (b, f) => { partOf(b, f.target).state.present = false; },
     cue: (b, f) => ({ mag: 1, text: `${f.target} 的焊盘是空的（丝印上有位置，但没焊零件）` }),
   },
@@ -73,6 +73,27 @@ export const FAULTS = {
     zh: "稳压芯片型号装错", kinds: ["ldo"], arg: "vout",
     apply: (b, f) => { partOf(b, f.target).state.vout = f.arg.vout; },
     cue: (b, f) => ({ mag: 2, text: `${f.target} 上的丝印是 “${f.arg.vout.toFixed(1)}V” 版本（这块板要 3.3 V）` }),
+  },
+  // ---- v18：需要示波器才看得清的故障（参数全部估算）----
+  driedCap: {
+    zh: "电解电容干涸（容量掉、ESR 变大）", kinds: ["cap"], arg: "c/esr",
+    apply: (b, f) => { const p = partOf(b, f.target); p.state.c = f.arg?.c ?? p.props.c * 0.1; p.state.esr = f.arg?.esr ?? 3; p.state.dried = true; },
+    cue: (b, f) => ({ mag: 2, text: `${f.target} 顶部的防爆纹微微鼓起，底部有一圈褐色干涸的电解液痕迹` }),
+  },
+  badCrimp: {
+    zh: "线缆端子压接不良（接触电阻大）", kinds: ["wire"], arg: "r",
+    apply: (b, f) => { const w = b.wires.find((x) => x.id === f.target); w.state.crimpR = f.arg?.r ?? 6; w.state.crimp = "bad"; },
+    cue: (b, f) => ({ mag: 2, text: `${f.target} 的端子只压住了线皮，铜丝在端子里能来回抽动` }),
+  },
+  openCrimp: {
+    zh: "线缆端子退针 / 断开", kinds: ["wire"],
+    apply: (b, f) => { const w = b.wires.find((x) => x.id === f.target); w.state.cut = true; w.state.crimp = "open"; },
+    cue: (b, f) => ({ mag: 2, text: `${f.target} 的端子从插头里退出来一截（倒刺压平了），线和插座没有接触` }),
+  },
+  stalledServo: {
+    zh: "舵机卡死（齿轮打坏 / 机械卡住）", kinds: ["servo"],
+    apply: (b, f) => { partOf(b, f.target).state.stalled = true; },
+    cue: (b, f) => ({ mag: 1, text: `${f.target} 的舵盘用手拧不动，通电时发出“嗡嗡”声` }),
   },
 };
 
@@ -84,7 +105,7 @@ export function faultOptions(b) {
   for (const [type, F] of Object.entries(FAULTS)) {
     if (F.kinds.includes("net")) { const nets = Object.keys(b.nets); for (let i = 0; i < nets.length; i++) for (let j = i + 1; j < nets.length; j++) out.push({ type, zh: `${F.zh}：${nets[i]} ↔ ${nets[j]}`, target: null, arg: { a: nets[i], b: nets[j], id: "BR1" } }); continue; }
     if (F.kinds.includes("trace")) for (const t of b.traces || []) out.push({ type, zh: `${F.zh}：${t.id} ${t.zh}`, target: t.id });
-    if (F.kinds.includes("wire")) for (const w of b.wires || []) out.push({ type, zh: `${F.zh}：${w.id} 换成 30AWG 30 cm`, target: w.id, arg: { awg: 30, len: 0.3 } });
+    if (F.kinds.includes("wire")) for (const w of b.wires || []) out.push(type === "thinWire" ? { type, zh: `${F.zh}：${w.id} 换成 30AWG 30 cm`, target: w.id, arg: { awg: 30, len: 0.3 } } : { type, zh: `${F.zh}：${w.id}`, target: w.id });
     for (const p of b.parts) {
       if (!F.kinds.includes(p.kind)) continue;
       if (type === "reversed" && p.kind === "conn" && p.props.keyed) continue;

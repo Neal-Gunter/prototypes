@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { transient } from "../src/sim/transient.js";
 import { lipo, ldo, boost, mcu } from "../src/sim/devices.js";
-import { TEMPLATES, makeBoard } from "../src/repair/boards.js";
+import { ALL_TEMPLATES as TEMPLATES, makeBoard } from "../src/repair/boards.js";
 import { simulate } from "../src/repair/board.js";
 import { buildTransient } from "../src/repair/tboard.js";
 import { prepare } from "../src/sim/transient.js";

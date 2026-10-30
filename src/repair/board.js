@@ -256,14 +256,14 @@ function observe(b, phases, { power, run }) {
       if (v > p.props.vdmg) o.damage.push({ ref: p.ref, kind: "damaged", why: `传感器供电 ${v.toFixed(2)} V 超过约 ${p.props.vdmg} V（估算）` });
     }
     if (p.kind === "cap" && !p.state.burnt && p.props.polar && power) { // v18：电解电容反接
-      const v = Math.min(...all((ph) => vd(ph.sol, pinNode(p.ref, "+"), pinNode(p.ref, "-")) ?? 0));
+      const v = Math.min(...all((ph) => (p.state.orient ?? 1) * (vd(ph.sol, pinNode(p.ref, "+"), pinNode(p.ref, "-")) ?? 0))); // orient −1 = 电容本身装反
       if (v < -1) o.damage.push({ ref: p.ref, kind: "burnt", why: `电解电容反接 ${v.toFixed(1)} V，会发热鼓包（真机可能爆浆）` });
     }
     if (p.kind === "servo") {
       const v = all((ph) => vd(ph.sol, pinNode(p.ref, "V"), pinNode(p.ref, "G")) ?? 0);
       const mv = phases.filter((ph) => ph.moving?.has(p.ref));
       const vmv = mv.map((ph) => vd(ph.sol, pinNode(p.ref, "V"), pinNode(p.ref, "G")) ?? 0);
-      o.servos[p.ref] = { v: Math.min(...v), moving: run && mv.length > 0 && Math.min(...vmv) >= SERVO_MIN_V, commanded: mv.length > 0 };
+      o.servos[p.ref] = { v: Math.min(...v), moving: run && !p.state.stalled && mv.length > 0 && Math.min(...vmv) >= SERVO_MIN_V, stalled: !!p.state.stalled, commanded: mv.length > 0 };
       // 插反的舵机：舵机的地接到了 GPIO 上
       for (const ph of phases) for (const e of ph.els) if (e.t === "V" && /-/.test(e.ref) && e.ref.startsWith(b.parts.find((x) => x.kind === "mcu")?.ref + "-")) { const i = -ph.sol.i(e); if (Math.abs(i) > GPIO_SINK_MAX && !o.warn.some((w) => w.includes(e.ref))) o.warn.push(`${e.ref.replace("-", " 的 ")} 脚电流 ${(Math.abs(i) * 1000).toFixed(0)} mA，远超 GPIO 能力（估算 ${GPIO_SINK_MAX * 1000} mA），真机可能烧脚`); }
     }

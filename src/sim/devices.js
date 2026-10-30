@@ -24,7 +24,7 @@ export function lipo({ id, p, n, ocv, rint, split = 0.6, tau = 2, mAh = 1000, on
 
 // 线性稳压（LDO）：输出级 = 受控电压源（目标 vset + 积分校正 u）串 rLoop，等效“环路带宽有限”——负载突变时先掉一下，再在 tau 内拉回来；
 // 输出电容负责顶住这一下（这就是为什么要去耦电容）。还有：压差 drop、限流 ilim、静态电流 iq、输入 < 1.2 V 时关断（输出高阻）。rLoop / tau 估算。
-export function ldo({ id, vin, gnd, vout, vset, drop, iq = 0.005, ilim = 0.5, rLoop = 1, tau = 20e-6 }) {
+export function ldo({ id, vin, gnd, vout, vset, drop, iq = 0.005, ilim = 0.5, rLoop = 0.2, tau = 20e-6 }) {
   const d = { t: "X", kind: "ldo", id, u: 0, limit: false, on: true };
   const m = `${id}#pass`;
   d.expand = (add) => {
@@ -37,7 +37,8 @@ export function ldo({ id, vin, gnd, vout, vset, drop, iq = 0.005, ilim = 0.5, rL
     const ioPrev = d.on ? clamp((ctx.V(m) - ctx.V(vout)) / rLoop, 0, ilim * 1.05) : 0; // 上一步解出来的输出电流
     d.on = vi > 1.2;
     let v = vset + d.u;
-    v = Math.min(v, vi - drop + ioPrev * rLoop); // 压差按输出端算：Vout ≤ Vin − drop
+    const vmax = vi - drop + ioPrev * rLoop; // 压差按输出端算：Vout ≤ Vin − drop
+    d.sat = v > vmax; v = Math.min(v, vmax);
     d.limit = (v - vo) / rLoop > ilim;
     if (d.limit) v = vo + ilim * rLoop;
     d.src.v = Math.max(0, v) + g;
@@ -45,18 +46,18 @@ export function ldo({ id, vin, gnd, vout, vset, drop, iq = 0.005, ilim = 0.5, rL
     return { vi, vo };
   };
   d.update = (ctx) => { cmd(ctx); };
-  d.after = (ctx) => { const vo = ctx.V(vout) - ctx.V(gnd); if (!d.on) { d.u = 0; return; } const du = ((vset - vo) * ctx.dt) / tau; if (!(d.limit && du > 0)) d.u = clamp(d.u + du, -vset, 2); };
+  d.after = (ctx) => { const vo = ctx.V(vout) - ctx.V(gnd); if (!d.on) { d.u = 0; return; } const du = (vset - vo) * 0.7 * (1 - Math.exp(-ctx.dt / tau)); /* 步长比 tau 大时也不会过冲；限流 / 压差饱和时不再往上积分（防积分饱和过冲） */ if (!((d.limit || d.sat) && du > 0)) d.u = clamp(d.u + du, -vset, 2); };
   d.dc = (ctx) => { if (d.on) d.u = clamp(ctx.V(m) - ctx.V(vout), 0, 2); cmd(ctx); }; // 直流：积分器已经把 rLoop 上的压降补上了
   d.dcAfter = () => 0;
   return d;
 }
 
 // 升压模块（平均模型）：输入 → 储能电感 L（带直流电阻）→ 恒功率取电（Pout / 效率）；
-// 输入端有模块自带的小电容 cIn；输出 = 受控电压源（软启动斜坡）串 rOut 再串“等效环路电感” lOut，模块自带一颗小输出电容 cOut（esrOut 0.2 Ω 当作“环路阻尼”的等效，估算）；
-// 限流：输出电流到 ilim（随输入电压缩放）就不再往上给；持续限流超过 tHic 进入“打嗝”保护，关断 tOff 再软启动；
+// 输入端有模块自带的小电容 cIn；输出 = 受控电压源（软启动斜坡）串 rOut 再串“等效环路电感” lOut，模块自带一颗小陶瓷输出电容 cOut，另加一条 RC 阻尼支路代表环路补偿（估算）；
+// 限流：输出电流到 ilim（随输入电压缩放）就不再往上给；启动宽限期（tss + tGrace）之后“限流且输出低于 70 %”持续超过 tHic 进入“打嗝”保护，关断 tOff 再软启动；
 // 欠压锁定（UVLO，带回差）；时间步足够小（≤ 开关周期 / 16）时叠加开关纹波电流（按占空比 D = 1 − Vin/Vout 的脉冲电流）。
 // 关断时输出断开（我的补充：按“带输出隔离”的模块处理）。所有参数估算，除非模板里写了来源。
-export function boost({ id, vin, gnd, vout, en, v = 5.2, eff = 0.85, ilim35 = 1.1, uvlo = 2.5, hys = 0.2, L = 2.2e-6, dcr = 0.03, rOut = 0.05, lOut = 4.7e-6, cOut = 4.7e-6, esrOut = 0.2, cIn = 10e-6, esrIn = 0.01, tss = 1e-3, fsw = 4e5, tHic = 2e-3, tOff = 20e-3, ripple = true }) {
+export function boost({ id, vin, gnd, vout, en, v = 5.2, eff = 0.85, ilim35 = 1.1, uvlo = 2.5, hys = 0.2, L = 2.2e-6, dcr = 0.03, rOut = 0.05, lOut = 4.7e-6, cOut = 4.7e-6, esrOut = 0.005, rDamp = 1, cDamp = 22e-6, cIn = 10e-6, esrIn = 0.01, tss = 1e-3, fsw = 4e5, tHic = 2e-3, tOff = 20e-3, tGrace = 15e-3, ripple = true }) {
   const d = { t: "X", kind: "boost", id, on: false, ramp: 0, inLimit: 0, offUntil: -Infinity, limit: false, hiccups: 0 };
   const sw = `${id}#sw`, m = `${id}#ctl`, m2 = `${id}#lo`;
   d.expand = (add) => {
@@ -67,6 +68,7 @@ export function boost({ id, vin, gnd, vout, en, v = 5.2, eff = 0.85, ilim35 = 1.
     d.sw = add({ t: "S", a: m, b: m2, ron: 1e-4, roff: 1e9, on: () => d.on });
     d.lo = add({ t: "L", a: m2, b: vout, l: lOut });
     add({ t: "C", a: vout, b: gnd, c: cOut, esr: esrOut });
+    add({ t: "C", a: vout, b: gnd, c: cDamp, esr: rDamp }); // 等效“环路补偿 / 阻尼”支路（估算），不影响直流
     d.rip = add({ t: "I", from: gnd, to: vout, i: 0 });
   };
   const state = (ctx) => {
@@ -76,7 +78,7 @@ export function boost({ id, vin, gnd, vout, en, v = 5.2, eff = 0.85, ilim35 = 1.
     if (!enOk || ctx.t < d.offUntil) d.on = false;
     else if (d.on) d.on = vi > uvlo;
     else d.on = vi > uvlo + hys;
-    if (d.on && !was) { d.ramp = 0; ctx.discontinuity = true; ctx.log?.({ dev: id, kind: "boost-on" }); }
+    if (d.on && !was) { d.ramp = 0; d.onAt = ctx.t; ctx.discontinuity = true; ctx.log?.({ dev: id, kind: "boost-on" }); }
     if (!d.on && was) { ctx.discontinuity = true; ctx.log?.({ dev: id, kind: vi <= uvlo ? "boost-uvlo" : "boost-off" }); }
     return vi;
   };
@@ -106,8 +108,10 @@ export function boost({ id, vin, gnd, vout, en, v = 5.2, eff = 0.85, ilim35 = 1.
   d.dc = (ctx) => { d.update(ctx); };
   d.after = (ctx) => {
     if (!d.on) return;
+    const vo0 = ctx.V(vout) - ctx.V(gnd); // 只有“限流 + 输出被拉到 70 % 以下”（接近短路）才算过载
     d.ramp = Math.min(1, d.ramp + ctx.dt / tss);
-    if (d.limit) { d.inLimit += ctx.dt; if (d.inLimit > tHic) { d.offUntil = ctx.t + tOff; d.inLimit = 0; d.hiccups++; ctx.log({ dev: id, kind: "boost-hiccup" }); } } else d.inLimit = Math.max(0, d.inLimit - ctx.dt * 0.5);
+    // 刚启动的 tss + tGrace 内给大电容充电不算过载（估算的“启动宽限期”），之后持续限流才打嗝
+    if (d.limit && vo0 < 0.7 * v && ctx.t - (d.onAt ?? -Infinity) > tss + tGrace) { d.inLimit += ctx.dt; if (d.inLimit > tHic) { d.offUntil = ctx.t + tOff; d.inLimit = 0; d.hiccups++; ctx.log({ dev: id, kind: "boost-hiccup" }); } } else d.inLimit = Math.max(0, d.inLimit - ctx.dt * 0.5);
   };
   d.start = () => { d.ramp = d.on ? 1 : 0; };
   return d;
@@ -126,13 +130,13 @@ export function mcu({ id, vcc, gnd, i, vnom, bo, hys = 0.1, tBoot = 1e-3, burst 
   const v = (ctx) => ctx.V(vcc) - ctx.V(gnd);
   d.update = (ctx) => {
     const vc = v(ctx);
-    if (burst) { const ph = ((ctx.t - (burst.t0 || 0)) % burst.period + burst.period) % burst.period; d.bi.i = d.running && ph < burst.on ? burst.i * clamp(vc / vnom, 0, 1.2) : 0; }
+    if (burst) { const ph = ((ctx.t - (burst.t0 ?? burst.period / 2)) % burst.period + burst.period) % burst.period; d.bi.i = !ctx.dc && d.running && ph < burst.on ? burst.i * clamp(vc / vnom, 0, 1.2) : 0; }
     for (const s of d.gp) s.v = Math.min(vio, Math.max(0, vc)) + ctx.V(gnd);
   };
   d.dc = (ctx) => { const vc = v(ctx); d.running = vc >= bo; d.update(ctx); };
   d.after = (ctx) => {
     const vc = v(ctx);
-    d.vmin = Math.min(d.vmin, vc);
+    if (d.running || d.boots || d.resets) d.vmin = Math.min(d.vmin, vc); // 只统计“开过机之后”的最低电压
     if (d.running) { if (vc < bo) { d.running = false; d.resets++; d.okFor = 0; ctx.discontinuity = true; ctx.log({ dev: id, kind: "reset", v: vc }); } }
     else if (vc > bo + hys) { d.okFor += ctx.dt; if (d.okFor >= tBoot) { d.running = true; d.boots++; d.lastBoot = ctx.t; ctx.discontinuity = true; ctx.log({ dev: id, kind: "boot", v: vc }); } }
     else d.okFor = 0;

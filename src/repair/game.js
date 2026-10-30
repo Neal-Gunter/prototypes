@@ -3,6 +3,7 @@
 import { simulate, meter, wiggle, applyDamage, partOf, pinNode, clone, AWG_OHM_M } from "./board.js";
 import { makeBoard } from "./boards.js";
 import { applyFaults, colorBands } from "./faults.js";
+import { tdCheck, capture } from "./tboard.js";
 
 export const TOOLS = {
   hand: { zh: "手", key: "1" },
@@ -11,6 +12,8 @@ export const TOOLS = {
   iron: { zh: "电烙铁 + 焊锡", key: "4" },
   braid: { zh: "吸锡带", key: "5" },
   magnifier: { zh: "放大镜", key: "6" },
+  scope: { zh: "示波器", key: "7" }, // v18
+  crimper: { zh: "压线钳 + 新端子", key: "8" }, // v18
 };
 
 // 零件箱：只写通用名称，不写价格（没有可核实的报价）
@@ -25,6 +28,11 @@ export const BIN = {
   "bat-lipo-full": { zh: "1S 锂电（充满）", kind: "bat", chem: "lipo1", ocv: 4.15, rint: 0.06 }, "bat-lipo-half": { zh: "1S 锂电（半电）", kind: "bat", chem: "lipo1", ocv: 3.85, rint: 0.06 },
   "wire-22": { zh: "22AWG 硅胶线", kind: "wire", awg: 22 }, "wire-30": { zh: "30AWG 飞线", kind: "wire", awg: 30 },
   "jst-ph2": { zh: "JST-PH 2 脚插座", kind: "conn" },
+  // v18：电容（ESR 是同类常见值的估算，不是某个型号的规格书数值）和备用舵机
+  "cap-100n": { zh: "陶瓷电容 100 nF", kind: "cap", c: 100e-9, esr: 0.02, polar: false }, "cap-10u": { zh: "陶瓷电容 10 µF", kind: "cap", c: 10e-6, esr: 0.005, polar: false },
+  "cap-22u": { zh: "陶瓷电容 22 µF", kind: "cap", c: 22e-6, esr: 0.005, polar: false }, "cap-470u": { zh: "电解电容 470 µF / 10 V", kind: "cap", c: 470e-6, esr: 0.06, polar: true },
+  "cap-1000u": { zh: "电解电容 1000 µF / 10 V", kind: "cap", c: 1000e-6, esr: 0.04, polar: true }, "cap-2200u": { zh: "电解电容 2200 µF / 10 V", kind: "cap", c: 2200e-6, esr: 0.03, polar: true },
+  servo: { zh: "备用舵机（同型号）", kind: "servo" }, terminal: { zh: "压接端子（同型号）", kind: "terminal" },
 };
 
 // 动作 → 需要的工具、估算工时（分钟）、是否“动烙铁 / 动线”（必须先断电并拔掉电池）
@@ -34,7 +42,8 @@ export const ACTIONS = {
   desolder: { zh: "拆下零件", tool: "iron", min: 4, hot: true }, place: { zh: "焊上新零件", tool: "iron", min: 4, hot: true }, removeWire: { zh: "拆掉飞线", tool: "iron", min: 2, hot: true },
   jumper: { zh: "飞线跨过断线", tool: "iron", min: 6, hot: true }, rewire: { zh: "换线", tool: "iron", min: 8, hot: true }, replaceConn: { zh: "换插座", tool: "iron", min: 10, hot: true },
   battery: { zh: "装 / 拆电池", min: 1 }, reseat: { zh: "重新插紧", tool: "hand", min: 0.5 }, flipConn: { zh: "插头掉个头", tool: "hand", min: 1, live: true },
-  fixPolarity: { zh: "改正输入线极性", min: 3, live: true }, cover: { zh: "拆 / 装外壳", min: 1 }, deliver: { zh: "交付验收", min: 2 }, hint: { zh: "看提示", min: 0 },
+  fixPolarity: { zh: "改正输入线极性", min: 3, live: true },
+  scope: { zh: "示波器抓波形", tool: "scope", min: 1 }, recrimp: { zh: "剪掉旧端子重新压接", tool: "crimper", min: 6, live: true }, swapServo: { zh: "换舵机", tool: "hand", min: 4, live: true }, cover: { zh: "拆 / 装外壳", min: 1 }, deliver: { zh: "交付验收", min: 2 }, hint: { zh: "看提示", min: 0 },
 };
 export const HINT_COST = [5, 10, 20];
 export const SAFETY_COST = 15, WRONG_PART_COST = 5;
@@ -68,7 +77,8 @@ function evalOnce(b, tb) {
   for (const s of spec) {
     const o = (s.run ? run : idle).obs;
     let ok = false, info = "";
-    if (s.led) { const l = o.leds[s.led]; ok = !!l && l.state !== "烧了" && l.mA >= s.mA[0] && l.mA <= s.mA[1] && l.mAmin >= s.mA[0]; info = l ? `${l.state} ${l.mA.toFixed(1)} mA` : "不在板上"; }
+    if (s.tr) { const r = tdCheck(tb ? withBatt(b, tb) : b, s); ok = r.ok; info = r.info; } // v18：示波器 / 时域验收
+    else if (s.led) { const l = o.leds[s.led]; ok = !!l && l.state !== "烧了" && l.mA >= s.mA[0] && l.mA <= s.mA[1] && l.mAmin >= s.mA[0]; info = l ? `${l.state} ${l.mA.toFixed(1)} mA` : "不在板上"; }
     else if (s.net) { const n = o.nets[s.net]; ok = !!n && n.min >= s.v[0] && n.max <= s.v[1]; info = n ? `${n.min.toFixed(2)}–${n.max.toFixed(2)} V` : "悬空"; }
     else if (s.notHot) { ok = !o.hot.some((h) => h.ref === s.notHot); info = ok ? "温度正常" : "烫手"; }
     else if (s.mcu) { ok = o.mcu?.state === s.mcu; info = o.mcu?.state || "没有主控"; }
@@ -83,6 +93,8 @@ function evalOnce(b, tb) {
   const damage = [...idle.obs.damage, ...(run?.obs.damage || [])];
   return { ok: checks.every((c) => c.ok) && damage.length === 0, checks, damage, idle, run };
 }
+
+function withBatt(b, tb) { const c = clone(b); const bat = c.parts.find((p) => p.kind === "bat"); if (bat) Object.assign(bat.state, { ocv: tb.ocv, rint: tb.rint }); return c; }
 
 // ---------- 关卡 ----------
 export function buildScenario(sc) {
@@ -216,12 +228,15 @@ export class Game {
     if (it.kind === "led" || it.kind === "diode") st.orient = orient;
     if (it.kind === "ldo") st.vout = it.vout;
     if (it.kind === "conn") st.seat = "ok";
+    if (it.kind === "cap") { st.c = it.c; st.esr = it.esr; if (p.props.polar && !it.polar) st.orient = 1; else if (it.polar) st.orient = orient; }
     p.state = st;
     p.joints = {};
     this.used.push(item);
-    const wrong = (it.kind === "res" && it.ohms !== p.props.ohms) || (it.kind === "ldo" && it.vout !== p.props.vout) || ((it.kind === "led" || it.kind === "diode") && orient !== 1);
-    if (wrong) this.wrongParts.push({ ref, item, why: it.kind === "res" ? `丝印要求 ${p.props.ohms} Ω` : it.kind === "ldo" ? `这块板要 ${p.props.vout} V` : "方向装反了" });
-    this.note("焊接", `在 ${ref} 焊上 ${it.zh}${orient === -1 ? "（方向反着）" : ""}`);
+    const capWrong = it.kind === "cap" && (Math.abs(it.c - p.props.c) / p.props.c > 0.25 || (it.polar && orient !== 1));
+    if (capWrong) this.wrongParts.push({ ref, item, why: it.polar && orient !== 1 ? "电解电容装反了" : `丝印要求 ${fmtC(p.props.c)}` });
+    const wrong = capWrong || (it.kind === "res" && it.ohms !== p.props.ohms) || (it.kind === "ldo" && it.vout !== p.props.vout) || ((it.kind === "led" || it.kind === "diode") && orient !== 1);
+    if (wrong && !capWrong) this.wrongParts.push({ ref, item, why: it.kind === "res" ? `丝印要求 ${p.props.ohms} Ω` : it.kind === "ldo" ? `这块板要 ${p.props.vout} V` : "方向装反了" });
+    this.note("焊接", `在 ${ref} 焊上 ${it.zh}${orient === -1 && (it.kind !== "cap" || it.polar) ? "（方向反着）" : ""}`);
     return { ok: true, wrong };
   }
   do_battery({ op, item, orient = 1 }) {
@@ -286,6 +301,41 @@ export class Game {
     this.note("接线", `${ref}：换成极性正确的适配器线（中心正）`);
     return { ok: true };
   }
+  // v18：示波器。exp = steady（一直开着）/ power（抓开机那一下）/ run（抓舵机起步那一下）
+  do_scope(opts = {}) {
+    const exp = opts.exp || "steady";
+    const bat = this.board.parts.find((p) => p.kind === "bat");
+    if (bat && bat.state.present === false) return { ok: false, text: "电池没装，示波器上只有一条 0 V 的线" };
+    if (exp === "power") { this.power = true; this.running = !!opts.run; }
+    if (exp === "run") { if (!this.power) return { ok: false, text: "先通电" }; this.running = true; }
+    const run = exp === "steady" ? this.running : !!(opts.run ?? exp === "run");
+    const covered = (opts.chans || []).find((c) => { const p = c.ref && partOf(this.board, c.ref); const cv = p?.cover && this.board.covers.find((x) => x.id === p.cover); return cv?.on; });
+    if (covered) return { ok: false, text: `${covered.ref} 被外壳挡住了，探头夹不上去` };
+    const cap = capture(this.board, { ...opts, exp, run });
+    this.settle(); this.markPowered();
+    this.lastScope = cap;
+    const sum = (cap.chans || opts.chans || []).map((c, i) => { const m = cap.meas?.[i]; return m ? `CH${i + 1} ${c.label || c.node} ${fmtV(m.min)}…${fmtV(m.max)}（峰峰 ${fmtV(m.pp)}）` : null; }).filter(Boolean).join("；");
+    const ev = (cap.allEvents || []).filter((e) => e.kind === "reset" || e.kind === "boost-hiccup").length;
+    this.note("示波器", `${EXP_ZH[exp]} ${fmtT(opts.tdiv || 1e-3)}/div → ${cap.triggered === false ? "没等到触发（自动模式下照样显示）" : sum || "没有通道"}${ev ? `；期间复位 / 打嗝 ${ev} 次` : ""}`);
+    return { ok: true, cap };
+  }
+  do_recrimp({ id }) {
+    const w = this.board.wires.find((x) => x.id === id);
+    if (!w) return { ok: false, text: "没有这根线" };
+    if (!w.cable) return { ok: false, text: "这根是焊上去的线，不是压接端子" };
+    w.state = { ...w.state, crimpR: 0, cut: false, crimp: "new" };
+    this.used.push("terminal");
+    this.note("压接", `${w.zh}：剪掉旧端子，剥线 2–3 mm，用压线钳压上新端子（芯线和线皮两段都压住），插回去听到“咔”一声，拉一下不掉`);
+    return { ok: true };
+  }
+  do_swapServo({ ref }) {
+    const p = partOf(this.board, ref);
+    if (p?.kind !== "servo") return { ok: false, text: "这不是舵机" };
+    p.state = { ...p.state, stalled: false, newPart: true };
+    this.used.push("servo");
+    this.note("更换", `换上一个同型号的新舵机 ${ref}（旧的齿轮打坏了，留着拆齿轮）`);
+    return { ok: true };
+  }
   do_cover({ id, on }) {
     const c = this.board.covers.find((x) => x.id === id);
     if (!c) return { ok: false, text: "没有这个外壳" };
@@ -345,6 +395,10 @@ export class Game {
 }
 
 const MODE_ZH = { V: "电压档", ohm: "电阻档", beep: "通断档", diode: "二极管档" };
+const EXP_ZH = { steady: "一直开着抓", power: "抓开机那一下", run: "抓舵机起步那一下" };
+export const fmtV = (v) => (!Number.isFinite(v) ? "—" : Math.abs(v) < 1 ? `${(v * 1000).toFixed(1)} mV` : `${v.toFixed(3)} V`);
+export const fmtT = (t) => (t >= 1e-3 ? `${+(t * 1e3).toPrecision(3)} ms` : t >= 1e-6 ? `${+(t * 1e6).toPrecision(3)} µs` : `${+(t * 1e9).toPrecision(3)} ns`);
+export const fmtC = (c) => (c >= 1e-6 ? `${+(c * 1e6).toPrecision(3)} µF` : `${+(c * 1e9).toPrecision(3)} nF`);
 export { MODE_ZH };
 export const label = (pr) => (!pr ? "—" : pr.net ? `背面 ${pr.tp || pr.net}` : `${pr.ref}.${pr.pin}`);
 
@@ -366,6 +420,12 @@ export function inspectText(b, ref, mag = 1) {
       if (p.state.seat === "worn") out.push(mag > 1 ? "簧片张开，插进去几乎没阻力" : "插头看起来插着");
       if (p.state.seat === "out") out.push("插头没插到底，露出一截金属");
     }
+    if (p.kind === "cap") {
+      out.push(p.props.polar ? `电解电容，外壳印着 ${fmtC(p.state.c && !p.state.dried ? p.state.c : p.props.c)}` : mag > 1 ? "贴片陶瓷电容（本体没有丝印，容值只能看料号 / 用电容表量）" : "小贴片电容");
+      if (p.state.dried) out.push(mag > 1 ? "顶部防爆纹微微鼓起，底部有一圈褐色干涸的电解液痕迹" : "顶部好像有点鼓（拿放大镜看）");
+      if (p.props.polar && (p.state.orient ?? 1) < 0) out.push("外壳上的白色负极条对着丝印的 + 号——装反了");
+    }
+    if (p.kind === "servo" && p.state.stalled) out.push("舵盘用手拧不动，通电时发出“嗡嗡”声");
     if (p.kind === "bat") out.push(p.props.chem === "lipo1" ? "锂电外观正常（电量从外观看不出来，要量）" : "外观正常（电量要量）");
     const cold = Object.entries(p.joints || {}).filter(([, v]) => v === "cold").map(([k]) => k);
     if (cold.length) out.push(mag > 1 ? `${cold.join("、")} 脚焊点发灰、粗糙、成球状，边缘没润湿焊盘` : "有个焊点颜色好像不太一样（拿放大镜看）");
@@ -376,6 +436,7 @@ export function inspectText(b, ref, mag = 1) {
     return out.join("；");
   }
   const w = b.wires.find((x) => x.id === ref);
+  if (w && w.cable) return `${w.zh}：${w.state.crimp === "open" ? (mag > 1 ? "一头的端子从插头里退出来一截（倒刺压平了）" : "插头看起来插着（拿放大镜看端子）") : w.state.crimp === "bad" ? (mag > 1 ? "一头的端子只压住了线皮，芯线在端子里能抽动" : "看起来正常（拿放大镜看端子）") : "端子压接正常"}；线皮印着 ${w.state.awg}AWG，长约 ${Math.round(w.state.len * 100)} cm`;
   if (w) return `${w.zh}：${mag > 1 ? `线皮印着 ${w.state.awg}AWG，长约 ${Math.round(w.state.len * 100)} cm（${(AWG_OHM_M[w.state.awg] * w.state.len * 1000).toFixed(0)} mΩ）` : "线皮上的字太小，拿放大镜看"}`;
   const t = b.traces.find((x) => x.id === ref);
   if (t) return `${t.id} ${t.zh}：${t.state.cracked ? (mag > 1 ? "有一道发丝细的裂纹" : "看不清，拿放大镜") : "完好"}`;
