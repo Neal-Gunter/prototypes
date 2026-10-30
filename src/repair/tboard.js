@@ -92,9 +92,9 @@ function stats(arr, i0, i1) {
 
 // 抓一次波形。chans：[{ node, on }]（最多 4 路，探头地夹都在板子的地上）；math：{ a, b }（CHa − CHb）
 // trig：{ src: 通道序号 0–3 或 "math", slope: "rise"|"fall", level, mode: "auto"|"normal"|"single" }
-export function capture(b, { exp = "steady", run = false, tdiv = 1e-3, pre = 0.1, chans = [], math = null, trig = null, method = "trap", points = 2500 } = {}) {
+export function capture(b, { exp = "steady", run = false, tdiv = 1e-3, pre = 0.1, chans = [], math = null, trig = null, method = "trap", points = 2500, adaptive = null, dtOverride = null } = {}) {
   const W = 10 * tdiv;
-  const dt = Math.min(2e-4, Math.max(2e-8, W / points));
+  const dt = dtOverride || Math.min(2e-4, Math.max(2e-8, W / points));
   const tArm = exp === "steady" ? 0 : -pre * W;
   const tStart = tArm - (exp === "steady" ? 0 : 0.05 * W);
   const tStop = exp === "steady" ? 2.2 * W : (1 - pre) * W + 1.2 * W;
@@ -103,7 +103,7 @@ export function capture(b, { exp = "steady", run = false, tdiv = 1e-3, pre = 0.1
   const nodes = chans.map((c) => (c && c.node ? c.node : null));
   const probes = nodes.map((nd, i) => ({ id: "ch" + i, node: nd }));
   const t0 = performance?.now?.() ?? Date.now();
-  const r = transient(net, { tStart, tStop, dt, method, probes, init: "dc", ground: built.ground });
+  const r = transient(net, { tStart, tStop, dt, method, probes, init: "dc", ground: built.ground, adaptive });
   const ms = (performance?.now?.() ?? Date.now()) - t0;
   const T = r.t, N = T.length;
   const data = r.probes.map((p) => p.data);

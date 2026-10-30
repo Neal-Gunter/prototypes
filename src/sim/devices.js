@@ -99,7 +99,7 @@ export function boost({ id, vin, gnd, vout, en, v = 5.2, eff = 0.85, ilim35 = 1.
     const vsw = Math.max(0.3, ctx.V(sw) - ctx.V(gnd));
     d.sink.i = Math.min(15, pout / eff / vsw);
     // 开关纹波（零均值脉冲电流）
-    if (ripple && d.on && !ctx.dc && ctx.dt <= 1 / (16 * fsw)) {
+    if (ripple && d.on && !ctx.dc && !ctx.noRipple && ctx.dt <= 1 / (16 * fsw)) {
       const D = clamp(1 - vi / Math.max(vo, 0.1), 0, 0.9);
       const ph = (ctx.t * fsw) % 1;
       d.rip.i = ph < D ? -Math.max(0, il) : (Math.max(0, il) * D) / (1 - D);

@@ -73,6 +73,7 @@ export function transient(input, opt = {}) {
   const net = input.prim ? input : prepare(input, ground);
   const { prim, devices, nodes, n } = net;
   const dt = opt.dt, t0 = opt.tStart ?? 0, t1 = opt.tStop;
+  let h = dt; // 当前步长（固定步长时一直等于 dt）
   const method = opt.method || "trap";
   const steps = Math.max(1, Math.round((t1 - t0) / dt));
   const caps = prim.filter((e) => e.t === "C"), inds = prim.filter((e) => e.t === "L"), dio = prim.filter((e) => e.t === "D"), sws = prim.filter((e) => e.t === "S");
@@ -106,7 +107,7 @@ export function transient(input, opt = {}) {
   }
 
   function matrixFor(mode) { // mode: "dc" | "be" | "trap"
-    const sig = mode + "|" + dio.map((d) => (d.on ? 1 : 0)).join("") + "|" + sws.map((s) => (s._on ? 1 : 0)).join("");
+    const sig = mode + "|" + h + "|" + dio.map((d) => (d.on ? 1 : 0)).join("") + "|" + sws.map((s) => (s._on ? 1 : 0)).join("");
     let lu = cache.get(sig);
     if (lu) return lu;
     const A = new Float64Array(n * n);
@@ -117,8 +118,8 @@ export function transient(input, opt = {}) {
       else if (e.t === "V") g2(e._p, e._n, 1 / e.r);
       else if (e.t === "D") g2(e._p, e._n, e.on ? 1 / e.rs : e.goff);
       else if (e.t === "S") g2(e._p, e._n, e._on ? 1 / e.ron : 1 / e.roff);
-      else if (e.t === "C") g2(e._p, e._n, mode === "dc" ? 0 : mode === "be" ? e.c / dt : (2 * e.c) / dt);
-      else if (e.t === "L") g2(e._p, e._n, mode === "dc" ? 1e4 : mode === "be" ? dt / e.l : dt / (2 * e.l));
+      else if (e.t === "C") g2(e._p, e._n, mode === "dc" ? 0 : mode === "be" ? e.c / h : (2 * e.c) / h);
+      else if (e.t === "L") g2(e._p, e._n, mode === "dc" ? 1e4 : mode === "be" ? h / e.l : h / (2 * e.l));
     }
     lu = luFactor(A, n);
     if (cache.size > 200) cache.clear();
@@ -135,8 +136,8 @@ export function transient(input, opt = {}) {
         if (e.t === "V") { e._v = val(e.v, t, ctx); inj(e._p, e._n, e._v / e.r); }
         else if (e.t === "I") { e._i = val(e.i, t, ctx); inj(e._n, e._p, e._i); }
         else if (e.t === "D") { if (e.on) inj(e._p, e._n, e.vf / e.rs); }
-        else if (e.t === "C" && mode !== "dc") { const g = mode === "be" ? e.c / dt : (2 * e.c) / dt; inj(e._p, e._n, mode === "be" ? g * e.vn : g * e.vn + e.in); }
-        else if (e.t === "L" && mode !== "dc") { const g = mode === "be" ? dt / e.l : dt / (2 * e.l); inj(e._p, e._n, mode === "be" ? -e.in : -(e.in + g * e.vn)); }
+        else if (e.t === "C" && mode !== "dc") { const g = mode === "be" ? e.c / h : (2 * e.c) / h; inj(e._p, e._n, mode === "be" ? g * e.vn : g * e.vn + e.in); }
+        else if (e.t === "L" && mode !== "dc") { const g = mode === "be" ? h / e.l : h / (2 * e.l); inj(e._p, e._n, mode === "be" ? -e.in : -(e.in + g * e.vn)); }
       }
       luSolve(matrixFor(mode), b, x);
       let flip = false;
@@ -147,8 +148,8 @@ export function transient(input, opt = {}) {
   }
 
   function accept(mode) {
-    for (const e of caps) { const v = vOf(e._p) - vOf(e._n); if (mode === "dc") { e.vn = v; e.in = 0; continue; } const g = mode === "be" ? e.c / dt : (2 * e.c) / dt; e.in = mode === "be" ? g * (v - e.vn) : g * (v - e.vn) - e.in; e.vn = v; }
-    for (const e of inds) { const v = vOf(e._p) - vOf(e._n); if (mode === "dc") { e.in = 1e4 * v; e.vn = 0; continue; } const g = mode === "be" ? dt / e.l : dt / (2 * e.l); e.in = mode === "be" ? e.in + g * v : e.in + g * (v + e.vn); e.vn = v; }
+    for (const e of caps) { const v = vOf(e._p) - vOf(e._n); if (mode === "dc") { e.vn = v; e.in = 0; continue; } const g = mode === "be" ? e.c / h : (2 * e.c) / h; e.in = mode === "be" ? g * (v - e.vn) : g * (v - e.vn) - e.in; e.vn = v; }
+    for (const e of inds) { const v = vOf(e._p) - vOf(e._n); if (mode === "dc") { e.in = 1e4 * v; e.vn = 0; continue; } const g = mode === "be" ? h / e.l : h / (2 * e.l); e.in = mode === "be" ? e.in + g * v : e.in + g * (v + e.vn); e.vn = v; }
   }
 
   // 初始条件
@@ -173,6 +174,7 @@ export function transient(input, opt = {}) {
     for (const d of devices) d.start?.(ctx);
   }
 
+  if (opt.adaptive) return adaptiveRun();
   // 探头
   const probes = (opt.probes || []).map((p) => ({ ...p, idx: p.node != null ? (p.node === ground ? -1 : nodes.get(p.node) ?? null) : null }));
   const every = opt.every || 1;
@@ -203,4 +205,76 @@ export function transient(input, opt = {}) {
     if (s % every === 0) record(t);
   }
   return { t: T, probes: probes.map((p, j) => ({ id: p.id, node: p.node, data: out[j] })), events, stats: { steps, n, iters, beSteps, factorizations: cache.size }, V, cur: elemCurrent, net };
+
+  // ---------- v19：自适应步长（误差控制） ----------
+  // opt.adaptive = { atol, rtol, dtMin, dtMax, dtEvent }。每一步用“线性外推预测值”和梯形法解的差估计局部误差：
+  //   err = 0.5 · max |x − x_pred| / (atol + rtol·|x|)；err ≤ 1 接受，否则退回（元件 / 器件状态全部恢复）换小步重算。
+  //   步长只取 dtMax / 2^k（梯子），LU 分解按步长缓存。
+  // 事件（复位、开机、升压启停、打嗝、二极管 / 开关翻转）：发生事件的那一步如果步长 > dtEvent 就退回、步长 ÷8 重来，
+  //   直到用 ≤ dtEvent 的小步“走过”事件；事件之后从小步重新长大。最小步长 dtMin 封底（到底了就强制接受，计数 forced）。
+  // 输出：按 opt.dt 的均匀时间网格线性插值（示波器其余代码不用改），另给原始接受步数。
+  // 已知简化：不叠加升压开关纹波（ctx.noRipple）——要看纹波用固定步长 ≤ 开关周期 / 16。
+  function adaptiveRun() {
+    const A = opt.adaptive === true ? {} : opt.adaptive;
+    const atol = A.atol ?? 2e-3, rtol = A.rtol ?? 1e-3;
+    const dtMax = A.dtMax ?? dt * 8, dtMin = A.dtMin ?? Math.max(1e-10, dt / 2048), dtEvent = A.dtEvent ?? Math.max(dtMin, dt / 16);
+    const iJump = A.iJump ?? 0.02, vJump = A.vJump ?? 0.05;
+    const ladder = (q) => { const k = Math.max(0, Math.ceil(Math.log2(dtMax / q) - 1e-9)); return Math.max(dtMin, dtMax / 2 ** k); };
+    ctx.noRipple = true;
+    const probes = (opt.probes || []).map((p) => ({ ...p, idx: p.node != null ? (p.node === ground ? -1 : nodes.get(p.node) ?? null) : null }));
+    const nOut = Math.max(1, Math.round((t1 - t0) / dt)) + 1;
+    const T = new Float64Array(nOut), out = probes.map(() => new Float32Array(nOut));
+    const sample = () => probes.map((p) => (p.fn ? p.fn(ctx) : p.el ? elemCurrent(p.el) : p.idx == null ? NaN : vOf(p.idx)));
+    let tLast = t0, yLast = sample(), w = 1;
+    T[0] = t0; yLast.forEach((y, j) => { out[j][0] = y; });
+    const emit = (t, y) => { while (w < nOut && t0 + w * dt <= t + 1e-15) { const tt = t0 + w * dt, f = t > tLast ? (tt - tLast) / (t - tLast) : 1; T[w] = tt; for (let j = 0; j < y.length; j++) out[j][w] = yLast[j] + (y[j] - yLast[j]) * f; w++; } tLast = t; yLast = y; };
+    // 状态快照（退回用）：器件对象上所有数值 / 布尔 / 字符串 / null 字段 + 原始元件的 v / i / on
+    const scal = (v) => v == null || typeof v === "number" || typeof v === "boolean" || typeof v === "string";
+    const snap = () => ({ x: Float64Array.from(x), c: caps.map((e) => [e.vn, e.in]), l: inds.map((e) => [e.vn, e.in]), d: dio.map((e) => e.on), s: sws.map((e) => e._on), p: prim.map((e) => [e.v, e.i, e._v, e._i]), dv: devices.map((d) => Object.entries(d).filter(([, v]) => scal(v))), ev: events.length, dis: ctx.discontinuity });
+    const restore = (S) => {
+      x.set(S.x);
+      caps.forEach((e, i) => { [e.vn, e.in] = S.c[i]; }); inds.forEach((e, i) => { [e.vn, e.in] = S.l[i]; });
+      dio.forEach((e, i) => { e.on = S.d[i]; }); sws.forEach((e, i) => { e._on = S.s[i]; });
+      prim.forEach((e, i) => { const q = S.p[i]; if (typeof e.v !== "function") e.v = q[0]; if (typeof e.i !== "function") e.i = q[1]; e._v = q[2]; e._i = q[3]; });
+      devices.forEach((d, i) => { const keep = new Set(S.dv[i].map(([k]) => k)); for (const k of Object.keys(d)) if (!keep.has(k) && scal(d[k])) delete d[k]; for (const [k, v] of S.dv[i]) d[k] = v; });
+      events.length = S.ev; ctx.discontinuity = S.dis;
+    };
+    const q = ladder(dtMin) / 1024;
+    let t = t0, hh = ladder(dtEvent), forceBE = true, hPrev = 0;
+    let acc = 0, rej = 0, evRej = 0, forced = 0, iters = 0, beSteps = 0, hMinUsed = Infinity, hMaxUsed = 0;
+    const x0 = Float64Array.from(x), x1 = Float64Array.from(x);
+    while (t < t1 - 1e-15) {
+      h = Math.min(hh, t1 - t); ctx.dt = h;
+      const S = snap();
+      const tn = t0 + Math.round((t + h - t0) / q) * q; ctx.t = tn; // 时间按最小步长取整，避免累加误差让事件早 / 晚一步
+      const carry = ctx.discontinuity; ctx.discontinuity = false;
+      const swBefore = sws.map((q) => q._on), dBefore = dio.map((d) => d.on);
+      for (const d of devices) d.update?.(ctx);
+      const swNow = sws.map((q) => !!val(q.on, tn, ctx));
+      const topo = swNow.some((v, i) => v !== swBefore[i]);
+      const mode = method === "be" || forceBE || carry || topo || ctx.discontinuity ? "be" : "trap";
+      const it = solveStep(mode, tn);
+      let err = 0;
+      if (hPrev > 0 && !forceBE && !carry && !topo) { const r = h / hPrev; for (let i = 0; i < n; i++) { const pr = x1[i] + (x1[i] - x0[i]) * r; const e = Math.abs(x[i] - pr) / (atol + rtol * Math.abs(x[i])); if (e > err) err = e; } err *= 0.5; }
+      accept(mode);
+      for (const d of devices) d.after?.(ctx);
+      const flipped = dio.some((d, i) => d.on !== dBefore[i]);
+      // 源突变（舵机起步、负载开关等由器件直接改的电流 / 电压源）：跳变超过 iJump / vJump 也按事件处理
+      const jumped = prim.some((e, i) => (e.t === "I" && typeof e.i === "number" && Math.abs(e.i - (S.p[i][1] ?? 0)) > iJump) || (e.t === "V" && typeof e.v === "number" && Math.abs(e.v - (S.p[i][0] ?? 0)) > vJump));
+      const evHappened = jumped || events.length > S.ev || ctx.discontinuity || topo || flipped;
+      const atMin = h <= dtMin * 1.0001;
+      if (evHappened && h > dtEvent * 1.0001) { restore(S); ctx.t = t; hh = ladder(Math.max(dtEvent, h / 8)); evRej++; continue; }
+      if (err > 1 && !atMin) { restore(S); ctx.t = t; hh = ladder(Math.max(dtMin, h * Math.max(0.2, 0.9 / Math.sqrt(err)))); rej++; continue; }
+      if (err > 1) forced++;
+      acc++; iters += it; if (mode === "be") beSteps++;
+      hMinUsed = Math.min(hMinUsed, h); hMaxUsed = Math.max(hMaxUsed, h);
+      x0.set(x1); x1.set(x); hPrev = evHappened ? 0 : h; t = tn;
+      forceBE = flipped;
+      emit(t, sample());
+      const grow = evHappened ? dtEvent : h * Math.min(2, err > 0 ? 0.9 / Math.sqrt(err) : 2);
+      hh = ladder(Math.min(dtMax, Math.max(dtMin, grow)));
+    }
+    while (w < nOut) { T[w] = t0 + w * dt; yLast.forEach((y, j) => { out[j][w] = y; }); w++; }
+    return { t: T, probes: probes.map((p, j) => ({ id: p.id, node: p.node, data: out[j] })), events, stats: { steps: acc, rejected: rej, eventRejects: evRej, forced, n, iters, beSteps, factorizations: cache.size, hMin: hMinUsed, hMax: hMaxUsed, adaptive: true, nominalSteps: Math.round((t1 - t0) / dt) }, V, cur: elemCurrent, net };
+  }
 }
