@@ -143,7 +143,7 @@ export default function ElecPanel({ probes, setProbes, tool, setTool }) {
       </section>
 
       <details className="border border-line bg-white p-2" data-testid="bench-scope-panel">
-        <summary className="cursor-pointer font-medium">示波器（时域模式，v18）：开机波形、舵机起步跌落、加不加电容</summary>
+        <summary className="cursor-pointer font-medium">示波器（时域模式，v19：仿真你台面上的电路）：开机波形、舵机起步跌落、加不加电容</summary>
         <div className="mt-1"><BenchScope /></div>
       </details>
     </div>

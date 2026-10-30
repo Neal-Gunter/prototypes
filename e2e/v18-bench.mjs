@@ -115,7 +115,7 @@ for (const id of ids) {
 // ⑤ 装配台
 await p.goto(BASE + "/assembly?scene=electrics"); await p.waitForSelector("[data-testid=bench-scope-panel]", { state: "attached", timeout: 60000 });
 await L(() => { document.querySelector("[data-testid=bench-scope-panel]").open = true; });
-await p.locator("[data-testid=bench-scope-open]").scrollIntoViewIfNeeded(); await click("bench-scope-open"); await p.waitForSelector("[data-testid=bench-scope]");
+await p.locator("[data-testid=bench-scope-open]").scrollIntoViewIfNeeded(); await click("bench-scope-open"); await p.waitForSelector("[data-testid=bench-scope]"); await click("bscope-src-ref"); /* v19：默认是“我的电路”，参考板改成备用 */
 const bcap = async () => { await L(() => { window.__benchScope = null; }); await click("bscope-capture"); await p.waitForFunction(() => window.__benchScope, null, { timeout: 30000 }); return L(() => window.__benchScope.cap); };
 const pw = await bcap(); ok(pw.meas[1].max > 5 && pw.dev.U1.resets === 0, "工作台：八爪鱼 v10 开机波形（5VA 升到 5 V，主控不复位）", `5VA 最高 ${pw.meas[1].max.toFixed(2)} V`);
 await shot("bench-power", "bench-scope");
