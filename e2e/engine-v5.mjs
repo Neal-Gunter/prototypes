@@ -46,8 +46,16 @@ for (const [id, n] of [["p-breadboard-830", 830], ["p-breadboard-half", 400], ["
   run(1.0);
   const p0 = engine.worldPose(m).p.clone();
   engine.setTool("screwdriver");
+  engine.setToolPos(new THREE.Vector3(-8, 20, 0)); run(0.2);
+  engine.setToolPos(new THREE.Vector3(-8, 0.5, 0)); run(1.0);
   let wm = 0;
   for (let k = 0; k <= 120; k++) { engine.setToolPos(new THREE.Vector3(-8 + k * 0.1, 0.5, 0)); run(1 / 120); wm = Math.max(wm, pen()); }
+  // 鼠标一帧从电机一侧跳到另一侧：工具限速，一步步推，不会瞬移进零件里
+  const pm = engine.worldPose(m).p.clone();
+  engine.setToolPos(new THREE.Vector3(pm.x - 5, 0.5, pm.z)); run(1.0);
+  let wj = 0;
+  engine.setToolPos(new THREE.Vector3(pm.x + 8, 0.5, pm.z)); run(1.5, () => { wj = Math.max(wj, pen()); });
+  check("鼠标一下跳过零件：工具每步最多 2 mm，推开而不是穿过", wj < 0.5 && engine.worldPose(m).p.x > pm.x + 1, `最深 ${wj} mm，电机 x ${pm.x.toFixed(1)}→${engine.worldPose(m).p.x.toFixed(1)}`);
   engine.setToolPos(new THREE.Vector3(0, 30, 0)); run(0.5);
   const mv = engine.worldPose(m).p.distanceTo(p0);
   check("螺丝刀扫过步进电机：电机被推开", mv > 1, `推开 ${mv.toFixed(2)} cm`);

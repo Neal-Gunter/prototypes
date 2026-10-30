@@ -62,7 +62,7 @@ export default function AssemblyPage() {
       });
       setUids([...engine.parts.keys()]);
       setReady(true);
-      window.__asm = { engine, overlapTest: () => engine.overlapTest(), snapshot: () => engine.snapshot(), build: (t) => buildList(t) };
+      window.__asm = { engine, overlapTest: () => engine.overlapTest(), snapshot: () => engine.snapshot(), build: (t) => buildList(t), addAt: async (id, x, z, y = 0.02) => engine.addPart(toDef(await getEntry(id)), { p: new THREE.Vector3(x, y, z), q: new THREE.Quaternion() }) };
       const sc = params.get("scene");
       if (sc && PRESETS[sc]) { setTab("elec"); buildList(PRESETS[sc].text, PRESETS[sc].zh); }
     });

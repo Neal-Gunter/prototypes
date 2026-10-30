@@ -663,6 +663,7 @@ class Engine {
       const rb = this.world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(p.x, p.y, p.z).setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }).setLinearDamping(3).setAngularDamping(3).setCcdEnabled(true));
       const col = this.world.createCollider(R.ColliderDesc.capsule(segLen / 2 - r * 0.9, r).setRotation(rotZtoX()).setDensity(1.5).setFriction(0.9).setCollisionGroups(GROUPS.rope), rb);
       this.colOwner.set(col.handle, "rope");
+      (this.ropeSeg ||= new Map()).set(col.handle, { id, i, N });
       segs.push(rb);
     }
     // 胶囊沿局部 x 轴（setRotation 把 y 轴转到 x 轴）
@@ -767,7 +768,15 @@ class Engine {
   }
   setToolPos(p) {
     this.tool.pos.copy(p);
-    if (this.tool.body) this.tool.body.setNextKinematicTranslation({ x: p.x, y: p.y, z: p.z });
+  }
+  // 工具每个物理步最多走 0.2 cm（约 24 cm/s）：鼠标一帧跳很远时，工具不会“瞬移”进零件里，而是一步步把零件推开
+  stepTool() {
+    const b = this.tool.body;
+    if (!b) return;
+    const t = b.translation(), d = new THREE.Vector3(this.tool.pos.x - t.x, this.tool.pos.y - t.y, this.tool.pos.z - t.z);
+    const L = d.length(), far = t.y > 12 && this.tool.pos.y > 12; // 在零件上方很高处移动时不限速
+    if (L > 0.2 && !far) d.multiplyScalar(0.2 / L);
+    if (L > 1e-5) b.setNextKinematicTranslation({ x: t.x + d.x, y: t.y + d.y, z: t.z + d.z });
   }
 
   // ---------------- 主循环 ----------------
@@ -776,6 +785,7 @@ class Engine {
     this.acc = Math.min(this.acc + dt, 4 / 120);
     while (this.acc >= this.world.timestep) {
       this.stepDrag();
+      this.stepTool();
       this.stepOps(this.world.timestep);
       // 休眠刚体被叫醒的那一步，它和桌面（运动学刚体）之间还没有接触，会白白自由落体一步（实测压进桌面 0.4 mm）。
       // 所以：这一步前睡着、这一步后醒了的刚体，把位置退回到步前、速度清零；下一步接触已经建立了。
@@ -922,6 +932,9 @@ class Engine {
         const o2 = this.colOwner.get(c2.handle);
         if (!includeRopes && o2 === "rope") return;
         if (c1.handle > c2.handle && o2 !== "bench") return;
+        // 线头的头两段和它自己连着的插头/零件挨在一起是正常的（线是从插头里出来的）
+        const rs = this.ropeSeg?.get(o1 === "rope" ? c1.handle : o2 === "rope" ? c2.handle : -1);
+        if (rs && (rs.i <= 1 || rs.i >= rs.N - 2) && this.cables.find((c) => c.id === rs.id)?.ends.includes(o1 === "rope" ? o2 : o1)) return;
         // 精确的形状间距离（不依赖求解器的接触点缓存）
         const sc = c1.contactCollider(c2, 0.01);
         if (!sc) return;

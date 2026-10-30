@@ -232,6 +232,15 @@ function Bench() {
   );
 }
 // 鼠标交互：拖拽 / 拧 / 焊
+// 测试/演示用：把相机移到某个位置看向某点（只在走查脚本里调用）
+function CamHook({ controls }) {
+  const { camera } = useThree();
+  useEffect(() => {
+    window.__asmCam = (pos, tgt) => { camera.position.set(...pos); controls.current?.target.set(...tgt); controls.current?.update(); };
+    return () => { delete window.__asmCam; };
+  }, [camera, controls]);
+  return null;
+}
 function Interact({ toolRef, vis, flux, controls, onHover, onProbe }) {
   const { camera, gl, raycaster, pointer } = useThree();
   const st = useRef({ mode: null, btn: 0, shift: false });
@@ -329,6 +338,7 @@ export default function AsmScene({ uids, tool, debug, flux, vis, onTick, onSelec
       <Probes probes={probes} />
       <Interact toolRef={toolRef} vis={vis} flux={fluxRef} controls={controls} onProbe={onProbe} />
       <Loop onTick={onTick} />
+      <CamHook controls={controls} />
       <OrbitControls ref={controls} makeDefault target={[0, 0, 0]} maxPolarAngle={Math.PI / 2.1} minDistance={8} maxDistance={110} />
     </Canvas>
   );

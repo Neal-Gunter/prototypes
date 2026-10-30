@@ -23,8 +23,9 @@ npm run preview
 - `/` — pitch, flow (想法 → 仿真 → 装配), three feature cards, who-it's-for strip, waitlist form
 - `/workbench` — **hardware workbench, early prototype, simplified simulation** (see below)
 - `/assembly` — **assembly bench (v4), early prototype, simplified simulation**: Rapier collisions, standoffs/screws/nuts M2/M2.5/M3, base plate, headers, JST/Dupont/USB plugs, breadboard, servo bracket + horn + tentacle, automated demo
-- `/parts` — parts library: 564 open-source CAD parts (real mm sizes, thumbnails, licence per part, no prices) + 25 procedural
-- `/electrics` — simplified circuit lab: two MCUs, LED + resistor, button, pot, board-to-board wire; pinMode / digitalWrite / digitalRead / analogRead
+- `/parts` — parts library: 564 open-source CAD parts (real mm sizes, thumbnails, licence per part, no prices) + 76 procedural
+- `/electrics` — now redirects to `/assembly?scene=electrics` (v5: one bench for assembly + circuit)
+- `/assembly/guide` — printable assembly guide (BOM, wiring table, breadboard holes, steps, `.ino`, 对照现实 readings, safety notes); `?src=default|bench`
 - `/credits` — asset sources and licences
 - `/example` — eight-tentacle robot driven by an ESP32-S3, with tabs 想法 / 仿真 / 装配 (`?tab=idea|simulate|assemble`)
 
@@ -123,3 +124,32 @@ The script uses `window.__wb` test hooks only to find where things are on the sc
 
 - Fixed simplified circuit, steady-state Ohm's law only. The LED forward voltage of 2.0 V is a typical value (估算). The full list of simplifications is on the page.
 - Test: `node e2e/electrics.mjs`.
+
+## v5: one bench, linked to the real world (early prototype, simplified simulation)
+
+- **One bench** (`/assembly`): assembly, wiring and the simplified circuit run in the same scene. `/electrics` redirects to `/assembly?scene=electrics`.
+- **Real-world bridge**:
+  - "生成装配指南…" opens `/assembly/guide`, built from the state on the bench: BOM with sizes and sources, a net/wiring table, breadboard holes, steps and `.ino` download.
+  - Print it or save it as PDF from the browser; the print CSS hides the site chrome.
+  - "导入清单" rebuilds a circuit from a text list.
+  - "对照现实" in the circuit panel lists what a multimeter should read on the real build, using the same simulated values.
+  - Safety notes are included.
+- **More parts** (76 procedural, all made in this project, CC0):
+  - socket-head cap screws M2/M2.5/M3 (ISO 4762), washers (ISO 7089) and hex keys (ISO 2936);
+  - breadboards with 830, 400 and 170 holes (2.54 mm pitch; outer size 估算);
+  - motors: NEMA 17 at 34/40/48 mm (42.3 mm flange, 31 mm M3 hole spacing), 28BYJ-48, N20, 130 and a coin vibration motor;
+  - desk tools: tweezers, cutter, stripper, multimeter, solder pump and solder spool;
+  - Dupont wires at 10 and 30 cm.
+  - No licence-clean CAD models were found for these, so they are built from primitives, and unverified shapes are marked 估算.
+- **Collisions**:
+  - The active tool is a kinematic collider. It moves at most 2 mm per physics step, so a mouse jump pushes parts instead of teleporting through them.
+  - Wires are 20-segment capsule ropes with CCD. They collide with parts, the bench and tools.
+- **Tests**:
+  - `sh scripts/engine-test.sh` runs `e2e/engine-node.mjs` (44 checks), `e2e/engine-v5.mjs` (12 checks) and `e2e/elec-node.mjs` (24 checks).
+  - The v5 checks cover: every new part dropping and stacking without overlap, the hole counts 830/400/170, the screwdriver pushing a NEMA 17 (sweep and one-frame jump), and a breadboard dropped on a wire and dragged with no rope segment inside the board.
+  - `CHROME=/usr/bin/google-chrome node e2e/v5-walk.mjs` runs the browser walkthrough. It writes screenshots, `guide.pdf` and `v5-walk.json` to `../v5/`.
+- **Simplified**:
+  - Washers do not change screw clamping.
+  - Hand tools on the bench are props: only the screwdriver, soldering iron and probes act.
+  - The mini/full breadboard tops are drawn without hole detail.
+  - The import list's coordinates are tuned for the 400-hole board.
