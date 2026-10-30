@@ -92,7 +92,7 @@ export default function PartViewer({ id }) {
         <p className="mt-1 text-[11px] leading-snug text-ink-soft" data-testid="collider-info">
           碰撞体：{def.colliders.filter((c) => c.hull).length ? `${def.colliders.length} 个凸包` : `${def.colliders.length} 个盒`}（物理引擎按这些凸块算碰撞）。
           {def.collider_decomp?.hull
-            ? <>凸包分解（构建时，我的补充）：原来 {def.collider_decomp.hull.boxes} 个体素盒 → {def.collider_decomp.hull.n} 个凸包；比可见网格最多外扩 {def.collider_decomp.hull.box_exMax_mm} → {def.collider_decomp.hull.exMax_mm} mm（中位 {def.collider_decomp.hull.p50_mm} mm），网格顶点全部被覆盖。</>
+            ? <>凸包分解（构建时，我的补充）：先做体素凸分解（体素 {def.collider_decomp.cell_mm} mm，容差 {def.collider_decomp.tol_mm} mm），原来 {def.collider_decomp.hull.boxes} 个盒 → 收紧合并成 {def.collider_decomp.hull.n} 个凸包；比可见网格最多外扩 {def.collider_decomp.hull.box_exMax_mm} → {def.collider_decomp.hull.exMax_mm} mm（中位 {def.collider_decomp.hull.p50_mm} mm），网格顶点全部被覆盖。</>
             : def.collider_decomp
             ? <>体素凸分解（构建时，我的补充）：体素 {def.collider_decomp.cell_mm} mm，盒子比可见网格最多外扩 {def.collider_decomp.exMax_mm} mm（容差 {def.collider_decomp.tol_mm} mm = 体素对角线），网格表面全部被覆盖。</>
             : def.kind === "glb" ? <>由模型各部件的包围盒自动生成，可能比外形稍大（估算）。</> : <>程序生成零件，碰撞盒即外形（近似）。</>}

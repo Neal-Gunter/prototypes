@@ -36,7 +36,7 @@ for (const e of all) {
   // 包围盒（cm）：所有碰撞盒的外包络
   const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity]; let vol = 0;
   for (const c of cs) for (let i = 0; i < 3; i++) { lo[i] = Math.min(lo[i], c.c[i] - c.h[i]); hi[i] = Math.max(hi[i], c.c[i] + c.h[i]); }
-  for (const c of cs) vol += 8 * c.h[0] * c.h[1] * c.h[2];
+  for (const c of cs) vol += c.hull && c.vol != null ? c.vol : 8 * c.h[0] * c.h[1] * c.h[2]; // v23：凸包用真实体积（外接盒体积会互相重叠）
   const span = [0, 1, 2].map((i) => hi[i] - lo[i]).sort((a, b) => a - b), dm = [d.x, d.y, d.z].map((v) => v / 10).sort((a, b) => a - b);
   if (span.some((s, i) => s > dm[i] * 1.02 + 0.03)) { nOutside++; err(e, `碰撞盒超出包围盒：${span.map((v) => (v * 10).toFixed(1)).join("×")} mm vs ${dm.map((v) => (v * 10).toFixed(1)).join("×")} mm`); }
   const bv = dm[0] * dm[1] * dm[2];
