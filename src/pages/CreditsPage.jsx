@@ -111,6 +111,10 @@ export default function CreditsPage() {
       <p className="mt-2 leading-7 text-ink-soft" data-testid="credits-repair">
         12 个关卡、板子、故障、提示和文字全部由本项目自写（我的补充），板子是示意图，不是某款真实产品的原理图。AWG 线阻用常见的实心铜线 20 °C 换算表（22AWG 约 0.053 Ω/m … 30AWG 约 0.339 Ω/m）；色环按 IEC 60062 的颜色代码；I2C 上拉下限按标准模式 3 mA 灌电流估算。其他电阻、压降、内阻、接触电阻、工时都是估算。不显示价格。仿真读数不是实测，不替代真实安全培训。
       </p>
+      <h2 className="mt-8 text-xl font-medium">时域仿真和示波器（v18）</h2>
+      <p className="mt-2 leading-7 text-ink-soft" data-testid="credits-scope">
+        时域求解器（改进节点法、梯形法 / 后向欧拉伴随模型、非线性迭代）、器件行为模型、示波器面板、三板台架和 6 个示波器关卡全部由本项目自写（我的补充），没有用第三方电路仿真库。验证用的是 RC / RL / RLC 阶跃响应的教科书解析解。LiPo 内阻和极化、升压限流、舵机起步 / 堵转电流、主控欠压阈值、电容老化后的容量和 ESR、端子接触电阻都是估算，不代表某个具体型号；不显示价格。仿真读数不是实测，不替代真实安全培训。
+      </p>
       <h2 className="mt-8 text-xl font-medium">代码库</h2>
       <p className="mt-2 leading-7 text-ink-soft">
         React、three.js、@dimforge/rapier3d-compat（Apache-2.0，物理碰撞）、@react-three/fiber、@react-three/drei、zustand、Tailwind CSS（除注明外均为 MIT 许可）。模型转换脚本用 glTF‑Transform 和 meshoptimizer（MIT，只在开发时运行）。“模型 + 功能图”页（v11）在浏览器里用 occt-import-js（LGPL‑2.1，读 STEP；作为单独的 JS + wasm 文件按需加载，没有改动，可替换）和 pdfjs-dist（Apache-2.0，读 PDF 功能图，按需加载）。内置示例的八爪鱼 GLB 和功能图 SVG 由本项目从 v10 预设自制；v12 的 2 自由度机械臂示例（OBJ + 功能图 + 工程）由本项目脚本自制，CC0。关节和舵机运动用同一个 Rapier 引擎。

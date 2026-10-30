@@ -127,6 +127,11 @@ await click("bscope-batt-aged"); const a2 = await bcap(); await shot("bench-aged
 ok(a2.dev.U1.resets > 0, "老化电池：主控（接在电池上）欠压复位，电容救不了", `复位 ${a2.dev.U1.resets} 次，VBAT 最低 ${a2.meas[0].min.toFixed(2)} V`);
 res.bench = { nocapPP: a0.meas[1].pp, cap470PP: a1.meas[1].pp, agedResets: a2.dev.U1.resets };
 
+// ⑥ 指南 + 素材页
+await p.goto(BASE + "/assembly/guide"); await p.waitForSelector("[data-testid=guide-scope]", { timeout: 60000 });
+ok(/地夹/.test(await txt("guide-scope")) && /不替代真实安全培训/.test(await txt("guide-scope")), "装配指南有示波器 / 时域章节");
+await p.goto(BASE + "/credits"); await p.waitForSelector("[data-testid=credits-scope]");
+ok(/我的补充/.test(await txt("credits-scope")) && /估算/.test(await txt("credits-scope")), "素材页写明时域仿真为自写、参数为估算");
 ok(errs.length === 0, "没有页面错误", errs.join(" | "));
 await ctx.close(); await b.close();
 if (SHOT) {

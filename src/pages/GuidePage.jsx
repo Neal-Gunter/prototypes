@@ -143,6 +143,21 @@ export default function GuidePage() {
         <p className="mt-2 text-xs text-red-800">所有关卡都是低压直流。永远不要用表笔去碰 220 V 市电（插座、适配器里面、电源板的高压一侧）——那需要专门的培训和工具。</p>
       </section>
 
+      <section id="scope" className="mt-6 border border-line bg-white p-3" data-testid="guide-scope">
+        <h2 className="text-lg font-medium">示波器和时域模式（v18，早期原型，简化仿真）</h2>
+        <p className="text-xs text-ink-soft">万用表只看平均值；电压“一下子”跌下去、纹波、噪声要用示波器看。在 <Link className="underline" to="/repair">/repair</Link> 打开“时域”，或玩“示波器关卡”。读数来自仿真，不是实测；<b>不替代真实安全培训</b>。</p>
+        <ol className="mt-2 list-decimal pl-5 text-xs leading-5">
+          <li><b>夹探头</b>：选示波器（键 7），点测试点或零件脚，依次夹到 CH1…CH4。</li>
+          <li><b>选抓法</b>：一直开着（稳态）/ 抓开机那一下 / 抓舵机起步那一下；时基调到 1–5 µs/div 才看得到升压的开关纹波，配合 AC 耦合把每格电压调小。</li>
+          <li><b>触发</b>：选通道、上升 / 下降沿、电平；“单次”等不到边沿时会显示“等待触发”。</li>
+          <li><b>光标和数学</b>：点屏幕放光标读 Δt、ΔV；数学 CH1 − CH2 看两块板之间的地压差。</li>
+          <li><b>地夹</b>：探头的地在仪器里互相连通并接大地，只能夹在地上；测两块板的地差用两个通道 + 数学，不要把地夹夹到别的节点。</li>
+          <li><b>储能电容</b>：舵机起步电流大，靠近舵机的大电解电容顶住瞬间；电解电容有极性，会老化（容量掉、ESR 变大）。</li>
+          <li><b>板间连线</b>：插头端子压不好会有接触电阻，大电流时压降明显；“重新插拔”修不好，要重新压端子。</li>
+        </ol>
+        <p className="mt-2 text-xs text-ink-soft">简化（我的补充）：理想元件，没有 EMI、温度、PCB 寄生，只算写明的 ESR、线阻、端子接触电阻、电池内阻；升压和舵机是行为模型，数值多为估算。</p>
+      </section>
+
       <section className="mt-6 break-inside-avoid border border-copper p-3" data-testid="guide-safety">
         <h2 className="font-medium">安全提示</h2>
         <p className="text-xs text-copper">{SAFETY[0]}</p>
