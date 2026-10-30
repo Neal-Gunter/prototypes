@@ -25,7 +25,7 @@ export const partOf = (b, ref) => b.parts.find((p) => p.ref === ref);
 
 // ---------- 导体（通电求解和电阻档共用同一份） ----------
 // phase: "idle"（静止）| "run"（运行 / 振动，接触不良的地方会断）| "wiggle"（镊子拨动那一下）
-function conductors(b, { power, phase = "idle" }) {
+export function conductors(b, { power, phase = "idle" }) {
   const R = [];
   const open = (state) => state === "cold" && phase !== "wiggle"; // 冷焊点：平时不通，镊子一拨瞬间通
   for (const p of b.parts) {
@@ -38,13 +38,13 @@ function conductors(b, { power, phase = "idle" }) {
       const seat = p.state.seat || "ok";
       if (seat === "out" || (seat === "worn" && phase === "run")) continue; // 磨损的插头：一振动就断（估算）
       const n = p.props.pairs;
-      for (let k = 1; k <= n; k++) { const kk = p.state.flip ? n + 1 - k : k; R.push({ a: pinNode(p.ref, "a" + k), b: pinNode(p.ref, "b" + kk), r: CONTACT_R[seat] || CONTACT_R.ok, why: "contact" }); }
+      for (let k = 1; k <= n; k++) { const kk = p.state.flip ? n + 1 - k : k; R.push({ a: pinNode(p.ref, "a" + k), b: pinNode(p.ref, "b" + kk), r: CONTACT_R[seat] || CONTACT_R.ok, why: "contact", ref: p.ref, seat }); }
     }
     if (p.kind === "res" && !p.state.burnt) R.push({ a: pinNode(p.ref, "1"), b: pinNode(p.ref, "2"), r: p.state.ohms, why: "res", ref: p.ref });
     if (p.kind === "sw" && power) R.push({ a: pinNode(p.ref, "a"), b: pinNode(p.ref, "b"), r: 0.03, why: "sw" });
   }
   for (const t of b.traces || []) if (!t.state?.cracked) R.push({ a: t.a, b: t.b, r: TRACE_R, why: "trace" });
-  for (const w of b.wires || []) if (!w.state?.cut) R.push({ a: w.state?.swap ? w.b : w.a, b: w.state?.swap ? w.a : w.b, r: (AWG_OHM_M[w.state?.awg ?? w.awg] || 0.05) * (w.state?.len ?? w.len), why: "wire", id: w.id });
+  for (const w of b.wires || []) if (!w.state?.cut) R.push({ a: w.state?.swap ? w.b : w.a, b: w.state?.swap ? w.a : w.b, r: (AWG_OHM_M[w.state?.awg ?? w.awg] || 0.05) * (w.state?.len ?? w.len) + (w.state?.crimpR || 0), why: "wire", id: w.id }); // v18：crimpR = 端子压接不良的额外接触电阻（估算）
   for (const s of b.shorts || []) R.push({ a: s.a, b: s.b, r: s.r ?? BRIDGE_R, why: "short", id: s.id });
   return R;
 }
@@ -96,7 +96,12 @@ function solveOnce(b, { power, phase, moving, prev }) {
       els.push({ t: "R", a: P(p, "VCC"), b: P(p, "GND"), r: 3.3 / pr.i, ref: p.ref + "-load" });
     } else if (p.kind === "servo") {
       const mv = moving?.has(p.ref);
-      els.push({ t: "R", a: P(p, "V"), b: P(p, "G"), r: 5.0 / (mv ? pr.iPeak : pr.iIdle), ref: p.ref + "-load" });
+      els.push({ t: "R", a: P(p, "V"), b: P(p, "G"), r: 5.0 / (mv ? (st.stalled ? pr.iStall ?? 0.9 : pr.iPeak) : pr.iIdle), ref: p.ref + "-load" }); // v18：卡死的舵机吃堵转电流（估算）
+    } else if (p.kind === "asensor" && !st.damaged) { // v18：比例输出的模拟传感器（输出 = k·VCC）
+      els.push({ t: "R", a: P(p, "VCC"), b: P(p, "GND"), r: 3.3 / pr.i, ref: p.ref + "-load" });
+      const g = prev?.[p.ref] || { vcc: 0 };
+      els.push({ t: "V", p: P(p, "OUT"), n: P(p, "GND"), v: Math.max(0, g.vcc) * (pr.k ?? 0.5), r: pr.rOut ?? 100, ref: p.ref + "-out" });
+      info[p.ref] = g;
     } else if (p.kind === "load") {
       els.push({ t: "R", a: P(p, "1"), b: P(p, "2"), r: pr.ohms, ref: p.ref + "-load" });
     }
@@ -105,7 +110,7 @@ function solveOnce(b, { power, phase, moving, prev }) {
   return { els, sol, info };
 }
 
-const vd = (sol, a, b) => { const x = sol.v(a), y = sol.v(b); return x == null || y == null ? null : x - y; };
+export const vd = (sol, a, b) => { const x = sol.v(a), y = sol.v(b); return x == null || y == null ? null : x - y; };
 
 // 迭代：稳压 / 升压的输入电流取决于输出电流，MCU 跑不跑取决于电压
 function solvePhase(b, opt) {
@@ -143,6 +148,8 @@ function solvePhase(b, opt) {
       } else if (p.kind === "mcu") {
         const vcc = vd(r.sol, P("VCC"), P("GND")) ?? 0;
         next[p.ref] = { run: vcc >= pr.bo, vcc };
+      } else if (p.kind === "asensor" && !p.state.damaged) {
+        next[p.ref] = { vcc: vd(r.sol, P("VCC"), P("GND")) ?? 0 };
       }
       const a = prev[p.ref], c = next[p.ref];
       if (c && (!a || Object.keys(c).some((k) => typeof c[k] === "number" ? Math.abs(c[k] - (a[k] ?? 0)) > 1e-5 : c[k] !== a[k]))) changed = true;
@@ -160,7 +167,7 @@ export function passiveOhms(b, a, c, { power = false, phase = "idle" } = {}) {
 }
 
 // 信号线是不是通到了指定的脚
-const linked = (b, a, c, phase = "idle", lim = 10) => passiveOhms(b, a, c, { power: true, phase }) < lim;
+export const linked = (b, a, c, phase = "idle", lim = 10) => passiveOhms(b, a, c, { power: true, phase }) < lim;
 
 // ---------- 整板仿真（多相：静止 / 运行；接触不良会让运行分成“接着 / 断开”两相） ----------
 export function simulate(b, { power = false, run = false, batt = null } = {}) {
@@ -247,6 +254,10 @@ function observe(b, phases, { power, run }) {
     if (p.kind === "sensor" && !p.state.damaged) {
       const v = Math.max(...all((ph) => vd(ph.sol, pinNode(p.ref, "VCC"), pinNode(p.ref, "GND")) ?? 0));
       if (v > p.props.vdmg) o.damage.push({ ref: p.ref, kind: "damaged", why: `传感器供电 ${v.toFixed(2)} V 超过约 ${p.props.vdmg} V（估算）` });
+    }
+    if (p.kind === "cap" && !p.state.burnt && p.props.polar && power) { // v18：电解电容反接
+      const v = Math.min(...all((ph) => vd(ph.sol, pinNode(p.ref, "+"), pinNode(p.ref, "-")) ?? 0));
+      if (v < -1) o.damage.push({ ref: p.ref, kind: "burnt", why: `电解电容反接 ${v.toFixed(1)} V，会发热鼓包（真机可能爆浆）` });
     }
     if (p.kind === "servo") {
       const v = all((ph) => vd(ph.sol, pinNode(p.ref, "V"), pinNode(p.ref, "G")) ?? 0);
