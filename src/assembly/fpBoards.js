@@ -2,6 +2,7 @@
 // 焊盘坐标逐个来自封装文件（链接见每个零件的 footprint.url），所以导线接到的是真实的物理位置；外形只是近似。
 import { FP_BOARDS } from "./fpBoards.gen.js";
 import { attachPhys } from "./physpins.js";
+import { L298N_NOTE } from "./breakout.js";
 const c = (v) => v / 10; // mm → cm（引擎单位）
 const DEN = { pcb: 1.85, ic: 2.0 };
 function build(g) {
@@ -34,6 +35,7 @@ function build(g) {
   // 焊盘 → 引脚锚点（pinhole / pad / 腿），用同一套 attachPhys；腿已经按序号放好 → 先占位
   const phys = { b: g.board, mode: "footprint", pitch: g.pitch || null, pins: pads.map((q) => [q.p[0] * 10, q.p[1] * 10, q.p[2] * 10, q.num, q.name, q.role, q.tht ? 1 : 0, q.w * 10, q.h * 10, 0, 0, q.d]) };
   attachPhys(def, phys);
+  if (g.ic === "multiwatt") { def.mountNote = L298N_NOTE; def.spec += "。" + L298N_NOTE; def.est.unshift("安装方式：直插 Multiwatt15（不是贴片）"); }
   return def;
 }
 export const FP_PROCEDURAL = FP_BOARDS.map(build);

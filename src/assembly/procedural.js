@@ -5,6 +5,7 @@
 
 import { STD_PROCEDURAL } from "./procedural2.js";
 import { FP_PROCEDURAL } from "./fpBoards.js";
+import { BREAKOUT_PROCEDURAL } from "./breakout.js";
 export const LIC_SELF = "本项目自制（程序生成，CC0）";
 
 // ISO 7045 盘头十字螺钉：dk 头径、k 头高；ISO 261 粗牙螺距；ISO 273 中等过孔
@@ -526,6 +527,7 @@ export const PROCEDURAL = [
   ...[["M2", 4], ["M2", 8], ["M2", 12], ["M2.5", 8], ["M2.5", 12], ["M2.5", 16], ["M3", 4], ["M3", 5], ["M3", 25], ["M3", 30], ["M3", 35], ["M3", 40]].map(([a, b]) => capScrew(a, b)),
   ...STD_PROCEDURAL,
   ...FP_PROCEDURAL, // v22：按 KiCad 封装生成的 12 块板/模块（引脚物理位置）
+  ...BREAKOUT_PROCEDURAL, // v23：贴片转接板 13 种 + 没有 CAD 的贴片封装 7 种
 ].map((d) => ({ ...d, licence: LIC_SELF, kind: "proc", thumb: `/lib/thumbs/${d.id}.webp` }));
 
 export const PROC_BY_ID = Object.fromEntries(PROCEDURAL.map((d) => [d.id, d]));
