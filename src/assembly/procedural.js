@@ -528,5 +528,10 @@ export const CABLES = {
   "dupont-ff-10": { zh: "杜邦线 母‑母 10 cm", ends: ["p-dupont-f1", "p-dupont-f1"], len: 10, r: 0.08 },
   "servo-lead": { zh: "舵机引线（棕 GND / 红 VCC / 橙 SIG）", ends: [null, "p-dupont-f3"], len: 15, est: true, r: 0.12 },
   "usb-c": { zh: "USB‑C 数据线（接电脑）", ends: ["p-plug-usb-c", null], len: 30, r: 0.17, est: true },
+  // 八爪鱼台面用（v6）：杜邦线按 md 采购清单“母对母”；舵机引线按 MG90S 常见 25 cm（估算）；电源线 md 没写线径（估算 20AWG 硅胶线）
+  "octo-dupont-20": { zh: "杜邦线 母‑母 20 cm（md 采购清单）", ends: ["p-dupont-f1", "p-dupont-f1"], len: 20, r: 0.08 },
+  "octo-dupont-30": { zh: "杜邦线 母‑母 30 cm（md 采购清单）", ends: ["p-dupont-f1", "p-dupont-f1"], len: 30, r: 0.08 },
+  "octo-servo": { zh: "MG90S 舵机引线（棕 GND / 红 V+ / 橙 PWM）", ends: [null, "p-dupont-f3"], len: 25, est: true, r: 0.12 },
+  "octo-wire": { zh: "电源线 20AWG 硅胶线（线径文档未写，估算）", ends: [null, null], len: 15, est: true, r: 0.1 },
   "micro-usb": { zh: "Micro‑USB 数据线（接电脑）", ends: ["p-plug-micro-usb", null], len: 30, r: 0.17, est: true },
 };

@@ -7,6 +7,7 @@ const WorkbenchPage = lazy(() => import("./pages/WorkbenchPage"));
 const AssemblyPage = lazy(() => import("./pages/AssemblyPage"));
 const PartsPage = lazy(() => import("./pages/PartsPage"));
 const GuidePage = lazy(() => import("./pages/GuidePage"));
+const OctoGuidePage = lazy(() => import("./pages/OctoGuidePage"));
 import NotFoundPage from "./pages/NotFoundPage";
 import CreditsPage from "./pages/CreditsPage";
 
@@ -46,6 +47,14 @@ export default function App() {
             element={
               <Suspense fallback={<p className="p-8 text-ink-soft">正在加载装配指南…</p>}>
                 <GuidePage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/assembly/octopus-guide"
+            element={
+              <Suspense fallback={<p className="p-8 text-ink-soft">正在加载八爪鱼指南…</p>}>
+                <OctoGuidePage />
               </Suspense>
             }
           />

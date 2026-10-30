@@ -10,6 +10,8 @@ import ElecPanel from "../assembly/ui/ElecPanel.jsx";
 import { elec } from "../assembly/elecStore.js";
 import { PRESETS, buildFromList, parseList } from "../assembly/builder.js";
 import { makeGuide } from "../assembly/guide.js";
+import OctoPanel, { octoDetach, octoSim } from "../assembly/ui/OctoPanel.jsx";
+import { octoGuide } from "../assembly/octopus/spec.js";
 
 export const ASM_SIMPLIFICATIONS = [
   "碰撞形状是若干个方块（从 CAD 包围盒和几何体里提取），不是逐三角形网格；圆柱、六角螺母等按方块近似",
@@ -22,6 +24,8 @@ export const ASM_SIMPLIFICATIONS = [
   "焊接只判断“烙铁下面有穿过针脚的焊盘孔 + 按住时间”，有没有助焊剂只改变所需时间；焊点质量（合格 / 虚焊 / 连锡 / 烫坏）由按住时间、助焊剂和邻近焊盘决定，是规则判断，不是热仿真",
   "通电：台面上真实的插接和焊点 → 网表 → 直流电阻网络求解（LED 用分段线性模型，舵机按 PWM 信号直接给角度），不模拟瞬态、电容、芯片内部",
   "固件由 JS 迷你解释器运行（Arduino 风格子集），不是真实 RP2040 / ESP32 仿真；舵机转动只改画面，不推动刚体",
+  "八爪鱼：md 的 C++ 固件逐行移植成 JS（协程代替 FreeRTOS 任务），I2C 写到寄存器级的 PCA9685 替身；语音、大模型、WiFi / 蓝牙都是模拟",
+  "八爪鱼：电压 / 电流 / 掉电复位是估算模型；桌面爬行用二维库仑摩擦估算，3D 机身不跟着走（位移看俯视轨迹）；预设整只装好，触手之间用夹角判断碰撞",
 ];
 const TOOLS = [
   { k: "hand", zh: "手", tip: "左键拖动零件；右键按住 = 用手拧铜柱 / 螺母（Shift 反拧）" },
@@ -65,6 +69,8 @@ export default function AssemblyPage() {
       window.__asm = { engine, overlapTest: () => engine.overlapTest(), snapshot: () => engine.snapshot(), build: (t) => buildList(t), addAt: async (id, x, z, y = 0.02) => engine.addPart(toDef(await getEntry(id)), { p: new THREE.Vector3(x, y, z), q: new THREE.Quaternion() }) };
       const sc = params.get("scene");
       if (sc && PRESETS[sc]) { setTab("elec"); buildList(PRESETS[sc].text, PRESETS[sc].zh); }
+      if (sc === "octo") setTab("octo");
+      if (sc === "octoA" || sc === "octoB") { setTab("octo"); setTimeout(() => window.__octo?.build({ plan: sc.slice(4), phase: 3, fault: "none" }), 300); }
     });
     return () => { off(); stopRef.current = true; };
   }, []);
@@ -81,6 +87,7 @@ export default function AssemblyPage() {
     engine.addPart(toDef(e, flip && /pinheader/.test(id)), { p: new THREE.Vector3(x, 0.02, z), q: new THREE.Quaternion() });
   };
   const clear = () => {
+    octoDetach();
     stopRef.current = true;
     for (const c of [...engine.cables]) engine.removeCable(c.id);
     for (const u of [...engine.parts.keys()]) if (engine.parts.has(u)) engine.removePart(u);
@@ -171,11 +178,12 @@ export default function AssemblyPage() {
       </div>
       <aside className="flex min-h-0 flex-col gap-3 overflow-y-auto text-sm lg:w-80">
         <div className="flex gap-1" role="tablist">
-          {[["tools", "工具与装配"], ["elec", "通电"]].map(([k, zh]) => (
+          {[["tools", "工具与装配"], ["elec", "通电"], ["octo", "八爪鱼"]].map(([k, zh]) => (
             <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={`min-h-9 flex-1 border ${tab === k ? "border-ink bg-ink text-paper-2" : "border-line bg-white"}`} data-testid={`tab-${k}`}>{zh}</button>
           ))}
         </div>
-        <fieldset>
+        <div className={tab === "octo" ? "" : "hidden"}><OctoPanel ready={ready} busy={!!(demo && !demo.done)} clear={clear} run={async (s) => { stopRef.current = false; if (window.__asmSpeed) return driveRun(s); let k = Math.round(s * 120); while (k-- > 0) engine.update(1 / 120); await new Promise((r) => requestAnimationFrame(r)); }} setDemo={setDemo} onExport={() => { localStorage.setItem("octo-guide", JSON.stringify(octoGuide(octoSim, engine))); nav("/assembly/octopus-guide?src=bench"); }} /></div>
+        <fieldset className={tab === "octo" ? "hidden" : ""}>
           <legend className="font-medium">练习电路（自动装配到桌面上）</legend>
           <div className="mt-1 flex flex-col gap-1">
             {Object.entries(PRESETS).map(([k, p]) => (
