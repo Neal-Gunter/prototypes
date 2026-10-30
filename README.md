@@ -172,6 +172,18 @@ The script uses `window.__wb` test hooks only to find where things are on the sc
   - 电流是估算值。
   - 只做直流层面的电压、电流检查。
 
+## v14：自动步态搜索 + 倾角闭环（早期原型，简化仿真）
+
+**网址**：八爪鱼 https://neal-gunter.github.io/prototypes/assembly?scene=octo （“▶ v10 紧凑无线版”装好后，右侧“自动步态搜索”“闭环（IMU）”两块）；四足 https://neal-gunter.github.io/prototypes/assembly/model?demo=quad （“运动”里同样两块）。
+
+- **自动步态搜索**（`src/gait/search*.js`、`search.worker.js`，我的补充）：sep-CMA-ES，在 Web Worker 里跑，页面不卡；每个候选 = 4 s 站稳 + 10 s 步态的完整 Rapier 仿真（固件孪生里的防碰撞、限位 90±55°、限速 300 °/s 照样生效）。目标：速度优先 / 直线优先 / 省电 / 自定义权重（公式在面板上写明）；可选左右对称（21 维）、“在 μ 0.3 / 0.5 / 0.8 上取平均”（防过拟合，慢 3 倍）、搜完做鲁棒性复评（μ、机身质量 ×0.9 / ×1.1、5 个随机种子：每个关节 ±2° 装配零位误差 + 0–1 s 起步延迟，估算）。可以取消；结果可预览、应用到编辑器、导出 JSON / `octopus_gait_custom.h`。命令行同款：`node scripts/gait-cma.mjs`、`node scripts/quad-search.mjs`。
+- **v14 预设“v14 自动搜索（速度优先）”**：命令行 CMA-ES（约 390 次评估）搜出来的。10 s、μ = 0.5（仿真，不是实物速度）：v13 同步划桨 3.757 cm/s、侧漂 0.27 cm、航向 0.7°、10.13 J（0.27 J/cm，估算）→ v14 开环 4.733 cm/s（+26%）、侧漂 0.45 cm、航向 11.7°、11.24 J（0.24 J/cm）→ v14 + 闭环 4.640 cm/s、侧漂 −1.97 cm、航向 3.3°。鲁棒性复评：平均 4.63 vs 3.63 cm/s，最差 3.38 vs 2.47 cm/s，但最大侧漂 2.43 vs 1.40 cm（更偏）。“直线优先”搜出来的单点很直（侧漂 −0.10 cm），复评最大侧漂 7.04 cm → 过拟合，没有用作预设。浏览器里只给 120 次评估时，从同步划桨出发找不到更好的（3.744 分保持）——要更多次数或用命令行。
+- **倾角 / 航向闭环**（`src/gait/ctrl.js` 和固件 `octopus_ctrl.h`，同一套公式）：模拟 MPU-6050（量程 ±2 g / ±500 °/s 和固件里的寄存器配置一致；噪声取估算的保守值，不模拟零偏和温漂——固件上电静止 1 s 求零偏），互补滤波出横滚 / 俯仰，陀螺积分出航向；航向 PD 修左右两侧的划幅，倾斜 PD 修偏置。面板：4 个增益滑块、坡度 / 方向、2 s 时右侧加 30 g、开环 vs 闭环对比、台面上实时闭环。“自适应转向符号”（我的补充）：修正饱和而且越修越偏时翻转符号——因为坡上该往哪边修是按同步划桨标定的经验规则，换步态会反。数字（八爪鱼，仿真）：平地 + 30 g 航向 9.0° → 3.2°（同步划桨）、28.8° → 3.1°（v14，浏览器）；3° 横坡同步划桨 −46.1° → 0.8°，v14 −24.3° → −13.1°；四足 8° 横坡平均倾角 9.32° → 7.14°。
+- **MPU-6050 零件 + 固件**：零件库 `p-octo-mpu6050`（Adafruit 3886 STEMMA QT 板：26.0 × 17.8 × 4.6 mm、1.8 g，按 Adafruit 产品页；板上引脚位置是估算）。接法：v10 接 QT Py 的 STEMMA QT 口（Wire1，SDA 41 / SCL 40，地址 0x68）；完善版和 PCA9685 共用一条 Wire。`octopus_imu.h` 直接读寄存器（不需要额外库），上电静止 1 s 求陀螺零偏。`node scripts/gait-export.mjs ctrl out.h` 导出控制参数；`GAIT_SRC=v14 sh scripts/fw-compile.sh`：v10 + 步态 + 闭环 712008 B（33%），完善版 OCTO_RIG=8 + 闭环 624564 B（47%），我们的文件 0 警告。
+- **台面边界（我的补充）**：3D 台面只有 60 × 40 cm，v14 步态约 5 s 就会走到台边。现在整机（触手尖算进去）快出边时会被一起平移回起点（朝向、关节角不变），事件里记一条；测速、前进距离、轨迹照常累计。之前会走出台面、穿进台边（最深 36 mm）。
+- **老实说的限制**：全部是简化仿真，没上实机；导出的头文件只编译过、没上板。三个万向球在横坡上整机侧滑（3° 横坡 10 s 侧滑 50–70 cm），闭环只修航向和倾角，不修侧滑；坡上修正方向的规则是经验的，自适应翻号是兜底；v14 步态最大角速度 294 °/s，离 300 °/s 限速很近，实机舵机可能跟不上；四足 8° 横坡闭环倾角更小但航向更偏。可选的下一步：3D 打印一条触手实测摩擦和速度（本版没做）。
+- **测试**：`node scripts/search-test.mjs`、`node scripts/v14-test.mjs`（13 项）、`node scripts/ctrl-test.mjs`（25 项），都在 `sh scripts/engine-test.sh` 里；浏览器走查 `node e2e/v14-bench.mjs`（23 项，录屏 demo.mp4；`BASE` / `OUT` / `SHOTS=0` 可改）。
+
 ## v13：闭环连杆 + 台面步态编辑器（早期原型，简化仿真）
 
 **网址**：八爪鱼 https://neal-gunter.github.io/prototypes/assembly?scene=octo （“▶ v10 紧凑无线版”装好后，右侧“步态编辑器”）；上传模型 https://neal-gunter.github.io/prototypes/assembly/model?demo=quad （四足示例，打开“运动”）、`?demo=fourbar`（四连杆）。

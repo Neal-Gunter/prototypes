@@ -2,7 +2,7 @@
 import { chromium } from "playwright";
 import fs from "node:fs";
 import { execSync } from "node:child_process";
-const OUT = "/workspace/proto-site/v10", BASE = process.env.BASE || "http://localhost:4173", FR = `${OUT}/frames`, VID = "/tmp/pwv10";
+const OUT = process.env.OUT || "/workspace/proto-site/v10", BASE = process.env.BASE || "http://localhost:4173", FR = `${OUT}/frames`, VID = "/tmp/pwv10";
 fs.rmSync(VID, { recursive: true, force: true }); for (const f of fs.existsSync(OUT) ? fs.readdirSync(OUT) : []) if (/\.(png|mp4|json|zip)$/.test(f)) fs.rmSync(`${OUT}/${f}`); fs.rmSync(FR, { recursive: true, force: true }); fs.mkdirSync(FR, { recursive: true });
 const b = await chromium.launch({ executablePath: "/usr/bin/google-chrome", args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
 const W = 1366, H = 768, res = {}; let n = 0;
