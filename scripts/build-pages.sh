@@ -5,6 +5,6 @@ OUT="${1:-/tmp/ghroot/prototypes}"
 cd "$(dirname "$0")/.."
 npx vite build --base=/prototypes/ --outDir "$OUT" --emptyOutDir
 cp "$OUT/index.html" "$OUT/404.html"
-for r in example workbench assembly parts assembly/guide assembly/octopus-guide assembly/model electrics credits; do mkdir -p "$OUT/$r"; cp "$OUT/index.html" "$OUT/$r/index.html"; done
+for r in example workbench assembly parts assembly/guide assembly/octopus-guide assembly/model electrics credits repair; do mkdir -p "$OUT/$r"; cp "$OUT/index.html" "$OUT/$r/index.html"; done
 touch "$OUT/.nojekyll"
 echo "pages build ok -> $OUT"
