@@ -109,7 +109,7 @@ export async function runDemo(engine, { run, say = () => {}, stop = () => false,
     for (const f of over(h1).slice(0, 3).concat(over(h2).slice(0, 3))) {
       if (stop()) break;
       showTool("iron", f.wp.clone().add(V(0, 0.12, 0)));
-      if (engine.holdSolder(f.wp.clone().add(V(0, 0.1, 0)))) await run(0.8);
+      if (engine.holdSolder(f.wp.clone().add(V(0, 0.1, 0)), { hold: 0.8 })) await run(0.8);
     }
     showTool(null);
     engine.tool.kind = "hand";

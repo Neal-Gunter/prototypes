@@ -28,6 +28,7 @@ export function createFirmware(onEvent) {
       w.postMessage({ type: "run", code, adcBits: opts.adcBits });
     },
     input(kind, pin, value) { w?.postMessage({ type: "input", kind, pin, value }); },
+    inputs(d, a) { w?.postMessage({ type: "inputs", d, a }); },
     stop() { if (w) { w.terminate(); w = null; } },
     get running() { return !!w; },
   };

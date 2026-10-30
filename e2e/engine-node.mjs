@@ -198,7 +198,7 @@ const pinsNow = [...feats(h1, "pin-up"), ...feats(h2, "pin-up")];
 const onPin = ph2.filter((f) => pinsNow.some((g) => Math.hypot(g.wp.x - f.wp.x, g.wp.z - f.wp.z) < 0.08));
 const over = (h) => ph2.filter((f) => feats(h, "pin-up").some((g) => Math.hypot(g.wp.x - f.wp.x, g.wp.z - f.wp.z) < 0.08));
 for (const f of over(h1).slice(0, 3).concat(over(h2).slice(0, 3))) {
-  const op = engine.holdSolder(f.wp.clone().add(new THREE.Vector3(0, 0.1, 0)));
+  const op = engine.holdSolder(f.wp.clone().add(new THREE.Vector3(0, 0.1, 0)), { hold: 0.8 });
   if (op) { run(0.8, "solder"); soldered++; }
 }
 check("用烙铁焊了 6 个点", soldered === 6 && (engine.parts.get(pico).state.solder?.length || 0) === 6, `${soldered}`);
@@ -256,6 +256,6 @@ const fin = pen("final");
 check(`全程任意两零件穿透 < ${TOL_MM} mm`, worstMm < TOL_MM, `最深 ${worstMm} mm @ ${worstAt}`);
 const summary = { passed: results.filter((r) => r.ok).length, failed: results.filter((r) => !r.ok).length, worstPenetrationMm: worstMm, worstAt, final: fin, parts: engine.parts.size, bodies: engine.bodies.size, edges: engine.edges.length };
 console.log(JSON.stringify(summary, null, 1));
-fs.mkdirSync("../v4", { recursive: true });
-fs.writeFileSync("../v4/engine-test.json", JSON.stringify({ summary, results, log: engine.log }, null, 1));
+fs.mkdirSync("../v5", { recursive: true });
+fs.writeFileSync("../v5/engine-test.json", JSON.stringify({ summary, results, log: engine.log }, null, 1));
 process.exit(summary.failed ? 1 : 0);

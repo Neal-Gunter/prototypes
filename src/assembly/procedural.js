@@ -251,7 +251,7 @@ function breadboard() {
 
 // ---------- 插头（导线端）：Dupont、JST‑PH、USB ----------
 function dupont(gender, n = 1) {
-  const w = 2.54 * n, h = 2.54, L = 14;
+  const w = 2.54 * n - 0.1, h = 2.44, L = 14; // 外壳比 2.54 mm 排距窄 0.1 mm，挨着插不打架（估算，实物约 2.4–2.5 mm）
   const pinLen = gender === "m" ? 6 : 0;
   const cols = [box(-mm(w) / 2, mm(w) / 2, mm(pinLen), mm(pinLen + L), -mm(h) / 2, mm(h) / 2)];
   if (gender === "m") cols.push(box(-0.032, 0.032, 0, mm(pinLen), -0.032, 0.032));
@@ -263,10 +263,11 @@ function dupont(gender, n = 1) {
     proc: { type: "dupont", gender, n, L, pinLen },
     colliders: cols,
     dims_mm: { x: w, y: L + pinLen, z: h },
-    dims_src: "截面按 2.54 mm 排距；长度为估算",
+    dims_src: "截面按 2.54 mm 排距减 0.1 mm；长度为估算",
     spec: gender === "m" ? "公针 0.64 mm 方针（常见规格）" : "套在 0.64 mm 方针上",
     density: DENSITY.plastic,
-    anchors: gender === "m" ? [{ t: "dupont-m", p: [0, 0, 0], depth: mm(pinLen) }] : [{ t: "dupont-f", n, p: [0, 0, 0], depth: mm(6) }],
+    // 母头每个触点一个特征（k = 触点号），多 pin 母头要所有触点同时对上排针才套得进去
+    anchors: gender === "m" ? [{ t: "dupont-m", p: [0, 0, 0], depth: mm(pinLen), k: 0 }] : Array.from({ length: n }, (_, k) => ({ t: "dupont-f", n, k, p: [mm((k - (n - 1) / 2) * 2.54), 0, 0], depth: mm(6) })),
     est: ["壳体长度"],
     wireEnd: [0, mm(pinLen + L), 0],
   };
@@ -296,6 +297,33 @@ function plug(kind) {
     anchors: [{ t: "plug", kind, p: [0, cy, 0], dir: [-1, 0, 0], depth: mm(P.tl) }],
     est: ["外壳"],
     wireEnd: [mm(P.tl + P.bl), cy, 0],
+  };
+}
+
+// ---------- 面包板跳线（预先折好的 U 形单芯线）：两腿间距 = N × 2.54 mm ----------
+const JUMPER_COLOR = { 1: "#c0392b", 2: "#c0392b", 3: "#e67e22", 4: "#f1c40f", 5: "#27ae60", 6: "#2f6fd6", 7: "#8e44ad", 8: "#7f8c8d", 10: "#ecf0f1", 12: "#a0522d", 15: "#222222" };
+function jumper(N) {
+  const span = 2.54 * N, legLen = 6, wd = 0.6, h = 1.2; // 估算：22 AWG 实心线芯 ≈0.64 mm，绝缘层外径 ≈1.2 mm，腿长 6 mm
+  const x = mm(span) / 2;
+  const cols = [
+    box(-x - mm(h) / 2, x + mm(h) / 2, mm(legLen), mm(legLen + h), -mm(h) / 2, mm(h) / 2),
+    box(-x - 0.032, -x + 0.032, 0, mm(legLen), -0.032, 0.032),
+    box(x - 0.032, x + 0.032, 0, mm(legLen), -0.032, 0.032),
+  ];
+  return {
+    id: `p-jumper-${N}`,
+    name_zh: `面包板跳线 ${N} 格（${span.toFixed(2)} mm）`,
+    name: `Breadboard jumper wire ${N}×2.54 mm`,
+    cat: "wire",
+    proc: { type: "jumper", N, color: JUMPER_COLOR[N] || "#2f6fd6", wd },
+    colliders: cols,
+    legs: [{ p: [-x, 0, 0], top: mm(legLen), w: mm(wd), i: 0 }, { p: [x, 0, 0], top: mm(legLen), w: mm(wd), i: 1 }],
+    dims_mm: dimsOf(cols),
+    dims_src: "腿距按 2.54 mm 栅格；线径与腿长为估算（22 AWG 实心线常见规格）",
+    spec: "22 AWG 实心线（常见规格），两端剥线约 6 mm（估算）",
+    density: DENSITY.mixed,
+    anchors: [],
+    est: ["线径", "腿长", "颜色（各家套装的颜色编码不同）"],
   };
 }
 
@@ -331,6 +359,7 @@ export const PROCEDURAL = [
   standoff("M2", 8, 3), standoff("M2.5", 10, 6), standoff("M3", 10, 6),
   horn(), tentacle(),
   dupont("m"), dupont("f"), dupont("f", 3),
+  ...[1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15].map(jumper),
   plug("usb-c"), plug("micro-usb"), plug("jst-ph2"),
   tool("screwdriver"), tool("iron"),
 ].map((d) => ({ ...d, licence: LIC_SELF, kind: "proc", thumb: `/lib/thumbs/${d.id}.webp` }));
@@ -339,9 +368,10 @@ export const PROC_BY_ID = Object.fromEntries(PROCEDURAL.map((d) => [d.id, d]));
 
 // 线缆：两端插头 + 中间绳子（Rapier 胶囊链）
 export const CABLES = {
-  "dupont-mm": { zh: "杜邦线 公‑公 20 cm", ends: ["p-dupont-m1", "p-dupont-m1"], len: 20 },
-  "dupont-ff": { zh: "杜邦线 母‑母 20 cm", ends: ["p-dupont-f1", "p-dupont-f1"], len: 20 },
-  "dupont-mf": { zh: "杜邦线 公‑母 20 cm", ends: ["p-dupont-m1", "p-dupont-f1"], len: 20 },
-  "usb-c": { zh: "USB‑C 数据线（接电脑）", ends: ["p-plug-usb-c", null], len: 30 },
-  "micro-usb": { zh: "Micro‑USB 数据线（接电脑）", ends: ["p-plug-micro-usb", null], len: 30 },
+  "dupont-mm": { zh: "杜邦线 公‑公 20 cm", ends: ["p-dupont-m1", "p-dupont-m1"], len: 20, r: 0.08 },
+  "dupont-ff": { zh: "杜邦线 母‑母 20 cm", ends: ["p-dupont-f1", "p-dupont-f1"], len: 20, r: 0.08 },
+  "dupont-mf": { zh: "杜邦线 公‑母 20 cm", ends: ["p-dupont-m1", "p-dupont-f1"], len: 20, r: 0.08 },
+  "servo-lead": { zh: "舵机引线（棕 GND / 红 VCC / 橙 SIG）", ends: [null, "p-dupont-f3"], len: 15, est: true, r: 0.12 },
+  "usb-c": { zh: "USB‑C 数据线（接电脑）", ends: ["p-plug-usb-c", null], len: 30, r: 0.17, est: true },
+  "micro-usb": { zh: "Micro‑USB 数据线（接电脑）", ends: ["p-plug-micro-usb", null], len: 30, r: 0.17, est: true },
 };

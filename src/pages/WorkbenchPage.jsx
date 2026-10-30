@@ -173,6 +173,9 @@ export default function WorkbenchPage() {
           早期原型，简化仿真 <span lang="en">· Early prototype, simplified simulation</span>
         </p>
       </div>
+      <p className="mt-2 border border-copper bg-white px-2 py-1 text-sm" data-testid="assembly-banner">
+        新版在<Link to="/assembly?scene=electrics" className="mx-1 underline">装配台</Link>：真实尺寸的零件、碰撞、焊点质量、按接线通电和固件都在一处，还能导出照着做的<Link to="/assembly/guide" className="mx-1 underline">装配指南</Link>。这个页面保留作对照。
+      </p>
 
       <div className="mt-3 flex flex-wrap items-center gap-2" role="tablist" aria-label="模式">
         {MODES.map(([m, l]) => (

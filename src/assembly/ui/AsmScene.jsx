@@ -5,6 +5,8 @@ import { OrbitControls, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { engine, BENCH } from "../engine.js";
 import { PROC_BY_ID } from "../procedural.js";
+import { elec } from "../elecStore.js";
+import { elemKind, jointOf, terminalAt } from "../netlist.js";
 
 const MAT = {
   steel: new THREE.MeshStandardMaterial({ color: "#b8bcc2", metalness: 0.85, roughness: 0.32 }),
@@ -15,6 +17,9 @@ const MAT = {
   orange: new THREE.MeshStandardMaterial({ color: "#d9792b", roughness: 0.5 }),
   blue: new THREE.MeshStandardMaterial({ color: "#2f6fd6", roughness: 0.45 }),
   solder: new THREE.MeshStandardMaterial({ color: "#d8dde2", metalness: 1, roughness: 0.15 }),
+  cold: new THREE.MeshStandardMaterial({ color: "#8d8f8c", metalness: 0.3, roughness: 0.9 }),
+  bridge: new THREE.MeshStandardMaterial({ color: "#e8ecef", metalness: 1, roughness: 0.1, emissive: "#552200", emissiveIntensity: 0.4 }),
+  burnt: new THREE.MeshStandardMaterial({ color: "#4a2f1d", roughness: 0.9 }),
   sel: new THREE.MeshBasicMaterial({ color: "#d9792b", wireframe: true }),
 };
 const PROC_MAT = { screw: "steel", nut: "steel", standoff: "brass", plate: "acrylic", breadboard: "white", bracket: "black", horn: "white", tentacle: "orange", dupont: "black", plug: "black", tool: "blue" };
@@ -64,17 +69,39 @@ function Glb({ def }) {
   const H = def.dims_mm.y / 10;
   return def.flip ? <group position={[0, H, 0]} rotation={[Math.PI, 0, 0]}><primitive object={obj} /></group> : <primitive object={obj} />;
 }
+const _q = new THREE.Quaternion(), _p = new THREE.Vector3();
 function Part({ uid, onDown }) {
   const ref = useRef();
+  const glow = useRef();
   const p = engine.parts.get(uid);
+  const kind = p ? elemKind(p.def) : null;
   useFrame(() => {
     if (!ref.current || !engine.parts.has(uid)) return;
     const w = engine.worldPose(uid);
-    ref.current.position.copy(w.p);
-    ref.current.quaternion.copy(w.q);
+    const v = engine.parts.get(uid).vis;
+    if (v && v.ang) {
+      // 舵机带着转：绕输出轴旋转（只改画面）
+      _q.setFromAxisAngle(v.axis, v.ang);
+      _p.copy(w.p).sub(v.pivot).applyQuaternion(_q).add(v.pivot);
+      ref.current.position.copy(_p);
+      ref.current.quaternion.copy(_q).multiply(w.q);
+    } else {
+      ref.current.position.copy(w.p);
+      ref.current.quaternion.copy(w.q);
+    }
+    if (glow.current) {
+      const st = engine.parts.get(uid).state;
+      const mA = elec.last?.leds.get(uid)?.mA || 0;
+      const on = !st.burnt && mA > 0.3;
+      glow.current.visible = on || !!st.burnt;
+      glow.current.material.color.set(st.burnt ? "#2a1a12" : "#ff3b2f");
+      glow.current.material.opacity = st.burnt ? 0.9 : Math.min(0.95, 0.25 + mA / 12);
+      glow.current.scale.setScalar(on ? 1 + Math.min(1.2, mA / 15) : 1);
+    }
   });
   if (!p) return null;
   const def = p.def;
+  const H = (def.dims_mm?.y || 8) / 10;
   return (
     <group ref={ref} onPointerDown={(e) => onDown(e, uid)} name={uid}>
       {def.kind === "glb" ? (
@@ -82,15 +109,29 @@ function Part({ uid, onDown }) {
       ) : (
         <ProcMesh def={def} />
       )}
-      {(p.state.solder || []).map((q, i) => (
-        <mesh key={i} position={q} material={MAT.solder}><sphereGeometry args={[0.06, 10, 8]} /></mesh>
-      ))}
+      {(p.state.solder || []).map((q0, i) => {
+        const j = jointOf(q0);
+        // 合格：光亮小锥；虚焊：发灰、球状；连锡：拉长到旁边焊盘；烫坏：焦黑
+        return (
+          <mesh key={i} position={j.p} material={MAT[j.q === "good" ? "solder" : j.q] || MAT.solder} scale={j.q === "bridge" ? [2.2, 1, 1] : j.q === "cold" ? [1.15, 1.15, 1.15] : [1, 0.8, 1]}>
+            {j.q === "good" ? <coneGeometry args={[0.07, 0.1, 12]} /> : <sphereGeometry args={[0.065, 10, 8]} />}
+          </mesh>
+        );
+      })}
+      {kind === "led" && (
+        <mesh ref={glow} position={[0, H * 0.72, 0]} visible={false}>
+          <sphereGeometry args={[0.3, 16, 12]} />
+          <meshBasicMaterial transparent opacity={0.5} color="#ff3b2f" depthWrite={false} />
+        </mesh>
+      )}
     </group>
   );
 }
+const WIRE_COLORS = ["#d23a2f", "#1e1f22", "#e0b322", "#2f8f4e", "#2f6fd6", "#e07a2b", "#8a4fbf", "#f1efe9"];
 function Cables() {
   const group = useRef();
-  const mat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#1e1f22", roughness: 0.6 }), []);
+  const mats = useMemo(() => new Map(), []);
+  const matFor = (col) => { if (!mats.has(col)) mats.set(col, new THREE.MeshStandardMaterial({ color: col, roughness: 0.6 })); return mats.get(col); };
   useFrame(() => {
     const g = group.current;
     if (!g) return;
@@ -98,12 +139,24 @@ function Cables() {
     engine.cables.forEach((c, i) => {
       const pts = engine.cablePoints(c);
       if (pts.length < 2) return;
-      const geo = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), pts.length * 3, 0.18, 8, false);
-      if (!g.children[i]) g.add(new THREE.Mesh(geo, mat));
-      else { g.children[i].geometry.dispose(); g.children[i].geometry = geo; }
+      // 粗细 = 物理绳子的半径（不会出现“线看着穿过去了、其实是画粗了”）
+      const geo = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), pts.length * 3, engine.cableRadius(c), 8, false);
+      const n = +String(c.id).replace(/\D/g, "") || i;
+      const col = c.color || (c.kind === "servo-lead" ? "#7a4a2a" : /usb/.test(c.kind) ? "#2a2b2e" : WIRE_COLORS[n % WIRE_COLORS.length]);
+      if (!g.children[i]) g.add(new THREE.Mesh(geo, matFor(col)));
+      else { g.children[i].geometry.dispose(); g.children[i].geometry = geo; g.children[i].material = matFor(col); }
     });
   });
   return <group ref={group} />;
+}
+// 万用表表笔：红 / 黑小锥
+function Probes({ probes }) {
+  return ["red", "black"].map((k) => probes?.[k]?.wp ? (
+    <mesh key={k} position={[probes[k].wp.x, probes[k].wp.y + 0.6, probes[k].wp.z]} rotation={[Math.PI, 0, 0]}>
+      <coneGeometry args={[0.12, 1.2, 12]} />
+      <meshStandardMaterial color={k === "red" ? "#d23a2f" : "#1e1f22"} />
+    </mesh>
+  ) : null);
 }
 function DebugColliders({ on }) {
   const ref = useRef();
@@ -150,7 +203,7 @@ function Bench() {
   );
 }
 // 鼠标交互：拖拽 / 拧 / 焊
-function Interact({ toolRef, vis, flux, controls, onHover }) {
+function Interact({ toolRef, vis, flux, controls, onHover, onProbe }) {
   const { camera, gl, raycaster, pointer } = useThree();
   const st = useRef({ mode: null, btn: 0, shift: false });
   useEffect(() => {
@@ -165,6 +218,7 @@ function Interact({ toolRef, vis, flux, controls, onHover }) {
       st.current.mode = null;
       if (m === "drag") engine.endDrag();
       if (m === "op") { engine.releaseOps(); if (toolRef.current !== "hand") vis.current.kind = null; }
+      if (m === "press") { elec.press(st.current.pressUid, false); }
       if (controls.current) controls.current.enabled = true;
     };
     const wheel = (e) => { if (st.current.mode === "drag") { e.preventDefault(); engine.dragLift(-Math.sign(e.deltaY) * 0.3); } };
@@ -196,6 +250,15 @@ function Interact({ toolRef, vis, flux, controls, onHover }) {
     if (tool === "hand" && !right) {
       engine.beginDrag(uid, e.point.clone());
       st.current.mode = engine.drag ? "drag" : null;
+    } else if (tool === "hand" && elemKind(engine.parts.get(uid)?.def) === "btn") {
+      // 右键按住按键 = 按下（松开就弹起）
+      elec.press(uid, true);
+      st.current.pressUid = uid;
+      st.current.mode = "press";
+    } else if (tool === "meter") {
+      const t = terminalAt(engine, e.point.clone(), 0.3);
+      onProbe?.(right || e.nativeEvent.shiftKey ? "black" : "red", t ? { term: t.term, wp: t.f.wp.clone() } : null);
+      if (controls.current) controls.current.enabled = true;
     } else if (tool === "hand" || tool === "screwdriver") {
       engine.tool.kind = tool;
       const p = engine.parts.get(uid);
@@ -206,7 +269,8 @@ function Interact({ toolRef, vis, flux, controls, onHover }) {
     } else if (tool === "iron") {
       engine.tool.kind = "iron";
       vis.current = { kind: "iron", pos: e.point.clone().add(new THREE.Vector3(0, 0.05, 0)) };
-      engine.holdSolder(e.point.clone(), { flux: flux.current });
+      // Shift + 烙铁 = 拆焊（吸锡带/吸锡器）
+      engine.holdSolder(e.point.clone(), { flux: flux.current, desolder: e.nativeEvent.shiftKey });
       st.current.mode = "op";
     }
     onHover?.(uid);
@@ -217,7 +281,7 @@ function Loop({ onTick }) {
   useFrame((_, dt) => { if (!engine.extDrive) engine.update(Math.min(dt, 1 / 30)); onTick?.(); });
   return null;
 }
-export default function AsmScene({ uids, tool, debug, flux, vis, onTick, onSelect }) {
+export default function AsmScene({ uids, tool, debug, flux, vis, onTick, onSelect, probes, onProbe }) {
   const toolRef = useRef(tool);
   toolRef.current = tool;
   const fluxRef = useRef(flux);
@@ -233,7 +297,8 @@ export default function AsmScene({ uids, tool, debug, flux, vis, onTick, onSelec
       <Cables />
       <ToolMesh vis={vis} />
       <DebugColliders on={debug} />
-      <Interact toolRef={toolRef} vis={vis} flux={fluxRef} controls={controls} />
+      <Probes probes={probes} />
+      <Interact toolRef={toolRef} vis={vis} flux={fluxRef} controls={controls} onProbe={onProbe} />
       <Loop onTick={onTick} />
       <OrbitControls ref={controls} makeDefault target={[0, 0, 0]} maxPolarAngle={Math.PI / 2.1} minDistance={8} maxDistance={110} />
     </Canvas>

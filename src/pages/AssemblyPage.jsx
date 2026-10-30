@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import * as THREE from "three";
 import { engine } from "../assembly/engine.js";
 import { getEntry, toDef } from "../assembly/catalog.js";
 import { runDemo } from "../assembly/demo.js";
 import AsmScene from "../assembly/ui/AsmScene.jsx";
 import PartsBrowser from "../assembly/ui/PartsBrowser.jsx";
+import ElecPanel from "../assembly/ui/ElecPanel.jsx";
+import { elec } from "../assembly/elecStore.js";
+import { PRESETS, buildFromList, parseList } from "../assembly/builder.js";
 
 export const ASM_SIMPLIFICATIONS = [
   "碰撞形状是若干个方块（从 CAD 包围盒和几何体里提取），不是逐三角形网格；圆柱、六角螺母等按方块近似",
@@ -15,12 +18,15 @@ export const ASM_SIMPLIFICATIONS = [
   "插接（排针、面包板、杜邦、USB、JST）按特征点对齐吸附，不模拟插拔力和弹片",
   "导线是一串胶囊刚体组成的绳子，没有弯曲刚度",
   "质量多为估算（碰撞盒体积 × 材料密度），标“估算”的尺寸没有查到原始资料",
-  "焊接只判断“烙铁下面有穿过针脚的焊盘孔 + 按住时间”，有没有助焊剂只改变所需时间",
+  "焊接只判断“烙铁下面有穿过针脚的焊盘孔 + 按住时间”，有没有助焊剂只改变所需时间；焊点质量（合格 / 虚焊 / 连锡 / 烫坏）由按住时间、助焊剂和邻近焊盘决定，是规则判断，不是热仿真",
+  "通电：台面上真实的插接和焊点 → 网表 → 直流电阻网络求解（LED 用分段线性模型，舵机按 PWM 信号直接给角度），不模拟瞬态、电容、芯片内部",
+  "固件由 JS 迷你解释器运行（Arduino 风格子集），不是真实 RP2040 / ESP32 仿真；舵机转动只改画面，不推动刚体",
 ];
 const TOOLS = [
   { k: "hand", zh: "手", tip: "左键拖动零件；右键按住 = 用手拧铜柱 / 螺母（Shift 反拧）" },
   { k: "screwdriver", zh: "螺丝刀", tip: "按住螺丝拧紧，Shift + 按住 拧松" },
-  { k: "iron", zh: "烙铁", tip: "按住穿过针脚的焊盘孔焊接" },
+  { k: "iron", zh: "烙铁", tip: "按住穿过针脚的焊盘孔焊接；Shift + 按住 = 拆焊（吸掉焊锡）" },
+  { k: "meter", zh: "表笔", tip: "左键 = 红表笔，右键或 Shift+左键 = 黑表笔；读数在“通电”页" },
 ];
 
 export default function AssemblyPage() {
@@ -34,6 +40,11 @@ export default function AssemblyPage() {
   const [pen, setPen] = useState(null);
   const [demo, setDemo] = useState(null);
   const [sel, setSel] = useState(null);
+  const [tab, setTab] = useState("tools");
+  const [probes, setProbes] = useState({});
+  const [listText, setListText] = useState(PRESETS.electrics.text);
+  const [listErr, setListErr] = useState([]);
+  const [params] = useSearchParams();
   const vis = useRef({ kind: null, pos: new THREE.Vector3() });
   const stopRef = useRef(false);
   const tick = useRef(0);
@@ -48,7 +59,9 @@ export default function AssemblyPage() {
       });
       setUids([...engine.parts.keys()]);
       setReady(true);
-      window.__asm = { engine, overlapTest: () => engine.overlapTest(), snapshot: () => engine.snapshot() };
+      window.__asm = { engine, overlapTest: () => engine.overlapTest(), snapshot: () => engine.snapshot(), build: (t) => buildList(t) };
+      const sc = params.get("scene");
+      if (sc && PRESETS[sc]) { setTab("elec"); buildList(PRESETS[sc].text, PRESETS[sc].zh); }
     });
     return () => { off(); stopRef.current = true; };
   }, []);
@@ -68,8 +81,38 @@ export default function AssemblyPage() {
     stopRef.current = true;
     for (const c of [...engine.cables]) engine.removeCable(c.id);
     for (const u of [...engine.parts.keys()]) if (engine.parts.has(u)) engine.removePart(u);
+    elec.reset();
+    setProbes({});
     setPen(null);
   };
+  // 物理由脚本推进（每帧 2 步 = 60 fps 时实时），慢机器上只是变慢，结果不变
+  const driveRun = async (s) => {
+    let k = Math.round(s * 120);
+    while (k > 0 && !stopRef.current) {
+      const m = Math.min(window.__asmSpeed || 2, k);
+      for (let i = 0; i < m; i++) engine.update(1 / 120);
+      k -= m;
+      await new Promise((r) => requestAnimationFrame(r));
+    }
+  };
+  // 按文字清单装配：和自动演示同一套插接 / 焊接 / 碰撞规则
+  async function buildList(text, title = "按清单装配") {
+    const pe = parseList(text).errors;
+    setListErr(pe);
+    if (pe.length) return { fails: pe };
+    clear();
+    await new Promise((r) => setTimeout(r, 120));
+    stopRef.current = false;
+    engine.extDrive = true;
+    setDemo({ text: `${title}…`, i: 0 });
+    const fast = async (s) => { if (window.__asmSpeed) return driveRun(s); let k = Math.round(s * 120); while (k-- > 0) engine.update(1 / 120); await new Promise((r) => requestAnimationFrame(r)); };
+    const r = await buildFromList(engine, text, { run: fast, say: (t) => setDemo({ text: `${title}：${t}` }), stop: () => stopRef.current });
+    engine.extDrive = false;
+    setListErr(r.fails);
+    setDemo({ text: r.fails.length ? `${title}：完成，有 ${r.fails.length} 个问题（见右侧）` : `${title}：完成（${engine.parts.size} 个零件，${engine.cables.length} 根线）`, done: true });
+    window.__asmBuilt = { fails: r.fails, parts: engine.parts.size, cables: engine.cables.length };
+    return r;
+  }
   const play = async () => {
     clear();
     await new Promise((r) => setTimeout(r, 120));
@@ -78,15 +121,7 @@ export default function AssemblyPage() {
     setDemo({ text: "开始演示…", i: 0 });
     const ok = await runDemo(engine, {
       // 演示时由脚本推进物理（每帧 2 步 = 60 fps 时实时），慢机器上只是变慢，步骤结果不变
-      run: async (s) => {
-        let k = Math.round(s * 120);
-        while (k > 0 && !stopRef.current) {
-          const m = Math.min(window.__asmSpeed || 2, k);
-          for (let i = 0; i < m; i++) engine.update(1 / 120);
-          k -= m;
-          await new Promise((r) => requestAnimationFrame(r));
-        }
-      },
+      run: driveRun,
       say: (text, i) => setDemo({ text, i }),
       stop: () => stopRef.current,
       showTool: (kind, pos) => { vis.current = { kind, pos: pos || vis.current.pos }; },
@@ -109,7 +144,7 @@ export default function AssemblyPage() {
         <Link to="/parts" className="text-xs underline">打开完整零件库（看尺寸、孔位、许可）</Link>
       </aside>
       <div className="relative min-h-[60vh] flex-1 border border-line bg-paper-2">
-        {ready ? <AsmScene uids={uids} tool={tool} debug={debug} flux={flux} vis={vis} onTick={onTick} onSelect={setSel} /> : <p className="p-6 text-ink-soft">正在加载物理引擎…</p>}
+        {ready ? <AsmScene uids={uids} tool={tool} debug={debug} flux={flux} vis={vis} onTick={onTick} onSelect={setSel} probes={probes} onProbe={(k, t) => setProbes((p) => ({ ...p, [k]: t }))} /> : <p className="p-6 text-ink-soft">正在加载物理引擎…</p>}
         <div className="pointer-events-none absolute left-2 top-2 flex max-w-md flex-col gap-1" aria-live="polite" data-testid="toasts">
           {demo && <div className="bg-ink/85 px-2 py-1 text-sm text-paper-2" data-testid="demo-step">{demo.text}</div>}
           {toasts.map((t) => (
@@ -121,11 +156,33 @@ export default function AssemblyPage() {
         </div>
       </div>
       <aside className="flex min-h-0 flex-col gap-3 overflow-y-auto text-sm lg:w-80">
+        <div className="flex gap-1" role="tablist">
+          {[["tools", "工具与装配"], ["elec", "通电"]].map(([k, zh]) => (
+            <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={`min-h-9 flex-1 border ${tab === k ? "border-ink bg-ink text-paper-2" : "border-line bg-white"}`} data-testid={`tab-${k}`}>{zh}</button>
+          ))}
+        </div>
+        <fieldset>
+          <legend className="font-medium">练习电路（自动装配到桌面上）</legend>
+          <div className="mt-1 flex flex-col gap-1">
+            {Object.entries(PRESETS).map(([k, p]) => (
+              <button key={k} type="button" disabled={!ready || (demo && !demo.done)} onClick={() => { setTab("elec"); buildList(p.text, p.zh.split("：")[0]); }} className="min-h-9 border border-line bg-white px-2 text-left text-xs disabled:opacity-50" data-testid={`preset-${k}`}>{p.zh}</button>
+            ))}
+          </div>
+          <details className="mt-1 text-xs">
+            <summary className="cursor-pointer">导入清单（粘贴文字清单，照着装配）</summary>
+            <textarea value={listText} onChange={(e) => setListText(e.target.value)} rows={8} spellCheck={false} className="mt-1 w-full border border-line bg-white p-1 font-mono text-[11px] leading-4" data-testid="list-text" />
+            <button type="button" disabled={!ready || (demo && !demo.done)} onClick={() => buildList(listText)} className="min-h-8 border border-ink px-2 disabled:opacity-50" data-testid="list-build">照清单装配</button>
+            <p className="mt-1 text-ink-soft">每行一件：面包板 / 板子 / 零件 / 跳线 / 导线 / 舵机 / USB，“#”后是注释。<Link to="/assembly/guide" className="underline">看装配指南格式</Link></p>
+          </details>
+          {listErr.length > 0 && <ul className="mt-1 list-disc pl-4 text-xs text-red-700" data-testid="list-errors">{listErr.slice(0, 8).map((e) => <li key={e}>{e}</li>)}</ul>}
+        </fieldset>
+        <div className={tab === "elec" ? "" : "hidden"}><ElecPanel probes={probes} setProbes={setProbes} tool={tool} setTool={pickTool} /></div>
+        <div className={tab === "tools" ? "flex flex-col gap-3" : "hidden"}>
         <fieldset>
           <legend className="font-medium">工具</legend>
           <div className="mt-1 flex gap-1">
             {TOOLS.map((t) => (
-              <button key={t.k} type="button" onClick={() => pickTool(t.k)} aria-pressed={tool === t.k} className={`min-h-9 flex-1 border px-2 ${tool === t.k ? "border-ink bg-ink text-paper-2" : "border-line bg-white"}`} data-testid={`tool-${t.k}`}>{t.zh}</button>
+              <button key={t.k} type="button" onClick={() => pickTool(t.k)} title={t.tip} aria-pressed={tool === t.k} className={`min-h-9 flex-1 border px-2 ${tool === t.k ? "border-ink bg-ink text-paper-2" : "border-line bg-white"}`} data-testid={`tool-${t.k}`}>{t.zh}</button>
             ))}
           </div>
           <p className="mt-1 text-xs text-ink-soft">{TOOLS.find((t) => t.k === tool).tip}</p>
@@ -147,6 +204,7 @@ export default function AssemblyPage() {
           <ul className="mt-1 list-disc pl-4 text-ink-soft">{ASM_SIMPLIFICATIONS.map((s) => <li key={s}>{s}</li>)}</ul>
         </details>
         {sel && <p className="text-xs text-ink-soft">选中：{engine.parts.get(sel)?.def.name_zh || sel}</p>}
+        </div>
       </aside>
     </section>
   );

@@ -76,6 +76,8 @@ export function toDef(e, flip = false) {
       ];
       def.plasticTop = pb + 0.254;
     }
+    // 6 mm 轻触按键：脚距 6.5×4.5 mm，和 2.54 mm 网格对不齐，实物插面包板时脚会被稍微掰开；这里放宽对孔容差（估算）
+    if (/sw_push_6mm|sw_tactile/i.test(e.id)) def.legBend = 0.13;
     // 腿也要有碰撞盒：没对准孔时，零件立在针尖上（腿多时按排合并）
     def.colliders = [...def.colliders, ...legColliders(def.legs)];
   }

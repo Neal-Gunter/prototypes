@@ -11,6 +11,12 @@ self.onmessage = (msg) => {
     inputs[msg.data.kind || "d"][msg.data.pin] = msg.data.value;
     return;
   }
+  if (type === "inputs") {
+    // 一次发来整张输入表：{d:{pin:0|1|null}, a:{pin:0..1}}（装配台的电路求解每帧算一次）
+    inputs.d = msg.data.d || {};
+    inputs.a = msg.data.a || {};
+    return;
+  }
   if (type !== "run") return;
   let gen;
   const io = {

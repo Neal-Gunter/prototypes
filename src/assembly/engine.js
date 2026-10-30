@@ -47,6 +47,7 @@ class Engine {
     this.tool = { kind: "hand", body: null, pos: new THREE.Vector3(0, 30, 0) };
     this.version = 0;
     this.log = [];
+    this.history = []; // 装配步骤记录（导出装配指南用）
   }
   async init() {
     if (this.ready) return;
@@ -133,6 +134,15 @@ class Engine {
     }
     this.emit();
     return uid;
+  }
+  // 直接把一个单独的刚体摆到某个位姿（导入/预设用；随后仍走 trySnap 的同一套装配规则和穿模检查）
+  teleport(uid, p, q) {
+    const b = this.bodies.get(this.parts.get(uid).body);
+    b.rb.setTranslation({ x: p.x, y: p.y, z: p.z }, true);
+    b.rb.setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }, true);
+    b.rb.setLinvel({ x: 0, y: 0, z: 0 }, true);
+    b.rb.setAngvel({ x: 0, y: 0, z: 0 }, true);
+    this.world.propagateModifiedBodyPositionsToColliders();
   }
   removePart(uid) {
     const p = this.parts.get(uid);
@@ -260,6 +270,7 @@ class Engine {
   }
   link(a, b, kind, why) {
     if (a === b) return;
+    this.history.push({ t: "link", a, b, kind, why });
     const ex = this.edges.find((e) => ((e.a === a && e.b === b) || (e.a === b && e.b === a)));
     if (ex) {
       if (kind === "fasten") ex.kind = "fasten";
@@ -417,7 +428,7 @@ class Engine {
       const p = this.parts.get(u);
       const L = (pt) => V(pt).applyQuaternion(p.rel.q).add(p.rel.p);
       for (const a of p.def.anchors || []) f.push({ ...a, uid: u, lp: L(a.p) });
-      for (const l of p.def.legs || []) f.push({ t: "leg", uid: u, lp: L(l.p), top: l.top, i: l.i });
+      for (const l of p.def.legs || []) f.push({ t: "leg", uid: u, lp: L(l.p), top: l.top, i: l.i, bend: p.def.legBend });
       for (const h of p.def.bbHoles || []) f.push({ t: "bbhole", uid: u, lp: L(h.p), name: h.name, net: h.net });
     }
     return f;
@@ -499,7 +510,7 @@ class Engine {
   matchPattern(rule, dset, tset, bodyPos, yaw, bottom, curQ) {
     const q = yawQ(yaw);
     const dw = dset.map((f) => ({ f, xz: f.lp.clone().applyQuaternion(q) }));
-    const tol = rule.tol;
+    const tol = rule.name === "insert" && dset[0]?.bend ? Math.max(rule.tol, dset[0].bend) : rule.tol;
     const ref = dw[0];
     let best = null;
     // “够得着”按第 0 个特征现在的位置算（不是转过之后的位置），这样长排针转 90° 也能吸上
@@ -612,6 +623,14 @@ class Engine {
     this.ops.push(op);
     this.emit();
   }
+  // 搭建器/测试用：把一个计时操作（焊接等）一次性推进 t 秒，不跑物理
+  finishOpNow(op, t) {
+    if (!op || typeof op !== "object") return false;
+    for (let k = 0; k < 400 && !op.done; k++) op.step(this, t / 40);
+    if (!op.done) op.onRelease?.(this);
+    this.ops = this.ops.filter((o) => o !== op);
+    return true;
+  }
   stepOps(dt) {
     for (const op of [...this.ops]) {
       if (!this.parts.has(op.uid)) {
@@ -628,8 +647,9 @@ class Engine {
     const R = this.R;
     const spec = CABLES[kind];
     const id = `cable${uidSeq++}`;
-    const N = 14;
-    const r = 0.07;
+    const N = 20;
+    const r = spec.r || 0.08; // 导线外皮半径（cm）；画面上的粗细用同一个值
+
     const A = this.cableEndWorld(endUids[0]);
     const B = endUids[1] ? this.cableEndWorld(endUids[1]) : fixedEnd.clone();
     const segLen = spec.len / N;
@@ -722,6 +742,7 @@ class Engine {
     pts.push(c.endUids[1] ? this.cableEndWorld(c.endUids[1]) : c.fixedEnd.clone());
     return pts;
   }
+  cableRadius(c) { return CABLES[c.kind]?.r || 0.08; }
 
   // ---------------- 工具（运动学碰撞体） ----------------
   setTool(kind) {
@@ -1126,10 +1147,10 @@ export const RULES = [
     above: 1.2,
     d: (f) => f.t === "dupont-f",
     t: (f) => f.t === "pin-up",
-    accept: (n) => n >= 1,
+    accept: (n, total) => n === total,
     y: (d, t) => t.base + (t.wp.y - t.p[1]) - d.lp.y,
-    check: (e, c) => (e.pinTaken(c.pairs[0][1]) ? "那根针上已经套了母头" : null),
-    msg: () => "杜邦母头套上排针了",
+    check: (e, c) => (c.pairs.some(([, t]) => e.pinTaken(t)) ? "那根针上已经套了母头" : null),
+    msg: (e, c) => (c.count > 1 ? `${c.count} pin 杜邦母头套上排针了` : "杜邦母头套上排针了"),
   },
   {
     name: "dupont-m",
@@ -1233,8 +1254,11 @@ Object.assign(Engine.prototype, {
   pinTaken(t) {
     for (const e of this.edges) {
       if (e.b !== t.uid || e.why !== "dupont-f") continue;
-      const w = this.toWorld(e.a, [0, 0, 0]);
-      if (Math.hypot(w.x - t.wp.x, w.z - t.wp.z) < 0.08) return true;
+      for (const a of this.parts.get(e.a)?.def.anchors || []) {
+        if (a.t !== "dupont-f") continue;
+        const w = this.toWorld(e.a, a.p);
+        if (Math.hypot(w.x - t.wp.x, w.z - t.wp.z) < 0.08) return true;
+      }
     }
     return false;
   },
@@ -1436,7 +1460,19 @@ Object.assign(Engine.prototype, {
     }
     return best;
   },
-  holdSolder(wp, { flux = true } = {}) {
+  // 焊点质量（简化模型，时间阈值为估算）：need = 润湿所需时间（有助焊剂 0.6 s，没有 1.4 s）
+  //   松开时 t < 0.4·need：没焊上；< need：虚焊；≤ G：合格；再久：附近有焊盘就连锡，否则仍合格；≥ 3.5·need：焊盘烫坏（自动停止）
+  //   有助焊剂时 G = 2.5·need，没有时 G = 1.6·need（锡更容易拉尖、堆锡）
+  solderGrade(t, flux, hasNeighbor) {
+    const need = flux ? 0.6 : 1.4;
+    const G = (flux ? 2.5 : 1.6) * need;
+    if (t < 0.4 * need) return null;
+    if (t < need) return "cold";
+    if (t <= G) return "good";
+    if (t < 3.5 * need) return hasNeighbor ? "bridge" : "good";
+    return "burnt";
+  },
+  holdSolder(wp, { flux = true, hold = null, desolder = false } = {}) {
     const j = this.findSolderJoint(wp);
     if (!j) {
       this.toast("烙铁下面没有穿着针脚的焊盘孔", "warn");
@@ -1444,29 +1480,94 @@ Object.assign(Engine.prototype, {
     }
     const p = this.parts.get(j.board);
     p.state.solder ||= [];
+    p.state.lifted ||= [];
     const lp = this.toLocal(j.board, j.f.wp);
-    if (p.state.solder.some((q) => Math.hypot(q[0] - lp.x, q[2] - lp.z) < 0.05)) {
-      this.toast("这个焊点已经焊好了", "info");
+    const at = (q) => (Array.isArray(q) ? q : q.p);
+    const idx = p.state.solder.findIndex((q) => Math.hypot(at(q)[0] - lp.x, at(q)[2] - lp.z) < 0.05);
+    const old = idx >= 0 ? (Array.isArray(p.state.solder[idx]) ? { p: p.state.solder[idx], q: "good" } : p.state.solder[idx]) : null;
+    if (p.state.lifted.includes(j.f.i) && !desolder) {
+      this.toast("这个焊盘已经烫掉了：真实中只能刮开铜箔或用飞线补救", "error");
       return false;
     }
-    const need = flux ? 0.6 : 1.4; // 有助焊剂时锡更快润湿（简化）
+    if (desolder && !old) {
+      this.toast("这里没有焊锡可吸", "info");
+      return false;
+    }
+    if (!desolder && old?.q === "good") {
+      this.toast("这个焊点已经焊好了（Shift + 烙铁可以拆焊）", "info");
+      return false;
+    }
+    if (!desolder && old?.q === "burnt") {
+      this.toast("焊盘已经烫坏，先 Shift + 烙铁拆掉", "warn");
+      return false;
+    }
+    // 最近的相邻焊盘（连锡对象）
+    let nb = null;
+    for (const a of p.def.anchors || []) {
+      if (a.t !== "pinhole" || a.i === j.f.i) continue;
+      const d = Math.hypot(a.p[0] - j.f.p[0], a.p[2] - j.f.p[2]);
+      if (d < 0.27 && (!nb || d < nb.d)) nb = { d, i: a.i };
+    }
+    const need = flux ? 0.6 : 1.4;
+    const finish = (e) => {
+      if (op.finished) return;
+      op.finished = true;
+      op.done = true;
+      if (desolder) {
+        if (op.t < 0.8) { e.toast("吸锡时间太短，锡还没化开", "warn"); return; }
+        p.state.solder.splice(p.state.solder.indexOf(op.entry), 1);
+        if (old.q === "burnt" && !p.state.lifted.includes(j.f.i)) p.state.lifted.push(j.f.i);
+        // 这两个零件之间没有焊点了：恢复成“只是插着”
+        if (!p.state.solder.some((q) => !Array.isArray(q) && q.other === j.other)) {
+          const ed = e.edges.find((x) => (x.a === j.board && x.b === j.other) || (x.b === j.board && x.a === j.other));
+          if (ed && ed.why === "solder") { ed.kind = "seat"; ed.why = "onpins"; }
+        }
+        e.toast(old.q === "burnt" ? "拆下烫坏的焊点：这个焊盘已经不能再焊（真实中需要飞线）" : "拆焊完成（吸锡）", old.q === "burnt" ? "warn" : "ok");
+        e.history.push({ t: "desolder", board: j.board, i: j.f.i });
+        e.emit();
+        return;
+      }
+      let q = e.solderGrade(op.t, flux, !!nb);
+      if (old) {
+        // 补焊：有助焊剂可以把虚焊、连锡修好；没有助焊剂连锡拉不开
+        if (!q) { e.toast("补焊时间太短", "warn"); return; }
+        if (q === "burnt") q = "burnt";
+        else if (old.q === "bridge" && !flux) q = "bridge";
+        else if (q === "bridge" && old.q === "cold") q = "bridge";
+        else q = q === "cold" ? (old.q === "bridge" && flux ? "good" : "cold") : q;
+        Object.assign(old, { q, bridge: q === "bridge" ? nb?.i : undefined });
+        if (idx >= 0 && Array.isArray(p.state.solder[idx])) p.state.solder[idx] = old;
+        e.toast(q === "good" ? "补焊成功：焊点变成光亮的小锥形" : `补焊后仍是「${{ cold: "虚焊", bridge: "连锡", burnt: "焊盘烫坏" }[q]}」`, q === "good" ? "ok" : "warn");
+      } else {
+        if (!q) { e.toast("时间太短，锡没熔到焊盘上", "warn"); return; }
+        p.state.solder.push({ p: [lp.x, lp.y + 0.02, lp.z], q, i: j.f.i, other: j.other, bridge: q === "bridge" ? nb?.i : undefined });
+        e.link(j.board, j.other, "fasten", "solder");
+        const n = p.state.solder.length;
+        const msg = {
+          good: `焊好 ${n} 个点${flux ? "" : "（没涂助焊剂，焊得慢）"}`,
+          cold: `虚焊：加热不够（${op.t.toFixed(1)} s < ${need} s），焊点发灰、不导通——涂助焊剂再补焊`,
+          bridge: "连锡：加热太久，锡流到旁边的焊盘上把两针短路了——涂助焊剂再补焊",
+          burnt: "加热太久，焊盘烫坏了（松开烙铁！）",
+        }[q];
+        e.toast(msg, q === "good" ? "ok" : q === "burnt" ? "error" : "warn");
+      }
+      e.history.push({ t: "solder", board: j.board, i: j.f.i, q: old ? old.q : q });
+      e.emit();
+    };
     const op = {
       uid: j.board,
       uids: [j.board],
       t: 0,
-      kind: "solder",
+      kind: desolder ? "desolder" : "solder",
+      need,
+      entry: old && (idx >= 0 ? p.state.solder[idx] : null),
       step: (e, dt) => {
         op.t += dt;
-        op.progress = Math.min(1, op.t / need);
-        if (op.t >= need) {
-          op.done = true;
-          p.state.solder.push([lp.x, lp.y + 0.02, lp.z]);
-          e.link(j.board, j.other, "fasten", "solder");
-          const n = p.state.solder.length;
-          e.toast(`焊好 ${n} 个点${flux ? "" : "（没涂助焊剂，焊得慢、可能虚焊）"}`, "ok");
-          e.emit();
-        }
+        op.progress = Math.min(1, op.t / (desolder ? 0.8 : need));
+        op.grade = desolder ? null : e.solderGrade(op.t, flux, !!nb);
+        if ((hold != null && op.t >= hold - 1e-6) || (!desolder && op.t >= 3.5 * need) || (desolder && op.t >= 0.8 && hold == null)) finish(e);
       },
+      onRelease: (e) => finish(e),
     };
     this.startOp(op);
     return op;
@@ -1476,6 +1577,7 @@ Object.assign(Engine.prototype, {
     return wp.clone().sub(w.p).applyQuaternion(w.q.clone().invert());
   },
   releaseOps() {
+    for (const o of this.ops) if (!o.keep) o.onRelease?.(this);
     this.ops = this.ops.filter((o) => o.keep);
     this.emit();
   },
