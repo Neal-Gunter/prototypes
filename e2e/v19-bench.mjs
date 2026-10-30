@@ -81,7 +81,8 @@ const o1 = await after(() => click("bscope-CAP2-0"));
 ok(o1.ghost && o1.cap.meas[1].min < o0.cap.meas[1].min, "去掉两个电容：5V 跌得更深（灰线 = 去之前）", `${o0.cap.meas[1].min.toFixed(3)} → ${o1.cap.meas[1].min.toFixed(3)} V`);
 await shot("octo-nocap-overlay", "bench-scope");
 const o2 = await after(() => click("bscope-age-aged"));
-ok(o2.cap.dev.QTPY.resets > 0, "再换老化电池：主控欠压复位", `复位 ${o2.cap.dev.QTPY.resets} 次，电池最低 ${o2.cap.meas[0].min.toFixed(3)} V`);
+const o2stop = await L(() => window.__benchScope.cap.allEvents.filter((e) => e.kind === "lowStop").length); // v20：低压停先于欠压复位
+ok(o2.cap.dev.QTPY.resets > 0 || o2stop > 0, "再换老化电池：主控低压停或欠压复位", `复位 ${o2.cap.dev.QTPY.resets} 次，低压停 ${o2stop} 次，电池最低 ${o2.cap.meas[0].min.toFixed(3)} V`);
 await shot("octo-aged-nocap", "bench-scope");
 // 和 v18 参考板对照（同为不加电容 + 老化电池）
 res.octo = { run: { min5: o0.cap.meas[1].min, pp: o0.cap.meas[1].pp }, nocap: { min5: o1.cap.meas[1].min, pp: o1.cap.meas[1].pp }, agedNocap: { resets: o2.cap.dev.QTPY.resets, vbatMin: o2.cap.meas[0].min } };

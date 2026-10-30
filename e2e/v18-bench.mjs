@@ -124,8 +124,9 @@ const a0 = await bcap(); await shot("bench-servo-dip-nocap", "bench-scope");
 await click("bscope-cap-470"); const a1 = await bcap(); await shot("bench-servo-dip-470u", "bench-scope");
 ok(a1.meas[1].pp < a0.meas[1].pp * 0.6, "并 470 µF：舵机起步时 5VA 跌落变小", `${(a0.meas[1].pp * 1000).toFixed(0)} → ${(a1.meas[1].pp * 1000).toFixed(0)} mV 峰峰`);
 await click("bscope-batt-aged"); const a2 = await bcap(); await shot("bench-aged-battery", "bench-scope");
-ok(a2.dev.U1.resets > 0, "老化电池：主控（接在电池上）欠压复位，电容救不了", `复位 ${a2.dev.U1.resets} 次，VBAT 最低 ${a2.meas[0].min.toFixed(2)} V`);
-res.bench = { nocapPP: a0.meas[1].pp, cap470PP: a1.meas[1].pp, agedResets: a2.dev.U1.resets };
+const a2stop = a2.allEvents.filter((e) => e.kind === "lowStop").length; // v20：平均值升压模型下电池跌到 3.44 V 左右，先触发固件低压停（3.55 V），不再到 3.4 V 欠压复位
+ok(a2.dev.U1.resets > 0 || a2stop > 0, "老化电池：电池被拉低，主控低压停或欠压复位，电容救不了", `复位 ${a2.dev.U1.resets} 次，低压停 ${a2stop} 次，VBAT 最低 ${a2.meas[0].min.toFixed(2)} V`);
+res.bench = { nocapPP: a0.meas[1].pp, cap470PP: a1.meas[1].pp, agedResets: a2.dev.U1.resets, agedStops: a2stop };
 
 // ⑥ 指南 + 素材页
 await p.goto(BASE + "/assembly/guide"); await p.waitForSelector("[data-testid=guide-scope]", { timeout: 60000 });

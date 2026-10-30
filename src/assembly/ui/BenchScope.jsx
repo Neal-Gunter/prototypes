@@ -47,7 +47,7 @@ function RefScope() {
     <div data-testid="bscope-ref">
       <p className="mb-1 border-l-4 border-amber-500 bg-amber-50 px-2 py-1 text-xs">备用：v18 参考板（维修模式里的“八爪鱼 v10 紧凑版”电源树），<b>不是</b>你台面上此刻连的电路。早期原型，简化仿真，数值均为估算。</p>
       <ScopePanel s={s} set={setS} nodes={NODES} onCapture={run} testid="bscope" extra={extra} />
-      <p className="mt-1 text-xs text-ink-soft">可以试：① 新电池、不加电容，抓“舵机起步那一下”；② 并 470 µF，跌落明显变小；③ 换老化电池：主控（接在电池上）欠压复位，电容救不了；④ 并 1000 µF 抓“开机那一下”：给大电容充电的冲击电流会把电池拉低。</p>
+      <p className="mt-1 text-xs text-ink-soft">可以试：① 新电池、不加电容，抓“舵机起步那一下”；② 并 470 µF，跌落明显变小；③ 换老化电池：舵机起步时电池被拉到 3.4–3.5 V，固件低压保护（3.55 V）先停舵机，再低到 3.4 V 主控会欠压复位，加电容救不了（主控挂在电池上）；④ 并 1000 µF 抓“开机那一下”：给大电容充电的冲击电流会把电池拉低。</p>
     </div>
   );
 }
