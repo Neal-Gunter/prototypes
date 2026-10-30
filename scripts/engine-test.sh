@@ -6,6 +6,7 @@ npx esbuild src/assembly/engine.js --bundle --format=esm --platform=node --outfi
 npx esbuild src/assembly/catalog.js --bundle --format=esm --platform=node --outfile=.tmp/cat-bundle.mjs --log-level=warning
 printf 'export * from "../src/assembly/netlist.js";\nexport * from "../src/assembly/builder.js";\nexport * from "../src/assembly/electrics.js";\nexport * from "../src/assembly/guide.js";\n' > .tmp/elec-entry.js
 npx esbuild .tmp/elec-entry.js --bundle --format=esm --platform=node --outfile=.tmp/elec-bundle.mjs --log-level=warning --external:three
+npx esbuild src/assembly/breakout.js --bundle --format=esm --platform=node --outfile=.tmp/bo-bundle.mjs --log-level=warning
 npx esbuild src/assembly/procedural.js --bundle --format=esm --platform=node --outfile=.tmp/proc-bundle.mjs --log-level=warning
 [ "$1" = "elec-bundle-only" ] && exit 0
 [ "$1" = "elec" ] || node e2e/engine-node.mjs
@@ -46,3 +47,5 @@ node scripts/boost-avg-test.mjs >/dev/null || exit 1
 # v21：凸分解碰撞体（网格全覆盖 / 盒子互不重叠 / 外扩 ≤ 容差）+ 引擎里不穿模
 OUT=${OUT:-/tmp/v21coll} node scripts/collider-test.mjs >/dev/null || exit 1
 node e2e/collider-engine.mjs >/dev/null || exit 1
+# v23：贴片转接板（封装来自 KiCad，贴片 → 焊 → 排针 → 面包板导通 / 虚焊 / 连锡 / 方向）
+node scripts/breakout-test.mjs > /tmp/breakout-test.log && tail -1 /tmp/breakout-test.log || { cat /tmp/breakout-test.log | grep -v ^PASS; exit 1; }

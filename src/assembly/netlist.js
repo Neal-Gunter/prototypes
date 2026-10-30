@@ -346,6 +346,7 @@ export function termLabel(engine, term) {
   const kind = elemKind(P.def);
   const pp = P.def.physPins?.[k]; // v22：引脚物理位置表里的名字
   if (k.startsWith("s")) return pp ? `${ref} ${pp.name}（贴片焊盘 ${pp.num}）` : `${ref} 焊盘 ${+k.slice(1) + 1}`;
+  if (k.startsWith("t")) return pp ? `${ref} 转接板${pp.name}` : `${ref} 转接板焊盘 ${+k.slice(1) + 1}`;
   if (k.startsWith("p")) {
     const pin = boardPins(P.def)[+k.slice(1)];
     if (pin) return `${ref} ${pin.label}${pin.gpio != null && !/^GP/.test(pin.label) ? `（GPIO${pin.gpio}）` : ""}`;

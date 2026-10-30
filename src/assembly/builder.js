@@ -146,7 +146,10 @@ export function makeBuilder(engine, { run = async () => {}, log = () => {} } = {
     const boId = `p-bo-${cd.smdPkg}`;
     const ia = +a[0] - 1, ib = +b[0] - 1;
     const bo = await place(boId, [[(f) => f.t === "leg" && f.i === ia, holeOf(S.bb, a[1])], [(f) => f.t === "leg" && f.i === ib, holeOf(S.bb, b[1])]], { ref: `${ref}-BO` });
-    if (!bo.ok) throw new Error(`${ref}：转接板没插进面包板（${bo.why || "对不上孔"}）`);
+    if (!bo.ok || bo.err > 0.05) { engine.removePart(bo.uid); throw new Error(`${ref}：转接板没插进面包板（${bo.err > 0.05 ? `${a[0]} 脚和 ${b[0]} 脚的孔距和转接板差 ${(bo.err * 10).toFixed(1)} mm` : bo.why || "对不上孔"}）`); }
+    { const lg = feats(bo.uid, "leg"), ha = holeOf(S.bb, a[1]), hb = holeOf(S.bb, b[1]); const la = lg.find((f) => f.i === ia), lb = lg.find((f) => f.i === ib);
+      const e = Math.max(Math.hypot(la.wp.x - ha.x, la.wp.z - ha.z), Math.hypot(lb.wp.x - hb.x, lb.wp.z - hb.z));
+      if (e > 0.05) { engine.removePart(bo.uid); throw new Error(`${ref}：转接板吸到了别的孔上（偏 ${(e * 10).toFixed(1)} mm）`); } }
     const bw = engine.worldPose(bo.uid).p;
     const chip = engine.addPart(cd, { p: V(bw.x + 4, 0.3, bw.z), q: yawQ(0) }, { allowOverlap: true });
     await run(0.1);

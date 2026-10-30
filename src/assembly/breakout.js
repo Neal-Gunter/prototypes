@@ -2,13 +2,14 @@
 //   焊盘图读自 KiCad 官方封装（breakouts.gen.js，scripts/build-breakouts.mjs 生成），所以 kc- 贴片零件的焊盘和转接板焊盘逐点对齐；
 //   转接板外形 / 排针布置是自己画的（CC0）：DIP 式两排，行距 7.62 mm（0.3"，跨面包板中槽）或 15.24 mm（0.6"，大封装），
 //   排针为“上下都能插”的长针（下面插面包板，上面套杜邦母头）。转接板上的走线没画：网表里按“焊盘 k ↔ 排针 k”直连。
-import { SMD_PKGS } from "./breakouts.gen.js";
+import { SMD_PKGS, KICAD_SHA } from "./breakouts.gen.js";
+export { SMD_PKGS, KICAD_SHA };
 const c = (v) => v / 10; // mm → cm
 export const SMD_BY_KEY = Object.fromEntries(SMD_PKGS.map((g) => [g.key, g]));
 export const SMD_BY_CAD = Object.fromEntries(SMD_PKGS.flatMap((g) => g.cad.map((id) => [id, g])));
 const P = 2.54; // mm
 const LEG = 6.0, SPACER = 2.5, PCB = 1.6, UP = 6.0; // mm：针尖到塑料座底 / 塑料座 / 板厚 / 板上长针（估算，常见长针排针）
-// 排针位置：DIP 编号（左列 1..n 自上而下，右列 n+1..N 自下而上）
+// 排针位置：DIP 编号（左列 1..n 自上而下，右列 n+1..N 自下而上；N 脚和 1 脚同一排）
 export function headerLayout(g) {
   const n = Math.ceil(g.N / 2), xs = g.pads.map((p) => Math.abs(p[1]) + p[3] / 2), zs = g.pads.map((p) => Math.abs(p[2]) + p[4] / 2);
   const ext = Math.max(...xs), extZ = Math.max(...zs);
@@ -17,7 +18,7 @@ export function headerLayout(g) {
   const pins = [];
   for (let k = 0; k < g.N; k++) {
     if (k < n) pins.push([-S / 2, z0 + k * P]);
-    else pins.push([S / 2, z0 + (n - 1 - (k - n)) * P]);
+    else pins.push([S / 2, z0 + (g.N - 1 - k) * P]); // 右列自下而上，最后一脚总在 1 脚对面（奇数脚时右下角空一个位）
   }
   const W = S + P, D = Math.max(n * P, 2 * extZ + 2.5) + 1.0;
   return { n, S, W, D, pins };
