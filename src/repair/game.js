@@ -143,7 +143,7 @@ export class Game {
 
   // 统一入口：返回 { ok, text, ... }
   act(a) {
-    if (this.done && a.a !== "inspect" && a.a !== "probe") return { ok: false, text: "这一关已经交付了" };
+    if (this.done && a.a !== "inspect" && a.a !== "probe" && a.a !== "scope") return { ok: false, text: "这一关已经交付了" };
     const A = ACTIONS[a.a];
     if (!A) return { ok: false, text: "不认识的动作" };
     if (A.tool && a.a !== "probe") { if (this.autoTool) this.tool = A.tool; if (this.tool !== A.tool) return { ok: false, text: `要先拿起「${TOOLS[A.tool].zh}」` }; }

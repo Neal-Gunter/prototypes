@@ -71,6 +71,7 @@ export default function ScopePanel({ s, set, nodes, onCapture, running, testid =
             {!cap && <text x={GW / 2} y={GH / 2} fontSize={13} fill="#7a9" textAnchor="middle">选通道和节点，按“抓一次”</text>}
             {cap?.waiting && <text x={GW / 2} y={GH / 2} fontSize={13} fill="#fc6" textAnchor="middle">等待触发……（没有满足条件的边沿）</text>}
           </svg>
+          {s.err && <div className="mt-1 text-xs text-[#b03a2e]" data-testid={`${testid}-err`}>{s.err}</div>}
           <div className="mt-1 flex flex-wrap gap-x-3 font-mono text-xs" data-testid={`${testid}-readout`}>
             <span>{fT(s.tdiv)}/div</span>
             {s.chans.map((c, i) => c.on && <span key={i} style={{ color: CH_COLOR[i] === "#e8d33a" ? "#a08a00" : CH_COLOR[i] }}>CH{i + 1} {c.node} {fV(c.vdiv)}/div{c.ac ? " AC" : ""}{cap?.meas?.[i] ? ` 峰峰 ${fV(cap.meas[i].pp)} 均值 ${fV(cap.meas[i].mean)} 最低 ${fV(cap.meas[i].min)}` : ""}</span>)}

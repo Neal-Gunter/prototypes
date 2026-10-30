@@ -11,7 +11,7 @@ function navClass({ isActive }) {
 }
 
 // 这些页面是能交互的早期原型（不是纯概念图）
-const PROTO_PATHS = ["/workbench", "/assembly", "/parts", "/credits"];
+const PROTO_PATHS = ["/workbench", "/assembly", "/parts", "/credits", "/repair"];
 
 export default function Layout() {
   const { pathname } = useLocation();

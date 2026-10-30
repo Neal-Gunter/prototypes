@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Game, TOOLS, BIN, ACTIONS, HINT_COST, MODE_ZH, label } from "../repair/game.js";
 import { meter } from "../repair/board.js";
 import { SCENARIOS, STAR } from "../repair/scenarios.js";
-import { SCOPE_SCENARIOS } from "../repair/scopeScenarios.js";
+import { SCOPE_SCENARIOS, metricOf } from "../repair/scopeScenarios.js";
 import ScopePanel, { defaultScope, captureOpts, CH_COLOR } from "../repair/ui/ScopePanel.jsx";
 import { LS_KEY } from "../repair/editor.js";
 import BoardView from "../repair/ui/BoardView.jsx";
@@ -68,8 +68,8 @@ export default function RepairPage() {
   const doCapture = useCallback((over) => {
     const s0 = { ...scopeRef.current, ...(over || {}) };
     setScope({ ...s0, busy: true });
-    setTimeout(() => { const r = act({ a: "scope", ...captureOpts(s0) }); setScope((x) => ({ ...x, ...(over || {}), busy: false, cap: r.ok ? r.cap : x.cap })); }, 20);
-  }, [act]);
+    setTimeout(() => { game.tool = "scope"; const r = act({ a: "scope", ...captureOpts(s0) }); setScope((x) => ({ ...x, ...(over || {}), busy: false, cap: r?.ok ? r.cap : x.cap, err: r?.ok ? null : (r?.text || "抓不到波形"), n: (x.n || 0) + 1 })); }, 20);
+  }, [act, game]);
   const probeTarget = (t) => (t.type === "pin" ? { ref: t.ref, pin: t.pin } : t.type === "tp" ? { net: t.net, tp: t.tp } : t.type === "pad" ? { net: t.net } : null);
   const pick = useCallback((t) => {
     setSel(t);
@@ -84,7 +84,7 @@ export default function RepairPage() {
     if (t.type === "cover") { act({ a: "cover", id: t.id }); return; }
   }, [game, act, nextProbe]);
 
-  useEffect(() => { window.__repair = { get game() { return game; }, get scope() { return scopeRef.current; }, setScope: (p) => setScope((x) => ({ ...x, ...p })), capture: doCapture, act, pick, setScenario, setTool: (k) => { game.tool = k; rerender(); }, setSide }; }, [game, act, pick, setScenario, doCapture]);
+  useEffect(() => { window.__repair = { get game() { return game; }, get scope() { return scopeRef.current; }, setScope: (p) => setScope((x) => ({ ...x, ...p })), capture: doCapture, metricOf, play: (x) => { const t = ACTIONS[x.a]?.tool; if (t) game.tool = t; return act(x); }, act, pick, setScenario, setTool: (k) => { game.tool = k; rerender(); }, setSide }; }, [game, act, pick, setScenario, doCapture]);
   useEffect(() => {
     const k = (e) => { if (e.target.closest?.("input,textarea,select")) return; const t = TOOL_ORDER.find((x) => TOOLS[x].key === e.key); if (t) { game.tool = t; rerender(); } };
     window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k);

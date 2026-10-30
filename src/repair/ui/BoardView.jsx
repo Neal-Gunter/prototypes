@@ -86,8 +86,10 @@ export default function BoardView({ board, obs, side, rot, zoom, setZoom, pan, s
       {board.wires.map((w) => { const a = netXY(w.a), b = netXY(w.b, a); const mid = [(mx(a[0]) + mx(b[0])) / 2, (a[1] + b[1]) / 2 - 4]; return (
         <g key={w.id} onClick={click({ type: "wire", id: w.id })} style={{ cursor: "pointer" }} data-testid={`wire-${w.id}`}>
           <path d={`M${mx(a[0])},${a[1]} Q${mid[0]},${mid[1]} ${mx(b[0])},${b[1]}`} stroke={w.color || (/BAT-|-$/.test(w.a) ? "#222" : w.id.startsWith("JW") ? "#e0e050" : "#d42")} strokeWidth={w.cable ? (w.state.awg >= 28 ? 0.7 : 1.4) : w.state.awg >= 28 ? 0.45 : 1.1} fill="none" strokeDasharray={w.state.cut ? "2 1.5" : undefined} />
-          <path d={`M${mx(a[0])},${a[1]} Q${mid[0]},${mid[1]} ${mx(b[0])},${b[1]}`} stroke={isSel({ type: "wire", id: w.id }) ? "#f6c945" : "transparent"} strokeWidth={3} fill="none" strokeOpacity={0.5} />
+          <path d={`M${mx(a[0])},${a[1]} Q${mid[0]},${mid[1]} ${mx(b[0])},${b[1]}`} stroke={isSel({ type: "wire", id: w.id }) ? "#f6c945" : "transparent"} strokeWidth={w.cable ? 1.8 : 3} fill="none" strokeOpacity={0.5} />
         </g>); })}
+      {/* 空焊盘位置画在线的上面，免得被线缆挡住点不到 */}
+      {side === "front" && board.parts.filter((p) => p.state.present === false && !p.offBoard).map((p) => <rect key={"hit" + p.ref} x={p.x} y={p.y} width={p.w} height={p.h} fill="transparent" onClick={click({ type: "part", ref: p.ref })} style={{ cursor: "pointer" }} data-testid={`empty-${p.ref}`} />)}
       {/* 锡桥 / 飞线短路 */}
       {board.shorts.map((s) => { const a = netXY(s.a), b = netXY(s.b, a); const vis = s.kind === "wire" || side === "back" || zoom >= 2; return vis && (
         <g key={s.id} onClick={click({ type: "short", id: s.id })} style={{ cursor: "pointer" }} data-testid={`short-${s.id}`}>

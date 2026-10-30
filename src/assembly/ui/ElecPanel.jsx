@@ -6,6 +6,7 @@ import { meter, termLabel } from "../netlist.js";
 import { makeGuide } from "../guide.js";
 import { Link } from "react-router-dom";
 import { benchToDesc, BENCH_KEY } from "../../repair/benchImport.js";
+import BenchScope from "./BenchScope.jsx";
 
 const LV = { error: "border-red-700 bg-red-50", warn: "border-amber-500 bg-amber-50", info: "border-line bg-white", ok: "border-emerald-700 bg-emerald-50" };
 
@@ -140,6 +141,11 @@ export default function ElecPanel({ probes, setProbes, tool, setTool }) {
           {L && !L.checks.length && <li className="text-xs text-ink-soft">没有发现问题（只检查了模拟里能判断的那些项目）</li>}
         </ul>
       </section>
+
+      <details className="border border-line bg-white p-2" data-testid="bench-scope-panel">
+        <summary className="cursor-pointer font-medium">示波器（时域模式，v18）：开机波形、舵机起步跌落、加不加电容</summary>
+        <div className="mt-1"><BenchScope /></div>
+      </details>
     </div>
   );
 }
