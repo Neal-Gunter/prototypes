@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { LinkSession, TIMING } from "./session.js";
 import { MockTransport, WebSerialTransport, BleTransport, linkSupport, MOCK_PRESETS } from "./transports.js";
 import { RealClock } from "./clock.js";
+import { Link } from "react-router-dom";
 import { loadCalib, saveCalib, sanitizeCalib, toTrimHeader, defaultCalib, WIZARD } from "./calib.js";
 import { MODES, PROTO, NAK } from "./protocol.js";
 import { SAFETY, gaitPeakRate } from "./safety.js";
@@ -82,7 +83,7 @@ export default function LinkPanel({ tid = "link" }) {
   return (
     <fieldset className="flex flex-col gap-1 border border-red-300 p-2" data-testid={tid}>
       <legend className="font-medium">实物连接（v16，我的补充）：浏览器 ⇄ ESP32</legend>
-      <p className="rounded bg-amber-50 px-1 text-amber-800">早期原型，简化仿真。这套协议和固件只在编译器和模拟设备上测过，<b>还没有在真机上测过</b>。</p>
+      <p className="rounded bg-amber-50 px-1 text-amber-800">早期原型，简化仿真。这套协议和固件只在编译器和模拟设备上测过，<b>还没有在真机上测过</b>。 <Link to="/assembly/octopus-guide?variant=v10#link" className="underline" data-testid="link-guide">使用说明（指南第 14 节）</Link></p>
       {!support.serial && !support.ble && <p className="rounded bg-red-50 px-1 text-red-800" data-testid={`${tid}-unsupported`}>连真板子：{support.why} 下面的「模拟设备」和「演练」照样能用。</p>}
       <div className="flex flex-wrap items-center gap-1">
         {[["serial", "USB 串口"], ["ble", "蓝牙 BLE"], ["mock", "模拟设备（演示）"]].map(([k, zh]) => (

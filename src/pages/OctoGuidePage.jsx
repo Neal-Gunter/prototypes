@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { octoGuide, MD_PRICES, MD_SOURCES, REALITY, TRACE, MD_ISSUES, PLUS_CHANGES, PLUS_BOM, PLUS_SOURCES } from "../assembly/octopus/spec.js";
 import { OctoSim } from "../assembly/octopus/sim.js";
+import { LINK_STEPS, LINK_PROTO, LINK_SAFETY, LINK_LIMITS, LINK_CREDITS } from "../link/guide-v16.js";
 import { V10_FW, V10_PINS, V10_COMPARE, V10_BOM, V10_SAFETY, V10_LIMITS, V10_BUILD } from "../assembly/octopus/guide-v10.js";
 
 const fmtTime = (iso) => new Date(iso).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour12: false }) + "（北京时间）";
@@ -12,7 +13,7 @@ const T = ({ head, rows, t }) => (
     <tbody>{rows.map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j} className="border border-line px-1 py-0.5 align-top">{c}</td>)}</tr>)}</tbody></table>
 );
 
-const TOC = [["s1", "1. 台面物料"], ["s2", "2. 价格（来自 md）"], ["s3", "3. 接线表"], ["s4", "4. 引脚表"], ["s5", "5. 对照现实"], ["s6", "6. 出处表"], ["s7", "7. md 问题清单"], ["s8", "8. md 原文固件"], ["plus", "9. 完善版改动表"], ["s10", "10. 完善版物料"], ["s11", "11. 完善版固件 + 下载"], ["s12", "12. 如何实际动手做"], ["v10", "13. v10 紧凑无线版（电池在身上）"]];
+const TOC = [["s1", "1. 台面物料"], ["s2", "2. 价格（来自 md）"], ["s3", "3. 接线表"], ["s4", "4. 引脚表"], ["s5", "5. 对照现实"], ["s6", "6. 出处表"], ["s7", "7. md 问题清单"], ["s8", "8. md 原文固件"], ["plus", "9. 完善版改动表"], ["s10", "10. 完善版物料"], ["s11", "11. 完善版固件 + 下载"], ["s12", "12. 如何实际动手做"], ["v10", "13. v10 紧凑无线版（电池在身上）"], ["link", "14. 实物连接（v16）"]];
 // 12 节：把台面指南的每一节对到现实里的动手步骤。只用 md 原文和 datasheet 能查到的事实；通用安全常识标“我的补充”，不编数字。
 const BUILD = [
   ["0", "先在台面跑通", "先在装配台点“一键开始”看完整流程，再按 md 的阶段顺序做实物：小智语音链路 → 1 个舵机 + 最小 MCP → PCA9685 + 降压 + 电池 → 组装 → 调步态 → 升级（md 路线图；完善版同）。", "md README §7 推进顺序；完善版 §7"],
@@ -45,7 +46,7 @@ export default function OctoGuidePage() {
       <p className="text-xs"><a href="#plus" className="text-copper underline">→ 完善版（我的补充）：改动表、物料、修正后的固件和文档下载</a>{g.variant === "plus" ? "（台面当前就是完善版）" : ""}</p>
       <p className="text-xs"><a href="#v10" className="text-copper underline" data-testid="og-v10-link">→ v10 紧凑无线版（我的补充）：电池在身上、手机 BLE 遥控、117 g（估算）</a>{g.variant === "v10" ? "（这份指南当前就是 v10）" : ""}</p>
       <nav className="mt-3 border border-line bg-white p-2 text-xs print:hidden" data-testid="og-toc"><b>目录</b>
-        <ol className="mt-1 grid grid-cols-1 gap-x-4 sm:grid-cols-2">{TOC.map(([id, zh]) => <li key={id}><a href={`#${id}`} onClick={(e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ block: "start" }); history.replaceState(history.state, "", `${location.pathname}${location.search}#${id}`); }} className={`underline ${id === "plus" || id === "s10" || id === "s11" || id === "s12" || id === "v10" ? "text-copper" : ""}`}>{zh}</a></li>)}</ol></nav>
+        <ol className="mt-1 grid grid-cols-1 gap-x-4 sm:grid-cols-2">{TOC.map(([id, zh]) => <li key={id}><a href={`#${id}`} onClick={(e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ block: "start" }); history.replaceState(history.state, "", `${location.pathname}${location.search}#${id}`); }} className={`underline ${id === "plus" || id === "s10" || id === "s11" || id === "s12" || id === "v10" || id === "link" ? "text-copper" : ""}`}>{zh}</a></li>)}</ol></nav>
       {g.fixes?.length > 0 && <p className="text-xs text-ink-soft">台面打开的固件修正：{g.fixes.length} 项（见下面“md 里不对的地方”）</p>}
 
       <h2 id="s1" className="mt-6 text-lg font-medium">1. 台面物料（不含价格）</h2>
@@ -121,6 +122,18 @@ export default function OctoGuidePage() {
       {V10_SAFETY.map(([h, items]) => <div key={h} className="mt-3" data-testid="og-v10-safety"><h3 className="font-medium text-red-800">⚠️ {h}</h3><ul className="ml-5 list-disc text-xs leading-5">{items.map((x) => <li key={x}>{x}</li>)}</ul></div>)}
       <h3 className="mt-3 font-medium">13.5 简化和限制（老实说）</h3>
       <T t="og-v10-limits" head={["项目", "说明", "标记"]} rows={V10_LIMITS} />
+
+      <h2 id="link" className="mt-8 text-lg font-medium text-copper" data-testid="og-link">14. 实物连接：浏览器 ↔ 板子（v16，我的补充）</h2>
+      <p className="text-xs">早期原型，简化仿真。装配台八爪鱼面板里的“实物连接”可以用 USB 串口或蓝牙连上烧了 OCTL/1 固件的 ESP32，发指令、看遥测、和仿真对照。没有板子也能用“模拟设备（演示）”把整套流程走一遍。<b>这些功能都还没在真机上测过。</b></p>
+      <h3 className="mt-3 font-medium">14.1 怎么用</h3>
+      <T t="og-link-steps" head={["步骤", "做什么", "怎么做"]} rows={LINK_STEPS} />
+      <h3 className="mt-3 font-medium">14.2 协议 OCTL/1</h3>
+      <T t="og-link-proto" head={["项目", "内容"]} rows={LINK_PROTO} />
+      <div className="mt-3" data-testid="og-link-safety"><h3 className="font-medium text-red-800">⚠️ 14.3 安全</h3><T head={["项目", "做法"]} rows={LINK_SAFETY} /></div>
+      <h3 className="mt-3 font-medium">14.4 简化和限制（老实说）</h3>
+      <T t="og-link-limits" head={["项目", "说明", "标记"]} rows={LINK_LIMITS} />
+      <h3 className="mt-3 font-medium">14.5 出处 / 许可</h3>
+      <T t="og-link-credits" head={["内容", "来源"]} rows={LINK_CREDITS} />
     </article>
   );
 }

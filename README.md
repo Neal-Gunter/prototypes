@@ -172,6 +172,47 @@ The script uses `window.__wb` test hooks only to find where things are on the sc
   - 电流是估算值。
   - 只做直流层面的电压、电流检查。
 
+## v16：实物连接——浏览器 ↔ ESP32（早期原型，简化仿真）
+
+**全部是软件，没接过真板子。** 协议、固件、重连、急停只在编译器、浏览器里的模拟设备和假浏览器 API 桩上测过。
+
+- **实物连接面板**（装配台 → 八爪鱼面板 → “实物连接”；`src/link/`）：
+  - 三种连接：USB 串口（Web Serial，115200）、蓝牙 BLE（Web Bluetooth，Nordic UART Service，设备名前缀 `OctoBrain`，按 20 字节分包）、**模拟设备（演示）**。
+  - 指令：开始 / 更新速度（GO 油门 转向）、停（STOP）、限速（RATE）；高级里有姿势（POSE 8 路）和步态参数（GAIT 6 个）。
+  - 遥测：8 路角度、电池、IMU 横滚 / 俯仰、模式、运行时间。叠加图：蓝线是浏览器里的仿真孪生（同一份 firmware.js 吃被确认的指令），橙线是板子回传的值。差值表给出每路 RMS / 最大差、电池、倾角、往返延迟、遥测丢帧率。
+  - 不支持的浏览器（没有 Web Serial / Web Bluetooth、不是 https）会明确提示“请用电脑上的 Chrome 或 Edge”，串口 / 蓝牙按钮禁用；模拟设备仍可用。
+- **协议 OCTL/1**（`src/link/protocol.js`，固件 `octopus_link_core.h` / `octopus_link.h`）：
+  - 一行一帧：`@序号 指令 参数…*CRC16\n`，最长 160 字节，CRC‑16/CCITT‑FALSE（校验值 0x29B1）。
+  - 指令：`HELLO 1`、`PING`、`GO`、`STOP`、`ESTOP`、`POSE`、`GAIT`、`TRIM`、`RATE 30–240`、`TEL 0–20 Hz`。
+  - 应答 `OK` / `NAK 1–9`；板子主动发 `TEL`、`EVT`（1 心跳超时、2 BLE 断开、3 电量低）、`BOOT`（复位原因）。
+  - 每条 400 ms 等应答、重发 2 次；PING 每 400 ms；1.2 s 没帧判掉线；退避 0.3 → 4 s 自动重连，最多 12 次。
+- **安全**（我的补充）：
+  - 限速 240 °/s（舵机标称 300 °/s 的 80%），浏览器和固件两边都卡；GAIT 超速会自动降频率。
+  - 角度限位：姿势 ±55°，中位 ±20°，再加校准的上下限。
+  - 大红急停（也可按 Esc；关页面时也会发）：浏览器端先锁住，连发 3 次；板子断电锁定，直到 STOP。重连后急停仍然保持。
+  - 板子 1.5 s 没收到帧就自己停；BLE 断开立刻停；**重连后从不自动恢复动作**；电量低拒绝动作（NAK 7）。
+  - **演练（不发送）**：不打开串口 / 蓝牙，所有帧只记在面板里（e2e 验证写入 0 字节）。
+- **校准向导**：每路中位 / 下限 / 上限，存在浏览器 localStorage（`octo.calib.v1`），连着板子时实时发 TRIM + POSE；可导出 `octopus_trim_custom.h`（`kCenter / kMin / kMax`）编进固件。
+- **固件**：`GAIT_SRC=v15 CTRL_CFG=scripts/ctrl-wheel.json bash scripts/fw-compile.sh`。
+  - v10 + 步态 + 闭环 + 校准 + OCTL/1：717308 B。
+  - 完善版 OCTO_RIG=8 + 校准 + OCTL/1：626460 B。
+  - 所有组合我们的文件 0 警告（md 原样固件不算，按原文保留）。
+  - 主机端 C 版 `scripts/octl-host.c` 和 JS 解析器做了 4000 行模糊对拍，结果逐项相同。
+- **模拟设备**（`src/link/device.js`、`transports.js`）：
+  - 同一份 firmware.js v10 孪生，加上延迟（串口 4±3 ms / 蓝牙 30±15 ms）、丢包、坏帧、时钟漂移、电池压降、合成 IMU。参数都是**估算**。
+  - 故障按钮：信号丢失 3 s、蓝牙断开 2 s、欠压复位、固件卡死 2 s。
+  - 面板上始终标着“模拟设备，不代表真机”。
+- **老实说的限制**：
+  - 没上过真 ESP32。
+  - TEL 回传的是固件的**指令角度**，舵机没有位置反馈。
+  - 很多 ESP32 板子打开串口时 DTR/RTS 会复位板子，第一次连接会多等约 1 s。
+  - Web Serial 只有电脑版 Chrome / Edge（https 或 localhost）有；Web Bluetooth 在 Linux 上可能要开实验开关。无头 Chrome 里没有 `navigator.bluetooth`，所以 e2e 用假的浏览器 API 桩来跑真的传输层代码。
+  - 没接 IMU 时倾角显示“—”。
+- **出处 / 许可**：Web Serial、Web Bluetooth 是浏览器内置的 W3C WICG API；NUS UUID 是 Nordic Semiconductor 公开的约定；CRC‑16/CCITT‑FALSE 是公开算法。OCTL/1、固件处理、模拟设备和面板都是本项目自写，和仓库同一许可。没加第三方库。
+- **测试**：
+  - `node scripts/link-test.mjs`：61 项，已加进 `sh scripts/engine-test.sh`。覆盖 CRC、模糊对拍、分包、安全限幅、校准、孪生、会话 + 模拟设备（掉线、重连、急停、欠压、演练）。
+  - 浏览器走查 `node e2e/v16-bench.mjs`：34 项，会录 demo.mp4。
+
 ## v15：多工况鲁棒搜索 + 横坡侧滑补偿 + Worker 池（早期原型，简化仿真）
 
 全部是软件仿真，没上实机；数字都是仿真值，不是实物速度。

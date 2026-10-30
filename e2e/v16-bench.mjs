@@ -138,6 +138,9 @@ for (const kind of ["serial", "ble"]) {
   await p3.click("[data-testid=link-disconnect]"); await p3.waitForTimeout(300); await p3.evaluate(() => { window.__stub.rx = []; window.__stub.estop = false; });
 }
 await p3.close();
+await p.goto(BASE + "/assembly/octopus-guide?variant=v10#link"); await p.waitForSelector("[data-testid=og-link]");
+ok(await p.locator("[data-testid=og-link-proto] tbody tr").count() === 6 && await p.locator("[data-testid=og-link-limits] tbody tr").count() === 6 && await p.locator("[data-testid=og-link-credits] tbody tr").count() >= 4, "指南第 14 节：步骤 / 协议 / 安全 / 限制 / 出处");
+await L(() => document.querySelector("[data-testid=og-link]").scrollIntoView()); await shot("guide-link");
 ok(!errs.length, "没有页面错误", errs.join(" | "));
 fs.writeFileSync(`${OUT}/logs/v16-bench-results.json`, JSON.stringify(res, null, 1));
 await ctx.close(); await b.close();
