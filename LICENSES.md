@@ -76,3 +76,9 @@ v5 新增的程序零件（同样是本项目自制、CC0）：
 - `src/assembly/octopus/md/` 里的 9 个文件（README、`.ino`、`octopus_*.h`、`octopus_mcp.cpp`、3 份中文 md）是项目所有者自己提供的资料。原样收录，一字未改，用于对照和导出指南。
 - 新增 10 个程序零件（ESP32‑S3‑DevKitC‑1 板、INMP441、0.96" OLED、2 块 XL4015、2S 锂电池，以及躯干、触手、俯仰支架、B 型触手）由本项目用代码生成（CC0），尺寸按数据手册或 md，未核实的标“估算”。
 - 用到的已有真实模型：Adafruit 815 / 3006 / 3923 / 1143（Adafruit_CAD_Parts，见上文），以及 KiCad 的 ESP32‑S3‑WROOM‑1 和 CP_Radial_D6.3mm（KiCad 库许可，见上文）。
+
+## v7：完善版（我的补充）
+
+- `src/assembly/octopus/plus/` 里的固件和 md 是在项目所有者提供的 md 基础上改写的（每处标“我的补充”），和 md 原件同样归项目所有者。
+- 引用的事实来自公开数据手册：Espressif ESP32-S3 技术规格书 / DevKitC-1 用户指南、NXP PCA9685 数据手册、XL4015、TP4056 规格书，以及 Nordic UART Service UUID。只引用参数，没有复制文档内容。
+- 编译用 arduino-cli（GPL-3.0）和 arduino-esp32 core（LGPL-2.1），只在本地使用，没有随项目分发。
