@@ -53,7 +53,7 @@ export default function GuidePage() {
           <thead><tr className="border-b border-ink"><th className="py-1 pr-2">#</th><th className="pr-2">名称 / 规格</th><th className="pr-2">数量</th><th className="pr-2">位号</th><th className="pr-2">尺寸</th><th>资料</th></tr></thead>
           <tbody>
             {g.bom.map((b, i) => (
-              <tr key={b.id} className="border-b border-line align-top">
+              <tr key={b.id} id={`bom-${b.id}`} className="border-b border-line align-top target:bg-amber-50">
                 <td className="py-1 pr-2">{i + 1}</td>
                 <td className="pr-2"><span className="font-medium">{b.name}</span>{b.spec && <span className="block text-ink-soft">{b.spec}</span>}</td>
                 <td className="pr-2">{b.qty}</td>
