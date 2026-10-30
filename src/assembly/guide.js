@@ -12,6 +12,7 @@ const SPEC = [
   [/^kc-potentiometer_bourns_3386w/, (P) => ({ spec: `Bourns 3386W 卧式微调电位器 ${fmtOhm(P.state.ohms || 10000)}（3 脚）` })],
   [/^kc-pinheader_1x(\d+)_p2\.54mm/, (P, m) => ({ spec: `2.54 mm 单排直针排针 1×${+m[1]}（可以从 1×40 掰断）` })],
   [/^p-breadboard-half$/, () => ({ spec: "半尺寸免焊面包板 400 孔（30 列 × 10 行 + 两侧电源轨）" })],
+  [/^p-/, (P) => (P.def.spec && P.def.spec !== "估算" ? { spec: P.def.spec } : null)],
   [/^ada-1143$/, () => ({ spec: "微型舵机（金属齿轮，3 线：棕 GND / 红 VCC / 橙 SIG）" })],
 ];
 const CABLE_SPEC = {
@@ -38,7 +39,7 @@ export function makeGuide(engine, { steps = [], title = "我的电路", listText
     g.qty++;
     if (P.state.ref) g.refs.push(P.state.ref);
     if (!g.spec) {
-      for (const [re, f] of SPEC) { const m = id.match(re); if (m) { const s = f(P, m); g.spec = s.spec; if (s.doc) g.links.push({ zh: "官方资料", url: s.doc }); break; } }
+      for (const [re, f] of SPEC) { const m = id.match(re); if (m) { const s = f(P, m); if (!s) continue; g.spec = s.spec; if (s.doc) g.links.push({ zh: "官方资料", url: s.doc }); break; } }
       if (P.def.product_url) g.links.push({ zh: "商品 / 资料页", url: P.def.product_url });
       if (P.def.url) g.links.push({ zh: "3D 模型来源", url: P.def.url });
     }
@@ -46,7 +47,7 @@ export function makeGuide(engine, { steps = [], title = "我的电路", listText
   for (const c of engine.cables) {
     const id = `cable:${c.kind}`;
     if (c.kind === "servo-lead") continue; // 舵机自带
-    if (!groups.has(id)) groups.set(id, { id, name: CABLES[c.kind]?.zh || c.kind, dims: c.kind.startsWith("dupont") ? "长 20 cm，插针 2.54 mm" : `长约 ${CABLES[c.kind]?.len || "?"} cm（估算）`, qty: 0, refs: [], links: [], spec: CABLE_SPEC[c.kind] || "" });
+    if (!groups.has(id)) groups.set(id, { id, name: CABLES[c.kind]?.zh || c.kind, dims: c.kind.startsWith("dupont") ? `长 ${CABLES[c.kind]?.len || 20} cm，插针 2.54 mm` : `长约 ${CABLES[c.kind]?.len || "?"} cm（估算）`, qty: 0, refs: [], links: [], spec: CABLE_SPEC[c.kind] || "" });
     groups.get(id).qty++;
   }
   const bom = [...groups.values()].sort((a, b) => order(a.id) - order(b.id));

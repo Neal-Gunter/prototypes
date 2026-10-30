@@ -21,10 +21,10 @@ export default function PartsPage() {
         <div className="mt-3 max-w-3xl text-sm leading-6 text-ink-soft" data-testid="parts-counts">
           <p>
             现在有 <b className="text-ink">{stats.real}</b> 个真实 CAD 模型（Adafruit CAD Parts，MIT：{stats.src.MIT || 0} 个；KiCad 3D 模型库，CC BY‑SA 4.0：{stats.src["CC-BY-SA-4.0"] || 0} 个），
-            加上 <b className="text-ink">{stats.proc}</b> 个按标准尺寸程序生成的零件（螺丝、螺母、铜柱、底板、支架、面包板、插头等）。
+            加上 <b className="text-ink">{stats.proc}</b> 个按标准尺寸程序生成的零件（螺丝、内六角螺丝、垫圈、螺母、铜柱、底板、面包板 830/400/170 孔、步进电机和小电机、桌面工具、杜邦线等）。
           </p>
           <p className="mt-1">
-            这远不是市面上的全部零件。偏少的分类：{stats.thin.map((c) => `${c.label} ${c.real} 个`).join("、")}；紧固件和工具没有真实 CAD 模型，只有程序生成的。
+            这远不是市面上的全部零件。偏少的分类：{stats.thin.map((c) => `${c.label} ${c.real} 个`).join("、")}；紧固件、电机和工具没有找到许可干净的真实 CAD 模型，只有按标准尺寸或估算外形程序生成的。
           </p>
           <p className="mt-1">不显示价格。尺寸来自 CAD 包围盒或标准（ISO），没核实的标“估算”。</p>
         </div>
