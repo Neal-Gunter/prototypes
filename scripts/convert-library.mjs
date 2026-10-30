@@ -151,7 +151,7 @@ for (const E of manifest.slice(start, start + count)) {
 
     // 碰撞盒：每个实体（或单网格的连通分量）一个 AABB（STEP 坐标 mm）
     let boxes = [], legs = [], holes = [], plates = [];
-    const isKicad = E.src.startsWith("kicad/");
+    const isKicad = /^(kicad|espressif)\//.test(E.src) || (E.src.startsWith("sparkfun/") && E.cat !== "mcu"); // KiCad 约定：z=0 为 PCB 顶面
     for (const s of solids) {
       let triList = Array.from({ length: s.idx.length / 3 }, (_, i) => i * 3);
       if (isKicad) {

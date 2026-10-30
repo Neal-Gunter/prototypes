@@ -3,6 +3,7 @@
 // USB Type‑C / Micro‑B 插头舌片、2.54 mm 排距）；查不到的统一标“估算”，写进 est 字段。
 // 坐标：零件自身坐标系，y 朝上、底面 y = 0、xz 居中；单位 cm（与场景一致）；dims_mm 用 mm 给人看。
 
+import { STD_PROCEDURAL } from "./procedural2.js";
 export const LIC_SELF = "本项目自制（程序生成，CC0）";
 
 // ISO 7045 盘头十字螺钉：dk 头径、k 头高；ISO 261 粗牙螺距；ISO 273 中等过孔
@@ -10,14 +11,19 @@ export const THREAD = {
   M2: { d: 2, pitch: 0.4, dk: 4.0, k: 1.6, nutS: 4.0, nutM: 1.6, clear: 2.4 },
   "M2.5": { d: 2.5, pitch: 0.45, dk: 5.0, k: 2.1, nutS: 5.0, nutM: 2.0, clear: 2.9 },
   M3: { d: 3, pitch: 0.5, dk: 5.6, k: 2.4, nutS: 5.5, nutM: 2.4, clear: 3.4 },
+  // v20：M4–M8（ISO 7045 / ISO 4032 / ISO 273 / ISO 261）
+  M4: { d: 4, pitch: 0.7, dk: 8.0, k: 3.1, nutS: 7, nutM: 3.2, clear: 4.5 },
+  M5: { d: 5, pitch: 0.8, dk: 9.5, k: 3.7, nutS: 8, nutM: 4.7, clear: 5.5 },
+  M6: { d: 6, pitch: 1.0, dk: 12.0, k: 4.6, nutS: 10, nutM: 5.2, clear: 6.6 },
+  M8: { d: 8, pitch: 1.25, dk: 16.0, k: 6.0, nutS: 13, nutM: 6.8, clear: 9.0 },
   // 舵机附带的自攻螺丝：规格没查到可靠来源，全部估算
   "ST1.5": { d: 1.5, pitch: 0.5, dk: 3.2, k: 1.2, clear: 1.7, est: true },
 };
 
 // ISO 4762 内六角圆柱头螺钉：dk 头径、k 头高、s 内六角对边（= ISO 2936 扳手规格）
-export const CAP = { M2: { dk: 3.8, k: 2, s: 1.5 }, "M2.5": { dk: 4.5, k: 2.5, s: 2 }, M3: { dk: 5.5, k: 3, s: 2.5 } };
+export const CAP = { M2: { dk: 3.8, k: 2, s: 1.5 }, "M2.5": { dk: 4.5, k: 2.5, s: 2 }, M3: { dk: 5.5, k: 3, s: 2.5 }, M4: { dk: 7, k: 4, s: 3 }, M5: { dk: 8.5, k: 5, s: 4 }, M6: { dk: 10, k: 6, s: 5 }, M8: { dk: 13, k: 8, s: 6 } };
 // ISO 7089 平垫圈（标准系列）：d1 内径、d2 外径、h 厚
-export const WASHER = { M2: { d1: 2.2, d2: 5, h: 0.3 }, "M2.5": { d1: 2.7, d2: 6, h: 0.5 }, M3: { d1: 3.2, d2: 7, h: 0.5 } };
+export const WASHER = { M2: { d1: 2.2, d2: 5, h: 0.3 }, "M2.5": { d1: 2.7, d2: 6, h: 0.5 }, M3: { d1: 3.2, d2: 7, h: 0.5 }, M4: { d1: 4.3, d2: 9, h: 0.8 }, M5: { d1: 5.3, d2: 10, h: 1 }, M6: { d1: 6.4, d2: 12, h: 1.6 }, M8: { d1: 8.4, d2: 16, h: 1.6 } };
 
 // 材料密度（g/cm³，常见手册值）：用来从碰撞盒体积估算质量
 export const DENSITY = { steel: 7.85, brass: 8.5, pcb: 1.85, acrylic: 1.19, pla: 1.24, abs: 1.05, plastic: 1.2, copper: 8.9, mixed: 1.6 };
@@ -513,6 +519,10 @@ export const PROCEDURAL = [
   motor("28byj48"), motor("nema17-34"), motor("nema17-40"), motor("nema17-48"), motor("n20"), motor("130"), motor("coin"),
   ...["tweezers", "cutter", "stripper", "multimeter", "pump", "solder", "hex1.5", "hex2", "hex2.5"].map(handTool),
   ...OCTO_PROCEDURAL,
+  // v20：M4–M8 螺丝 / 螺母 / 垫圈（ISO 7045 / 4762 / 4032 / 7089）
+  ...["M4", "M5", "M6", "M8"].flatMap((s) => [nut(s), washer(s), ...[8, 10, 12, 16, 20, 25, 30].map((l) => capScrew(s, l)), ...[8, 12, 16, 20].map((l) => screw(s, l))]),
+  ...[["M2", 4], ["M2", 8], ["M2", 12], ["M2.5", 8], ["M2.5", 12], ["M2.5", 16], ["M3", 4], ["M3", 5], ["M3", 25], ["M3", 30], ["M3", 35], ["M3", 40]].map(([a, b]) => capScrew(a, b)),
+  ...STD_PROCEDURAL,
 ].map((d) => ({ ...d, licence: LIC_SELF, kind: "proc", thumb: `/lib/thumbs/${d.id}.webp` }));
 
 export const PROC_BY_ID = Object.fromEntries(PROCEDURAL.map((d) => [d.id, d]));

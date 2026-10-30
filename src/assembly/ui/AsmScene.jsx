@@ -46,7 +46,12 @@ function ProcMesh({ def }) {
     return (
       <group>
         {p.prims.map((q, i) => q.k === "cyl" ? (
-          <mesh key={i} position={q.c} rotation={q.ax === "x" ? [0, 0, Math.PI / 2] : q.ax === "z" ? [Math.PI / 2, 0, 0] : [0, 0, 0]} material={MAT[q.m] || MAT.white} castShadow receiveShadow><cylinderGeometry args={[q.r, q.r, q.h, 24]} /></mesh>
+          <mesh key={i} position={q.c} rotation={q.ax === "x" ? [0, 0, Math.PI / 2] : q.ax === "z" ? [Math.PI / 2, 0, 0] : [0, 0, 0]} material={MAT[q.m] || MAT.white} castShadow receiveShadow><cylinderGeometry args={[q.r, q.r2 ?? q.r, q.h, q.seg || 24]} /></mesh>
+        ) : q.k === "tube" ? (
+          // v20：空心圆柱（轴承、垫片、带轮孔）：矩形截面绕轴旋转
+          <mesh key={i} position={q.c} rotation={q.ax === "x" ? [0, 0, Math.PI / 2] : q.ax === "z" ? [Math.PI / 2, 0, 0] : [0, 0, 0]} material={MAT[q.m] || MAT.white} castShadow receiveShadow>
+            <latheGeometry args={[[[q.ri, -q.h / 2], [q.r, -q.h / 2], [q.r, q.h / 2], [q.ri, q.h / 2], [q.ri, -q.h / 2]].map(([x, y]) => new THREE.Vector2(x, y)), q.seg || 32]} />
+          </mesh>
         ) : (
           <mesh key={i} position={q.c} material={MAT[q.m] || MAT.white} castShadow receiveShadow><boxGeometry args={[q.h[0] * 2, q.h[1] * 2, q.h[2] * 2]} /></mesh>
         ))}

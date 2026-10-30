@@ -9,6 +9,21 @@ const LIB = path.resolve("../libsrc");
 const OUT = path.resolve("public/lib");
 const man = JSON.parse(fs.readFileSync(path.join(LIB, "manifest.json"), "utf8"));
 const r2 = (v) => Math.round(v * 100) / 100;
+// v20：来源短码和许可短码（索引里用来筛选）
+export const SRC_KEY = { "Adafruit CAD Parts": "ada", "KiCad packages3D": "kicad", "SparkFun KiCad Libraries": "sfe", "Espressif KiCad Libraries": "esp", "Seeed Studio OPL KiCad Library": "seeed" };
+const licKey = (l) => (l.startsWith("MIT") ? "MIT" : l.startsWith("CC-BY-4.0") ? "CC-BY-4.0" : "CC-BY-SA-4.0");
+// v20：接口 / 电压标签——只从名字里的关键词推断（界面标“名称推断”）
+const IFACE_RULES = [["i2c", /i2c|stemma qt|qwiic/i], ["spi", /\bspi\b|micro ?sd|sd card/i], ["uart", /uart|serial|gps|gnss/i], ["usb", /usb/i], ["can", /\bcan\b/i], ["i2s", /i2s/i],
+  ["wifi", /wifi|esp32|esp8266|esp8684|airlift|wroom|wrover|pico w/i], ["ble", /\bble\b|bluetooth|nrf52|esp32/i], ["lora", /lora|rfm9|sx12/i], ["pwm", /servo|pwm/i], ["jst", /jst|stemma/i], ["header", /pinheader|pinsocket|header/i], ["power", /barrel|terminal|xt\d0|battery|lipo/i]];
+export function tagsOf(e) {
+  const t = `${e.name} ${e.name_zh} ${e.id}`;
+  const iface = new Set(e.iface || []);
+  for (const [k, re] of IFACE_RULES) if (re.test(t)) iface.add(k);
+  const volts = new Set();
+  for (const m of t.matchAll(/(\d+(?:\.\d+)?)\s?V(?:DC|AC|\b)/gi)) { const v = +m[1]; if (v > 0 && v <= 400) volts.add(v); }
+  for (const m of t.matchAll(/[-_](0?\d{1,2})VDC/gi)) volts.add(+m[1]);
+  return { iface: [...iface], volts: [...volts] };
+}
 
 // ---- 覆盖：都写清楚依据 ----
 const OVERRIDE = {
@@ -69,6 +84,10 @@ for (const m of man) {
     holes: meta.holes?.length ? meta.holes : undefined,
     pinholes: meta.pinholes?.length ? meta.pinholes : undefined,
     pitch_mm: m.pitch_mm ?? undefined,
+    pins: m.pins ?? undefined,
+    rating: m.rating ?? undefined,
+    rating_src: m.rating_src ?? undefined,
+    author: m.author ?? (m.source === "Adafruit CAD Parts" ? "Adafruit Industries" : m.source === "KiCad packages3D" ? "KiCad Library Team 及贡献者" : undefined),
     product: m.product,
     source: m.source,
     licence: m.licence,
@@ -77,8 +96,12 @@ for (const m of man) {
     mass: null, // 质量没有核实来源：页面上按碰撞盒体积 × 材料密度显示“估算”
   };
   OVERRIDE[m.id]?.(e);
+  const tg = tagsOf(e);
+  e.iface = tg.iface.length ? tg.iface : undefined;
+  e.volts = tg.volts.length ? tg.volts : undefined;
+  e.tags_src = "名称推断";
   (byCat[m.cat] ||= []).push(e);
-  index.push([e.id, e.name_zh, e.name, e.cat, [r2(e.dims_mm.x), r2(e.dims_mm.z), r2(e.dims_mm.y)], e.licence.startsWith("MIT") ? "MIT" : "CC-BY-SA-4.0"]);
+  index.push([e.id, e.name_zh, e.name, e.cat, [r2(e.dims_mm.x), r2(e.dims_mm.z), r2(e.dims_mm.y)], licKey(e.licence), SRC_KEY[e.source] || "other", [...(e.iface || []), ...(e.volts || []).map((v) => v + "V")].join(" ")]);
 }
 for (const [cat, list] of Object.entries(byCat)) {
   list.sort((a, b) => a.name_zh.localeCompare(b.name_zh, "zh"));
