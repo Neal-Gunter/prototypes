@@ -87,3 +87,8 @@ v5 新增的程序零件（同样是本项目自制、CC0）：
 
 - `plus/xiaozhi/stub_compile/` 是本项目写的桩（CC0），用于单独检查 `octopus_mcp.cpp` 能否编译。小智工程（xiaozhi-esp32，MIT）的头文件由 `scripts/fw-compile.sh` 在编译时从上游下载，不收录、不分发。
 - 第 12 节的安全提示：“md / 完善版写到的”引自项目所有者的 md；其余是通用安全常识，标“我的补充”，没有复制任何文档。
+
+## v9
+
+- `loco.js` 物理行走用 `@dimforge/rapier3d-compat`（Apache-2.0，已在上面列出）；舵机参数引自 MG90S 公开规格（堵转扭矩、速度、质量），只引用数字。
+- 走查录屏用 Playwright（Apache-2.0）和 ffmpeg（LGPL/GPL），只在本地使用，不随项目分发。

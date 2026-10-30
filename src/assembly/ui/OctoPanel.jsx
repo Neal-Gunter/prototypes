@@ -22,6 +22,8 @@ export const CAMS = [
   { k: "top", zh: "俯视", pos: [0, 58, 0.01], tgt: [0, 0, 0], body: true },
   { k: "body", zh: "机身特写", pos: [12, 13, 16], tgt: [0, 3, 0], body: true },
   { k: "side", zh: "触手侧面", pos: [24, 4.5, 0], tgt: [0, 2, 0], body: true },
+  // v9：远一点、贴着桌面的正侧面，看触手抬起 / 下压推地（跟着机身）
+  { k: "walk", zh: "走路侧视", pos: [42, 2.2, -4], tgt: [0, 2.2, -4], body: true },
   { k: "wires", zh: "接线台面", pos: [-12, 28, 26], tgt: [-12, 0, 2] },
 ];
 export function setCam(k, motion) {
