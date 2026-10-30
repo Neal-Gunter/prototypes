@@ -3,6 +3,8 @@ import fs from "node:fs";
 import { parseModel } from "../src/modellab/load.js";
 import { autoSplit } from "../src/modellab/modules.js";
 import { SERVO_PINS, BATT_PIN } from "../src/assembly/octopus/v10.js";
+import { SG51R_GEO } from "../src/assembly/octopus/parts.js";
+import * as THREE from "three";
 const W = 1200, H = 760;
 const b = fs.readFileSync("public/demo/octo-v10.glb");
 const r = await parseModel(b.buffer.slice(b.byteOffset, b.byteOffset + b.length), "octo-v10.glb");
@@ -39,6 +41,31 @@ const project = {
 const MASS = [[/充电板/, 2], [/舵机/, 5], [/LiPo/, 23], [/QT Py/, 1.2], [/MiniBoost/, 1], [/开关/, 0.07], [/分压/, 0.7], [/电容/, 0.4], [/导线/, 4], [/骨架/, 31], [/短触手/, 1.5]];
 project.modules = project.modules.map(({ id, name, color, meshes, collider, material }) => ({ id, name, color, meshes, collider, material, massG: MASS.find(([re]) => re.test(name))?.[1] ?? null, hidden: false }));
 project.notes += " 质量用 v10 质量表（舵机、电池、QT Py、升压板、开关是商品页数字；骨架含 3 个万向珠、触手、导线、充电板、分压板和电容是估算）。";
+// v12：8 个偏航关节（竖直轴，和 octopus/loco.js 的 v10 一样）：父 = n 号舵机，子 = n 号短触手；SG51R，软件限位 ±55°（v10 固件同款）
+const boxOf = (m) => { const b = new THREE.Box3(); for (const id of m.meshes) { const me = r.meshes.find((x) => x.id === id); me.geom.computeBoundingBox(); b.union(me.geom.boundingBox); } return b; };
+const all = new THREE.Box3(); for (const me of r.meshes) { me.geom.computeBoundingBox(); all.union(me.geom.boundingBox); }
+const C = all.getCenter(new THREE.Vector3());
+project.joints = [];
+for (let i = 0; i < 8; i++) {
+  const sv = project.modules.find((m) => m.name.startsWith(`${i} 号触手舵机`)), arm = project.modules.find((m) => m.name === `${i} 号短触手`);
+  const sb = boxOf(sv), sc = sb.getCenter(new THREE.Vector3()), ac = boxOf(arm).getCenter(new THREE.Vector3());
+  const dir = new THREE.Vector3(ac.x - C.x, 0, ac.z - C.z).normalize();
+  const sh = (SG51R_GEO.shaftX / 100); // 舵机中心到输出轴 0.605 cm（米）
+  const p = [sc.x + dir.x * sh, sb.max.y, sc.z + dir.z * sh].map((v) => +v.toFixed(6));
+  project.joints.push({ id: `j-yaw${i}`, name: `${i} 号触手偏航`, type: "revolute", parent: sv.id, child: arm.id, anchor: p, axis: [0, 1, 0], limits: { min: -55, max: 55 }, drive: { preset: "sg51r", volt: 5.2, torque: 1, speed: 300, forceN: 5, speedMm: 20 }, home: 0 });
+}
+const allJ = project.joints.map((j) => j.id);
+for (const f of project.functions) f.joints = f.id === "f-drv" || f.id === "f-arm" ? allJ : [];
+const sw = (a) => Object.fromEntries(allJ.map((id, i) => [id, a(i)]));
+project.poses = [
+  { id: "p-home", name: "回中", values: sw(() => 0) },
+  { id: "p-ccw", name: "全部左摆 35°", values: sw(() => 35) },
+  { id: "p-cw", name: "全部右摆 35°", values: sw(() => -35) },
+  { id: "p-alt", name: "交替张合", values: sw((i) => (i % 2 ? 30 : -30)) },
+];
+project.timeline = { loop: false, keys: [{ t: 0, pose: "p-home" }, { t: 0.6, pose: "p-ccw" }, { t: 1.4, pose: "p-cw" }, { t: 2.2, pose: "p-alt" }, { t: 3.0, pose: "p-home" }] };
+project.sim = { fixBase: false };
+project.notes += " v12：8 个偏航关节（SG51R，±55°），两个功能（舵机驱动、触手）绑定了这 8 个关节。";
 fs.writeFileSync("public/demo/octo-v10.project.json", JSON.stringify(project, null, 1));
 // ---------- 功能图 SVG ----------
 const box = (k, t, sub, fill) => { const [x, y, w, h] = B[k]; return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="${fill}" stroke="#333" stroke-width="2"/><text x="${x + w / 2}" y="${y + (h > 90 ? 50 : 30)}" font-size="24" text-anchor="middle" font-family="sans-serif" font-weight="bold">${t}</text>${sub.map((s, i) => `<text x="${x + w / 2}" y="${y + (h > 90 ? 82 : 52) + i * 24}" font-size="16" text-anchor="middle" fill="#444" font-family="sans-serif">${s}</text>`).join("")}`; };

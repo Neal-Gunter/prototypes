@@ -1,0 +1,421 @@
+{
+ "schema": "proto-modellab/1",
+ "id": "builtin-arm2dof",
+ "builtin": true,
+ "name": "内置示例：两自由度小机械臂（关节 + 舵机）",
+ "updated": 0,
+ "notes": "本项目自制（CC0）。外形尺寸是我定的（舵机外壳按 MG90S 这一档画成方块，估算外形）；MG90S 的扭矩、速度、13.4 g 来自 Tower Pro datasheet，其余质量按 PLA 体积估算。",
+ "model": {
+  "file": "arm2dof.obj",
+  "builtin": "demo/arm2dof.obj",
+  "units": "mm",
+  "scale": 1,
+  "upAxis": "y",
+  "unitWhy": "画的时候就是毫米",
+  "split": "auto"
+ },
+ "modules": [
+  {
+   "massG": null,
+   "id": "a0",
+   "name": "底座",
+   "color": "#c9c2b0",
+   "material": "pla",
+   "meshes": [
+    "m0"
+   ],
+   "collider": "hull",
+   "hidden": false
+  },
+  {
+   "massG": 13.4,
+   "id": "a1",
+   "name": "底座舵机 MG90S（偏航）",
+   "color": "#2f6fd6",
+   "material": "mixed",
+   "meshes": [
+    "m1"
+   ],
+   "collider": "hull",
+   "hidden": false
+  },
+  {
+   "massG": null,
+   "id": "a2",
+   "name": "转台",
+   "color": "#e0b322",
+   "material": "pla",
+   "meshes": [
+    "m2"
+   ],
+   "collider": "hull",
+   "hidden": false
+  },
+  {
+   "massG": 13.4,
+   "id": "a3",
+   "name": "肩部舵机 MG90S（俯仰）",
+   "color": "#2f6fd6",
+   "material": "mixed",
+   "meshes": [
+    "m3"
+   ],
+   "collider": "hull",
+   "hidden": false
+  },
+  {
+   "massG": null,
+   "id": "a4",
+   "name": "大臂",
+   "color": "#e07a2b",
+   "material": "pla",
+   "meshes": [
+    "m4"
+   ],
+   "collider": "hull",
+   "hidden": false
+  },
+  {
+   "massG": null,
+   "id": "a5",
+   "name": "末端推板",
+   "color": "#d23a2f",
+   "material": "pla",
+   "meshes": [
+    "m5"
+   ],
+   "collider": "hull",
+   "hidden": false
+  }
+ ],
+ "functions": [
+  {
+   "id": "f-yaw",
+   "name": "底座转动（偏航）",
+   "kind": "驱动",
+   "color": "#2f6fd6",
+   "regions": [
+    {
+     "x": 0.04,
+     "y": 0.1774193548387097,
+     "w": 0.28,
+     "h": 0.22580645161290322
+    }
+   ],
+   "pins": [
+    {
+     "label": "PWM1",
+     "signal": "50 Hz，0.5–2.5 ms（常见舵机信号，估算）"
+    }
+   ],
+   "modules": [
+    "a1",
+    "a2"
+   ],
+   "joints": [
+    "j-yaw"
+   ],
+   "note": "MG90S 带转台左右转"
+  },
+  {
+   "id": "f-pitch",
+   "name": "抬臂（俯仰）",
+   "kind": "驱动",
+   "color": "#8a4fbf",
+   "regions": [
+    {
+     "x": 0.36,
+     "y": 0.1774193548387097,
+     "w": 0.28,
+     "h": 0.22580645161290322
+    }
+   ],
+   "pins": [
+    {
+     "label": "PWM2",
+     "signal": "50 Hz"
+    }
+   ],
+   "modules": [
+    "a3",
+    "a4"
+   ],
+   "joints": [
+    "j-pitch"
+   ],
+   "note": "MG90S 带大臂上下摆；压太低推板会碰到地面"
+  },
+  {
+   "id": "f-push",
+   "name": "推方块（执行）",
+   "kind": "执行",
+   "color": "#d23a2f",
+   "regions": [
+    {
+     "x": 0.68,
+     "y": 0.1774193548387097,
+     "w": 0.28,
+     "h": 0.22580645161290322
+    }
+   ],
+   "pins": [],
+   "modules": [
+    "a4",
+    "a5"
+   ],
+   "joints": [
+    "j-yaw",
+    "j-pitch"
+   ],
+   "note": "两个关节一起动；点“放测试方块”看它把方块推走"
+  },
+  {
+   "id": "f-frame",
+   "name": "结构",
+   "kind": "结构",
+   "color": "#a89a7a",
+   "regions": [
+    {
+     "x": 0.04,
+     "y": 0.532258064516129,
+     "w": 0.28,
+     "h": 0.1774193548387097
+    }
+   ],
+   "pins": [],
+   "modules": [
+    "a0",
+    "a2"
+   ],
+   "joints": [],
+   "note": "底座用“固定底座”拧在地面上"
+  },
+  {
+   "id": "f-ctl",
+   "name": "主控（没画进 3D）",
+   "kind": "控制",
+   "color": "#2f8f4e",
+   "regions": [
+    {
+     "x": 0.36,
+     "y": 0.532258064516129,
+     "w": 0.28,
+     "h": 0.1774193548387097
+    }
+   ],
+   "pins": [
+    {
+     "label": "PWM1 / PWM2",
+     "signal": "任意两路 PWM 输出"
+    }
+   ],
+   "modules": [],
+   "joints": [],
+   "note": "示意：任意能出两路 PWM 的板子"
+  }
+ ],
+ "joints": [
+  {
+   "id": "j-yaw",
+   "name": "底座偏航",
+   "type": "revolute",
+   "parent": "a1",
+   "child": "a2",
+   "anchor": [
+    0,
+    33,
+    0
+   ],
+   "axis": [
+    0,
+    1,
+    0
+   ],
+   "limits": {
+    "min": -90,
+    "max": 90
+   },
+   "drive": {
+    "preset": "mg90s",
+    "volt": 4.8,
+    "torque": 1,
+    "speed": 300,
+    "forceN": 5,
+    "speedMm": 20
+   },
+   "home": 0
+  },
+  {
+   "id": "j-turret",
+   "name": "肩部舵机固定在转台上",
+   "type": "fixed",
+   "parent": "a2",
+   "child": "a3",
+   "anchor": [
+    0,
+    35,
+    0
+   ],
+   "axis": [
+    0,
+    1,
+    0
+   ],
+   "limits": {
+    "min": 0,
+    "max": 0
+   },
+   "drive": {
+    "preset": "none",
+    "volt": 4.8,
+    "torque": 1,
+    "speed": 300,
+    "forceN": 5,
+    "speedMm": 20
+   },
+   "home": 0
+  },
+  {
+   "id": "j-pitch",
+   "name": "肩部俯仰",
+   "type": "revolute",
+   "parent": "a3",
+   "child": "a4",
+   "anchor": [
+    0,
+    47,
+    14.5
+   ],
+   "axis": [
+    0,
+    0,
+    1
+   ],
+   "limits": {
+    "min": -20,
+    "max": 80
+   },
+   "drive": {
+    "preset": "mg90s",
+    "volt": 4.8,
+    "torque": 1,
+    "speed": 300,
+    "forceN": 5,
+    "speedMm": 20
+   },
+   "home": 0
+  },
+  {
+   "id": "j-paddle",
+   "name": "推板粘在大臂上",
+   "type": "fixed",
+   "parent": "a4",
+   "child": "a5",
+   "anchor": [
+    76,
+    47,
+    14.5
+   ],
+   "axis": [
+    0,
+    1,
+    0
+   ],
+   "limits": {
+    "min": 0,
+    "max": 0
+   },
+   "drive": {
+    "preset": "none",
+    "volt": 4.8,
+    "torque": 1,
+    "speed": 300,
+    "forceN": 5,
+    "speedMm": 20
+   },
+   "home": 0
+  }
+ ],
+ "poses": [
+  {
+   "id": "p-home",
+   "name": "回中",
+   "values": {
+    "j-yaw": 0,
+    "j-pitch": 0
+   }
+  },
+  {
+   "id": "p-right",
+   "name": "右转",
+   "values": {
+    "j-yaw": -60,
+    "j-pitch": 0
+   }
+  },
+  {
+   "id": "p-left",
+   "name": "左转（推方块）",
+   "values": {
+    "j-yaw": 70,
+    "j-pitch": 0
+   }
+  },
+  {
+   "id": "p-up",
+   "name": "抬起",
+   "values": {
+    "j-yaw": 70,
+    "j-pitch": 60
+   }
+  },
+  {
+   "id": "p-low",
+   "name": "压低（会碰地）",
+   "values": {
+    "j-yaw": 0,
+    "j-pitch": -20
+   }
+  }
+ ],
+ "timeline": {
+  "loop": false,
+  "keys": [
+   {
+    "t": 0,
+    "pose": "p-home"
+   },
+   {
+    "t": 0.8,
+    "pose": "p-right"
+   },
+   {
+    "t": 2.4,
+    "pose": "p-left"
+   },
+   {
+    "t": 3.4,
+    "pose": "p-up"
+   },
+   {
+    "t": 4.4,
+    "pose": "p-home"
+   }
+  ]
+ },
+ "sim": {
+  "fixBase": true,
+  "block": [
+   58,
+   10,
+   -46
+  ]
+ },
+ "diagram": {
+  "file": "arm2dof-functions.svg",
+  "builtin": "demo/arm2dof-functions.svg",
+  "mime": "image/svg+xml",
+  "w": 1000,
+  "h": 620
+ }
+}

@@ -14,3 +14,5 @@ node scripts/octo-test.mjs || exit 1
 # v11：模型 + 功能图（解析、拆分、工程 ZIP、上传零件进引擎碰撞）
 node scripts/modellab-test.mjs || exit 1
 node e2e/modellab-engine.mjs || exit 1
+# v12：关节 / 舵机 / 关节带动碰撞 / 工程往返
+node scripts/artic-test.mjs || exit 1

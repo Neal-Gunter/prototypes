@@ -4,7 +4,7 @@
  "builtin": true,
  "name": "内置示例：v10 八爪鱼（模块 ↔ 功能图）",
  "updated": 0,
- "notes": "模型从装配台的 v10 预设导出（零件尺寸来自零件库，标“估算”的除外）；功能图是本项目自制的示意图，不是原理图。 质量用 v10 质量表（舵机、电池、QT Py、升压板、开关是商品页数字；骨架含 3 个万向珠、触手、导线、充电板、分压板和电容是估算）。",
+ "notes": "模型从装配台的 v10 预设导出（零件尺寸来自零件库，标“估算”的除外）；功能图是本项目自制的示意图，不是原理图。 质量用 v10 质量表（舵机、电池、QT Py、升压板、开关是商品页数字；骨架含 3 个万向珠、触手、导线、充电板、分压板和电容是估算）。 v12：8 个偏航关节（SG51R，±55°），两个功能（舵机驱动、触手）绑定了这 8 个关节。",
  "model": {
   "file": "octo-v10.glb",
   "builtin": "demo/octo-v10.glb",
@@ -501,7 +501,8 @@
     "d19",
     "d22"
    ],
-   "note": "1S 1200 mAh → 拨动开关 → 两个升压板；充电板只在充电时接 USB‑C"
+   "note": "1S 1200 mAh → 拨动开关 → 两个升压板；充电板只在充电时接 USB‑C",
+   "joints": []
   },
   {
    "id": "f-bst",
@@ -532,7 +533,8 @@
     "d24",
     "d25"
    ],
-   "note": "每个升压板带 4 个舵机，输出端各一颗电容"
+   "note": "每个升压板带 4 个舵机，输出端各一颗电容",
+   "joints": []
   },
   {
    "id": "f-ctl",
@@ -584,7 +586,8 @@
    "modules": [
     "d17"
    ],
-   "note": "直接用 LEDC 出 8 路 50 Hz PWM"
+   "note": "直接用 LEDC 出 8 路 50 Hz PWM",
+   "joints": []
   },
   {
    "id": "f-ble",
@@ -608,7 +611,8 @@
    "modules": [
     "d17"
    ],
-   "note": "和主控是同一块板：一个模块可以属于多个功能"
+   "note": "和主控是同一块板：一个模块可以属于多个功能",
+   "joints": []
   },
   {
    "id": "f-sense",
@@ -632,7 +636,8 @@
    "modules": [
     "d23"
    ],
-   "note": "100k/100k 分压，3.55 V 停运动、3.75 V 恢复（估算阈值）"
+   "note": "100k/100k 分压，3.55 V 停运动、3.75 V 恢复（估算阈值）",
+   "joints": []
   },
   {
    "id": "f-drv",
@@ -658,7 +663,17 @@
     "d13",
     "d15"
    ],
-   "note": "SG51R ×8，橙线 PWM / 红线 V+ / 棕线 GND"
+   "note": "SG51R ×8，橙线 PWM / 红线 V+ / 棕线 GND",
+   "joints": [
+    "j-yaw0",
+    "j-yaw1",
+    "j-yaw2",
+    "j-yaw3",
+    "j-yaw4",
+    "j-yaw5",
+    "j-yaw6",
+    "j-yaw7"
+   ]
   },
   {
    "id": "f-arm",
@@ -684,7 +699,17 @@
     "d14",
     "d16"
    ],
-   "note": "每个舵机带一条短触手"
+   "note": "每个舵机带一条短触手",
+   "joints": [
+    "j-yaw0",
+    "j-yaw1",
+    "j-yaw2",
+    "j-yaw3",
+    "j-yaw4",
+    "j-yaw5",
+    "j-yaw6",
+    "j-yaw7"
+   ]
   },
   {
    "id": "f-frame",
@@ -703,7 +728,8 @@
    "modules": [
     "d00"
    ],
-   "note": ""
+   "note": "",
+   "joints": []
   },
   {
    "id": "f-wire",
@@ -722,7 +748,8 @@
    "modules": [
     "d26"
    ],
-   "note": "35 根，3D 里合成一个模块（碰撞用凸包，比真实导线胖）"
+   "note": "35 根，3D 里合成一个模块（碰撞用凸包，比真实导线胖）",
+   "joints": []
   }
  ],
  "diagram": {
@@ -731,5 +758,333 @@
   "mime": "image/svg+xml",
   "w": 1200,
   "h": 760
+ },
+ "joints": [
+  {
+   "id": "j-yaw0",
+   "name": "0 号触手偏航",
+   "type": "revolute",
+   "parent": "d01",
+   "child": "d02",
+   "anchor": [
+    0.120141,
+    0.027401,
+    -0.0281
+   ],
+   "axis": [
+    0,
+    1,
+    0
+   ],
+   "limits": {
+    "min": -55,
+    "max": 55
+   },
+   "drive": {
+    "preset": "sg51r",
+    "volt": 5.2,
+    "torque": 1,
+    "speed": 300,
+    "forceN": 5,
+    "speedMm": 20
+   },
+   "home": 0
+  },
+  {
+   "id": "j-yaw1",
+   "name": "1 号触手偏航",
+   "type": "revolute",
+   "parent": "d03",
+   "child": "d04",
+   "anchor": [
+    0.147041,
+    0.027401,
+    -0.016946
+   ],
+   "axis": [
+    0,
+    1,
+    0
+   ],
+   "limits": {
+    "min": -55,
+    "max": 55
+   },
+   "drive": {
+    "preset": "sg51r",
+    "volt": 5.2,
+    "torque": 1,
+    "speed": 300,
+    "forceN": 5,
+    "speedMm": 20
+   },
+   "home": 0
+  },
+  {
+   "id": "j-yaw2",
+   "name": "2 号触手偏航",
+   "type": "revolute",
+   "parent": "d05",
+   "child": "d06",
+   "anchor": [
+    0.158177,
+    0.027401,
+    0.009964
+   ],
+   "axis": [
+    0,
+    1,
+    0
+   ],
+   "limits": {
+    "min": -55,
+    "max": 55
+   },
+   "drive": {
+    "preset": "sg51r",
+    "volt": 5.2,
+    "torque": 1,
+    "speed": 300,
+    "forceN": 5,
+    "speedMm": 20
+   },
+   "home": 0
+  },
+  {
+   "id": "j-yaw3",
+   "name": "3 号触手偏航",
+   "type": "revolute",
+   "parent": "d07",
+   "child": "d08",
+   "anchor": [
+    0.147025,
+    0.027402,
+    0.036863
+   ],
+   "axis": [
+    0,
+    1,
+    0
+   ],
+   "limits": {
+    "min": -55,
+    "max": 55
+   },
+   "drive": {
+    "preset": "sg51r",
+    "volt": 5.2,
+    "torque": 1,
+    "speed": 300,
+    "forceN": 5,
+    "speedMm": 20
+   },
+   "home": 0
+  },
+  {
+   "id": "j-yaw4",
+   "name": "4 号触手偏航",
+   "type": "revolute",
+   "parent": "d09",
+   "child": "d10",
+   "anchor": [
+    0.120116,
+    0.027401,
+    0.048
+   ],
+   "axis": [
+    0,
+    1,
+    0
+   ],
+   "limits": {
+    "min": -55,
+    "max": 55
+   },
+   "drive": {
+    "preset": "sg51r",
+    "volt": 5.2,
+    "torque": 1,
+    "speed": 300,
+    "forceN": 5,
+    "speedMm": 20
+   },
+   "home": 0
+  },
+  {
+   "id": "j-yaw5",
+   "name": "5 号触手偏航",
+   "type": "revolute",
+   "parent": "d11",
+   "child": "d12",
+   "anchor": [
+    0.093215,
+    0.027401,
+    0.036849
+   ],
+   "axis": [
+    0,
+    1,
+    0
+   ],
+   "limits": {
+    "min": -55,
+    "max": 55
+   },
+   "drive": {
+    "preset": "sg51r",
+    "volt": 5.2,
+    "torque": 1,
+    "speed": 300,
+    "forceN": 5,
+    "speedMm": 20
+   },
+   "home": 0
+  },
+  {
+   "id": "j-yaw6",
+   "name": "6 号触手偏航",
+   "type": "revolute",
+   "parent": "d13",
+   "child": "d14",
+   "anchor": [
+    0.082077,
+    0.0274,
+    0.009938
+   ],
+   "axis": [
+    0,
+    1,
+    0
+   ],
+   "limits": {
+    "min": -55,
+    "max": 55
+   },
+   "drive": {
+    "preset": "sg51r",
+    "volt": 5.2,
+    "torque": 1,
+    "speed": 300,
+    "forceN": 5,
+    "speedMm": 20
+   },
+   "home": 0
+  },
+  {
+   "id": "j-yaw7",
+   "name": "7 号触手偏航",
+   "type": "revolute",
+   "parent": "d15",
+   "child": "d16",
+   "anchor": [
+    0.093233,
+    0.0274,
+    -0.016966
+   ],
+   "axis": [
+    0,
+    1,
+    0
+   ],
+   "limits": {
+    "min": -55,
+    "max": 55
+   },
+   "drive": {
+    "preset": "sg51r",
+    "volt": 5.2,
+    "torque": 1,
+    "speed": 300,
+    "forceN": 5,
+    "speedMm": 20
+   },
+   "home": 0
+  }
+ ],
+ "poses": [
+  {
+   "id": "p-home",
+   "name": "回中",
+   "values": {
+    "j-yaw0": 0,
+    "j-yaw1": 0,
+    "j-yaw2": 0,
+    "j-yaw3": 0,
+    "j-yaw4": 0,
+    "j-yaw5": 0,
+    "j-yaw6": 0,
+    "j-yaw7": 0
+   }
+  },
+  {
+   "id": "p-ccw",
+   "name": "全部左摆 35°",
+   "values": {
+    "j-yaw0": 35,
+    "j-yaw1": 35,
+    "j-yaw2": 35,
+    "j-yaw3": 35,
+    "j-yaw4": 35,
+    "j-yaw5": 35,
+    "j-yaw6": 35,
+    "j-yaw7": 35
+   }
+  },
+  {
+   "id": "p-cw",
+   "name": "全部右摆 35°",
+   "values": {
+    "j-yaw0": -35,
+    "j-yaw1": -35,
+    "j-yaw2": -35,
+    "j-yaw3": -35,
+    "j-yaw4": -35,
+    "j-yaw5": -35,
+    "j-yaw6": -35,
+    "j-yaw7": -35
+   }
+  },
+  {
+   "id": "p-alt",
+   "name": "交替张合",
+   "values": {
+    "j-yaw0": -30,
+    "j-yaw1": 30,
+    "j-yaw2": -30,
+    "j-yaw3": 30,
+    "j-yaw4": -30,
+    "j-yaw5": 30,
+    "j-yaw6": -30,
+    "j-yaw7": 30
+   }
+  }
+ ],
+ "timeline": {
+  "loop": false,
+  "keys": [
+   {
+    "t": 0,
+    "pose": "p-home"
+   },
+   {
+    "t": 0.6,
+    "pose": "p-ccw"
+   },
+   {
+    "t": 1.4,
+    "pose": "p-cw"
+   },
+   {
+    "t": 2.2,
+    "pose": "p-alt"
+   },
+   {
+    "t": 3,
+    "pose": "p-home"
+   }
+  ]
+ },
+ "sim": {
+  "fixBase": false
  }
 }

@@ -5,10 +5,10 @@ import { LIMITS, MODEL_EXT, extOf, mb } from "./limits.js";
 
 export const SCHEMA = "proto-modellab/1";
 export function emptyProject(name = "未命名工程") {
-  return { schema: SCHEMA, id: newId("prj"), name, updated: Date.now(), model: null, modules: [], diagram: null, functions: [], notes: "" };
+  return { schema: SCHEMA, id: newId("prj"), name, updated: Date.now(), model: null, modules: [], diagram: null, functions: [], notes: "", joints: [], poses: [], timeline: { loop: false, keys: [] }, sim: { fixBase: false } };
 }
 export function newFunction(name, i = 0, kind = "其他") {
-  return { id: newId("fn"), name, kind, color: PALETTE[(i + 3) % PALETTE.length], regions: [], pins: [], modules: [], note: "" };
+  return { id: newId("fn"), name, kind, color: PALETTE[(i + 3) % PALETTE.length], regions: [], pins: [], modules: [], joints: [], note: "" };
 }
 
 const str = (v, max = 200) => (typeof v === "string" ? v.slice(0, max) : "");
@@ -50,8 +50,44 @@ export function sanitize(j) {
       pins: (Array.isArray(f.pins) ? f.pins : []).slice(0, 64).map((q) => ({ label: str(q?.label, 30), signal: str(q?.signal, 40) })).filter((q) => q.label || q.signal),
       modules: [...new Set((Array.isArray(f.modules) ? f.modules : []).filter((m) => modIds.has(m)))],
       note: str(f.note, 500),
+      joints: Array.isArray(f.joints) ? f.joints.slice(0, 200) : [], // 关节 id 在下面清洗完关节后再过滤
     });
   });
+  // v12：关节、姿态、时间轴
+  const vec = (v, d) => (Array.isArray(v) && v.length === 3 && v.every((x) => typeof x === "number" && Number.isFinite(x)) ? v.map((x) => Math.min(1e7, Math.max(-1e7, x))) : d);
+  const TYPES = ["revolute", "prismatic", "ball", "fixed"], PRESETS = ["none", "sg51r", "mg90s", "custom", "linear"];
+  const jIds = new Set();
+  for (const q of (Array.isArray(j.joints) ? j.joints : []).slice(0, 200)) {
+    const id = ident(q?.id); if (!id || jIds.has(id)) continue;
+    if (!modIds.has(q.parent) || !modIds.has(q.child) || q.parent === q.child) continue;
+    const type = TYPES.includes(q.type) ? q.type : "revolute";
+    const lo = type === "prismatic" ? -1000 : -180, hi = type === "prismatic" ? 1000 : 180;
+    let mn = num(q.limits?.min, lo, hi, type === "prismatic" ? 0 : -90), mx = num(q.limits?.max, lo, hi, type === "prismatic" ? 20 : 90);
+    if (mn > mx) [mn, mx] = [mx, mn];
+    const d = q.drive || {};
+    jIds.add(id);
+    p.joints.push({
+      id, name: str(q.name, 40) || id, type, parent: q.parent, child: q.child,
+      anchor: vec(q.anchor, [0, 0, 0]), axis: vec(q.axis, [0, 1, 0]),
+      limits: { min: mn, max: mx },
+      drive: { preset: PRESETS.includes(d.preset) ? d.preset : "none", volt: num(d.volt, 0.1, 12, 4.8), torque: num(d.torque, 0, 100, 1), speed: num(d.speed, 1, 5000, 300), forceN: num(d.forceN, 0, 1000, 5), speedMm: num(d.speedMm, 0.1, 2000, 20) },
+      home: Math.min(mx, Math.max(mn, num(q.home, lo, hi, 0))),
+    });
+  }
+  for (const f of p.functions) f.joints = [...new Set(f.joints.filter((x) => jIds.has(x)))];
+  const pIds = new Set();
+  for (const q of (Array.isArray(j.poses) ? j.poses : []).slice(0, 100)) {
+    const id = ident(q?.id); if (!id || pIds.has(id)) continue;
+    pIds.add(id);
+    const values = {};
+    if (q.values && typeof q.values === "object") for (const k of Object.keys(q.values)) if (jIds.has(k) && typeof q.values[k] === "number" && Number.isFinite(q.values[k])) values[k] = Math.min(1000, Math.max(-1000, q.values[k]));
+    p.poses.push({ id, name: str(q.name, 40) || id, values });
+  }
+  const tl = j.timeline && typeof j.timeline === "object" ? j.timeline : {};
+  p.timeline = { loop: tl.loop === true, keys: (Array.isArray(tl.keys) ? tl.keys : []).slice(0, 200).filter((k) => pIds.has(k?.pose)).map((k) => ({ t: num(k.t, 0, 600, 0), pose: k.pose })).sort((a, b) => a.t - b.t) };
+  p.sim = { fixBase: j.sim?.fixBase === true };
+  const blk = vec(j.sim?.block, null);
+  if (blk) p.sim.block = blk;
   return p;
 }
 
