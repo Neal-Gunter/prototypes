@@ -16,7 +16,7 @@
  *   HOME               逐路回中位
  *   WAVE n             第 n 号触手挥手（0~7）
  *   PULSE n            八条一起收缩 n 次
- *   GAIT f=0.6 yaw=30 lift=20 phase=45 duty=0.6   现场调步态（大小写都行）
+ *   GAIT f=0.6 yaw=30 lift=20 phase=45 duty=0.6 press=20   现场调步态（大小写都行；press 只对 B 有用）
  *   BATT               回报电池电压
  * 15 s 没收到指令会自动 REST（md 的安全特性，保留）；想一直走，App 每 5 s 重发一次 GO。
  */
@@ -220,6 +220,7 @@ void setGait(const String& s) {
     else if (tok.startsWith("LIFT="))  { p.lift_amp_deg = tok.substring(5).toFloat(); hit++; }
     else if (tok.startsWith("PHASE=")) { p.phase_deg    = tok.substring(6).toFloat(); hit++; }
     else if (tok.startsWith("DUTY="))  { p.duty         = tok.substring(5).toFloat(); hit++; }
+    else if (tok.startsWith("PRESS=")) { p.press_deg    = tok.substring(6).toFloat(); hit++; }
     i = (sp == -1) ? s.length() : sp + 1;
   }
   // 我的补充：夹到 md 写的安全范围
@@ -227,5 +228,5 @@ void setGait(const String& s) {
   if (p.freq_hz < 0.1f) p.freq_hz = 0.1f;
   if (p.yaw_amp_deg > 55.0f) p.yaw_amp_deg = 55.0f;
   body.SetGaitParams(p);
-  reply(hit ? "gait updated" : "gait: no key matched (use F= YAW= LIFT= PHASE= DUTY=)");
+  reply(hit ? "gait updated" : "gait: no key matched (use F= YAW= LIFT= PHASE= DUTY= PRESS=)");
 }

@@ -20,7 +20,7 @@ export const FIX_LIST = [
   { k: "steps", zh: "MCP crawl 的 steps 生效：走够步数自动停（原样 steps 被忽略，一直走到 15 s 超时）", md: "octopus_mcp.cpp · crawl" },
   { k: "limit", zh: "每路加软件限位 90°±55°，相邻触手不打架（md 第 8 节建议 SetTrim / SetLimit，但代码里没调用）", md: "README §8 / octopus_bus.h · SetLimit()" },
   // —— 完善版（我的补充）：md 没写清楚 / 写错、需要改硬件或改设计的部分 ——
-  { k: "gait2", plus: true, zh: "我的补充 · 镜像步态：左右两舷反向扫（cos(安装角) 加权），直行时转矩抵消；A 靠单向脚垫、差速转弯；B 默认 phase 0（同步划水：撑地推、抬起收），原地转时八条同向扫", md: "octopus_gait.h · Yaw()（md 的 CPG 八条同向扫，台面里 B 原地转、A 只蹭）" },
+  { k: "gait2", plus: true, zh: "我的补充 · 镜像步态：左右两舷反向扫（cos(安装角) 加权），直行时转矩抵消；A 靠单向脚垫、差速转弯；B 默认 phase 180 交替步态 + 支撑相下压 20°（v9 物理实测：v8 的 phase 0 触手尖只悬空 1.2 mm、走 0 cm），原地转时八条同向扫", md: "octopus_gait.h · Yaw()（md 的 CPG 八条同向扫，台面里 B 原地转、A 只蹭）" },
   { k: "antiCollide", plus: true, zh: "我的补充 · 邻臂防撞软限位：每帧检查相邻两条的夹角，小于机械间隙（A 12°、B 16°；B 为 v8 在 3D 碰撞体上实测 13° + 余量）+3° 余量就两边各退一半", md: "md 无（README §8 只说“相邻触手打架”）" },
   { k: "speed", plus: true, zh: "我的补充 · MCP speed 夹到 ≥ 834 ms/周期（≤ 1.2 Hz，md 自己写的舵机跟得上的上限）", md: "octopus_mcp.cpp · hz = 1000 / speed" },
   { k: "batt", plus: true, zh: "我的补充 · 电池检测改到 GPIO10（ADC1_CH9，避开麦克风 WS 的 GPIO4 和采购清单第二批 I2C 的 GPIO1/2），100k/22k 分压，3S 低于 9.6 V 停运动、回到 10.2 V 才恢复（估算阈值）", md: "body_firmware_A.ino BATTERY_PIN 4 / 无线架构 §6" },
@@ -29,8 +29,10 @@ export const FIX_LIST = [
 ];
 export const fixesAll = (on) => Object.fromEntries(FIX_LIST.map((f) => [f.k, !!on && !f.plus]));
 export const fixesPlus = () => Object.fromEntries(FIX_LIST.map((f) => [f.k, true]));
-// 完善版默认步态（我的补充，估算，台面里调出来的）：A 沿用 md 的环形波；B 改成同步划水
-export const plusGait = (plan) => (plan === "B" ? { freq_hz: 0.6, yaw_amp_deg: 20, lift_amp_deg: 25, phase_deg: 0, duty: 0.5 } : { freq_hz: 0.6, yaw_amp_deg: 30, lift_amp_deg: 20, phase_deg: 45, duty: 0.6 });
+// 完善版默认步态（我的补充，估算，台面里调出来的）：A 沿用 md 的环形波；B 改成交替步态 + 支撑相下压（v9）
+// v9（我的补充）：B 改成两组交替（phase 180 → 偶数号一组、奇数号一组）、duty 0.55（两组各有 10% 时间同时着地），支撑相俯仰下压 press 20°。
+// 物理仿真实测：v8 的 B（phase 0、支撑相 lift = 0）触手尖离桌 1.2 mm，机身整个压在底板上，触手推不动（0 cm/周期）。
+export const plusGait = (plan) => (plan === "B" ? { freq_hz: 0.6, yaw_amp_deg: 20, lift_amp_deg: 25, phase_deg: 180, duty: 0.55, press_deg: 20 } : { freq_hz: 0.6, yaw_amp_deg: 30, lift_amp_deg: 20, phase_deg: 45, duty: 0.6 });
 export const MIN_GAP = { A: 12, B: 16 }; // 相邻触手机械间隙（°）。B：v8 在 3D 碰撞体上实测相邻模块 13° 才接触，+3° 余量 = 16（v7 估算 40 过于保守）
 
 // ---------------- octopus_gait.h ----------------
@@ -64,8 +66,9 @@ export class Gait {
   }
   Lift(arm) {
     const p = this.Phase01(arm), d = clamp(this.params_.duty, 0.05, 0.95);
-    if (p < d) return 0;
-    return Math.sin(((p - d) / (1 - d)) * Math.PI) * this.params_.lift_amp_deg;
+    const pr = this.params_.press_deg || 0; // 我的补充（v9）：支撑相往下压 pr 度把机身撑起来；md 原样没有这个参数 = 0
+    if (p < d) return -pr;
+    return -pr + Math.sin(((p - d) / (1 - d)) * Math.PI) * (this.params_.lift_amp_deg + pr);
   }
   IsPowerStroke(arm) { return this.Phase01(arm) < this.params_.duty; }
   static MountAngle(arm) { return -90 + arm * 45; }
@@ -315,6 +318,7 @@ export class Runtime {
   setGait(s) {
     const p = this.body.GaitParamsSnapshot();
     const keys = this.F.gaitParse ? ["F=", "YAW=", "LIFT=", "PHASE=", "DUTY="] : ["f=", "yaw=", "lift=", "phase=", "duty="];
+    if (this.F.gait2) keys.push("PRESS="); // 完善版固件才有（v9）
     let i = 0, hit = 0;
     while (i < s.length) {
       const sp = s.indexOf(" ", i);
@@ -325,6 +329,7 @@ export class Runtime {
       else if (tok.startsWith(keys[2])) { p.lift_amp_deg = num(5); hit++; }
       else if (tok.startsWith(keys[3])) { p.phase_deg = num(6); hit++; }
       else if (tok.startsWith(keys[4])) { p.duty = num(5); hit++; }
+      else if (keys[5] && tok.startsWith(keys[5])) { p.press_deg = num(6); hit++; }
       i = sp === -1 ? s.length : sp + 1;
     }
     this.body.SetGaitParams(p);

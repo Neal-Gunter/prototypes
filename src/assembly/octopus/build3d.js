@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { getEntry, toDef } from "../catalog.js";
 import { pinsOf, FRAME } from "./parts.js";
 import { Gait } from "./firmware.js";
+import { LocoPhys } from "./loco.js";
 
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 const UP = V3(0, 1, 0);
@@ -22,8 +23,8 @@ export const BENCH_POS = {
   DIV: { p: [-16, 0, 10], yaw: 0 }, // 完善版：电池分压板（我的补充） // 阶段 1–2 在桌上；阶段 3 起装在机身上层板
 };
 const DEF_OF = { DIV: "p-octo-vdiv", ESP: "p-octo-devkitc1", PCA: "ada-815", MIC: "p-octo-inmp441", AMP: "ada-3006", SPK: "ada-3923", BAT: "p-octo-2s-lipo", U1: "p-octo-xl4015-6v", U2: "p-octo-xl4015-5v", OLED: "p-octo-oled096" };
-// 机身在台面上爬 / 转的画面限制：导线 20–30 cm，机身离开原位最多 8 cm、转 ±45°（估算），超过就停在边上并提示“导线拉紧”。
-export const TETHER = { r: 8, h: Math.PI / 4 };
+// v9：不再把机身“拴”在原位 8 cm 内（v8 的 TETHER 会把机身瞬移回边上）。导线不拽机身；只在导线直线距离接近线长时提示“实物里会拉紧”。
+export const TAUT = 0.9; // 两端直线距离 ≥ 线长 × 0.9 就提示（估算：杜邦线有弯、扎带也占长度）
 const defCache = {};
 async function D(id) { return (defCache[id] ||= toDef(await getEntry(id))); }
 const servoLocal = { shaft: [0, 3.07, 0.52], lead: [0, 0.45, -1.2] };
@@ -136,62 +137,57 @@ export async function buildOcto(engine, sim, { run, say } = {}) {
     engine.addCable(w.kind, [ua, ub], null, { endLocal: [la, lb], via, ties, color: w.color, N: Math.max(6, Math.min(16, Math.round(len / 2.2))), meta: { a: w.a, b: [w.b[0], pin2], why: w.why, md: w.md } });
     if (++k % 6 === 0) await run?.(0.05);
   }
-  // —— 舵机 → 画面（只改画面，不推动刚体） ——
-  for (const s of sim.servos) {
-    if (B.robot && B.plan === "B") {
-      rotors.push({ s, kind: s.slot === 0 ? "yawB" : "pitchB", arm: s.arm });
-    } else if (B.robot) rotors.push({ s, kind: "yaw", servo: roles[`S${s.arm}`], part: roles[`A${s.arm}`] });
-    else rotors.push({ s, kind: "yaw", servo: roles[`S${s.arm}`], part: roles[`H${s.arm}`] });
-  }
-  const tmpQ = new THREE.Quaternion();
-  // —— 机身跟着仿真位姿走（俯视轨迹里的 x / z / 航向）：整个机身是一个刚体，直接摆位姿，导线两端跟着动 ——
+  // —— v9：走路是物理（loco.js）。3D 画面 = 物理刚体的位姿：机身整体 + 每条触手的连杆（只摆画面/机身刚体，导线不拽机身）——
+  let lp = null;
+  if (B.robot) { lp = await LocoPhys.create(sim, { c: [OCTO_C.x, 0, OCTO_C.z], mu: sim.o.mu ?? 0.5 }); sim.attachPhys(lp); }
+  for (const s of sim.servos) if (!B.robot) rotors.push({ s, kind: "yaw", servo: roles[`S${s.arm}`], part: roles[`H${s.arm}`] });
   const base = B.robot ? engine.worldPose(roles.FRAME) : null;
-  const motion = { clamped: false, last: null, dx: 0, dz: 0, h: 0 };
+  // 每个跟着物理连杆走的零件：记下建好时的世界位姿 W0 和连杆建好时的位置 L0（连杆建的时候不转）
+  const follow = [];
+  if (lp) {
+    const tv = (rb) => { const t = rb.translation(); return V3(t.x, t.y, t.z); };
+    for (const L of lp.legs) {
+      const add = (uid, rb) => { if (uid && engine.parts.get(uid)) { const w = engine.worldPose(uid); follow.push({ uid, rb, W0p: w.p.clone(), W0q: w.q.clone(), L0: tv(rb) }); } };
+      if (B.plan === "B") { add(roles[`BR${L.a}`], L.links[0]); add(roles[`P${L.a}`], L.links[0]); add(roles[`A${L.a}`], L.links[1]); }
+      else add(roles[`A${L.a}`], L.arm);
+    }
+  }
+  const B0 = lp ? (() => { const t = lp.body.translation(); return V3(t.x, t.y, t.z); })() : null;
+  const motion = { taut: 0, tautCable: null, last: null, dx: 0, dz: 0, h: 0, y: 0, frames: 0 };
+  const rbPose = (rb) => { const t = rb.translation(), r = rb.rotation(); return { p: V3(t.x, t.y, t.z), q: new THREE.Quaternion(r.x, r.y, r.z, r.w) }; };
+  // 刚体从建好时（L0，不转）到现在（Lt）的变换，作用到零件建好时的世界位姿上
+  const carry = (L0, Lt, W0p, W0q) => ({ p: W0p.clone().sub(L0).applyQuaternion(Lt.q).add(Lt.p), q: Lt.q.clone().multiply(W0q) });
   const moveBody = () => {
-    if (!base || !engine.parts.get(roles.FRAME)) return;
-    const P = sim.pose || { x: 0, z: 0, h: 0 };
-    let dx = P.x, dz = P.z, h = P.h;
-    const r = Math.hypot(dx, dz), clR = r > TETHER.r, clH = Math.abs(h) > TETHER.h;
-    if (clR) { dx *= TETHER.r / r; dz *= TETHER.r / r; }
-    if (clH) h = Math.sign(h) * TETHER.h;
-    motion.clamped = clR || clH; motion.dx = dx; motion.dz = dz; motion.h = h;
-    const key = `${dx.toFixed(4)},${dz.toFixed(4)},${h.toFixed(4)}`;
-    if (key === motion.last) return;
-    motion.last = key;
-    const q = rotY((-h * 180) / Math.PI); // 仿真 h>0 = 右转；three.js 绕 +y 正转 = 左转
-    const p = base.p.clone().sub(OCTO_C).applyQuaternion(q).add(OCTO_C).add(V3(dx, 0, dz));
-    p.y = base.p.y;
-    engine.teleport(roles.FRAME, p, q.clone().multiply(base.q), true);
+    if (!lp || !base || !engine.parts.get(roles.FRAME)) return;
+    const P = sim.pose; motion.dx = P.x; motion.dz = P.z; motion.h = P.h;
+    const Bt = rbPose(lp.body); motion.y = Bt.p.y - B0.y;
+    const key = `${Bt.p.x.toFixed(4)},${Bt.p.y.toFixed(4)},${Bt.p.z.toFixed(4)},${Bt.q.x.toFixed(4)},${Bt.q.y.toFixed(4)},${Bt.q.z.toFixed(4)}`;
+    if (key !== motion.last) {
+      motion.last = key;
+      const w = carry(B0, Bt, base.p, base.q);
+      engine.teleport(roles.FRAME, w.p, w.q, true);
+    }
+    for (const f of follow) { const part = engine.parts.get(f.uid); if (!part) continue; const w = carry(f.L0, rbPose(f.rb), f.W0p, f.W0q); part.vis = { pose: { p: w.p, q: w.q } }; }
+    // 导线拉紧提示：一端在机身上、另一端在桌上的线，两端直线距离 / 线长
+    if (++motion.frames % 10 === 0) {
+      const onFrame = (u) => u && engine.parts.get(u)?.body === engine.parts.get(roles.FRAME)?.body;
+      let worst = 0, wc = null;
+      for (const c of engine.cables) {
+        if (c.endUids.length < 2 || onFrame(c.endUids[0]) === onFrame(c.endUids[1])) continue;
+        const d = engine.cableEndWorld(c.endUids[0], c.endLocal?.[0]).distanceTo(engine.cableEndWorld(c.endUids[1], c.endLocal?.[1])) / c.len;
+        if (d > worst) { worst = d; wc = c.meta?.a?.join?.(".") || c.id; }
+      }
+      motion.taut = worst; motion.tautCable = wc;
+    }
   };
   const apply = () => {
     moveBody();
     for (const r of rotors) {
-      if (r.kind === "yaw") {
-        const p = engine.parts.get(r.part); if (!p) continue;
-        const w = engine.worldPose(r.servo);
-        p.vis = { ang: ((r.s.ang - 90) * Math.PI) / 180, axis: UP.clone().applyQuaternion(w.q), pivot: engine.toWorld(r.servo, servoLocal.shaft) };
-      }
-    }
-    if (B.robot && B.plan === "B") {
-      for (let a = 0; a < 8; a++) {
-        const ys = sim.servos.find((s) => s.arm === a && s.slot === 0), ps = sim.servos.find((s) => s.arm === a && s.slot === 1);
-        const sy = roles[`S${a}`], sp = roles[`P${a}`];
-        const wy = engine.worldPose(sy), pivY = engine.toWorld(sy, servoLocal.shaft), axY = UP.clone().applyQuaternion(wy.q);
-        const qY = tmpQ.clone().setFromAxisAngle(axY, ((ys.ang - 90) * Math.PI) / 180);
-        const wp = engine.worldPose(sp), pivP0 = engine.toWorld(sp, servoLocal.shaft), axP0 = UP.clone().applyQuaternion(wp.q);
-        const pivP = pivP0.clone().sub(pivY).applyQuaternion(qY).add(pivY), axP = axP0.clone().applyQuaternion(qY);
-        const qP = new THREE.Quaternion().setFromAxisAngle(axP, ((ps.ang - 90) * Math.PI) / 180);
-        const setPose = (uid, pitch) => {
-          const part = engine.parts.get(uid); if (!part) return;
-          const w = engine.worldPose(uid);
-          let p = w.p.clone().sub(pivY).applyQuaternion(qY).add(pivY), q = qY.clone().multiply(w.q);
-          if (pitch) { p = p.sub(pivP).applyQuaternion(qP).add(pivP); q = qP.clone().multiply(q); }
-          part.vis = { pose: { p, q } };
-        };
-        setPose(roles[`BR${a}`], false); setPose(sp, false); setPose(roles[`A${a}`], true);
-      }
+      const p = engine.parts.get(r.part); if (!p) continue;
+      const w = engine.worldPose(r.servo);
+      p.vis = { ang: ((r.s.ang - 90) * Math.PI) / 180, axis: UP.clone().applyQuaternion(w.q), pivot: engine.toWorld(r.servo, servoLocal.shaft) };
     }
   };
   apply();
-  return { roles, rotors, apply, motion };
+  return { roles, rotors, apply, motion, lp };
 }

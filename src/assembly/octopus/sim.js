@@ -3,18 +3,17 @@
 import { benchSpec } from "./bench.js";
 import { evaluate } from "./circuit.js";
 import { Runtime, Pca9685Dev, fixesAll, fixesPlus, Gait } from "./firmware.js";
-import { ARM } from "./parts.js";
 
 export const EST = {
   pulse: "舵机脉宽 0.5–2.5 ms ↔ 0–180°（MG90S 常见标定，估算）",
   speed: "空载 0.1 s/60°@4.8 V、0.08 s/60°@6 V（MG90S 常见标称），按电压线性插值",
   current: "电流：保持 0.01 A，运动 0.12 + 0.45·(速度/最高速) A，堵转 0.7 A（估算）",
   frame: "只有 10–30 ms 周期（33–100 Hz）的 PWM 舵机才认（模拟舵机估算）",
-  friction: "桌面摩擦：最小耗散的库仑摩擦模型；方案 A 机身底板贴桌，触手只分到约 15% 重量（估算）",
+  friction: "v9 走路是物理仿真（Rapier）：机身是有重力的刚体，触手是舵机关节连着的刚体，只靠触手和桌面的接触摩擦推着走；摩擦系数、PLA 质量等是估算（见下面“走路物理”）",
   plusA: "完善版 A（我的补充）：底板下 3 个万向珠（滚动阻力系数约 0.02）、调高度让触手尖分担约 30% 重量 + 触手尖单向鳞片脚垫（向后滑 0.45、向前滑 0.15）——全部估算",
   gap: "相邻触手最小夹角：方案 A 12°（按触手根部宽度）；方案 B 13°（v8 在 3D 碰撞体上实测，见 e2e/gapB.mjs）——A 为估算",
 };
-const L_TIP = ARM.len, R_SHAFT = 3.8, GAP = 12;
+const GAP = 12;
 // 方案 B：v7 用 2·atan(1.55/4.27) ≈ 40° 估算（把模块当成绕躯干中心转，偏保守）。
 // v8：每个模块其实绕自己的偏航轴（离中心 3.8 cm）转，在 3D 碰撞体上让相邻两模块相向转，夹角缩到 13° 才第一次接触（1 号触手碰 2 号俯仰舵机）。
 export const GAP_B = 13; // v8：3D 碰撞体实测（e2e/gapB.mjs），相邻 B 模块夹角 < 13° 时俯仰舵机碰到邻臂触手
@@ -29,7 +28,7 @@ export class OctoSim {
     this.bench = benchSpec(o);
     this.r = rng(o.seed);
     this.dev = new Pca9685Dev(0x40);
-    this.t = 0; this.servoI = 0; this.peakI = 0; this.events = []; this.pose = { x: 0, z: 0, h: 0 }; this.trace = [{ x: 0, z: 0, h: 0, t: 0 }];
+    this.t = 0; this.servoI = 0; this.peakI = 0; this.events = []; this.phys = null; this.pose = { x: 0, z: 0, h: 0 }; this.trace = [{ x: 0, z: 0, h: 0, t: 0 }];
     this.servos = this.bench.servos.map((s) => ({ ...s, chN: +s.ch.slice(2), ang: 72 + this.r() * 36, w: 0, cmd: null, us: 0, I: 0, stall: false, buzz: false, collide: false }));
     this.res = evaluate(this.bench, { servoI: 0, micSpkCm: o.micSpkCm });
     this.espOn = false; this.offFor = 1e9; this.boots = 0; this.scenarioDone = false;
@@ -113,66 +112,22 @@ export class OctoSim {
       I += s.I;
     }
     this.servoI = I; this.avgI = (this.avgI || 0) + (I - (this.avgI || 0)) * Math.min(1, dt / 0.2); this.peakI = Math.max(this.peakI, this.avgI); this.peakInst = Math.max(this.peakInst || 0, I);
-    if (B.robot) this.locomote(dt);
+    if (B.robot && this.phys) { this.phys.step(dt); this.pose = this.phys.pose2d(); const m = this.phys.meas; this.vel = { v: m.v, slip: m.slip }; }
     if (this.t - (this.trace.at(-1)?.t || 0) > 0.05) { this.trace.push({ ...this.pose, t: this.t }); if (this.trace.length > 3000) this.trace.shift(); }
   }
   yawServos() { return this.servos.filter((s) => s.slot === 0 && s.arm != null).sort((a, b) => a.arm - b.arm); }
   liftOf(arm) { const s = this.servos.find((x) => x.arm === arm && x.slot === 1); return s ? s.ang - 90 : 0; }
   stanceArm(arm) { return this.liftOf(arm) <= 5; }
   armPose(arm) { const y = this.servos.find((x) => x.arm === arm && x.slot === 0); return { yaw: y ? y.ang - 90 : 0, lift: this.liftOf(arm) }; }
-  locomote(dt) {
-    const o = this.o, ys = this.yawServos();
-    if (ys.length < 8) return;
-    const cont = [];
-    for (const s of ys) {
-      const th = (Gait.MountAngle(s.arm) * Math.PI) / 180, phi = th - ((s.ang - 90) * Math.PI) / 180, dphi = -(s.w * Math.PI) / 180;
-      const p = [R_SHAFT * Math.cos(th) + L_TIP * Math.cos(phi), R_SHAFT * Math.sin(th) + L_TIP * Math.sin(phi)];
-      const v = [-L_TIP * Math.sin(phi) * dphi, L_TIP * Math.cos(phi) * dphi];
-      const lifted = o.plan === "B" && !this.stanceArm(s.arm);
-      if (!lifted) cont.push({ p, v });
-    }
-    let Nb, Nt;
-    if (o.plan === "B" && cont.length >= 3) { Nb = 0; Nt = 1 / cont.length; } else { const sh = o.plan === "B" ? 0.5 : this.bench.plusHw?.tipShare ?? o.tipShare; Nb = 1 - sh; Nt = cont.length ? sh / cont.length : 0; }
-    const hw = this.bench.plusHw || {};
-    const mu = 0.45, mub = hw.casters ? 0.02 : 0.3, rho = 2.5, eps = 0.05;
-    // 单向鳞片脚垫：滑动方向朝机身后方（+z）时摩擦高、朝前时低（平滑过渡，估算）
-    const muOf = (sx, sz) => (hw.pads ? 0.15 + 0.3 * 0.5 * (1 + Math.tanh((4 * sz) / Math.max(eps, Math.hypot(sx, sz)))) : mu);
-    let V = [0, 0], om = 0;
-    for (let it = 0; it < 16; it++) {
-      // 加权最小二乘（IRLS）近似最小耗散
-      const A = [[0, 0, 0], [0, 0, 0], [0, 0, 0]], b = [0, 0, 0];
-      const add = (w, row, rhs) => { for (let i = 0; i < 3; i++) { b[i] += w * row[i] * rhs; for (let j = 0; j < 3; j++) A[i][j] += w * row[i] * row[j]; } };
-      for (const c of cont) {
-        const sx = V[0] - om * c.p[1] + c.v[0], sz = V[1] + om * c.p[0] + c.v[1];
-        const w = (muOf(sx, sz) * Nt) / Math.max(eps, Math.hypot(sx, sz));
-        add(w, [1, 0, -c.p[1]], -c.v[0]); add(w, [0, 1, c.p[0]], -c.v[1]);
-      }
-      const wb = (mub * Nb) / Math.max(eps, Math.hypot(V[0], V[1])), wr = (mub * Nb * rho) / Math.max(eps / 10, Math.abs(om) * rho);
-      add(wb, [1, 0, 0], 0); add(wb, [0, 1, 0], 0); add(wr * rho, [0, 0, 1], 0);
-      for (let i = 0; i < 3; i++) A[i][i] += 1e-9;
-      const x = solve3(A, b); V = [x[0], x[1]]; om = x[2];
-    }
-    const h = this.pose.h, ch = Math.cos(h), sh2 = Math.sin(h);
-    this.pose.x += (V[0] * ch - V[1] * sh2) * dt; this.pose.z += (V[0] * sh2 + V[1] * ch) * dt; this.pose.h += om * dt;
-    this.vel = { vx: V[0], vz: V[1], om };
-  }
+  // v9：机身位移只来自物理（loco.js：有重力的刚体 + 触手和桌面的接触摩擦）。没接物理就不动——不再用运动学“算”位移。
+  attachPhys(lp) { this.phys = lp; this.pose = lp ? lp.pose2d() : { x: 0, z: 0, h: 0 }; this.trace = [{ ...this.pose, t: this.t }]; }
   snapshot() {
     const R = this.res.rails;
     return {
       t: this.t, espOn: this.espOn, boots: this.boots, halted: this.rt?.halted || null, rails: R, checks: this.res.checks, warn: this.res.warn,
       servos: this.servos.map((s) => ({ role: s.role, ch: s.ch, arm: s.arm, slot: s.slot, us: s.us, ang: s.ang, cmd: s.cmd, I: s.I, stall: s.stall, buzz: s.buzz, collide: s.collide, type: s.type })),
-      servoI: this.servoI, avgI: this.avgI || 0, peakI: this.peakI, peakInst: this.peakInst || 0, vel: this.vel, freq: this.dev.freq, pose: { ...this.pose }, log: this.rt ? this.rt.out.slice(-40) : [], events: this.events.slice(-20), mode: this.rt?.body.mode_, gait: this.rt?.body.GaitParamsSnapshot?.(),
+      servoI: this.servoI, avgI: this.avgI || 0, peakI: this.peakI, peakInst: this.peakInst || 0, vel: this.vel, freq: this.dev.freq, pose: { ...this.pose }, loco: this.phys ? this.phys.snapshot() : null, log: this.rt ? this.rt.out.slice(-40) : [], events: this.events.slice(-20), mode: this.rt?.body.mode_, gait: this.rt?.body.GaitParamsSnapshot?.(),
     };
   }
-}
-function solve3(A, b) {
-  const M = A.map((r, i) => [...r, b[i]]);
-  for (let c = 0; c < 3; c++) {
-    let p = c; for (let r = c + 1; r < 3; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
-    [M[c], M[p]] = [M[p], M[c]];
-    const d = M[c][c] || 1e-12;
-    for (let r = 0; r < 3; r++) if (r !== c) { const f = M[r][c] / d; for (let k = c; k < 4; k++) M[r][k] -= f * M[c][k]; }
-  }
-  return [M[0][3] / (M[0][0] || 1e-12), M[1][3] / (M[1][1] || 1e-12), M[2][3] / (M[2][2] || 1e-12)];
 }
 export { wrap };

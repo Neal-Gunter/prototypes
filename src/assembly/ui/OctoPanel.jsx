@@ -5,7 +5,8 @@ import { OctoSim, EST } from "../octopus/sim.js";
 import { FAULTS, PHASES } from "../octopus/bench.js";
 import { FIX_LIST, fixesAll, fixesPlus, Gait } from "../octopus/firmware.js";
 import { VARIANTS } from "../octopus/bench.js";
-import { buildOcto, OCTO_C, TETHER } from "../octopus/build3d.js";
+import { buildOcto, OCTO_C, TAUT } from "../octopus/build3d.js";
+import { LOCO_EST, MG90S } from "../octopus/loco.js";
 import { parseNL } from "../octopus/nl.js";
 
 let detach = null;
@@ -62,6 +63,28 @@ function TopView({ snap, plan }) {
   );
 }
 
+// v9：走路物理的读数（Rapier 刚体 + 接触摩擦）
+function LocoBox({ L, mu, setMu }) {
+  const g = (kg) => (kg * 1000).toFixed(0);
+  return (
+    <fieldset className="flex flex-col gap-1" data-testid="octo-loco">
+      <legend className="font-medium">走路物理（v9：机身是有重力的刚体，只靠触手和桌面的摩擦走）</legend>
+      <table className="w-full font-mono text-[11px]"><tbody>
+        <tr><td>速度</td><td data-testid="loco-v">{L.v.toFixed(2)} cm/s</td><td>每周期</td><td data-testid="loco-cyc">{L.perCycle == null ? "—" : `${L.perCycle.toFixed(2)} cm`}</td></tr>
+        <tr><td>打滑率</td><td data-testid="loco-slip">{L.slip.toFixed(2)}</td><td>着地触手</td><td data-testid="loco-contacts">{L.contacts} / 8</td></tr>
+        <tr><td>机身离桌</td><td>{L.y.toFixed(2)} cm</td><td>底板承重</td><td>{g(L.bodyLoad)} g</td></tr>
+        <tr><td>总质量</td><td>{g(L.mass)} g（估算）</td><td>舵机力矩</td><td>峰值 {Math.round(L.peakTorque * 100)}% · 堵转 {L.stall.toFixed(1)} kgf·cm</td></tr>
+      </tbody></table>
+      <div className="flex items-end gap-0.5" data-testid="loco-legs" title="每条触手压在桌上的力">
+        {L.load.map((x, i) => <div key={i} className="flex flex-1 flex-col items-center"><div className={x > 0.002 ? "w-full bg-copper" : "w-full bg-line"} style={{ height: `${Math.min(40, 4 + x * 300)}px` }} /><span className="text-[10px]">{i}:{g(x)}g</span></div>)}
+      </div>
+      <label className="flex items-center gap-1">桌面摩擦 μ（估算）<input type="range" min="0" max="1" step="0.05" value={mu} onChange={(e) => setMu(+e.target.value)} data-testid="loco-mu" /> <span data-testid="loco-mu-v">{mu.toFixed(2)}</span></label>
+      <p className="text-ink-soft">打滑率 = 着地触手尖相对桌面滑的距离 / 相对机身划的距离（0 = 完全抓地，1 = 原地空划）。μ 拉到 0 机身就不走——位移只来自触手接触。</p>
+      <details><summary className="cursor-pointer text-ink-soft">走路物理的出处和估算</summary><ul className="list-disc pl-4 text-ink-soft">{[MG90S.src, ...Object.values(LOCO_EST)].map((t, i) => <li key={i}>{t}</li>)}</ul></details>
+    </fieldset>
+  );
+}
+
 export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }) {
   const [plan, setPlan] = useState("A");
   const [variant, setVariant] = useState("md");
@@ -76,6 +99,8 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
   const [nlOut, setNlOut] = useState(null);
   const [wave, setWave] = useState(0);
   const [gait, setGait] = useState({ freq: 6, amplitude: 38, phase: 45 });
+  const [mu, setMuS] = useState(0.5);
+  const setMu = (v) => { setMuS(v); octoSim.o.mu = v; octoSim.phys?.setMu(v); };
   const handle = useRef(null);
 
   useEffect(() => {
@@ -156,7 +181,7 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
         <Btn t="octo-preset-B" dis={!ready || busy || building} on={() => build({ plan: "B", phase: 3, fault: "none", variant: "md" })} cls="text-left">小智八爪鱼 方案B（16 个 MG90S，每条摆 + 抬）</Btn>
         <span className="mt-1 text-copper">完善版（我的补充）：md 问题清单里的每一条都改了，改动见指南的“完善版改动表”</span>
         <Btn t="octo-preset-A-plus" dis={!ready || busy || building} on={() => build({ plan: "A", phase: 3, fault: "none", variant: "plus" })} cls="border-copper text-left">方案A · 完善版（我的补充：3S 电池、镜像步态、万向球脚，能直行和转弯）</Btn>
-        <Btn t="octo-preset-B-plus" dis={!ready || busy || building} on={() => build({ plan: "B", phase: 3, fault: "none", variant: "plus" })} cls="border-copper text-left">方案B · 完善版（我的补充：防撞、同步划水、原地转圈）</Btn>
+        <Btn t="octo-preset-B-plus" dis={!ready || busy || building} on={() => build({ plan: "B", phase: 3, fault: "none", variant: "plus" })} cls="border-copper text-left">方案B · 完善版（我的补充：防撞、交替步态 + 支撑相下压、原地转圈）</Btn>
         {variant === "plus" && <p className="text-copper" data-testid="octo-variant-tip">{VARIANTS.find((v) => v.k === "plus")?.tip}</p>}
         <details data-testid="octo-adv">
         <summary className="cursor-pointer text-ink-soft">高级设置：阶段 / 故障场景 / 固件模式 / 固件修正开关</summary>
@@ -234,7 +259,8 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
         </fieldset>}
         {!noBody && <TopView snap={snap} plan={plan} />}
         {built && <div className="flex flex-wrap items-center gap-1" data-testid="octo-cams"><span>镜头：</span>{CAMS.map((c) => <Btn key={c.k} t={`cam-${c.k}`} on={() => setCam(c.k, handle.current?.motion)}>{c.zh}</Btn>)}</div>}
-        {built && B3 && handle.current?.motion?.clamped && <p className="text-amber-700" data-testid="octo-tether">导线拉紧：3D 机身最多离开原位 {TETHER.r} cm、转 ±{Math.round((TETHER.h * 180) / Math.PI)}°（估算，按 20–30 cm 杜邦线），之后的位移只在俯视轨迹里继续算。</p>}
+        {built && B3 && snap.loco && <LocoBox L={snap.loco} mu={mu} setMu={setMu} />}
+        {built && B3 && (handle.current?.motion?.taut || 0) >= TAUT && <p className="text-amber-700" data-testid="octo-tether">实物里导线会在这附近拉紧（{handle.current.motion.tautCable}：两端直线距离已到线长的 {Math.round(handle.current.motion.taut * 100)}%）；v9 仿真不让导线拽机身，机身照样按触手摩擦走。</p>}
         {!noBody && <details data-testid="octo-adv-ch">
           <summary className="cursor-pointer font-medium">通道监视（PCA9685 → 舵机）</summary>
           <table className="mt-1 w-full font-mono text-[10px]" data-testid="octo-channels"><thead><tr className="text-ink-soft"><th>通道</th><th>舵机</th><th>脉宽 µs</th><th>指令°</th><th>实际°</th><th>A</th><th /></tr></thead><tbody>

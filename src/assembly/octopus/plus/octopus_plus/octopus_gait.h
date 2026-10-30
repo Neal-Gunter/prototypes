@@ -26,7 +26,8 @@ struct GaitParams {
     float yaw_amp_deg   = 30.0f;  // 我的补充：A 默认 30°（md 38°）；B 由 OctopusBody 改成 20°（v8；相邻差最大 0.71×20≈14°，45−14=31° > 间隙 16+3，估算）
     float lift_amp_deg  = 20.0f;
     float phase_deg     = 45.0f;  // 0=同步划水 45=环形波 180=交替
-    float duty          = 0.6f;   // 我的补充：A 0.6 / B 0.5（md 0.65）
+    float duty          = 0.6f;   // 我的补充：A 0.6 / B 0.55（md 0.65）
+    float press_deg     = 0.0f;   // 我的补充（v9）：B 支撑相俯仰往下压的角度，把机身从底板上撑起来；A 没有俯仰舵机 = 0
 };
 
 class Gait {
@@ -69,9 +70,10 @@ public:
     float Lift(int arm) const {
         float p = Phase01(arm);
         float d = Clamp(params_.duty, 0.05f, 0.95f);
-        if (p < d) return 0.0f;
+        float pr = params_.press_deg;
+        if (p < d) return -pr;
         float k = (p - d) / (1.0f - d);
-        return std::sin(k * static_cast<float>(M_PI)) * params_.lift_amp_deg;
+        return -pr + std::sin(k * static_cast<float>(M_PI)) * (params_.lift_amp_deg + pr);
     }
 
     bool IsPowerStroke(int arm) const { return Phase01(arm) < params_.duty; }
