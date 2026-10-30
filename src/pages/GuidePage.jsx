@@ -23,6 +23,7 @@ export default function GuidePage() {
     if (src === "bench" && local) { setG(local); return; }
     fetch("/guides/electrics.json").then((r) => r.json()).then(setG).catch((e) => setErr(String(e)));
   }, [src]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (g && location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView(); }, [g]);
   if (err) return <p className="p-8 text-red-700">指南加载失败：{err}</p>;
   if (!g) return <p className="p-8 text-ink-soft">正在加载装配指南…</p>;
   const pcs = g.bom.reduce((n, b) => n + b.qty, 0);
@@ -107,6 +108,23 @@ export default function GuidePage() {
           <pre className="mt-2 overflow-x-auto border border-line bg-white p-2 font-mono text-[11px] leading-4" data-testid="guide-code">{g.sketch}</pre>
         </section>
       )}
+
+      <section id="model-lab" className="mt-6 border border-line bg-white p-3" data-testid="guide-model-lab">
+        <h2 className="text-lg font-medium">模型 + 功能图（v11，早期原型，简化仿真）</h2>
+        <p className="text-xs text-ink-soft">在 <Link className="underline" to="/assembly/model">/assembly/model</Link> 上传自己的 3D 模型和一张功能图，把“哪个功能由哪些模块组成”画出来，再把模型放到装配台上做碰撞。🔒 文件只在本机浏览器里解析，不上传；工程存在本机 IndexedDB。</p>
+        <ol className="mt-2 list-decimal pl-5 text-xs leading-5">
+          <li><b>上传 3D 模型</b>：GLB / glTF（内嵌资源）/ OBJ / STL / STEP。上限：GLB 40 MB、STEP 15 MB。检查“尺寸和单位”：单位（毫米 / 厘米 / 米 / 英寸）、缩放、哪个轴朝上；旁边的蓝色卡片是一张银行卡（85.60 × 53.98 mm），用来目测尺寸对不对。</li>
+          <li><b>模块</b>：按组 / 网格自动拆成模块。可以“按连通块拆网格”、在“选网格”模式点网格再“拆成新模块”、勾选多个“合并”、改名、改颜色、选碰撞体（凸包 / 方块）、材料（算估算质量）或直接填实测质量。</li>
+          <li><b>上传功能图</b>：PNG / JPG / SVG（含脚本或外链的 SVG 会被拒绝），或 PDF 的某一页（转成图片）。在“画热点框”模式拖出矩形 → 新功能，填名称、类型、引脚 / 信号标注。</li>
+          <li><b>绑定</b>：“绑定”模式下先点热点（或左边的功能），再点 3D 里的模块（再点一次取消）；也可以在“从列表里选模块”里勾。</li>
+          <li><b>双向高亮</b>：点热点 → 3D 高亮它的模块；点 3D 模块 → 热点和左边的树高亮它属于的功能。</li>
+          <li><b>看法</b>：隐藏 / 隔离选中模块、隔离一个功能、按模块或按功能爆炸。左边的树是 功能 → 模块 → 网格。</li>
+          <li><b>导出 / 导入</b>：“导出工程 .zip”= project.json + 模型 + 功能图，可以在别的电脑上“导入工程 .zip”。</li>
+          <li><b>放到装配台</b>：整个模型作为一个刚体放上桌面，每个模块一个凸包或方块碰撞体，和桌面、其他零件碰撞，不穿模。</li>
+          <li><b>内置示例</b>：“内置示例：八爪鱼”= v10 紧凑无线版，27 个模块、9 个功能（示意图，不是原理图），质量按 v10 质量表约 117 g（估算）。</li>
+        </ol>
+        <p className="mt-2 text-xs text-ink-soft">简化：碰撞是凸包 / 方块（凹处被填平）；质量是体积 × 密度的估算；功能绑定只是标签，不做电路仿真；单位靠猜，猜错请手动改；贴图、动画忽略；Draco 压缩和引用外部文件的 glTF 不支持。</p>
+      </section>
 
       <section className="mt-6 break-inside-avoid border border-copper p-3" data-testid="guide-safety">
         <h2 className="font-medium">安全提示</h2>

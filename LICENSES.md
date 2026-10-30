@@ -92,3 +92,12 @@ v5 新增的程序零件（同样是本项目自制、CC0）：
 
 - `loco.js` 物理行走用 `@dimforge/rapier3d-compat`（Apache-2.0，已在上面列出）；舵机参数引自 MG90S 公开规格（堵转扭矩、速度、质量），只引用数字。
 - 走查录屏用 Playwright（Apache-2.0）和 ffmpeg（LGPL/GPL），只在本地使用，不随项目分发。
+
+## v11：模型 + 功能图（`/assembly/model`）
+
+- `occt-import-js`（LGPL-2.1）：v11 起也在网页里用（读上传的 STEP）。作为单独的 JS + wasm 文件、第一次上传 STEP 时才从本站加载，未修改，用户可以替换成自己编译的版本；源码：https://github.com/kovacsv/occt-import-js 。
+- `pdfjs-dist`（Apache-2.0）：读 PDF 功能图的一页，按需加载，`isEvalSupported: false`。
+- `three` 自带的 `GLTFLoader` / `OBJLoader` / `STLLoader` / `meshopt_decoder`（MIT）。
+- `public/demo/octo-v10.glb`、`octo-v10-functions.svg`、`octo-v10.project.json`：本项目自制（从 v10 预设导出，glTF-Transform + meshoptimizer 压缩），与本仓库同许可。
+- `e2e/fixtures/v11/*`：本项目用脚本生成的测试样例，CC0（见 `LICENSE-samples.txt`）。
+- e2e 测试里用到的 KiCad `SOT-23.step` 来自 KiCad 3D 库（CC-BY-SA 4.0 + 例外条款），只在本地测试时读取，不随网站发布。

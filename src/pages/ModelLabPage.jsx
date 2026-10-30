@@ -284,12 +284,12 @@ export default function ModelLabPage() {
   // ---------- 渲染 ----------
   const unbound = project ? project.modules.filter((m) => !fnOfMod.get(m.id)) : [];
   const ModRow = ({ m, fnId }) => (
-    <li data-mod={m.id} className={`flex items-center gap-1 px-1 ${hl.has(m.id) ? "bg-[#fff1d6]" : ""}`}>
+    <div data-mod={m.id} className={`flex items-center gap-1 px-1 ${hl.has(m.id) ? "bg-[#fff1d6]" : ""}`}>
       <input type="checkbox" aria-label={`选中 ${m.name}`} checked={selMods.has(m.id)} onChange={() => setSelMods((s) => { const t = new Set(s); t.has(m.id) ? t.delete(m.id) : t.add(m.id); return t; })} />
       <span className="inline-block h-3 w-3 shrink-0 border border-ink/30" style={{ background: m.color }} />
       <button className="min-w-0 flex-1 truncate text-left" onClick={() => { setSelMods(new Set([m.id])); if (!fnId) setSelFn(null); }} title={m.name}>{m.name}</button>
       <button className="text-xs text-ink-soft" onClick={() => updMod(m.id, (x) => { x.hidden = !x.hidden; })} aria-label={m.hidden ? "显示" : "隐藏"} data-testid="eye">{m.hidden ? "◌" : "●"}</button>
-    </li>
+    </div>
   );
   const Meshes = ({ m }) => (
     <details className="ml-6 text-xs">
@@ -364,16 +364,16 @@ export default function ModelLabPage() {
                     <span className="text-xs text-ink-soft">{f.kind}</span>
                     <button className="text-xs underline" onClick={() => isolateFn(f.id)} data-testid="isolate-fn">隔离</button>
                   </div>
-                  <ul className="ml-3">{f.modules.map((id) => project.modules.find((m) => m.id === id)).filter(Boolean).map((m) => <div key={m.id}><ModRow m={m} fnId={f.id} /></div>)}</ul>
+                  <ul className="ml-3">{f.modules.map((id) => project.modules.find((m) => m.id === id)).filter(Boolean).map((m) => <li key={m.id}>{ModRow({ m, fnId: f.id })}</li>)}</ul>
                 </li>
               ))}
               <li className="mt-2">
                 <div className="px-1 text-xs font-medium text-ink-soft">未绑定功能的模块（{unbound.length}）</div>
-                <ul className="ml-3">{unbound.map((m) => <div key={m.id}><ModRow m={m} /><Meshes m={m} /></div>)}</ul>
+                <ul className="ml-3">{unbound.map((m) => <li key={m.id}>{ModRow({ m })}{Meshes({ m })}</li>)}</ul>
               </li>
               {project.functions.length > 0 && <li className="mt-2">
                 <div className="px-1 text-xs font-medium text-ink-soft">全部模块（{project.modules.length}）和网格</div>
-                <ul className="ml-3">{project.modules.filter((m) => fnOfMod.get(m.id)).map((m) => <div key={m.id}><ModRow m={m} /><Meshes m={m} /></div>)}</ul>
+                <ul className="ml-3">{project.modules.filter((m) => fnOfMod.get(m.id)).map((m) => <li key={m.id}>{ModRow({ m })}{Meshes({ m })}</li>)}</ul>
               </li>}
             </ul>
           </aside>

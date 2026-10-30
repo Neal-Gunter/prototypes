@@ -172,6 +172,21 @@ The script uses `window.__wb` test hooks only to find where things are on the sc
   - 电流是估算值。
   - 只做直流层面的电压、电流检查。
 
+## v11：模型 + 功能图（`/assembly/model`，早期原型，简化仿真）
+
+上传自己的 3D 模型和一张功能图，把两者结合起来：模型拆成模块，功能图上画热点，功能 ↔ 模块绑定、双向高亮，再把模型放上装配台做碰撞（不穿模）。
+
+- **只在本机**：文件在浏览器里解析，不上传、不联网下载外部资源；工程存在 IndexedDB，可导出 / 导入 `.modellab.zip`（`project.json` + 模型 + 功能图 + README）。
+- **3D 模型**：GLB / glTF（内嵌资源，支持 meshopt；Draco 和外链 `.bin` 会给出提示）、OBJ（按 `g` / `o` 分组）、STL（二进制 / ASCII）、STEP（`occt-import-js`，第一次用时才加载 ~7.6 MB wasm）。上限见 `src/modellab/limits.js`（GLB 40 MB、STEP 15 MB、三角形 300 万等）。
+- **尺寸**：单位（mm / cm / m / in，自动猜并说明理由）、缩放、朝上的轴、真实尺寸读数、银行卡（ISO/IEC 7810 ID-1）对照、尺寸异常警告。
+- **模块**：按组 / 网格自动拆、按连通块拆、选网格拆出新模块、移动网格、合并、改名、改色；每个模块的碰撞体（凸包 / 方块）、材料（估算质量）、实测质量。
+- **功能图**：PNG / JPG / SVG（拒绝脚本、事件属性和外链）、PDF 的一页（`pdfjs-dist`，转 PNG）。矩形热点 → 功能（名称、类型、说明、引脚 / 信号）。
+- **结合**：绑定模式（点热点再点模块）或列表勾选；点热点 ↔ 点模块双向高亮；隐藏 / 隔离模块、隔离功能、按模块 / 按功能爆炸；树：功能 → 模块 → 网格。
+- **装配台**：`/assembly?custom=<工程 id>` 或 `?custom=demo`，整个模型一个刚体，每个模块一个碰撞体（`engine.addAssembly` 会把它抬出重叠）。
+- **内置示例**：v10 八爪鱼（`public/demo/`，本项目自制）：27 个模块、9 个功能，162 × 61 × 162 mm，质量按 v10 质量表 116.8 g（估算）。重做：`npx vite build && npx vite preview --port 4173`，`npx esbuild scripts/gltfx-entry.js --bundle --format=iife --outfile=.tmp/gx.js`，`node scripts/export-demo-glb.mjs`，`node scripts/compress-glb.mjs /tmp/octo-v10-raw.glb public/demo/octo-v10.glb`，`node scripts/make-demo-project.mjs`。
+- **简化（老实说）**：碰撞是凸包 / 方块，不是逐三角形；质量是体积 × 密度估算；绑定只是标签，不做电路仿真；单位靠猜；贴图 / 动画忽略；爆炸图是示意。
+- **测试**：`sh scripts/engine-test.sh`（含 `modellab-test` 33 项、`modellab-engine` 9 项）；浏览器走查 `node e2e/modellab.mjs`（先 `npx vite build && npx vite preview --port 4173`，40 项：GLB / OBJ / STL / STEP + SVG / PNG / PDF 上传、画热点、绑定、拆分 / 合并、隔离 / 爆炸、导出再导入、坏文件、装配台碰撞）。样例在 `e2e/fixtures/v11/`（CC0，`node scripts/make-v11-samples.mjs` 生成）。
+
 ## v10：紧凑无线版（我的补充，早期原型，简化仿真）
 
 **网址**：https://neal-gunter.github.io/prototypes/ → 装配台 → 八爪鱼 → “▶ v10 紧凑无线版”（预设 `octo-preset-v10`）。指南：`/assembly/octopus-guide?variant=v10` 第 13 节。

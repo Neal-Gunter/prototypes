@@ -40,6 +40,8 @@ function Hook({ groupRef }) {
             if (Math.abs(ndc.x) > 0.95 || Math.abs(ndc.y) > 0.95) continue;
             ray.setFromCamera(new THREE.Vector2(ndc.x, ndc.y), camera);
             const hit = ray.intersectObjects(ms, false)[0];
+            const sx = rect.left + ((ndc.x + 1) / 2) * rect.width, sy = rect.top + ((1 - ndc.y) / 2) * rect.height;
+            if (sx < 0 || sy < 0 || sx > innerWidth || sy > innerHeight) continue;
             if (hit && hit.object.userData.mod === modId) return { x: rect.left + ((ndc.x + 1) / 2) * rect.width, y: rect.top + ((1 - ndc.y) / 2) * rect.height, mesh: hit.object.userData.mesh };
           }
         }
