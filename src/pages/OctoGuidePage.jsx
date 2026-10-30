@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { octoGuide, MD_PRICES, MD_SOURCES, REALITY, TRACE, MD_ISSUES, PLUS_CHANGES, PLUS_BOM, PLUS_SOURCES } from "../assembly/octopus/spec.js";
 import { OctoSim } from "../assembly/octopus/sim.js";
+import { V10_FW, V10_PINS, V10_COMPARE, V10_BOM, V10_SAFETY, V10_LIMITS, V10_BUILD } from "../assembly/octopus/guide-v10.js";
 
 const fmtTime = (iso) => new Date(iso).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour12: false }) + "（北京时间）";
 const save = (name, text) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "text/plain" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
@@ -11,7 +12,7 @@ const T = ({ head, rows, t }) => (
     <tbody>{rows.map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j} className="border border-line px-1 py-0.5 align-top">{c}</td>)}</tr>)}</tbody></table>
 );
 
-const TOC = [["s1", "1. 台面物料"], ["s2", "2. 价格（来自 md）"], ["s3", "3. 接线表"], ["s4", "4. 引脚表"], ["s5", "5. 对照现实"], ["s6", "6. 出处表"], ["s7", "7. md 问题清单"], ["s8", "8. md 原文固件"], ["plus", "9. 完善版改动表"], ["s10", "10. 完善版物料"], ["s11", "11. 完善版固件 + 下载"], ["s12", "12. 如何实际动手做"]];
+const TOC = [["s1", "1. 台面物料"], ["s2", "2. 价格（来自 md）"], ["s3", "3. 接线表"], ["s4", "4. 引脚表"], ["s5", "5. 对照现实"], ["s6", "6. 出处表"], ["s7", "7. md 问题清单"], ["s8", "8. md 原文固件"], ["plus", "9. 完善版改动表"], ["s10", "10. 完善版物料"], ["s11", "11. 完善版固件 + 下载"], ["s12", "12. 如何实际动手做"], ["v10", "13. v10 紧凑无线版（电池在身上）"]];
 // 12 节：把台面指南的每一节对到现实里的动手步骤。只用 md 原文和 datasheet 能查到的事实；通用安全常识标“我的补充”，不编数字。
 const BUILD = [
   ["0", "先在台面跑通", "先在装配台点“一键开始”看完整流程，再按 md 的阶段顺序做实物：小智语音链路 → 1 个舵机 + 最小 MCP → PCA9685 + 降压 + 电池 → 组装 → 调步态 → 升级（md 路线图；完善版同）。", "md README §7 推进顺序；完善版 §7"],
@@ -33,7 +34,7 @@ export default function OctoGuidePage() {
   const [pfile, setPfile] = useState("octopus_plus/octopus_plus.ino");
   const g = useMemo(() => {
     if (params.get("src") === "bench") { try { const x = JSON.parse(localStorage.getItem("octo-guide") || "null"); if (x) return x; } catch { /* 用默认 */ } }
-    return octoGuide(new OctoSim({ plan: params.get("plan") === "B" ? "B" : "A", phase: 3, variant: params.get("variant") === "plus" ? "plus" : "md" }), null);
+    return octoGuide(new OctoSim({ plan: params.get("plan") === "B" ? "B" : "A", phase: 3, variant: ["plus", "v10"].includes(params.get("variant")) ? params.get("variant") : "md" }), null);
   }, [params]);
   useEffect(() => { document.title = `${g.title} 装配指南 · 硬件工作台`; }, [g]);
   return (
@@ -42,8 +43,9 @@ export default function OctoGuidePage() {
       <h1 className="mt-2 text-2xl font-medium">{g.title} · 装配指南</h1>
       <p className="text-ink-soft">按你给的 md（octopus-ai 目录 9 个文件）复刻。{g.phaseZh}{g.fault ? ` · 场景：${g.fault}` : ""} · 固件{g.mode === "mcp" ? "：小智 MCP（模拟）" : "：蓝牙串口 .ino"} · 生成于 {fmtTime(g.created)}</p>
       <p className="text-xs"><a href="#plus" className="text-copper underline">→ 完善版（我的补充）：改动表、物料、修正后的固件和文档下载</a>{g.variant === "plus" ? "（台面当前就是完善版）" : ""}</p>
+      <p className="text-xs"><a href="#v10" className="text-copper underline" data-testid="og-v10-link">→ v10 紧凑无线版（我的补充）：电池在身上、手机 BLE 遥控、117 g（估算）</a>{g.variant === "v10" ? "（这份指南当前就是 v10）" : ""}</p>
       <nav className="mt-3 border border-line bg-white p-2 text-xs print:hidden" data-testid="og-toc"><b>目录</b>
-        <ol className="mt-1 grid grid-cols-1 gap-x-4 sm:grid-cols-2">{TOC.map(([id, zh]) => <li key={id}><a href={`#${id}`} onClick={(e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ block: "start" }); history.replaceState(history.state, "", `${location.pathname}${location.search}#${id}`); }} className={`underline ${id === "plus" || id === "s10" || id === "s11" || id === "s12" ? "text-copper" : ""}`}>{zh}</a></li>)}</ol></nav>
+        <ol className="mt-1 grid grid-cols-1 gap-x-4 sm:grid-cols-2">{TOC.map(([id, zh]) => <li key={id}><a href={`#${id}`} onClick={(e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ block: "start" }); history.replaceState(history.state, "", `${location.pathname}${location.search}#${id}`); }} className={`underline ${id === "plus" || id === "s10" || id === "s11" || id === "s12" || id === "v10" ? "text-copper" : ""}`}>{zh}</a></li>)}</ol></nav>
       {g.fixes?.length > 0 && <p className="text-xs text-ink-soft">台面打开的固件修正：{g.fixes.length} 项（见下面“md 里不对的地方”）</p>}
 
       <h2 id="s1" className="mt-6 text-lg font-medium">1. 台面物料（不含价格）</h2>
@@ -62,9 +64,9 @@ export default function OctoGuidePage() {
       <h2 id="s3" className="mt-6 text-lg font-medium">3. 接线表（{g.wires.length} 根）</h2>
       <T t="og-wires" head={["从", "到", "说明", "出处"]} rows={g.wires.map((w) => [w.a, w.b, w.why, w.md])} />
 
-      <h2 id="s4" className="mt-6 text-lg font-medium">4. 台面引脚表（ESP32‑S3‑DevKitC‑1）</h2>
-      <T t="og-pins" head={["排针", "丝印", "接到", "作用", "出处"]} rows={g.pinmap.map((r) => [r.pin, r.gpio, r.to, r.why, r.md])} />
-      {g.servos?.length > 0 && <T head={["舵机", "触手", "PCA9685 通道", "类型"]} rows={g.servos.map((s) => [s.role, `${s.arm} 号${s.slot ? "（俯仰）" : g.plan === "B" ? "（偏航）" : ""}`, s.ch, s.type === "360" ? "360°（故障场景）" : "180°"])} />}
+      <h2 id="s4" className="mt-6 text-lg font-medium">4. 台面引脚表（{g.variant === "v10" ? "QT Py ESP32‑S3" : "ESP32‑S3‑DevKitC‑1"}）</h2>
+      {g.variant === "v10" ? <T t="og-pins" head={["舵机 / 功能", "焊盘", "GPIO", "说明"]} rows={V10_PINS} /> : <T t="og-pins" head={["排针", "丝印", "接到", "作用", "出处"]} rows={g.pinmap.map((r) => [r.pin, r.gpio, r.to, r.why, r.md])} />}
+      {g.servos?.length > 0 && g.variant !== "v10" && <T head={["舵机", "触手", "PCA9685 通道", "类型"]} rows={g.servos.map((s) => [s.role, `${s.arm} 号${s.slot ? "（俯仰）" : g.plan === "B" ? "（偏航）" : ""}`, s.ch, s.type === "360" ? "360°（故障场景）" : "180°"])} />}
 
       <h2 id="s5" className="mt-6 text-lg font-medium">5. 对照现实（台面和真东西哪里不一样）</h2>
       <T t="og-reality" head={["项目", "说明", "标记"]} rows={REALITY} />
@@ -101,6 +103,24 @@ export default function OctoGuidePage() {
       <p className="text-xs text-ink-soft">把上面每一节对到现实里的步骤。事实只取自你的 md 和 datasheet；没有出处的只写做法，不写数字。台面是简化仿真，实物以实测为准。</p>
       <T t="og-build" head={["步骤", "做什么", "怎么做", "出处"]} rows={BUILD} />
       {SAFETY.map(([h, items]) => <div key={h} className="mt-3" data-testid="og-safety"><h3 className="font-medium text-red-800">⚠️ {h}</h3><ul className="ml-5 list-disc text-xs leading-5">{items.map((x) => <li key={x}>{x}</li>)}</ul></div>)}
+
+      <h2 id="v10" className="mt-8 text-lg font-medium text-copper" data-testid="og-v10">13. v10 紧凑无线版（我的补充）</h2>
+      <p className="text-xs text-ink-soft">你说 v9 “又笨重又不方便、要插电”。v10：电池、主控、升压全部装在机身上，没有墙插、没有 USB 线（USB‑C 只在充电时插），手机用 BLE 遥控。只用商品页 / 数据手册查得到尺寸的零件。装配台里点“▶ v10 紧凑无线版”就能看。<span className="ml-1 border border-copper px-1 text-copper">早期原型，简化仿真</span></p>
+      <h3 className="mt-3 font-medium">13.1 和 v9 方案B 对比</h3>
+      <p className="text-xs text-ink-soft">{V10_COMPARE.note}</p>
+      <T t="og-v10-compare" head={["项目", "v9 方案B 完善版", "v10 紧凑无线版", "说明"]} rows={V10_COMPARE.rows} />
+      <h3 className="mt-3 font-medium">13.2 物料（带出处）</h3>
+      <p className="text-xs text-ink-soft">{V10_BOM.note}</p>
+      <T t="og-v10-bom" head={["类别", "型号", "数量", "尺寸 / 参数出处"]} rows={V10_BOM.rows} />
+      <T head={["质量表", "克", "来源"]} rows={V10_BOM.mass} />
+      <h3 className="mt-3 font-medium">13.3 固件（OCTO_V10）</h3>
+      <p className="text-xs" data-testid="og-v10-fw">{V10_FW.board}：{V10_FW.result}。复现：scripts/fw-compile.sh。源码就是第 11 节的 octopus_plus 文件夹（同一份代码，编译开关不同）。</p>
+      <ul className="ml-5 list-disc text-xs leading-5">{V10_FW.how.map((x) => <li key={x}>{x}</li>)}</ul>
+      <h3 className="mt-3 font-medium">13.4 动手步骤</h3>
+      <T t="og-v10-build" head={["步骤", "做什么", "怎么做"]} rows={V10_BUILD} />
+      {V10_SAFETY.map(([h, items]) => <div key={h} className="mt-3" data-testid="og-v10-safety"><h3 className="font-medium text-red-800">⚠️ {h}</h3><ul className="ml-5 list-disc text-xs leading-5">{items.map((x) => <li key={x}>{x}</li>)}</ul></div>)}
+      <h3 className="mt-3 font-medium">13.5 简化和限制（老实说）</h3>
+      <T t="og-v10-limits" head={["项目", "说明", "标记"]} rows={V10_LIMITS} />
     </article>
   );
 }

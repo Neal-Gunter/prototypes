@@ -94,6 +94,7 @@ export const TRACE = [
   ["麦克风和喇叭 ≥ 5 cm", "README §8"],
 ];
 
+const V10_ROLE_ZH = { QTPY: "QT Py ESP32‑S3（Adafruit 5426）", BAT: "1200 mAh 单节 LiPo（Adafruit 258）", CHG: "USB‑C LiPo 充电板（Adafruit 4410）", BST1: "MiniBoost 5 V #1（Adafruit 4654）", BST2: "MiniBoost 5 V #2（Adafruit 4654）", SW: "拨动开关（Adafruit 805）", DIV: "1S 分压板 100k/100k（我的补充，程序生成）", CAP1: "电解电容（升压 1 输出，KiCad 封装）", CAP2: "电解电容（升压 2 输出，KiCad 封装）" };
 export function octoGuide(sim, engine) {
   const B = sim.bench;
   const bom = [];
@@ -112,15 +113,17 @@ export function octoGuide(sim, engine) {
   else {
     const zh = { ESP: "ESP32‑S3‑DevKitC‑1（程序生成，估算）", PCA: "PCA9685 16 路（Adafruit 815 CAD）", MIC: "INMP441（程序生成，估算）", AMP: "MAX98357A（Adafruit 3006 CAD）", SPK: "喇叭（Adafruit 3923 CAD）", BAT: "2S 7.4 V 锂电池（程序生成，估算）", U1: "XL4015 降压 6 V（程序生成，估算）", U2: "XL4015 降压 5 V（补充，程序生成）", OLED: "0.96\" OLED（程序生成，估算）" };
     if (sim.o.variant === "plus") Object.assign(zh, { BAT: "3S 锂电组 11.1 V（我的补充，程序生成，估算）", U2: "XL4015 降压 5 V（我的补充，程序生成）", DIV: "电池分压 100k/22k → GPIO10（我的补充）" });
-    for (const r of B.roles) bom.push({ id: r, zh: zh[r] || r, n: 1, real: ["PCA", "AMP", "SPK"].includes(r) });
-    if (B.servos.length) bom.push({ id: "ada-1143", zh: "MG90S 舵机（Adafruit 1143 CAD）", n: B.servos.length, real: true });
+    const v10 = sim.o.variant === "v10";
+    if (v10) Object.assign(zh, V10_ROLE_ZH);
+    for (const r of B.roles) bom.push({ id: r, zh: zh[r] || r, n: 1, real: v10 ? r !== "DIV" : ["PCA", "AMP", "SPK"].includes(r) });
+    if (B.servos.length) bom.push(v10 ? { id: "ada-2201", zh: "SG51R 微型舵机（Adafruit 2201，按页面尺寸建模）", n: B.servos.length, real: true } : { id: "ada-1143", zh: "MG90S 舵机（Adafruit 1143 CAD）", n: B.servos.length, real: true });
     if (B.caps) bom.push({ id: "cap", zh: "220µF 电解电容（KiCad CAD）", n: B.caps, real: true });
   }
   return {
-    title: `小智八爪鱼 方案${B.plan}${sim.o.variant === "plus" ? " · 完善版（我的补充）" : ""}`, plan: B.plan, variant: sim.o.variant || "md", phase: B.phase, phaseZh: PHASES.find((p) => p.k === B.phase)?.zh, fault: FAULTS.find((f) => f.k === B.fault)?.zh,
+    title: sim.o.variant === "v10" ? "小智八爪鱼 v10 紧凑无线版（我的补充）" : `小智八爪鱼 方案${B.plan}${sim.o.variant === "plus" ? " · 完善版（我的补充）" : ""}`, plan: B.plan, variant: sim.o.variant || "md", phase: B.phase, phaseZh: PHASES.find((p) => p.k === B.phase)?.zh, fault: FAULTS.find((f) => f.k === B.fault)?.zh,
     fixes: FIX_LIST.filter((f) => sim.o.F[f.k]).map((f) => f.zh), mode: sim.o.mode,
     created: new Date().toISOString(),
     bom, wires: B.wires.map((w) => ({ a: w.a.join(" "), b: w.b.join(" "), why: w.why, md: w.md, kind: w.kind })),
-    pinmap: pinMap(B), servos: B.servos,
+    pinmap: sim.o.variant === "v10" ? [] : pinMap(B), servos: B.servos,
   };
 }
