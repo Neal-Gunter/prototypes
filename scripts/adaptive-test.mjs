@@ -44,21 +44,24 @@ const bench = [];
 const cases = [
   ["舵机起步 · 不加电容", { exp: "run", tdiv: 2e-3 }, { caps: { CAP1: 0, CAP2: 0 } }],
   ["开机 · 默认电容", { exp: "power", tdiv: 20e-3 }, {}],
-  ["老化电池 · 欠压复位", { exp: "run", tdiv: 2e-3 }, { rint: 0.25, caps: { CAP1: 0, CAP2: 0 } }],
+  ["老化电池 · 欠压（v20：低压停机）", { exp: "run", tdiv: 2e-3 }, { rint: 0.25, caps: { CAP1: 0, CAP2: 0 } }],
   ["舵机全部堵转 · 升压限流", { exp: "run", tdiv: 10e-3 }, { caps: { CAP1: 0, CAP2: 0 }, stall: true }],
 ];
 for (const [nm, o, ed] of cases) {
   const base = { ...o, run: true, pre: 0.05, trig: { src: 0, slope: "rise", level: 1, mode: "auto" }, chans: [{ node: "CHG:BAT" }, { node: "BST1:OUT" }, { node: "QTPY:BAT" }] };
   const mkb = () => { const b = octoBoard(W, ed).board; if (ed.stall) for (const p of b.parts) if (p.kind === "servo") p.state.stalled = true; return b; };
   const fine = capture(mkb(), { ...base, points: 25000 }), fx = capture(mkb(), base), ad = capture(mkb(), { ...base, adaptive: {} });
-  const err = (c) => { let e = 0, j = 0; const tf = fine.t; c.t.forEach((t, i) => { while (j < tf.length - 1 && tf[j + 1] < t) j++; for (const k of [0, 1]) e = Math.max(e, Math.abs(c.ch[k][i] - fine.ch[k][j])); }); return e; };
+  // v20：门限事件（低压停机 / 复位）附近 ±20 µs 不算逐点误差——门限穿越的时刻对 mV 级差别很敏感，时刻另外单独比（< 50 µs）
+  const tEv = fine.allEvents.filter((e) => e.kind === "lowStop" || e.kind === "reset").map((e) => e.t);
+  const err = (c) => { let e = 0, j = 0; const tf = fine.t; c.t.forEach((t, i) => { while (j < tf.length - 1 && tf[j + 1] < t) j++; if (tEv.some((te) => Math.abs(t - te) < 2e-5)) return; for (const k of [0, 1]) e = Math.max(e, Math.abs(c.ch[k][i] - fine.ch[k][j])); }); return e; };
   const evT = (c, kind) => c.allEvents.filter((e) => e.kind === kind).map((e) => e.t);
-  const row = { case: nm, fineMs: fine.ms, fixedMs: fx.ms, adaptMs: ad.ms, fineSteps: fine.stats.steps, fixedSteps: fx.stats.steps, adaptSteps: ad.stats.steps, rejected: ad.stats.rejected, eventRejects: ad.stats.eventRejects, forced: ad.stats.forced, fixedErr: err(fx), adaptErr: err(ad), min5: [fine.meas[1].min, fx.meas[1].min, ad.meas[1].min], resets: [fine.dev.QTPY.resets, fx.dev.QTPY.resets, ad.dev.QTPY.resets], hiccups: [fine.dev.BST1.hiccups, fx.dev.BST1.hiccups, ad.dev.BST1.hiccups], resetT: [evT(fine, "reset"), evT(fx, "reset"), evT(ad, "reset")] };
+  const row = { case: nm, fineMs: fine.ms, fixedMs: fx.ms, adaptMs: ad.ms, fineSteps: fine.stats.steps, fixedSteps: fx.stats.steps, adaptSteps: ad.stats.steps, rejected: ad.stats.rejected, eventRejects: ad.stats.eventRejects, forced: ad.stats.forced, fixedErr: err(fx), adaptErr: err(ad), min5: [fine.meas[1].min, fx.meas[1].min, ad.meas[1].min], resets: [fine.dev.QTPY.resets, fx.dev.QTPY.resets, ad.dev.QTPY.resets], hiccups: [fine.dev.BST1.hiccups, fx.dev.BST1.hiccups, ad.dev.BST1.hiccups], resetT: [evT(fine, "reset"), evT(fx, "reset"), evT(ad, "reset")], stopT: [evT(fine, "lowStop"), evT(fx, "lowStop"), evT(ad, "lowStop")] };
   bench.push(row);
   ok(row.adaptErr <= row.fixedErr * 1.05 + 1e-3, `${nm}：自适应对“细步长真值”的最大误差不比固定步长大`, `自适应 ${(row.adaptErr * 1e3).toFixed(1)} mV · 固定 ${(row.fixedErr * 1e3).toFixed(1)} mV；耗时 ${ad.ms.toFixed(0)} / ${fx.ms.toFixed(0)} / 细步长 ${fine.ms.toFixed(0)} ms；步数 ${ad.stats.steps} / ${fx.stats.steps} / ${fine.stats.steps}`);
   ok(row.resets[2] === row.resets[0] && row.hiccups[2] === row.hiccups[0], `${nm}：复位 / 打嗝次数和真值一致`, `复位 ${row.resets.join("/")}，打嗝 ${row.hiccups.join("/")}（真值 / 固定 / 自适应）`);
   if (row.resetT[0].length) { const d = Math.max(...row.resetT[0].map((t, i) => Math.abs(t - (row.resetT[2][i] ?? Infinity)))); const df = Math.max(...row.resetT[0].map((t, i) => Math.abs(t - (row.resetT[1][i] ?? Infinity)))); row.resetDtAdapt = d; row.resetDtFixed = df; ok(d < 50e-6, `${nm}：复位时刻和真值差 < 50 µs`, `自适应 ${(d * 1e6).toFixed(1)} µs · 固定 ${(df * 1e6).toFixed(1)} µs`); }
-  // 已知：升压模块的限流 / 调节环是“显式”的（每步按上一步的电感电流算），舵机起步那一下的最低点和步长有 ~15 mV 的相关性（细步长 BE 4.949 / 梯形 4.942 V 也差 7 mV），所以这里放宽到 20 mV
+  if (row.stopT[0].length) { const d = Math.max(...row.stopT[0].map((t, i) => Math.abs(t - (row.stopT[2][i] ?? Infinity)))); ok(d < 50e-6 && row.stopT[2].length === row.stopT[0].length, `${nm}：低压停机次数相同、时刻和真值差 < 50 µs`, `自适应 ${(d * 1e6).toFixed(1)} µs`); }
+  // v20：升压改成平均值模型（输入电流一阶滞后、限流是电流源 + 钳位二极管，和步长无关），舵机起步最低点 2500 点 vs 25000 点从 36 mV 降到 15 mV；仍保留 20 mV 容差
   ok(Math.abs(row.min5[2] - row.min5[0]) < 0.02, `${nm}：5V 最低值和真值差 < 20 mV`, `真值 ${row.min5[0].toFixed(4)} · 固定 ${row.min5[1].toFixed(4)} · 自适应 ${row.min5[2].toFixed(4)} V`);
 }
 fs.writeFileSync(`${OUT}/adaptive-test.json`, JSON.stringify({ pass, fail, analytic: rows, bench, log }, null, 2));

@@ -166,7 +166,7 @@ function WhatIf({ W }) {
       const r = whatIf(W, { cap: o.cap, batt: o.batt, awg: o.awg || null });
       const next = [...rows, r].slice(-8);
       setRows(next); setBusy(false);
-      window.__whatIf = next.map((x) => ({ opt: x.opt, ok: x.ok, resets: x.resets, minRail: x.minRail, servoDip: x.servoDip, ipk: x.ipk, ipkInrush: x.ipkInrush, ms: x.ms }));
+      window.__whatIf = next.map((x) => ({ opt: x.opt, ok: x.ok, resets: x.resets, stops: x.stops, minRail: x.minRail, servoDip: x.servoDip, ipk: x.ipk, ipkInrush: x.ipkInrush, ms: x.ms }));
     }, 20);
   };
   const ch = (k, v) => setO((x) => ({ ...x, [k]: v }));
@@ -187,12 +187,12 @@ function WhatIf({ W }) {
       </div>
       {rows.length > 0 && (
         <table className="w-full border-collapse text-xs" data-testid="whatif-table">
-          <thead><tr className="border-b border-line text-left"><th>电容</th><th>电池</th><th>线规</th><th>主控复位</th><th>5 V 最低（运行）</th><th>舵机起步跌落</th><th>电池峰值电流（估算）</th><th>上电浪涌（估算）</th><th>用时</th></tr></thead>
+          <thead><tr className="border-b border-line text-left"><th>电容</th><th>电池</th><th>线规</th><th>主控复位 / 低压停</th><th>5 V 最低（运行）</th><th>舵机起步跌落</th><th>电池峰值电流（估算）</th><th>上电浪涌（估算）</th><th>用时</th></tr></thead>
           <tbody>{rows.map((r, i) => (
             <tr key={i} className="border-b border-line" data-testid={`whatif-row-${i}`}>
               <td>{uF(r.opt.cap)}</td><td>{r.opt.batt === "fresh" ? "新" : r.opt.batt === "mid" ? "一阵" : "老化"}</td><td>{r.opt.awg ? `${r.opt.awg} AWG` : "原样"}</td>
               {r.ok ? <>
-                <td className={r.resets ? "font-bold text-red-700" : ""}>{r.resets} 次</td><td>{r.minRail.toFixed(3)} V</td><td>{(r.servoDip * 1000).toFixed(0)} mV</td><td>{r.ipk.toFixed(2)} A</td><td>{r.ipkInrush.toFixed(1)} A</td><td>{r.ms} ms</td>
+                <td className={r.resets || r.stops ? "font-bold text-red-700" : ""}>{r.resets} 次{r.stops ? ` · 低压停 ${r.stops}` : ""}</td><td>{r.minRail.toFixed(3)} V</td><td>{(r.servoDip * 1000).toFixed(0)} mV</td><td>{r.ipk.toFixed(2)} A</td><td>{r.ipkInrush.toFixed(1)} A</td><td>{r.ms} ms</td>
               </> : <td colSpan={6}>{r.errors.map((e) => e.zh).join("；")}</td>}
             </tr>
           ))}</tbody>

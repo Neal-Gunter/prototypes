@@ -126,7 +126,7 @@ function rigBoard() {
     parts: [
       part("BT1", "bat", "1S 锂聚合物电池（约 1200 mAh，估算）", 4, 12, 14, 16, { "+": "VBAT", "-": "GND" }, { chem: "lipo1", v: 3.85, r: 0.06, mAh: 1200, fp: "battery" }, { ocv: 3.85, rint: 0.06, orient: 1 }, { offBoard: true }),
       part("SW1", "sw", "电源开关", 24, 14, 10, 6, { a: "VBAT", b: "VSW" }, { fp: "switch" }),
-      part("U1", "boost", "5 V 升压模块（1 A 级，估算）", 6, 36, 16, 12, { IN: "VSW", GND: "GND", OUT: "5V", EN: "VSW" }, { vout: 5.2, eff: 0.85, ilim35: 1.0, uvlo: 2.5, fp: "module" }),
+      part("U1", "boost", "5 V 升压模块（1 A 级，估算）", 6, 36, 16, 12, { IN: "VSW", GND: "GND", OUT: "5V", EN: "VSW" }, { vout: 5.2, eff: 0.85, ilim35: 1.2, uvlo: 2.5, fp: "module" }),
       part("C1", "cap", "5 V 输出电解电容（470 µF / 10 V）", 28, 40, 8, 6, { "+": "5V", "-": "GND" }, { c: 470e-6, esr: 0.06, polar: true, rated: 10, fp: "ecap" }),
       hdr("J1", "到控制板的电源插座", 30, 60, ["5V", "GND"], "J1:", 2),
       hdr("J2", "到舵机板的电源插座", 30, 74, ["5V", "GND"], "J2:", 2),

@@ -57,7 +57,7 @@ export function ldo({ id, vin, gnd, vout, vset, drop, iq = 0.005, ilim = 0.5, rL
 // 限流：输出电流到 ilim（随输入电压缩放）就不再往上给；启动宽限期（tss + tGrace）之后“限流且输出低于 70 %”持续超过 tHic 进入“打嗝”保护，关断 tOff 再软启动；
 // 欠压锁定（UVLO，带回差）；时间步足够小（≤ 开关周期 / 16）时叠加开关纹波电流（按占空比 D = 1 − Vin/Vout 的脉冲电流）。
 // 关断时输出断开（我的补充：按“带输出隔离”的模块处理）。所有参数估算，除非模板里写了来源。
-export function boost({ id, vin, gnd, vout, en, v = 5.2, eff = 0.85, ilim35 = 1.1, uvlo = 2.5, hys = 0.2, L = 2.2e-6, dcr = 0.03, rOut = 0.05, lOut = 4.7e-6, cOut = 4.7e-6, esrOut = 0.005, rDamp = 1, cDamp = 22e-6, cIn = 10e-6, esrIn = 0.01, tss = 1e-3, fsw = 4e5, tHic = 2e-3, tOff = 20e-3, tGrace = 15e-3, ripple = true }) {
+export function boostLegacy({ id, vin, gnd, vout, en, v = 5.2, eff = 0.85, ilim35 = 1.1, uvlo = 2.5, hys = 0.2, L = 2.2e-6, dcr = 0.03, rOut = 0.05, lOut = 4.7e-6, cOut = 4.7e-6, esrOut = 0.005, rDamp = 1, cDamp = 22e-6, cIn = 10e-6, esrIn = 0.01, tss = 1e-3, fsw = 4e5, tHic = 2e-3, tOff = 20e-3, tGrace = 15e-3, ripple = true }) {
   const d = { t: "X", kind: "boost", id, on: false, ramp: 0, inLimit: 0, offUntil: -Infinity, limit: false, hiccups: 0 };
   const sw = `${id}#sw`, m = `${id}#ctl`, m2 = `${id}#lo`;
   d.expand = (add) => {
@@ -116,6 +116,92 @@ export function boost({ id, vin, gnd, vout, en, v = 5.2, eff = 0.85, ilim35 = 1.
   d.start = () => { d.ramp = d.on ? 1 : 0; };
   return d;
 }
+
+// v20：升压模块平均值模型（默认）。和旧模型（boostLegacy，v19 及以前）的区别：
+//   · 调压 + 限流不再是“按上一步电感电流显式算”，而是一个分段线性的隐式结构，和二极管一样在同一步里迭代求解：
+//       恒流源 ilim 注入节点 m，理想“钳位二极管”（rs = rOut）把多余电流送回电压 vclamp = vref − rOut·ilim。
+//       负载 < ilim：二极管导通 → 输出 = vref − rOut·Io（和旧模型的戴维南等效一样）；负载 > ilim：二极管截止 → 输出电流正好 = ilim。
+//     这样稳压 / 限流的切换在当步就定下来，结果不再依赖时间步长（只剩积分误差，梯形法二阶）。
+//   · 软启动斜坡按“开机后经过的时间”算（不是每步累加）。
+//   · 输入端：功率平衡显式写出损耗：Vsw·Iin = Pout + Io·vd（整流压降）+ D·rds·Iin²（开关管导通）+ kSw·Pout（开关损耗，估算）+ Vin·iq；
+//     电感直流电阻 dcr 的损耗由电路里的 L+DCR 元件自己算。kSw 按“在 3.7 V 输入、0.5 A 输出时效率 = eff”反推（eff 来自模块参数，估算）。
+//   · 压差：输入高于设定值时直通（输出 ≈ Vin − vd），只在软启动结束后生效。
+//   · 用开关级参考电路（scripts/boost-avg-test.mjs：真实 PWM 开关 + 二极管 + 电感 + 电容）在几个工作点校验了稳态输出和输入电流。
+//   已知简化（我的补充）：输入电流仍用上一步的输出电流（显式，影响很小）；没有环路带宽和 PWM 纹波细节（纹波仍按旧办法在很小步长时叠加）。
+export const BOOST_MODEL = { mode: "avg" };
+export function boostLossK({ v = 5.2, eff = 0.85, vd = 0.3, rds = 0.06, dcr = 0.03, iq = 2e-3 } = {}) {
+  const vi = 3.7, io = 0.5, po = v * io, pin = po / eff, iin = pin / vi, D = 1 - vi / v;
+  return Math.max(0, (pin - po - io * vd - D * rds * iin * iin - dcr * iin * iin - vi * iq) / po);
+}
+export function boostAvg({ id, vin, gnd, vout, en, v = 5.2, eff = 0.85, ilim35 = 1.1, uvlo = 2.5, hys = 0.2, L = 2.2e-6, dcr = 0.03, rOut = 0.05, lOut = 4.7e-6, cOut = 4.7e-6, esrOut = 0.005, rDamp = 1, cDamp = 22e-6, cIn = 10e-6, esrIn = 0.01, tss = 1e-3, fsw = 4e5, tHic = 2e-3, tOff = 20e-3, tGrace = 15e-3, ripple = true, vd = 0.3, rds = 0.06, iq = 2e-3, kSw = null, rLp = 1, tauIn = 60e-6 }) {
+  const d = { t: "X", kind: "boost", model: "avg", id, ifl: 0, iNow: 0, on: false, ramp: 0, inLimit: 0, offUntil: -Infinity, limit: false, hiccups: 0, onAt: -Infinity, lim: 0 };
+  const k = kSw ?? boostLossK({ v, eff, vd, rds, dcr, iq });
+  d.kSw = k;
+  const sw = `${id}#sw`, m = `${id}#ctl`, m2 = `${id}#lo`, c = `${id}#clamp`;
+  let vclamp = 0;
+  d.expand = (add) => {
+    d.lin = add({ t: "L", a: vin, b: sw, l: L, dcr });
+    d.sink = add({ t: "I", from: sw, to: gnd, i: 0 });
+    add({ t: "C", a: sw, b: gnd, c: cIn, esr: esrIn });
+    d.isrc = add({ t: "I", from: gnd, to: m, i: 0 }); // 限流恒流源
+    d.cl = add({ t: "V", p: c, n: gnd, v: 0, r: 1e-4 }); // 钳位电压
+    d.dio = add({ t: "D", a: m, k: c, vf: 0, rs: rOut }); // 钳位“二极管”：导通 = 稳压，截止 = 限流
+    d.sw = add({ t: "S", a: m, b: m2, ron: 1e-4, roff: 1e9, on: () => d.on });
+    d.lo = add({ t: "L", a: m2, b: vout, l: lOut });
+    add({ t: "R", a: m2, b: vout, r: rLp }); // 并联阻尼：恒流源串电感本身是病态的（限流时电感电流被强行规定），并一个电阻让限流 / 稳压切换不抖
+    add({ t: "C", a: vout, b: gnd, c: cOut, esr: esrOut });
+    add({ t: "C", a: vout, b: gnd, c: cDamp, esr: rDamp });
+    d.rip = add({ t: "I", from: gnd, to: vout, i: 0 });
+  };
+  const state = (ctx) => {
+    const vi = ctx.V(vin) - ctx.V(gnd);
+    const enOk = en == null ? true : ctx.V(en) - ctx.V(gnd) > 1.2;
+    const was = d.on;
+    if (!enOk || ctx.t < d.offUntil) d.on = false;
+    else if (d.on) d.on = vi > uvlo;
+    else d.on = vi > uvlo + hys;
+    if (d.on && !was) { d.onAt = ctx.t; ctx.discontinuity = true; ctx.log?.({ dev: id, kind: "boost-on" }); }
+    if (!d.on && was) { ctx.discontinuity = true; ctx.log?.({ dev: id, kind: vi <= uvlo ? "boost-uvlo" : "boost-off" }); }
+    return vi;
+  };
+  d.update = (ctx) => {
+    const vi = state(ctx);
+    const vo = ctx.V(vout) - ctx.V(gnd);
+    const il = Math.max(0, ctx.cur(d.lo.ind || d.lo));
+    const lim = ilim35 * clamp(vi / 3.5, 0.3, 1.3);
+    d.lim = lim;
+    d.ramp = ctx.dc ? 1 : clamp((ctx.t - d.onAt) / tss, 0, 1);
+    const vref = v * d.ramp;
+    const pass = d.ramp >= 1 ? vi - vd : 0; // 压差：输入比设定值高时直通
+    vclamp = Math.max(vref, pass) - rOut * lim;
+    d.isrc.i = d.on ? lim : 0;
+    d.cl.v = (d.on ? vclamp : 0) + ctx.V(gnd);
+    // 输入：功率平衡（显式写出损耗）
+    const po = d.on ? Math.max(0, vo * il) : 0;
+    const vsw = Math.max(0.3, ctx.V(sw) - ctx.V(gnd));
+    const D = clamp(1 - vi / Math.max(vo, 0.1), 0, 0.9);
+    const Pn = po * (1 + k) + il * vd + (d.on ? vi * iq : 0);
+    const rD = D * rds, disc = vsw * vsw - 4 * rD * Pn;
+    d.iNow = Math.min(15, rD > 1e-9 && disc > 0 ? (vsw - Math.sqrt(disc)) / (2 * rD) : Pn / vsw);
+    // 输入电流（= 电感平均电流）一阶滞后跟随需求（≈ 控制环带宽，tauIn 估算 60 µs）：瞬时“恒功率”负载会让输入 LC 自激，真实模块的电感电流跟不了这么快。按指数离散，和步长无关。
+    d.sink.i = ctx.dc ? d.iNow : d.ifl + (d.iNow - d.ifl) * (1 - Math.exp(-ctx.dt / tauIn));
+    if (ripple && d.on && !ctx.dc && !ctx.noRipple && ctx.dt <= 1 / (16 * fsw)) {
+      const ph = (ctx.t * fsw) % 1;
+      d.rip.i = ph < D ? -il : (il * D) / (1 - D);
+    } else d.rip.i = 0;
+  };
+  d.dc = (ctx) => { d.update(ctx); d.ifl = d.iNow; };
+  d.after = (ctx) => {
+    d.ifl = d.ifl + (d.iNow - d.ifl) * (1 - Math.exp(-ctx.dt / tauIn));
+    if (!d.on) { d.limit = false; return; }
+    d.limit = !d.dio.on; // 钳位二极管截止 = 正在限流
+    const vo0 = ctx.V(vout) - ctx.V(gnd);
+    if (d.limit && vo0 < 0.7 * v && ctx.t - d.onAt > tss + tGrace) { d.inLimit += ctx.dt; if (d.inLimit > tHic) { d.offUntil = ctx.t + tOff; d.inLimit = 0; d.hiccups++; ctx.log({ dev: id, kind: "boost-hiccup" }); } } else d.inLimit = Math.max(0, d.inLimit - ctx.dt * 0.5);
+  };
+  d.start = (ctx) => { if (d.on) d.onAt = -Infinity; };
+  return d;
+}
+export function boost(o) { return BOOST_MODEL.mode === "legacy" ? boostLegacy(o) : boostAvg(o); }
 
 // 主控（MCU）：平均负载电阻 + 可选的射频发射脉冲电流 + 欠压复位（低于 bo 立刻复位；回到 bo + hys 以上、持续 tBoot 才重新启动）。
 // 运行时 GPIO 通过开关接到 vio（推挽输出的等效内阻 rGpio）。burst 参数估算。

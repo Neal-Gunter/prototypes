@@ -276,6 +276,7 @@ export function whatIf(W, opt = {}) {
     const minRail = Math.min(c.meas[0].min, c.meas[1].min);
     res[ph] = {
       resets: c.dev[mcu.ref]?.resets ?? 0,
+      stops: c.allEvents.filter((e) => e.kind === "lowStop").length, // v20：低压保护停机（固件读 VBAT 低于门限就停 PWM）
       minRail, mcuMin: c.meas[2].min,
       dip: Math.max(pre(c.ch[0]) - c.meas[0].min, pre(c.ch[1]) - c.meas[1].min),
       ipk, ms: c.ms, events: c.allEvents.length,
@@ -285,6 +286,7 @@ export function whatIf(W, opt = {}) {
   return {
     ok: true, opt, edits, guessed,
     resets: res.power.resets + res.run.resets,
+    stops: res.power.stops + res.run.stops,
     minRail: res.run.minRail, // 运行中 5 V 轨最低（上电阶段从 0 V 爬升，不算）
     servoDip: res.run.dip,
     ipk: res.run.ipk, // 运行中（舵机起步）电池峰值电流，估算

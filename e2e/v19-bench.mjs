@@ -104,7 +104,7 @@ const w4 = await runWI(["whatif-cap-0", "whatif-batt-aged"]);
 const w5 = await runWI(["whatif-cap-0", "whatif-batt-fresh", "whatif-awg-30"]);
 ok((await p.locator("[data-testid^=whatif-row-]").count()) === 5, "what-if 表格 5 行");
 ok(w2.servoDip > w1.servoDip && w1.servoDip > w3.servoDip, "what-if：电容 0 / 100 / 1000 µF → 起步跌落递减", [w2, w1, w3].map((w) => (w.servoDip * 1000).toFixed(0) + " mV").join(" / "));
-ok(w1.resets === 0 && w4.resets > 0, "what-if：老化电池 + 不加电容会复位", `${w1.resets} → ${w4.resets} 次`);
+ok(w1.resets === 0 && !w1.stops && w4.resets + (w4.stops || 0) > 0, "what-if：老化电池 + 不加电容会复位或触发低压停机（v20 平均值升压模型下是低压停）", `${w1.resets} → ${w4.resets} 次复位，低压停 ${w4.stops || 0}`);
 ok([w1, w2, w3, w4, w5].every((w) => w.ipk > 0.5 && w.ipk < 6), "what-if：电池峰值电流 0.5–6 A（估算）", [w1, w2, w3, w4, w5].map((w) => w.ipk.toFixed(2)).join(" / ") + " A");
 ok(/估算/.test(await txt("whatif")) && /早期原型，简化仿真/.test(await txt("whatif")), "what-if 面板标明估算 / 早期原型");
 res.whatIf = [w1, w2, w3, w4, w5];

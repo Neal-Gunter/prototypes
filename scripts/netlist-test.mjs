@@ -87,7 +87,8 @@ for (const [k, o] of Object.entries({ base: {}, cap0: { cap: 0 }, cap1000: { cap
 const fmt = (r) => `复位 ${r.resets}，5V 最低 ${r.minRail.toFixed(3)} V，起步跌落 ${(r.servoDip * 1000).toFixed(0)} mV，电池峰值 ${r.ipk.toFixed(2)} A（${r.ms} ms）`;
 ok(Object.values(wi).every((r) => r.ok), "what-if 6 组全部跑完", Object.values(wi).map((r) => r.ms + " ms").join(" / "));
 ok(wi.cap0.servoDip > wi.base.servoDip && wi.base.servoDip > wi.cap1000.servoDip, "what-if：电容越大，舵机起步跌落越小", `0 / 100 / 1000 µF：${[wi.cap0, wi.base, wi.cap1000].map((r) => (r.servoDip * 1000).toFixed(0)).join(" / ")} mV`);
-ok(wi.base.resets === 0 && wi.aged.resets > 0 && wi.aged0.resets >= wi.aged.resets, "what-if：新电池不复位，老化电池会复位，再去掉电容复位不减少", `${wi.base.resets} / ${wi.aged.resets} / ${wi.aged0.resets}`);
+const bad = (r) => r.resets + r.stops;
+ok(bad(wi.base) === 0 && bad(wi.aged) > 0 && bad(wi.aged0) >= bad(wi.aged), "what-if：新电池不复位也不低压停，老化电池会复位或低压停机，再去掉电容也不减少（v20：平均值升压模型下老化电池是“低压保护停机”而不是掉电复位）", `复位+低压停 ${bad(wi.base)} / ${bad(wi.aged)} / ${bad(wi.aged0)}（复位 ${wi.base.resets}/${wi.aged.resets}/${wi.aged0.resets}）`);
 ok(Object.values(wi).every((r) => r.ipk > 0.5 && r.ipk < 6), "what-if：电池峰值电流在 0.5–6 A 之间（8 个舵机起步，估算）", Object.values(wi).map((r) => r.ipk.toFixed(2)).join(" / ") + " A");
 ok(wi.cap1000.ipkInrush > wi.base.ipkInrush, "what-if：电容越大，上电浪涌越大（估算）", `${wi.base.ipkInrush.toFixed(1)} → ${wi.cap1000.ipkInrush.toFixed(1)} A`);
 for (const [k, r] of Object.entries(wi)) log.push(`  what-if ${k}: ${fmt(r)}`);
