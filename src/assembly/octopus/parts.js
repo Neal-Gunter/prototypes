@@ -222,7 +222,7 @@ function armB() {
 // ---------- v10 紧凑无线版（我的补充）：骨架、短触手、1S 分压板 ----------
 // SG51R（库里 ada-2201 的 CAD）：机身中心到输出轴 0.605 cm、轴顶 2.49 cm、长 3.01 × 宽 1.18 cm。舵机竖装、长边沿径向、轴朝外。
 export const SG51R_GEO = { shaftX: 0.605, shaftTop: 2.49, halfL: 1.505, halfW: 0.59, bodyTop: 2.23 };
-export const FRAME_V10 = { R: 4.5, t: 0.25, servoR: 3.2, yawR: 3.2 + 0.605, postR: 1.2, deckY: 3.3, deckT: 0.2, deckR: 4.0 };
+export const FRAME_V10 = { R: 4.5, t: 0.25, servoR: 3.2, yawR: 3.2 + 0.605, postR: 1.2, deckY: 3.5, deckT: 0.2, deckR: 4.0 };
 // 触手：根部在舵盘上，先平着越过舵机外端（0.9 cm），再往下到桌面；末端 4.4 cm（估算，见 dims_src）
 export const ARM_V10 = { tip: [4.4, -2.57], seg: [[1.3, -0.45], [4.0, -2.3]], boxes: [[0.3, 1.35, 0.12, 0.2, 0.45], [1.3, 2.4, -0.6, 0.18, 0.42], [2.35, 3.45, -1.45, 0.16, 0.36], [3.4, 4.45, -2.3, 0.15, 0.3]] };
 function frameV10() {
@@ -231,15 +231,15 @@ function frameV10() {
   const prims = [{ k: "cyl", c: [0, F.t / 2, 0], r: F.R, h: F.t, m: "white" }];
   for (let k = 0; k < 4; k++) {
     const a = ((22.5 + 90 * k) * Math.PI) / 180, x = F.postR * Math.cos(a), z = F.postR * Math.sin(a);
-    const b = box(x - 0.25, x + 0.25, F.t, F.deckY, z - 0.25, z + 0.25);
+    const b = box(x - 0.2, x + 0.2, F.t, F.deckY, z - 0.2, z + 0.2);
     cols.push(b); prims.push(B(b, "white"));
   }
   const y0 = F.deckY, y1 = F.deckY + F.deckT;
   cols.push(box(-F.deckR * 0.92, F.deckR * 0.92, y0, y1, -F.deckR * 0.38, F.deckR * 0.38), box(-F.deckR * 0.38, F.deckR * 0.38, y0, y1, -F.deckR * 0.92, F.deckR * 0.92), box(-F.deckR * 0.7, F.deckR * 0.7, y0, y1, -F.deckR * 0.7, F.deckR * 0.7));
   prims.push({ k: "cyl", c: [0, (y0 + y1) / 2, 0], r: F.deckR, h: F.deckT, m: "white" });
   return base("p-octo-frame-v10", "v10 紧凑骨架（底板 Φ9 cm + 4 根立柱 + Φ8 cm 上层板，我的补充）", "Octopus v10 compact frame (our design)", "enclosure", cols, prims, {
-    dims_src: "我的补充：8 个 SG51R（Adafruit 2201，30.1 × 11.8 mm）竖装、轴朝外，舵机中心在半径 3.2 cm——8 个挤在一圈时内端不互相碰的最小值（半宽 0.59 cm / sin 22.5° ≈ 1.54 cm，加内端 1.5 cm → ≥ 3.05 cm）。底板 Φ9 cm 托住舵机外端；上层板高 3.3 cm，在触手根部（顶 ≈ 3.06 cm）上面，放电池和电路板。厚度、立柱为估算",
-    spec: "3D 打印（PLA）；底板 2.5 mm、上层板 2 mm；4 根立柱在相邻舵机之间。实体体积约 29 cm³（≈ 36 g 实心，按 60% 填充折算约 22 g，估算）",
+    dims_src: "我的补充：8 个 SG51R（Adafruit 2201，30.1 × 11.8 mm）竖装、轴朝外，舵机中心在半径 3.2 cm——8 个挤在一圈时内端不互相碰的最小值（半宽 0.59 cm / sin 22.5° ≈ 1.54 cm，加内端 1.5 cm → ≥ 3.05 cm）。底板 Φ9 cm 托住舵机外端；上层板底面高 3.5 cm，在触手根部（顶 ≈ 3.06 cm）上面，中间留 4 mm 走舵机线，放电池和电路板。厚度、立柱为估算",
+    spec: "3D 打印（PLA）；底板 2.5 mm、上层板 2 mm；4 根 4 × 4 mm 立柱在相邻舵机之间（舵机线从立柱旁边过）。实体体积约 29 cm³（≈ 36 g 实心，按 60% 填充折算约 22 g，估算）",
     est: ["全部结构尺寸", "质量"],
     density: 1.24 * 0.6,
   });

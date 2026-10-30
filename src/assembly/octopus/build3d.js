@@ -4,6 +4,7 @@ import { getEntry, toDef } from "../catalog.js";
 import { pinsOf, FRAME } from "./parts.js";
 import { Gait } from "./firmware.js";
 import { LocoPhys } from "./loco.js";
+import { DECK_V10, servoPoseV10, armPoseV10, servoRouteV10, dirOf } from "./layout-v10.js";
 
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 const UP = V3(0, 1, 0);
@@ -31,6 +32,77 @@ const servoLocal = { shaft: [0, 3.07, 0.52], lead: [0, 0.45, -1.2] };
 
 export async function buildOcto(engine, sim, { run, say } = {}) {
   const B = sim.bench, roles = {}, rotors = [];
+  if (B.board === "v10") await buildV10(engine, sim, roles, { run, say });
+  else await buildV9(engine, sim, roles, { run, say });
+  return finishOcto(engine, sim, roles, rotors);
+}
+
+const LABEL_V10 = { QTPY: "QT Py ESP32‑S3（Adafruit 5426）", BAT: "1200 mAh 单节 LiPo（Adafruit 258）", CHG: "USB‑C LiPo 充电板（Adafruit 4410）", BST1: "MiniBoost 5.2 V #1（Adafruit 4654）", BST2: "MiniBoost 5.2 V #2（Adafruit 4654）", SW: "拨动开关（Adafruit 805）", DIV: "1S 分压板 100k/100k（我的补充）", CAP1: "电容（升压 1 输出）", CAP2: "电容（升压 2 输出）" };
+const sideExit = (role, pin) => /^(SW|CAP\d)$/.test(role) || (role === "QTPY" && /^(BAT|BGND)$/.test(pin));
+async function buildV10(engine, sim, roles, { run, say } = {}) {
+  const B = sim.bench, C = OCTO_C;
+  const W = (p) => V3(C.x + p[0], C.y + p[1], C.z + p[2]);
+  say?.("v10 紧凑无线版：骨架 + 8 个 SG51R + 8 条短触手；电池、QT Py、充电板、2 个升压板、开关、分压板全装在机身上层板（没有桌上的线）");
+  const items = [{ def: await D("p-octo-frame-v10"), p: C.clone(), label: "v10 紧凑骨架" }];
+  const servoDef = await D("ada-2201"), armDef = await D("p-octo-arm-v10");
+  const idx = {};
+  for (let a = 0; a < 8; a++) {
+    const S = servoPoseV10(a), A = armPoseV10(a);
+    idx[`S${a}`] = items.length; items.push({ def: servoDef, p: W(S.p), q: rotY(S.yaw), label: `${a} 号触手舵机 SG51R` });
+    idx[`A${a}`] = items.length; items.push({ def: armDef, p: W(A.p), q: rotY(A.yaw), label: `${a} 号短触手` });
+  }
+  for (const r of B.roles) {
+    const L = DECK_V10[r]; if (!L) continue;
+    idx[r] = items.length; items.push({ def: await D(B.defs[r]), p: W(L.p), q: rotY(L.yaw), label: LABEL_V10[r] || r });
+  }
+  const uids = engine.addAssembly(items, { why: "v10 机身（预设整体装好；零件间距由 scripts/octo-test.mjs 的穿模检查验证）", allowOverlap: true });
+  roles.FRAME = uids[0];
+  for (const k of Object.keys(idx)) roles[k] = uids[idx[k]];
+  await run?.(0.4);
+  say?.(`接线：${B.wires.length} 根 + 8 根舵机电源（全部在机身上；舵机线沿底板→中心→上层板下面→外缘上来）`);
+  const pinLocal = (role, pin) => { const u = roles[role]; if (!u) return null; const pt = pinsOf(engine.parts.get(u).def).pins[pin]; return pt ? pt.p : null; };
+  const cable = (kind, ua, ub, la, lb, via, color, meta, ties) => {
+    const A = engine.toWorld(ua, la), Bp = engine.toWorld(ub, lb), pts = [A, ...via, Bp];
+    let len = 0; for (let i = 1; i < pts.length; i++) len += pts[i].distanceTo(pts[i - 1]);
+    engine.addCable(kind, [ua, ub], null, { endLocal: [la, lb], via, ties, color, N: Math.max(6, Math.min(16, Math.round(len / 1.6))), meta });
+  };
+  const exitFrom = (uid, local, worldP) => {
+    const w = engine.worldPose(uid), o = V3(local[0], 0, local[2]).applyQuaternion(w.q);
+    if (o.lengthSq() < 1e-6) o.set(0, 0, -1).applyQuaternion(w.q);
+    o.setY(0).normalize();
+    return worldP.clone().addScaledVector(o, 0.55).add(V3(0, 0.05, 0));
+  };
+  let k = 0;
+  for (const w of B.wires) {
+    if (w.kind === "octo-v10-servo") continue;
+    const ua = roles[w.a[0]], ub = roles[w.b[0]], la = pinLocal(...w.a), lb = pinLocal(...w.b);
+    if (!ua || !ub || !la || !lb) continue;
+    const A = engine.toWorld(ua, la), Bp = engine.toWorld(ub, lb);
+    const A1 = sideExit(...w.a) ? exitFrom(ua, la, A) : A.clone().add(V3(0, 0.4, 0));
+    const B1 = sideExit(...w.b) ? exitFrom(ub, lb, Bp) : Bp.clone().add(V3(0, 0.4, 0));
+    const h = C.y + 5.0 + (k % 4) * 0.2; // 越过板上最高的零件（充电板顶 ≈ 4.84 cm）
+    cable(w.kind, ua, ub, la, lb, [A1, A1.clone().setY(h), B1.clone().setY(h), B1], w.color, { a: w.a, b: w.b, why: w.why, md: w.md });
+    if (++k % 6 === 0) await run?.(0.05);
+  }
+  const lead = pinsOf(servoDef).pins.LEAD.p;
+  for (const w of B.wires.filter((x) => x.kind === "octo-v10-servo")) {
+    const a = +w.a[0].slice(1), us = roles[w.a[0]];
+    for (const [j, tgt, kind, color, why] of [[0, ["QTPY", w.b[1]], "octo-v10-wire", "orange", `${w.a[0]} 橙 PWM → QT Py ${w.b[1]}`], [1, [w.rail, "OUT"], "octo-v10-servo", "red", `${w.a[0]} 红 V+ / 棕 GND → ${w.rail} OUT / GND（3D 里画成一根）`]]) {
+      const ub = roles[tgt[0]], lb = pinLocal(...tgt); if (!ub || !lb) continue;
+      const end = engine.toWorld(ub, lb).sub(C);
+      const via = servoRouteV10(a, [end.x, end.y, end.z], j).map((p) => W(p));
+      const pts = [engine.toWorld(us, lead), ...via, engine.toWorld(ub, lb)], cum = [0];
+      for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + pts[i].distanceTo(pts[i - 1]));
+      const ties = [2, 3, 4, 5].map((i) => ({ at: cum[i] / cum.at(-1), uid: roles.FRAME }));
+      cable(kind, us, ub, lead, lb, via, color, { a: w.a, b: tgt, why: j ? why : w.why, md: w.md }, ties);
+    }
+    await run?.(0.03);
+  }
+  void dirOf;
+}
+
+async function buildV9(engine, sim, roles, { run, say } = {}) {
+  const B = sim.bench;
   const label = (r) => ({ ESP: "ESP32‑S3 开发板", PCA: "PCA9685 舵机驱动板", MIC: "INMP441 麦克风", AMP: "MAX98357A 功放", SPK: "喇叭", BAT: B.variant === "plus" ? "3S 锂电组 11.1 V（我的补充）" : "2S 锂电池", DIV: "电池分压 100k/22k → GPIO10（我的补充）", U1: "降压 6 V（舵机）", U2: B.variant === "plus" ? "降压 5 V（ESP32，我的补充）" : "降压 5 V（ESP32，补充）", OLED: "OLED" }[r] || r);
   // ESP32 开发板 + 板上的真实 ESP32‑S3‑WROOM‑1 模组（同一个刚体）
   say?.("放主控：ESP32‑S3‑DevKitC‑1（模组用库里的 ESP32‑S3‑WROOM‑1 CAD）");
@@ -137,6 +209,10 @@ export async function buildOcto(engine, sim, { run, say } = {}) {
     engine.addCable(w.kind, [ua, ub], null, { endLocal: [la, lb], via, ties, color: w.color, N: Math.max(6, Math.min(16, Math.round(len / 2.2))), meta: { a: w.a, b: [w.b[0], pin2], why: w.why, md: w.md } });
     if (++k % 6 === 0) await run?.(0.05);
   }
+}
+
+async function finishOcto(engine, sim, roles, rotors) {
+  const B = sim.bench;
   // —— v9：走路是物理（loco.js）。3D 画面 = 物理刚体的位姿：机身整体 + 每条触手的连杆（只摆画面/机身刚体，导线不拽机身）——
   let lp = null;
   if (B.robot) { lp = await LocoPhys.create(sim, { c: [OCTO_C.x, 0, OCTO_C.z], mu: sim.o.mu ?? 0.5 }); sim.attachPhys(lp); }

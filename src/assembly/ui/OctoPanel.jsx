@@ -2,7 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import { engine } from "../engine.js";
 import { OctoSim, EST } from "../octopus/sim.js";
-import { FAULTS, PHASES } from "../octopus/bench.js";
+import { FAULTS, FAULTS_V10, PHASES } from "../octopus/bench.js";
+import { LIPO, V10_EST, massV10 } from "../octopus/v10.js";
 import { FIX_LIST, fixesAll, fixesPlus, Gait } from "../octopus/firmware.js";
 import { VARIANTS } from "../octopus/bench.js";
 import { buildOcto, OCTO_C, TAUT } from "../octopus/build3d.js";
@@ -24,6 +25,7 @@ export const CAMS = [
   { k: "side", zh: "触手侧面", pos: [24, 4.5, 0], tgt: [0, 2, 0], body: true },
   // v9：远一点、贴着桌面的正侧面，看触手抬起 / 下压推地（跟着机身）
   { k: "walk", zh: "走路侧视", pos: [42, 2.2, -4], tgt: [0, 2.2, -4], body: true },
+  { k: "near", zh: "近侧视（小机身）", pos: [24, 3.5, -3], tgt: [0, 2.6, -3], body: true },
   { k: "wires", zh: "接线台面", pos: [-12, 28, 26], tgt: [-12, 0, 2] },
 ];
 export function setCam(k, motion) {
@@ -37,6 +39,7 @@ const Btn = ({ children, on, dis, t, cls = "", submit }) => <button type={submit
 function TopView({ snap, plan }) {
   if (!snap) return null;
   const S = 4.2, W = 220, H = 160;
+  const G = octoSim.phys?.geo, mR = G?.yawR ?? 3.8, aL = G ? G.tip[0] : 9, bR = G?.plateR ?? 5;
   const tr = octoSim.trace;
   const p = snap.pose, cx = W / 2, cz = H / 2;
   const ox = p.x, oz = p.z;
@@ -45,7 +48,7 @@ function TopView({ snap, plan }) {
   for (let a = 0; a < 8; a++) {
     const { yaw, lift } = octoSim.armPose(a);
     const th = (Gait.MountAngle(a) * Math.PI) / 180, phi = th - (yaw * Math.PI) / 180;
-    const lx0 = 3.8 * Math.cos(th), lz0 = 3.8 * Math.sin(th), lx1 = lx0 + 9 * Math.cos(phi), lz1 = lz0 + 9 * Math.sin(phi);
+    const lx0 = mR * Math.cos(th), lz0 = mR * Math.sin(th), lx1 = lx0 + aL * Math.cos(phi), lz1 = lz0 + aL * Math.sin(phi);
     const rot = (x, z) => [p.x + x * Math.cos(p.h) - z * Math.sin(p.h), p.z + x * Math.sin(p.h) + z * Math.cos(p.h)];
     arms.push({ a, s: P(...rot(lx0, lz0)), e: P(...rot(lx1, lz1)), up: plan === "B" && lift > 5 });
   }
@@ -56,7 +59,7 @@ function TopView({ snap, plan }) {
       <defs><pattern id="g" width={S * 5} height={S * 5} patternUnits="userSpaceOnUse" x={(cx - ox * S) % (S * 5)} y={(cz - oz * S) % (S * 5)}><path d={`M ${S * 5} 0 L 0 0 0 ${S * 5}`} fill="none" stroke="#e7e2d8" strokeWidth="0.6" /></pattern></defs>
       <rect width={W} height={H} fill="url(#g)" />
       <polyline points={pts} fill="none" stroke="#b06a2c" strokeWidth="1" />
-      <circle cx={P(p.x, p.z)[0]} cy={P(p.x, p.z)[1]} r={5 * S} fill="#f4efe6" stroke="#444" strokeWidth="0.8" />
+      <circle cx={P(p.x, p.z)[0]} cy={P(p.x, p.z)[1]} r={bR * S} fill="#f4efe6" stroke="#444" strokeWidth="0.8" />
       <line x1={P(p.x, p.z)[0]} y1={P(p.x, p.z)[1]} x2={nose[0]} y2={nose[1]} stroke="#c33" strokeWidth="1.2" />
       {arms.map((r) => <g key={r.a}><line x1={r.s[0]} y1={r.s[1]} x2={r.e[0]} y2={r.e[1]} stroke={r.up ? "#e6a76a" : "#d06a1a"} strokeWidth={r.up ? 1.5 : 3} strokeDasharray={r.up ? "2 1.5" : ""} strokeLinecap="round" /><text x={r.e[0]} y={r.e[1]} fontSize="6" fill="#333">{r.a}</text></g>)}
       <text x="4" y="10" fontSize="7" fill="#555">俯视轨迹（每格 5 cm；红线 = 0 号触手方向 = 前）</text>
@@ -119,13 +122,13 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
   }
   async function build1(o = {}) {
     const cfg = { plan, phase, fault, mode, variant, F, ...o };
-    if (o.variant && !o.F) cfg.F = o.variant === "plus" ? fixesPlus() : fixesAll(true);
+    if (o.variant && !o.F) cfg.F = o.variant === "plus" || o.variant === "v10" ? fixesPlus() : fixesAll(true);
     setVariant(cfg.variant); setPlan(cfg.plan); setPhase(cfg.phase); setFault(cfg.fault); setMode(cfg.mode); setF(cfg.F);
     octoDetach();
     clear();
     await new Promise((r) => setTimeout(r, 120));
     octoSim.set({ plan: cfg.plan, phase: cfg.phase, fault: cfg.fault, mode: cfg.mode, variant: cfg.variant, F: cfg.F });
-    const title = `小智八爪鱼 方案${cfg.plan}${cfg.variant === "plus" ? " · 完善版（我的补充）" : ""}`;
+    const title = cfg.variant === "v10" ? "小智八爪鱼 v10 紧凑无线版（我的补充）" : `小智八爪鱼 方案${cfg.plan}${cfg.variant === "plus" ? " · 完善版（我的补充）" : ""}`;
     setDemo({ text: `${title}…`, i: 0 });
     engine.extDrive = true;
     const h = await buildOcto(engine, octoSim, { run, say: (t) => setDemo({ text: `${title}：${t}` }) });
@@ -174,6 +177,7 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
           <Btn t="octo-quickstart" dis={!ready || busy || building} on={() => build({ plan: "A", phase: 3, fault: "none", variant: "plus", mode: "ino", go: true })} cls="border-copper bg-copper/10 py-2 font-medium">▶ 方案A 完善版<br /><span className="font-normal text-ink-soft">8 舵机，直行 + 转弯</span></Btn>
           <Btn t="octo-quickstart-B" dis={!ready || busy || building} on={() => build({ plan: "B", phase: 3, fault: "none", variant: "plus", mode: "ino", go: true })} cls="border-copper bg-copper/10 py-2 font-medium">▶ 方案B 完善版<br /><span className="font-normal text-ink-soft">16 舵机，摆 + 抬</span></Btn>
         </div>
+        <Btn t="octo-quickstart-v10" dis={!ready || busy || building} on={() => build({ plan: "A", phase: 3, fault: "none", variant: "v10", mode: "ino", go: true, cam: "body" })} cls="border-copper bg-copper/10 py-2 font-medium">▶ v10 紧凑无线版（我的补充）<span className="font-normal text-ink-soft"> · 电池在身上，不插电，手机 BLE 遥控</span></Btn>
         {building && <p className="text-ink-soft" data-testid="octo-building">正在装配（16 舵机版约 10–20 秒）…</p>}
       </fieldset>
       <fieldset className="flex flex-col gap-1">
@@ -184,6 +188,9 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
         <span className="mt-1 text-copper">完善版（我的补充）：md 问题清单里的每一条都改了，改动见指南的“完善版改动表”</span>
         <Btn t="octo-preset-A-plus" dis={!ready || busy || building} on={() => build({ plan: "A", phase: 3, fault: "none", variant: "plus" })} cls="border-copper text-left">方案A · 完善版（我的补充：3S 电池、镜像步态、万向球脚，能直行和转弯）</Btn>
         <Btn t="octo-preset-B-plus" dis={!ready || busy || building} on={() => build({ plan: "B", phase: 3, fault: "none", variant: "plus" })} cls="border-copper text-left">方案B · 完善版（我的补充：防撞、交替步态 + 支撑相下压、原地转圈）</Btn>
+        <span className="mt-1 text-copper">v10 紧凑无线版（我的补充）：电池、主控、升压全在机身上，没有墙插和 USB 线</span>
+        <Btn t="octo-preset-v10" dis={!ready || busy || building} on={() => build({ plan: "A", phase: 3, fault: "none", variant: "v10", cam: "body" })} cls="border-copper text-left">v10 紧凑无线版（1S 1200 mAh LiPo + QT Py ESP32‑S3 + 8 个 SG51R，约 {Math.round(massV10() * 1000)} g，估算）</Btn>
+        {variant === "v10" && <p className="text-copper" data-testid="octo-variant-tip-v10">{VARIANTS.find((v) => v.k === "v10")?.tip}</p>}
         {variant === "plus" && <p className="text-copper" data-testid="octo-variant-tip">{VARIANTS.find((v) => v.k === "plus")?.tip}</p>}
         <details data-testid="octo-adv">
         <summary className="cursor-pointer text-ink-soft">高级设置：阶段 / 故障场景 / 固件模式 / 固件修正开关</summary>
@@ -193,9 +200,9 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
         </label>
         <p className="text-ink-soft">{ph.md}{ph.textOnly ? "（这一阶段只有文字说明，台面按阶段 4 摆）" : ""}</p>
         <label>故障 / 维修场景：
-          <select value={fault} onChange={(e) => setFault(e.target.value)} className="ml-1 w-full border border-line bg-white" data-testid="octo-fault">{FAULTS.map((f) => <option key={f.k} value={f.k}>{f.zh}</option>)}</select>
+          <select value={fault} onChange={(e) => setFault(e.target.value)} className="ml-1 w-full border border-line bg-white" data-testid="octo-fault">{(variant === "v10" ? FAULTS_V10 : FAULTS).map((f) => <option key={f.k} value={f.k}>{f.zh}</option>)}</select>
         </label>
-        {FAULTS.find((f) => f.k === fault)?.md && <p className="text-ink-soft">出处：{FAULTS.find((f) => f.k === fault).md}</p>}
+        {(variant === "v10" ? FAULTS_V10 : FAULTS).find((f) => f.k === fault)?.md && <p className="text-ink-soft">出处：{(variant === "v10" ? FAULTS_V10 : FAULTS).find((f) => f.k === fault).md}</p>}
         <div className="flex gap-2">
           <label><input type="radio" checked={mode === "ino"} onChange={() => (built ? build({ mode: "ino" }) : setMode("ino"))} data-testid="octo-mode-ino" /> 蓝牙串口固件（body_firmware_A.ino）</label>
           <label><input type="radio" checked={mode === "mcp"} onChange={() => (built ? build({ mode: "mcp" }) : setMode("mcp"))} data-testid="octo-mode-mcp" /> 小智 MCP（模拟）</label>
@@ -207,19 +214,20 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
         </details>
         </div>
         </details>
-        <Btn t="octo-build" dis={!ready || busy || building} on={() => build()} cls="border-ink">按上面的设置重新装（方案{plan}{variant === "plus" ? " · 完善版" : ""}）</Btn>
+        <Btn t="octo-build" dis={!ready || busy || building} on={() => build()} cls="border-ink">按上面的设置重新装（{variant === "v10" ? "v10 紧凑无线版" : `方案${plan}${variant === "plus" ? " · 完善版" : ""}`}）</Btn>
       </fieldset>
       {built && snap && <>
         <fieldset data-testid="octo-power">
           <legend className="font-medium">通电状态</legend>
-          <p className={snap.espOn ? "text-emerald-700" : "text-red-700"}>ESP32：{snap.espOn ? `运行中（启动 ${snap.boots} 次）` : "没在运行"}{snap.halted ? ` · 固件停在：${snap.halted}` : ""}</p>
+          {variant === "v10" && <p className="text-emerald-800" data-testid="octo-v10-onboard">电源：1S {LIPO.mah} mAh LiPo 装在机身上（没有墙插、没有 USB 线；USB‑C 只在充电时插）。{snap.pBatAvg ? `平均耗电 ${snap.pBatAvg.toFixed(2)} W → 满电约 ${(LIPO.wh / snap.pBatAvg).toFixed(1)} h（估算，按现在这段动作的平均功率）` : ""}</p>}
+          <p className={snap.espOn ? "text-emerald-700" : "text-red-700"}>{variant === "v10" ? "QT Py ESP32‑S3" : "ESP32"}：{snap.espOn ? `运行中（启动 ${snap.boots} 次）` : "没在运行"}{snap.halted ? ` · 固件停在：${snap.halted}` : ""}</p>
           <table className="mt-1 w-full font-mono text-[11px]"><tbody>
             <tr><td>电池</td><td>{fx(R.vbat, 2)} V</td><td>舵机 V+</td><td>{fx(R.vservo, 2)} V</td></tr>
-            <tr><td>ESP32 5V</td><td>{fx(R.espIn, 2)} V</td><td>3V3</td><td>{fx(R.v33, 2)} V</td></tr>
+            <tr><td>{variant === "v10" ? "QT Py BAT" : "ESP32 5V"}</td><td>{fx(R.espIn, 2)} V</td><td>3V3</td><td>{fx(R.v33, 2)} V</td></tr>
             <tr><td>舵机电流</td><td>{fx(snap.avgI, 2)} A</td><td>峰值</td><td>{fx(snap.peakI, 2)} A</td></tr>
             <tr><td>PWM</td><td>{fx(snap.freq, 0)} Hz</td><td>共地</td><td>{R.gndCommon ? "有" : "没有"}</td></tr>
           </tbody></table>
-          <p className="text-ink-soft">电流、电压是估算模型（{EST.current}）</p>
+          <p className="text-ink-soft">电流、电压是估算模型（{variant === "v10" ? `${V10_EST.current}；${V10_EST.qtpy}` : EST.current}）</p>
           <ul className="mt-1 flex flex-col gap-0.5" data-testid="octo-checks">
             {[...errs, ...warns, ...snap.checks.filter((c) => c.ok)].slice(0, 14).map((c, i) => <li key={i} className={c.ok ? "text-emerald-700" : c.level === "err" ? "text-red-700" : "text-amber-700"}>{c.ok ? "✓" : c.level === "err" ? "✗" : "!"} {c.zh} <span className="text-ink-soft">（{c.md}）</span></li>)}
           </ul>
@@ -264,14 +272,14 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
         {built && B3 && snap.loco && <LocoBox L={snap.loco} mu={mu} setMu={setMu} />}
         {built && B3 && (handle.current?.motion?.taut || 0) >= TAUT && <p className="text-amber-700" data-testid="octo-tether">实物里导线会在这附近拉紧（{handle.current.motion.tautCable}：两端直线距离已到线长的 {Math.round(handle.current.motion.taut * 100)}%）；v9 仿真不让导线拽机身，机身照样按触手摩擦走。</p>}
         {!noBody && <details data-testid="octo-adv-ch">
-          <summary className="cursor-pointer font-medium">通道监视（PCA9685 → 舵机）</summary>
+          <summary className="cursor-pointer font-medium">{variant === "v10" ? "通道监视（QT Py LEDC GPIO → 舵机）" : "通道监视（PCA9685 → 舵机）"}</summary>
           <table className="mt-1 w-full font-mono text-[10px]" data-testid="octo-channels"><thead><tr className="text-ink-soft"><th>通道</th><th>舵机</th><th>脉宽 µs</th><th>指令°</th><th>实际°</th><th>A</th><th /></tr></thead><tbody>
             {snap.servos.map((s) => <tr key={s.role} className={s.buzz || s.collide ? "text-red-700" : ""}><td>{s.ch}</td><td>{s.role}{s.type === "360" ? "(360°)" : ""}</td><td>{s.us ? s.us.toFixed(0) : "—"}</td><td>{s.cmd == null ? "—" : s.cmd.toFixed(0)}</td><td>{s.ang.toFixed(0)}</td><td>{s.I.toFixed(2)}</td><td>{s.collide ? "碰" : s.buzz ? "响" : ""}</td></tr>)}
           </tbody></table>
         </details>}
         {snap.log.length > 0 && <pre className="max-h-32 overflow-auto border border-line bg-white p-1 text-[10px]" data-testid="octo-log">{snap.log.slice(-14).join("\n")}</pre>}
         {snap.events.length > 0 && <ul className="text-[11px] text-ink-soft">{snap.events.slice(-5).map((e, i) => <li key={i}>{e.t}s {e.zh}</li>)}</ul>}
-        <p className="text-ink-soft">{EST.friction}。{isB ? EST.gap : ""}</p>
+        <p className="text-ink-soft">{EST.friction}。{variant === "v10" ? V10_EST.gap : isB ? EST.gap : ""}</p>
       </>}
       <Btn t="octo-guide" dis={!built} on={onExport} cls="border-copper">生成八爪鱼装配指南（md 原文 .ino、引脚表、对照现实、出处表、价格）</Btn>
     </div>

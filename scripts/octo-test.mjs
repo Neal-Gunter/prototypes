@@ -103,6 +103,18 @@ ok(FIX_LIST.filter((f) => f.plus).every((f) => f.zh.includes("我的补充")), "
   t = new OctoSim({ phase: 3, variant: "v10" }); run(t, 4); ok(Math.abs(t.servos[0].us - 1500) < 6, "v10 LEDC pulse centre 1.5 ms " + t.servos[0].us);
   const y = AC([0, 40, -40, 0, 0, 0, 0, 0], -30); ok(y.every((v, a) => 45 - y[(a + 1) % 8] + v >= -30.1), "v10 anti-collide gap");
 }
+// v10 穿模检查（同一刚体内零件 Rapier 不报接触，用分离轴自己查）
+{
+  const { clipV10 } = await import("./v10-clip.mjs");
+  const { DECK_V10 } = await import("../src/assembly/octopus/layout-v10.js");
+  const c = clipV10();
+  ok(c.worstMm <= 0.05 && c.list.length === 0, `v10 layout: no part overlaps (worst ${c.worstMm} mm ${c.list.slice(0, 3).join(", ")})`);
+  ok(c.wireClearMm >= 0, `v10 servo cables clear of all parts (min ${c.wireClearMm} mm, ${c.wireWorst})`);
+  ok(c.sweepMm <= 0.05, `v10 arms sweep ±55° without hitting anything (${c.sweepMm} mm ${JSON.stringify(c.sweep)})`);
+  const save = DECK_V10.QTPY.p; DECK_V10.QTPY.p = [0, 3.7, 0];
+  const bad = clipV10(); DECK_V10.QTPY.p = save;
+  ok(bad.list.some((x) => x.includes("QTPY")), "v10 clip check catches a deliberately misplaced QT Py (control)");
+}
 // 完善版固件文件：静态检查（真正的编译检查用 arduino-cli，见 README）
 {
   const R = (f) => readFileSync(new URL("../src/assembly/octopus/plus/" + f, import.meta.url), "utf8");
