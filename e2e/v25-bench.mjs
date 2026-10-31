@@ -6,7 +6,7 @@ const BASE = process.env.BASE || "http://localhost:4173", OUT = process.env.OUT 
 fs.mkdirSync(`${OUT}/logs`, { recursive: true }); fs.rmSync(VID, { recursive: true, force: true });
 let pass = 0, fail = 0, n = 0; const res = {};
 const ok = (c, zh, extra = "") => { (c ? pass++ : fail++); console.log(c ? "✓" : "✗", zh, extra); };
-const b = await chromium.launch({ executablePath: process.env.CHROME || "/usr/bin/google-chrome", args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
+const b = await chromium.launch({ slowMo: SHOT ? 150 : 0, executablePath: process.env.CHROME || "/usr/bin/google-chrome", args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
 const ctx = await b.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true, ...(SHOT ? { recordVideo: { dir: VID, size: { width: 1440, height: 900 } } } : {}) });
 await ctx.addInitScript(() => { try { localStorage.setItem("asm-tour-v22-done", "1"); } catch {} });
 const p = await ctx.newPage(); const errs = [];
@@ -118,6 +118,6 @@ for (const [w, h, tag] of [[390, 844, "mobile"], [1920, 1080, "wide"]]) {
 ok(!errs.length, "页面无报错", errs.slice(0, 2).join(" | "));
 fs.writeFileSync(`${OUT}/logs/v25-bench.json`, JSON.stringify({ pass, fail, res, errs }, null, 1));
 await ctx.close(); await b.close();
-if (SHOT) { const v = fs.readdirSync(VID).find((f) => f.endsWith(".webm")); if (v) fs.copyFileSync(`${VID}/${v}`, `${OUT}/logs/v25-bench.webm`); }
+if (SHOT) { const v = fs.readdirSync(VID).filter((f) => f.endsWith(".webm")).sort((x, y) => fs.statSync(`${VID}/${y}`).size - fs.statSync(`${VID}/${x}`).size)[0]; /* 最长的是主页面（打印弹窗也会录一段） */ if (v) fs.copyFileSync(`${VID}/${v}`, `${OUT}/logs/v25-bench.webm`); }
 console.log(`v25-bench：${pass} PASS / ${fail} FAIL`);
 process.exit(fail ? 1 : 0);
