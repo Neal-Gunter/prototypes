@@ -13,7 +13,7 @@ function navClass({ isActive }) {
 }
 
 // 这些页面是能交互的早期原型（不是纯概念图）
-const PROTO_PATHS = ["/workbench", "/assembly", "/parts", "/credits", "/repair"];
+const PROTO_PATHS = ["/workbench", "/assembly", "/parts", "/credits", "/repair", "/project"];
 
 export default function Layout() {
   const { pathname } = useLocation();
@@ -73,6 +73,9 @@ export default function Layout() {
                 </NavLink>
                 <NavLink to="/assembly/model" className={navClass}>
                   {tr("模型 + 功能图")}
+                </NavLink>
+                <NavLink to="/project" className={navClass} data-testid="nav-project">
+                  {tr("动手做")}
                 </NavLink>
                 <NavLink to="/repair" className={navClass}>
                   {tr("维修关卡")}

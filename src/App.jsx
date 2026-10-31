@@ -11,6 +11,7 @@ const OctoGuidePage = lazy(() => import("./pages/OctoGuidePage"));
 const ModelLabPage = lazy(() => import("./pages/ModelLabPage"));
 const RepairPage = lazy(() => import("./pages/RepairPage"));
 const PinoutsPage = lazy(() => import("./pages/PinoutsPage"));
+const ProjectPage = lazy(() => import("./pages/ProjectPage"));
 import NotFoundPage from "./pages/NotFoundPage";
 import CreditsPage from "./pages/CreditsPage";
 
@@ -78,6 +79,8 @@ export default function App() {
             }
           />
           {/* 旧的“电路实验”页已并入装配台：打开就是同一套电路练习 */}
+          <Route path="/project" element={<Suspense fallback={<p className="p-8 text-ink-soft">正在加载引导项目…</p>}><ProjectPage /></Suspense>} />
+          <Route path="/project/octopus" element={<Navigate to="/project" replace />} />
           <Route path="/pinouts" element={<Suspense fallback={<p className="p-8 text-ink-soft">正在加载引脚表…</p>}><PinoutsPage /></Suspense>} />
           <Route path="/electrics" element={<Navigate to="/assembly?scene=electrics" replace />} />
           <Route path="/credits" element={<CreditsPage />} />

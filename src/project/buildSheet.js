@@ -5,9 +5,9 @@ import { SRC_ZH, LIC_ZH } from "../assembly/partsSearch.js";
 const PROC = { "p-octo-frame-v10": "PLA 骨架 Ø9 cm + 上层板 Ø8 cm（v10）", "p-octo-arm-v10": "PLA 短触手（v10）", "p-octo-vdiv-1s": "100k/100k 电池检测分压小板" };
 const LINKS = { ada: (id) => `https://www.adafruit.com/product/${id.slice(4)}`, kicad: () => "https://gitlab.com/kicad/libraries/kicad-packages3D" };
 
-export function buildSheet(state, rows, { now = new Date() } = {}) {
+export function buildSheet(state, rows, { now = new Date(), fw = null } = {}) {
   const st = state || P.emptyState();
-  const prog = P.progress(st, { dims: Object.fromEntries((rows || []).map((r) => [r[0], r[4]])), fw: st._fw || null });
+  const prog = P.progress(st, { dims: Object.fromEntries((rows || []).map((r) => [r[0], r[4]])), fw });
   const complete = ["bom", "assemble", "wire", "solder"].every((k, i) => prog.done[i]);
   // 没做完就按参考设计出单（并写明）
   const use = complete ? st : P.autoStep(P.autoStep(P.autoStep(P.autoStep(P.emptyState(), "bom"), "assemble"), "wire"), "solder");
