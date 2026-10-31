@@ -6,7 +6,7 @@ import fs from "node:fs";
 const BASE = (process.env.BASE || "http://localhost:4173/prototypes").replace(/\/$/, ""), OUT = process.env.OUT || "/tmp/v23walk", SHOTS = process.env.SHOTS !== "0";
 fs.mkdirSync(OUT, { recursive: true });
 const PAGES = [["home", "/"], ["example", "/example"], ["workbench", "/workbench"], ["assembly", "/assembly"], ["electrics", "/assembly?scene=electrics"], ["fault", "/assembly?scene=fault"], ["smd", "/assembly?scene=smd"], ["octo", "/assembly?scene=octo"],
-  ["model", "/assembly/model"], ["guide", "/assembly/guide"], ["octo-guide", "/assembly/octopus-guide?plan=B&variant=plus"], ["repair", "/repair"], ["repair-editor", "/repair?tab=editor"], ["parts", "/parts"], ["part", "/parts?id=ada-1185"], ["pinouts", "/pinouts"], ["credits", "/credits"], ["404", "/nope"]];
+  ["model", "/assembly/model"], ["guide", "/assembly/guide"], ["octo-guide", "/assembly/octopus-guide?plan=B&variant=plus"], ["repair", "/repair"], ["project", "/project"], ["repair-editor", "/repair?tab=editor"], ["parts", "/parts"], ["part", "/parts?id=ada-1185"], ["pinouts", "/pinouts"], ["credits", "/credits"], ["404", "/nope"]];
 const VPS = [["m", { width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }], ["w", { width: 1440, height: 900 }]];
 const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(",")) : null;
 const b = await chromium.launch({ executablePath: process.env.CHROME || "/usr/bin/google-chrome", args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });

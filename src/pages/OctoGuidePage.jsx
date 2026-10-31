@@ -110,6 +110,7 @@ export default function OctoGuidePage() {
       <p className="text-xs text-ink-soft">你说 v9 “又笨重又不方便、要插电”。v10：电池、主控、升压全部装在机身上，没有墙插、没有 USB 线（USB‑C 只在充电时插），手机用 BLE 遥控。只用商品页 / 数据手册查得到尺寸的零件。装配台里点“▶ v10 紧凑无线版”就能看。<span className="ml-1 border border-copper px-1 text-copper">早期原型，简化仿真</span></p>
       <h3 className="mt-3 font-medium">13.1 和 v9 方案B 对比</h3>
       <p className="text-xs text-ink-soft">{V10_COMPARE.note}</p>
+      <p className="text-xs" data-testid="og-v10-project"><Link to="/project" className="text-copper underline">→ 动手做（v25，我的补充）：按 6 步从零做这只 v10 八爪鱼——选零件、装配、接线、焊接、仿真检查，最后下载可打印的制作单</Link></p>
       <T t="og-v10-compare" head={["项目", "v9 方案B 完善版", "v10 紧凑无线版", "说明"]} rows={V10_COMPARE.rows} />
       <h3 className="mt-3 font-medium">13.2 物料（带出处）</h3>
       <p className="text-xs text-ink-soft">{V10_BOM.note}</p>
