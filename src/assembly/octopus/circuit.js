@@ -123,14 +123,25 @@ export function evaluate(bench, live = {}) {
 
 // —— v10（我的补充）：1S LiPo → 2 个 MiniBoost 5.2 V → 舵机；开关管 EN 和 QT Py。全是直流估算 ——
 export const I_QTPY = 0.08; // QT Py + BLE 平均电流 @3.7 V（估算）
+// v26：把 v25 的“总内阻”拆成 电池内阻 + 导线 + 接触（JST / 焊点）三段，默认值之和和 v25 一样（全部估算）
+export const V10_R_DEFAULT = { rWire: 0.03, rContact: 0.02 };
+export function v10PathR(vbat0, cal = {}) {
+  const tot0 = vbat0 < 3.6 ? 0.3 : 0.15;
+  const rWire = cal.rWire ?? V10_R_DEFAULT.rWire, rContact = cal.rContact ?? V10_R_DEFAULT.rContact;
+  const rint = cal.rint ?? +(tot0 - V10_R_DEFAULT.rWire - V10_R_DEFAULT.rContact).toFixed(3);
+  const none = cal.rint == null && cal.rWire == null && cal.rContact == null;
+  return { rint, rWire, rContact, total: none ? tot0 : rint + rWire + rContact };
+}
 export function evaluateV10(bench, live = {}) {
   const uf = nets(bench);
   const same = (a, b) => uf.f(a) === uf.f(b);
   const res = { checks: [], rails: {}, warn: [] };
   const C = (ok, zh, md, level = "err") => res.checks.push({ ok: !!ok, zh, md, level: ok ? "ok" : level });
   const servoI = live.servoI || 0, perRail = live.railI || null;
-  const vbat0 = bench.vbat;
-  const Rint = vbat0 < 3.6 ? 0.3 : 0.15; // 电池 + JST + 线的总内阻（估算；快没电时变大）
+  // v26：live.cal 是用户按实测做的校准（可撤销；没有就和 v25 完全一样）
+  const cal = live.cal || {};
+  const vbat0 = cal.vbat0 ?? bench.vbat;
+  const Rint = v10PathR(vbat0, cal).total; // 电池 + JST + 线的总内阻（估算；快没电时变大）
   const batOk = same("CHG:JST+", "BAT:BAT+") && same("CHG:JST-", "BAT:BAT-");
   const bstIn = (b) => batOk && same(`${b}:IN`, "BAT:BAT+") && same(`${b}:GND`, "BAT:BAT-");
   const swOn = same("SW:COM", "BAT:BAT+");
@@ -147,7 +158,7 @@ export function evaluateV10(bench, live = {}) {
   let vbat = vbat0, iBat = 0;
   const out = {};
   for (let it = 0; it < 3; it++) {
-    iBat = espOnPre ? I_QTPY : 0;
+    iBat = espOnPre ? (cal.iQt ?? I_QTPY) : 0;
     for (const b of ["BST1", "BST2"]) {
       const on = bsts.includes(b) && en(b);
       const lim = boostLimitA(vbat), I = on ? railI[b] : 0;

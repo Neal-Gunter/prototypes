@@ -1,5 +1,6 @@
 // v25：从完成的台面生成可打印 / 可下载的制作单（Markdown + HTML 打印版）。不写价格（全部未核实）。早期原型，简化仿真。
 import * as P from "./octoProject.js";
+import * as Mz from "./measure.js";
 import { V10_SAFETY, V10_LIMITS, V10_FW, V10_BUILD } from "../assembly/octopus/guide-v10.js";
 import { SRC_ZH, LIC_ZH } from "../assembly/partsSearch.js";
 const PROC = { "p-octo-frame-v10": "PLA 骨架 Ø9 cm + 上层板 Ø8 cm（v10）", "p-octo-arm-v10": "PLA 短触手（v10）", "p-octo-vdiv-1s": "100k/100k 电池检测分压小板" };
@@ -18,10 +19,11 @@ export function buildSheet(state, rows, { now = new Date(), fw = null } = {}) {
   });
   const wiring = P.refConnections().filter((c) => use.wires.some((w) => P.keyOf(w.a, w.b) === P.keyOf(c.a, c.b))).map((c, i) => ({ i: i + 1, a: P.nodeLabel(c.a), b: P.nodeLabel(c.b), how: c.jst ? "插头（不焊）" : /^S\d:/.test(c.a) ? "舵机线焊到焊盘 / 杜邦线" : "焊接", why: c.why, color: c.color }));
   const solder = P.solderSequence(use).map((x, i, a) => ({ i: i + 1, pad: P.nodeLabel(x.n), why: i && a[i - 1].why === x.why ? "〃" : x.why }));
-  const meter = P.meterTable(P.autoStep(use, "check"));
+  const meter = P.meterTable({ ...P.autoStep(use, "check"), measure: st.measure });
+  const measure = Mz.measureReport({ ...use, measure: st.measure });
   return {
     title: "八爪鱼 v10 紧凑无线版 · 制作单", generated: new Date(now.getTime() + 8 * 3600e3).toISOString().slice(0, 16).replace("T", " "), complete,
-    autoSteps: st.auto || [], bom, wiring, solder, meter,
+    autoSteps: st.auto || [], bom, wiring, solder, meter, measure,
     fw: V10_FW, build: V10_BUILD,
     safety: [
       ...V10_SAFETY,
@@ -44,6 +46,8 @@ const head = (sh) => [
   `生成时间：${sh.generated}（北京时间）· 早期原型，简化仿真`,
   sh.complete ? "按你在引导项目里完成的台面生成。" : "⚠️ 引导项目还没做完：这份制作单按参考设计（v10）生成。",
   sh.autoSteps.length ? `用了“示范：自动完成”的步骤：${sh.autoSteps.join("、")}` : "",
+  sh.measure?.example ? "⚠️ 实测对比里填的是示例数据（不是实测）：不代表任何真实硬件。" : "",
+  sh.measure && Object.keys(sh.measure.cal).length ? `用户校准生效中：${Object.entries(sh.measure.cal).map(([k, c]) => `${Mz.PARAM_ZH[k]} = ${c.value} ${Mz.PARAM_UNIT[k]}`).join("、")}（按实测反推，第 4b 节；第 4 节的期望值已按它重算）` : "",
   "价格：不写（全部未核实）。标“我的补充”的是本项目补充的内容，标“估算”的是模型算出来的、没有实测。",
 ].filter(Boolean);
 export function sheetMarkdown(sh) {
@@ -57,6 +61,7 @@ export function sheetMarkdown(sh) {
   sh.solder.forEach((s) => L.push(`| ${s.i} | ${pipe(s.pad)} | ${pipe(s.why)} |`));
   L.push("", "## 4. 测试清单（万用表）", "", "期望读数来自电路求解器；标“估算”的是模型值，实测会有偏差。按 ① → ② → ③ 的顺序，前一步不对就别往下做。", "", "| 阶段 | 测哪里 | 档位 | 期望 | 依据 | 实测 ☐ |", "|---|---|---|---|---|---|");
   sh.meter.forEach((m) => L.push(`| ${m.stage} | ${pipe(m.where)} | ${m.mode} | ${pipe(m.expect)} | ${m.basis} | |`));
+  L.push("", ...measureMd(sh.measure));
   L.push("", `固件编译状态：${sh.fw.result}`, "", "上电后（V10 制作步骤）：", "");
   sh.build.slice(2, 7).forEach((b) => L.push(`${b[0]}. **${b[1]}**：${b[2]}`));
   L.push("", "## 5. 安全", "");
@@ -70,7 +75,7 @@ export function sheetHtml(sh) {
   return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>${esc(sh.title)}</title>
 <style>
 body{font:13px/1.5 system-ui,"PingFang SC","Noto Sans CJK SC",sans-serif;max-width:960px;margin:24px auto;padding:0 16px;color:#111}
-h1{font-size:22px}h2{font-size:17px;border-bottom:2px solid #333;margin-top:28px}h3{font-size:14px}
+h1{font-size:22px}.st-ok{color:#166534}.st-dev{color:#b91c1c;font-weight:600}.st-cal{color:#1d4ed8}.st-est{color:#666}.ex{background:#fff1d6;border:2px solid #d97706;padding:6px 10px;font-weight:600}h2{font-size:17px;border-bottom:2px solid #333;margin-top:28px}h3{font-size:14px}
 table{border-collapse:collapse;width:100%;margin:8px 0}th,td{border:1px solid #999;padding:3px 6px;text-align:left;vertical-align:top}th{background:#eee}
 .note{background:#fff7e0;border:1px solid #e0b000;padding:6px 10px}.warn li{color:#8a3b00}
 @media print{body{margin:0;max-width:none;font-size:11px}h2{page-break-after:avoid}tr{page-break-inside:avoid}.noprint{display:none}}
@@ -82,9 +87,41 @@ table{border-collapse:collapse;width:100%;margin:8px 0}th,td{border:1px solid #9
 <h2>2. 接线表（引脚到引脚）</h2><p>引脚名来自 Adafruit 引脚图（parts.js）；GPIO 来自固件 OCTO_V10。</p>${tbl(["#", "从", "到", "方式", "说明"], sh.wiring.map((w) => [w.i, w.a, w.b, w.how, w.why]))}
 <h2>3. 焊接顺序（我的补充）</h2><p>先拔电池。先小板、再电源主路、最后 QT Py；JST 电池插头最后插。</p>${tbl(["#", "焊盘", "为什么在这一步"], sh.solder.map((s) => [s.i, s.pad, s.why]))}
 <h2>4. 测试清单（万用表）</h2><p>期望读数来自电路求解器；标“估算”的是模型值。按 ① → ② → ③ 的顺序。</p>${tbl(["阶段", "测哪里", "档位", "期望", "依据", "实测 ☐"], sh.meter.map((m) => [m.stage, m.where, m.mode, m.expect, m.basis, ""]))}
+${measureHtml(sh.measure, tbl)}
 <p>固件编译状态：${esc(sh.fw.result)}</p><ol start="3">${sh.build.slice(2, 7).map((b) => `<li><b>${esc(b[1])}</b>：${esc(b[2])}</li>`).join("")}</ol>
 <h2>5. 安全</h2>${sh.safety.map(([t, l]) => `<h3>${esc(t)}</h3><ul>${l.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`).join("")}
 <h2>6. 没有在实物上验证的部分</h2><ul class="warn">${sh.notValidated.map((x) => `<li>⚠️ ${esc(x)}</li>`).join("")}</ul>
 <h2>7. 来源</h2><ul>${sh.sources.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
 </body></html>`;
+}
+
+// v26：4b 实测对比
+const mIntro = (m) => [
+  "只有你在“实测对比”里填的值算实测；没填的写“仅估算”。容差也是估算。",
+  m.example ? "⚠️ 示例数据（不是实测）：下表的“实测”列是演示用的示例值，不代表任何真实硬件。" : "",
+  `合计：已在实物上验证 ${m.counts.ok} · 已按这条实测校准 ${m.counts.cal} · 有偏差 ${m.counts.dev} · 仅估算 ${m.counts.est}（共 ${m.counts.n} 项）`,
+].filter(Boolean);
+const mRow = (r) => [r.stage, r.where, r.kind === "open" ? "OL" : `${Mz.fmt(r.est, r.unit === "mA" ? 0 : 2)} ${r.unit}`, r.entry?.raw ? `${r.entry.raw}${r.kind === "open" ? "" : " " + r.unit}${r.entry.example ? "（示例数据）" : ""}${r.photo ? " · 有照片（只在本机）" : ""}` : "—", Mz.statusText(r.status, r.example), r.txt];
+const stepZh = (k) => P.STEPS.find((s) => s.k === k)?.zh || k;
+function measureMd(m) {
+  if (!m) return [];
+  const L = ["## 4b. 实测对比（我的补充）", "", ...mIntro(m).map((x) => `> ${x}`), "", "| 阶段 | 测哪里 | 估算 | 实测 | 标记 | 对比 |", "|---|---|---|---|---|---|"];
+  m.rows.forEach((r) => L.push(`| ${mRow(r).map(pipe).join(" | ")} |`));
+  L.push("", "每一步的标记：" + Object.entries(m.steps).map(([k, s]) => `${stepZh(k)} = ${Mz.statusText(s.status, s.example)}`).join("；"), "");
+  if (m.suggestions.length) { L.push("### 校准建议", ""); m.suggestions.forEach((s) => L.push(`- **${pipe(s.title)}** — 该查：${s.param ? Mz.PARAM_ZH[s.param] : "接线 / 焊点（不是参数）"}。${s.check}${s.apply ? ` 建议值：${Mz.PARAM_ZH[s.param]} = ${s.value} ${Mz.PARAM_UNIT[s.param]}（${s.how}）。` : ""}`)); L.push(""); }
+  const cal = Object.entries(m.cal);
+  L.push("### 用户校准", "", cal.length ? "下面的参数在仿真里换成了按实测反推的值（随时可以在页面上撤销）：" : "没有应用用户校准：仿真用默认估算。", "");
+  cal.forEach(([k, c]) => L.push(`- ${Mz.PARAM_ZH[k]} = ${c.value} ${Mz.PARAM_UNIT[k]}（来自 ${c.from}${c.example ? "，示例数据（不是实测）" : ""}）`));
+  return L;
+}
+function measureHtml(m, tbl) {
+  if (!m) return "";
+  const rows = m.rows.map(mRow);
+  const cls = Object.fromEntries([...Object.entries(Mz.STATUS_ZH), ...Object.entries(Mz.EXAMPLE_ZH)].map(([k, v]) => [esc(v), `st-${k}`]));
+  const t = tbl(["阶段", "测哪里", "估算", "实测", "标记", "对比"], rows).replace(/<td>([^<]*)<\/td>/g, (m0, x) => (cls[x] ? `<td class="${cls[x]}">${x}</td>` : m0));
+  const cal = Object.entries(m.cal);
+  return `<h2>4b. 实测对比（我的补充）</h2>${mIntro(m).map((x) => `<p class="${x.startsWith("⚠️") ? "ex" : ""}">${esc(x)}</p>`).join("")}${t}
+<p>每一步的标记：${esc(Object.entries(m.steps).map(([k, s]) => `${stepZh(k)} = ${Mz.statusText(s.status, s.example)}`).join("；"))}</p>
+${m.suggestions.length ? `<h3>校准建议</h3><ul>${m.suggestions.map((s) => `<li><b>${esc(s.title)}</b> — 该查：${esc(s.param ? Mz.PARAM_ZH[s.param] : "接线 / 焊点（不是参数）")}。${esc(s.check)}${s.apply ? esc(` 建议值：${Mz.PARAM_ZH[s.param]} = ${s.value} ${Mz.PARAM_UNIT[s.param]}（${s.how}）。`) : ""}</li>`).join("")}</ul>` : ""}
+<h3>用户校准</h3>${cal.length ? `<ul>${cal.map(([k, c]) => `<li>${esc(`${Mz.PARAM_ZH[k]} = ${c.value} ${Mz.PARAM_UNIT[k]}（来自 ${c.from}${c.example ? "，示例数据（不是实测）" : ""}）`)}</li>`).join("")}</ul>` : "<p>没有应用用户校准：仿真用默认估算。</p>"}`;
 }

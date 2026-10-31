@@ -10,12 +10,15 @@ import { DECK_V10 } from "../assembly/octopus/layout-v10.js";
 import BODY_H from "../assembly/octopus/plus/octopus_plus/octopus_body.h?raw";
 import BATT_H from "../assembly/octopus/plus/octopus_plus/octopus_batt.h?raw";
 import { useLang, tr } from "../i18n.js";
+import * as Mz from "../project/measure.js";
+import MeasurePanel from "../project/MeasurePanel.jsx";
 
 const FW = P.firmwarePins(BODY_H, BATT_H);
 const btn = "min-h-9 border border-line bg-white px-2.5 text-sm hover:border-copper disabled:opacity-40";
 const btnOn = "min-h-9 border border-copper bg-copper px-2.5 text-sm text-white";
 const PROC_ROWS = [["p-octo-frame-v10", "PLA 骨架 + 上层板（v10）", "v10 frame", "struct", [90, 90, 37], "CC0", "proc", ""], ["p-octo-arm-v10", "PLA 短触手（v10）", "v10 arm", "struct", [60, 8, 4], "CC0", "proc", ""], ["p-octo-vdiv-1s", "100k/100k 电池检测分压小板", "1S divider", "passive", [10, 6, 2], "CC0", "proc", ""]];
 const load = () => { try { const s = JSON.parse(localStorage.getItem(P.PROJECT_KEY)); return s && s.v === 25 ? s : P.emptyState(); } catch { return P.emptyState(); } };
+const loadPhotos = () => { try { return JSON.parse(localStorage.getItem(Mz.PHOTO_KEY)) || {}; } catch { return {}; } };
 const Q_ZH = { good: "合格", cold: "虚焊", bridge: "连锡", lifted: "焊盘翘起" };
 const Q_CLS = { good: "text-green-700", cold: "text-amber-700", bridge: "text-red-700", lifted: "text-red-700" };
 const download = (name, text, type) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); };
@@ -59,6 +62,9 @@ export default function ProjectPage() {
   const [wa, setWa] = useState(""); const [wb, setWb] = useState("");
   const [t, setT] = useState(1.0); const [flux, setFlux] = useState(true); const [des, setDes] = useState(false);
   const [msg, setMsg] = useState(null);
+  const [photos, setPhotos] = useState(loadPhotos); const [photoErr, setPhotoErr] = useState(false);
+  useEffect(() => { try { localStorage.setItem(Mz.PHOTO_KEY, JSON.stringify(photos)); setPhotoErr(false); } catch { setPhotoErr(true); } }, [photos]);
+  const mrep = useMemo(() => Mz.measureReport(state), [state]);
   useEffect(() => { loadIndex().then((i) => setRows([...i.parts, ...PROC_ROWS])); }, []);
   useEffect(() => { localStorage.setItem(P.PROJECT_KEY, JSON.stringify(state)); }, [state]);
   const dims = useMemo(() => Object.fromEntries((rows || []).map((r) => [r[0], r[4]])), [rows]);
@@ -71,7 +77,7 @@ export default function ProjectPage() {
   const sim = useMemo(() => (cur === "check" ? P.checkSim(state, FW) : null), [cur, state]);
   const sheet = useMemo(() => (cur === "finish" && rows ? buildSheet(state, rows, { fw: FW }) : null), [cur, state, rows]);
   const meter = useMemo(() => (cur === "check" || cur === "finish" ? P.meterTable(state) : []), [cur, state]);
-  useEffect(() => { window.__project = { get state() { return state; }, set: setState, P, FW, get prog() { return prog; }, sheet: () => rows && buildSheet(state, rows, { fw: FW }) }; }, [state, prog, rows]);
+  useEffect(() => { window.__project = { get state() { return state; }, set: setState, P, FW, get prog() { return prog; }, sheet: () => rows && buildSheet(state, rows, { fw: FW }), Mz, get measure() { return mrep; }, get photos() { return photos; } }; }, [state, prog, rows, mrep, photos]);
   const upd = (f) => setState((s) => { const n = structuredClone(s); f(n); return n; });
 
   const results = useMemo(() => {
@@ -93,9 +99,9 @@ export default function ProjectPage() {
       <p className="mt-1 max-w-3xl text-sm text-ink-soft">{tr("跟着 6 步把在线仿真和动手制作连起来：每一步都有通过 / 不通过的检查和提示；做完生成可打印的制作单（零件、接线、焊接顺序、万用表读数、安全）。数字标“估算”的是模型值，没在实物上测过。")}</p>
       <ol className="mt-4 flex flex-wrap gap-1" data-testid="stepper">
         {P.STEPS.map((s, i) => (
-          <li key={s.k}><button type="button" className={s.k === cur ? btnOn : btn} onClick={() => setStep(s.k)} data-testid={`step-${s.k}`} data-done={prog.done[i] ? "1" : "0"}>{prog.done[i] ? "✓ " : `${i + 1}. `}{tr(s.zh, s.en)}</button></li>
+          <li key={s.k}><button type="button" className={s.k === cur ? btnOn : btn} onClick={() => setStep(s.k)} data-testid={`step-${s.k}`} data-done={prog.done[i] ? "1" : "0"}>{prog.done[i] ? "✓ " : `${i + 1}. `}{tr(s.zh, s.en)}{mrep.steps[s.k] && mrep.steps[s.k].status !== "est" ? <span className={`ml-1 inline-block h-2 w-2 rounded-full ${mrep.steps[s.k].status === "dev" ? "bg-red-600" : "bg-green-600"}`} title={tr(Mz.statusText(mrep.steps[s.k].status, mrep.steps[s.k].example))} data-testid={`step-meas-${s.k}`} data-status={mrep.steps[s.k].status} /> : null}</button></li>
         ))}
-        <li className="ml-auto"><button type="button" className={btn} onClick={() => { if (confirm(tr("清空本机保存的项目进度？"))) { setState(P.emptyState()); setStep(null); setMsg(null); } }} data-testid="reset-project">{tr("重置项目")}</button></li>
+        <li className="ml-auto"><button type="button" className={btn} onClick={() => { if (confirm(tr("清空本机保存的项目进度（包括实测记录和照片）？"))) { setState(P.emptyState()); setPhotos({}); setStep(null); setMsg(null); } }} data-testid="reset-project">{tr("重置项目")}</button></li>
       </ol>
       <div className="mt-1 h-1.5 w-full bg-line"><div className="h-1.5 bg-copper" style={{ width: `${(prog.done.filter(Boolean).length / 6) * 100}%` }} data-testid="progress-bar" /></div>
 
@@ -186,6 +192,8 @@ export default function ProjectPage() {
               </div>
               <h3 className="font-semibold">{tr("万用表应该读到（求解器）")}</h3>
               <MeterTable rows={meter} />
+              {photoErr && <p className="text-red-700" data-testid="photo-quota">{tr("浏览器存储满了：照片没存上（删几张，或导出后清空）")}</p>}
+              <MeasurePanel state={state} setState={setState} photos={photos} setPhotos={setPhotos} report={mrep} />
             </div>
           )}
 
@@ -193,6 +201,7 @@ export default function ProjectPage() {
             <div className="mt-2 space-y-3 text-sm">
               <p className="text-ink-soft">{tr("固件把舵机回中（90°）后再装舵盘和触手，否则触手角度会偏。")}</p>
               <button type="button" className={state.armsOn ? btnOn : btn} onClick={() => upd((s) => { s.armsOn = !s.armsOn; })} data-testid="arms-on">{state.armsOn ? tr("✓ 8 条触手已装上") : tr("舵机回中 → 装上 8 条触手")}</button>
+              <p data-testid="measure-summary">{tr("实测对比")}：{tr("已验证")} {mrep.counts.ok + mrep.counts.cal} · {tr("有偏差")} {mrep.counts.dev} · {tr("仅估算")} {mrep.counts.est} / {mrep.counts.n}{mrep.example ? ` · ${tr("示例数据（不是实测）")}` : ""}{Object.keys(mrep.cal).length ? ` · ${tr("用户校准生效中")}` : ""} <button type="button" className="underline" onClick={() => setStep("check")} data-testid="goto-measure">{tr("去填实测")}</button></p>
               <h3 className="font-semibold">{tr("制作单")}</h3>
               {sheet && <p data-testid="sheet-status">{sheet.complete ? tr("按你完成的台面生成。") : tr("项目还没做完：制作单按参考设计生成（单子上会写明）。")}</p>}
               <div className="flex flex-wrap gap-2">

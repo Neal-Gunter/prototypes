@@ -209,18 +209,21 @@ export function firmwarePins(bodyH, battH) {
   const b = /kPin\s*=\s*(\d+)/.exec(v10(battH || "")); return { servo, batt: b ? +b[1] : null };
 }
 const PAD_OF_GPIO = Object.fromEntries(Object.entries(GPIO_OF).map(([p, g]) => [g, p]));
+// v26：用户校准（实测对比里“应用到仿真”的参数；没应用就是 undefined，和 v25 一样）
+export const calOf = (state) => { const c = state?.measure?.cal; return c && Object.keys(c).length ? Object.fromEntries(Object.entries(c).map(([k, v]) => [k, v.value])) : undefined; };
+export const STALL_A = 8 * 0.23; // 8 个同时堵转（估算）
 export function checkSim(state, fw) {
   const out = []; const d = netDiff(state);
   out.push({ group: "网表", ok: d.missing.length === 0, zh: `实际导通的网表 = 参考网表（断开 ${d.missing.length} 处）`, hint: d.missing[0] ? `${nodeLabel(d.missing[0].a)} ↔ ${nodeLabel(d.missing[0].b)} 不通：${isPad(d.missing[0].a) && state.joints?.[d.missing[0].a]?.q !== "good" ? "这一头的焊点不合格" : isPad(d.missing[0].b) && state.joints?.[d.missing[0].b]?.q !== "good" ? "这一头的焊点不合格" : d.missing[0].a.startsWith("BAT:") ? "电池没插" : "这根线没接"}` : "" });
   out.push({ group: "网表", ok: d.shorts.length === 0, zh: `没有短路（${d.shorts.length} 处）`, hint: d.shorts[0] ? `${nodeLabel(d.shorts[0].a)} 和 ${nodeLabel(d.shorts[0].b)} 连通了——多半是连锡` : "" });
-  const ub = userBench(state); const idle = evaluateV10(ub, { servoI: 0 });
+  const ub = userBench(state); const cal = calOf(state); const idle = evaluateV10(ub, { servoI: 0, cal });
   out.push({ group: "电源", ok: !!state.batPlugged, zh: "电池插上了（JST）", hint: "焊完、万用表通断检查没问题以后再插电池" });
   for (const c of idle.checks.filter((c) => c.level !== "ok" && !/5\.2 V 高于|没写额定电流/.test(c.zh))) out.push({ group: "电源", ok: false, level: c.level, zh: c.zh, hint: c.md });
   const bo = idle.rails.boost || {};
   for (const b of ["BST1", "BST2"]) out.push({ group: "电源", ok: Math.abs((bo[b]?.v || 0) - BOOST.vout) < 0.05, zh: `${roleZh(b)} 输出 ${(bo[b]?.v || 0).toFixed(2)} V（应为 ${BOOST.vout} V，页面数字）`, hint: bo[b]?.on ? "" : "这个升压没工作：查 IN / GND / EN 三根线和焊点、开关是否 ON" });
   out.push({ group: "电源", ok: idle.rails.espOn, zh: `QT Py 上电：BAT 焊盘后 ${idle.rails.espIn} V（估算二极管压降 0.3 V）`, hint: "查开关 COM → QT Py BAT 焊盘、背面 GND 焊盘" });
-  const stall = evaluateV10(ub, { servoI: 8 * 0.23 }); // 8 个同时堵转，估算（V10_LIMITS“电池线”一条）
-  out.push({ group: "电源", ok: true, level: stall.warn.length ? "warn" : "ok", zh: `最坏情况（8 个同时堵转 1.84 A，估算）：${stall.warn.length ? stall.warn.join("；") : `电池 ${stall.rails.vbat} V、电流 ${stall.rails.iBat} A`}`, hint: "只是提醒：固件里有软件限位和低压停机" });
+  const stall = evaluateV10(ub, { servoI: STALL_A, cal }); // 8 个同时堵转，估算（V10_LIMITS“电池线”一条）
+  out.push({ group: "电源", ok: true, level: stall.warn.length ? "warn" : "ok", zh: `最坏情况（8 个同时堵转 ${STALL_A.toFixed(2)} A，估算）：${stall.warn.length ? stall.warn.join("；") : `电池 ${stall.rails.vbat} V、电流 ${stall.rails.iBat} A`}`, hint: "只是提醒：固件里有软件限位和低压停机" });
   const fp = fw || {};
   out.push({ group: "固件", ok: /编译通过/.test(V10_FW.result), zh: `编译状态：${V10_FW.result}`, hint: "命令见“固件”页；台面不在浏览器里编译" });
   if (fp.servo) for (let i = 0; i < 8; i++) {
@@ -254,22 +257,22 @@ export const emptyState = () => ({ v: 25, bom: {}, placed: {}, order: [], wires:
 // —— 万用表检查表（从求解器算；电池电压是标称 3.85 V 估算，实测随电量 3.0–4.2 V） ——
 export function meterTable(state) {
   const st = state && (state.wires || []).length ? state : autoStep(autoStep(autoStep(emptyState(), "wire"), "solder"), "check");
-  const R = []; const add = (stage, where, mode, expect, basis) => R.push({ stage, where, mode, expect, basis });
+  const cal = calOf(state); const R = []; const add = (stage, where, mode, expect, basis) => R.push({ stage, where, mode, expect, basis });
   const cold = evaluateV10(userBench(st, { batPlugged: false, swOn: false }));
   add("① 不插电池", "电池座 JST+ ↔ JST−（充电板 BAT ↔ GND 焊盘）", "通断 / 电阻档", cold.same("CHG:BAT", "CHG:GND") ? "导通（短路！不能插电池）" : "不导通（OL）", "网表（求解器）");
   add("① 不插电池", "QT Py 背面 GND 焊盘 ↔ 充电板 GND", "通断档", cold.same("QTPY:BGND", "CHG:GND") ? "导通（≈ 0 Ω）" : "不导通（共地断了）", "网表");
   for (const b of ["BST1", "BST2"]) add("① 不插电池", `${roleZh(b)} IN ↔ OUT`, "通断档", cold.same(`${b}:IN`, `${b}:OUT`) ? "导通（错！）" : "不导通", "网表（芯片内部不算）");
   add("① 不插电池", "舵机 S0–S7 棕线 ↔ 充电板 GND", "通断档", Array.from({ length: 8 }, (_, i) => cold.same(`S${i}:GND`, "CHG:GND")).every(Boolean) ? "8 根都导通" : "有不导通的", "网表");
   add("① 不插电池", "相邻焊盘（QT Py A0–A1、升压 IN–GND–EN–OUT）", "通断档", "都不导通（导通 = 连锡）", "网表");
-  const off = evaluateV10(userBench(st, { batPlugged: true, swOn: false }));
+  const off = evaluateV10(userBench(st, { batPlugged: true, swOn: false }), { cal });
   add("② 插电池、开关 OFF", "充电板 BAT ↔ GND", "直流电压档", `≈ ${off.rails.vbat.toFixed(2)} V（估算：标称 ${REF().vbat} V；满电 4.2 V、保护板约 3.0 V 切断）`, "估算");
   add("② 插电池、开关 OFF", "升压 OUT ↔ GND（两个）", "直流电压档", `${(off.rails.boost?.BST1?.v || 0).toFixed(1)} V / ${(off.rails.boost?.BST2?.v || 0).toFixed(1)} V（EN 拉低 = 输出断开）`, "求解器 · Adafruit 4654 页面：EN 拉低真断开");
   add("② 插电池、开关 OFF", "QT Py 3V3 脚 ↔ GND", "直流电压档", `${off.rails.v33} V`, "求解器");
-  const on = evaluateV10(userBench(st, { batPlugged: true, swOn: true }), { servoI: 0 });
+  const on = evaluateV10(userBench(st, { batPlugged: true, swOn: true }), { servoI: 0, cal });
   add("③ 开关 ON、舵机不动", "升压 OUT ↔ GND（两个）", "直流电压档", `≈ ${(on.rails.boost?.BST1?.v || 0).toFixed(1)} V / ${(on.rails.boost?.BST2?.v || 0).toFixed(1)} V`, "页面数字（Adafruit 4654：5.2 V）");
   add("③ 开关 ON、舵机不动", "QT Py 3V3 脚 ↔ GND", "直流电压档", `≈ ${on.rails.v33} V`, "页面数字（QT Py 3.3 V 稳压）");
   add("③ 开关 ON、舵机不动", "分压 OUT（QT Py A3）↔ GND", "直流电压档", `≈ ${(on.rails.vbat / BATT_PIN.ratio).toFixed(2)} V（= 电池 ÷ ${BATT_PIN.ratio}，估算）`, "估算（100k/100k）");
-  add("③ 开关 ON、舵机不动", "电池总电流（电流档串在 JST 线上）", "直流电流档（≥ 2 A 量程）", `≈ ${(on.rails.iBat * 1000).toFixed(0)} mA（估算：QT Py + BLE ${0.08 * 1000} mA + 升压空载 + 舵机保持）`, "估算");
+  add("③ 开关 ON、舵机不动", "电池总电流（电流档串在 JST 线上）", "直流电流档（≥ 2 A 量程）", `≈ ${(on.rails.iBat * 1000).toFixed(0)} mA（估算：QT Py + BLE ${Math.round((cal?.iQt ?? 0.08) * 1000)} mA + 升压空载 + 舵机保持）`, "估算");
   return R;
 }
 export const SHEET_LIPO = LIPO;
