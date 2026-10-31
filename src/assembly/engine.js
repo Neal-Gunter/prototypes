@@ -26,7 +26,8 @@ function yawOf(q) {
   return Math.atan2(-f.z, f.x);
 }
 // v24 拆焊返修（简化规则，阈值为估算，不是实测）
-export const PAD_REWORK_MAX = 3, DESOLDER_OVERHEAT_S = 4, PART_HEAT_MAX_S = 30;
+import { PAD_REWORK_MAX, DESOLDER_OVERHEAT_S, PART_HEAT_MAX_S, solderGrade as solderGradeFn } from "./solderModel.js";
+export { PAD_REWORK_MAX, DESOLDER_OVERHEAT_S, PART_HEAT_MAX_S }; // v25：模型抽到 solderModel.js
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 
 // 凸包往中心缩 shr（cm），用来做“放下去会不会穿模”的预检（和方块的缩边一样）
@@ -1669,15 +1670,7 @@ Object.assign(Engine.prototype, {
   // 焊点质量（简化模型，时间阈值为估算）：need = 润湿所需时间（有助焊剂 0.6 s，没有 1.4 s）
   //   松开时 t < 0.4·need：没焊上；< need：虚焊；≤ G：合格；再久：附近有焊盘就连锡，否则仍合格；≥ 3.5·need：焊盘烫坏（自动停止）
   //   有助焊剂时 G = 2.5·need，没有时 G = 1.6·need（锡更容易拉尖、堆锡）
-  solderGrade(t, flux, hasNeighbor) {
-    const need = flux ? 0.6 : 1.4;
-    const G = (flux ? 2.5 : 1.6) * need;
-    if (t < 0.4 * need) return null;
-    if (t < need) return "cold";
-    if (t <= G) return "good";
-    if (t < 3.5 * need) return hasNeighbor ? "bridge" : "good";
-    return "burnt";
-  },
+  solderGrade(t, flux, hasNeighbor) { return solderGradeFn(t, flux, hasNeighbor); }, // v25：同 solderModel.js
   // v24：零件累计受热（估算，秒）。超过 PART_HEAT_MAX_S 只提示“可能受热损坏”，不改电路
   addHeat(uid, t) {
     const P = this.parts.get(uid);

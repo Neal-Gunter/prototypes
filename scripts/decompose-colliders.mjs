@@ -114,6 +114,7 @@ for (const f of fs.readdirSync(META)) {
   const id = f.replace(/\.json$/, ""); if (!cat[id]) continue;
   const mf = path.join(META, f); const meta = JSON.parse(fs.readFileSync(mf, "utf8"));
   const cs0 = meta.colliders_aabb || meta.colliders;
+  if (process.env.ONLY && !EXTRA.includes(id)) continue; // v25：ONLY=1 只处理 IDS 里的零件
   if (!EXTRA.includes(id) && !overlapping(cs0, meta.dims_mm) && !meta.collider_decomp) continue;
   const glb = path.join(ROOT, "public/lib", cat[id], id + ".glb"); if (!fs.existsSync(glb)) continue;
   const T = await tris(glb);

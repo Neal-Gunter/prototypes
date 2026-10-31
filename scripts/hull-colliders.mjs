@@ -147,12 +147,18 @@ for (const f of fs.readdirSync(META)) {
   // ② 相邻合并
   const touch = (a, b) => [0, 1, 2].every((k) => Math.abs(a.c[k] - b.c[k]) <= a.h[k] + b.h[k] + 2e-4);
   const nb = C.map(() => new Set()); for (let i = 0; i < PB.length; i++) for (let j = i + 1; j < PB.length; j++) if (touch(PB[i], PB[j])) { nb[i].add(j); nb[j].add(i); }
-  const cand = []; const tryPair = (i, j) => { const h = hullOf([...C[i].h.V, ...C[j].h.V]); if (!h || h.V.length > MAXV) return; const e = exOf(h).mx; if (e <= LIM) cand.push({ i, j, h, e, cost: h.vol - C[i].h.vol - C[j].h.vol }); };
+  // v25：NOOVERLAP=1 时，合并后的凸包不许伸进别的凸包（在别的凸包里取 5³ 个内点检查），这样凸包之间互不重叠（parts-validate 的体积判据）
+  const NOOV = !!process.env.NOOVERLAP;
+  const innerPts = (h) => { if (h._in) return h._in; const P = [], m = 5; for (let a = 0; a < m; a++) for (let b = 0; b < m; b++) for (let c = 0; c < m; c++) { const p = [0, 1, 2].map((k, kk) => h.lo[k] + (h.hi[k] - h.lo[k]) * ([a, b, c][kk] + 0.5) / m); if (inHull(h, p, -1e-6)) P.push(p); } for (const v of h.V) { const q = v.map((x, k) => x + ((h.lo[k] + h.hi[k]) / 2 - x) * 0.02); if (inHull(h, q, -1e-7)) P.push(q); } return (h._in = P); };
+  const aabbHit = (a, b) => [0, 1, 2].every((k) => a.lo[k] < b.hi[k] - 1e-6 && b.lo[k] < a.hi[k] - 1e-6);
+  const intrudes = (h, i, j) => C.some((c, x) => c.alive && x !== i && x !== j && aabbHit(h, c.h) && innerPts(c.h).some((p) => inHull(h, p, -1e-5)));
+  const cand = []; const tryPair = (i, j) => { const h = hullOf([...C[i].h.V, ...C[j].h.V]); if (!h || h.V.length > MAXV) return; const e = exOf(h).mx; if (e <= LIM && !(NOOV && intrudes(h, i, j))) cand.push({ i, j, h, e, cost: h.vol - C[i].h.vol - C[j].h.vol }); };
   for (let i = 0; i < C.length; i++) for (const j of nb[i]) if (j > i) tryPair(i, j);
   let evals = cand.length;
   while (cand.length) {
     cand.sort((a, b) => a.e - b.e || a.cost - b.cost); const k = cand.shift();
     if (!C[k.i].alive || !C[k.j].alive) continue;
+    if (NOOV && intrudes(k.h, k.i, k.j)) continue; // 别的块合并后可能长到这里
     C[k.j].alive = false; C[k.i] = { h: k.h, boxes: [...C[k.i].boxes, ...C[k.j].boxes], alive: true, ex: k.e };
     for (const x of nb[k.j]) if (x !== k.i) { nb[k.i].add(x); nb[x].delete(k.j); nb[x].add(k.i); } nb[k.i].delete(k.j);
     for (let q = cand.length - 1; q >= 0; q--) if (cand[q].i === k.i || cand[q].j === k.i || cand[q].i === k.j || cand[q].j === k.j) cand.splice(q, 1);
