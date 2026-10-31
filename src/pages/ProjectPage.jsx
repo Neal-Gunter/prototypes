@@ -201,7 +201,7 @@ export default function ProjectPage() {
             <div className="mt-2 space-y-3 text-sm">
               <p className="text-ink-soft">{tr("固件把舵机回中（90°）后再装舵盘和触手，否则触手角度会偏。")}</p>
               <button type="button" className={state.armsOn ? btnOn : btn} onClick={() => upd((s) => { s.armsOn = !s.armsOn; })} data-testid="arms-on">{state.armsOn ? tr("✓ 8 条触手已装上") : tr("舵机回中 → 装上 8 条触手")}</button>
-              <p data-testid="measure-summary">{tr("实测对比")}：{tr("已验证")} {mrep.counts.ok + mrep.counts.cal} · {tr("有偏差")} {mrep.counts.dev} · {tr("仅估算")} {mrep.counts.est} / {mrep.counts.n}{mrep.example ? ` · ${tr("示例数据（不是实测）")}` : ""}{Object.keys(mrep.cal).length ? ` · ${tr("用户校准生效中")}` : ""} <button type="button" className="underline" onClick={() => setStep("check")} data-testid="goto-measure">{tr("去填实测")}</button></p>
+              <p data-testid="measure-summary">{tr("实测对比")}：{mrep.example ? tr("示例数据吻合") : tr("已验证")} {mrep.counts.ok + mrep.counts.cal} · {tr("有偏差")} {mrep.counts.dev} · {tr("仅估算")} {mrep.counts.est} / {mrep.counts.n}{mrep.example ? ` · ${tr("示例数据（不是实测）")}` : ""}{Object.keys(mrep.cal).length ? ` · ${tr("用户校准生效中")}` : ""} <button type="button" className="underline" onClick={() => setStep("check")} data-testid="goto-measure">{tr("去填实测")}</button></p>
               <h3 className="font-semibold">{tr("制作单")}</h3>
               {sheet && <p data-testid="sheet-status">{sheet.complete ? tr("按你完成的台面生成。") : tr("项目还没做完：制作单按参考设计生成（单子上会写明）。")}</p>}
               <div className="flex flex-wrap gap-2">

@@ -41,7 +41,7 @@ export default function MeasurePanel({ state, setState, photos, setPhotos, repor
     <div className="space-y-3 border border-line bg-white p-3" data-testid="measure-panel">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="font-semibold">{tr("实测对比（我的补充）", "Measured vs estimated (my addition)")}</h3>
-        <span className="text-xs" data-testid="measure-counts">{tr("已验证")} {r.counts.ok} · {tr("校准后吻合")} {r.counts.cal} · {tr("有偏差")} {r.counts.dev} · {tr("仅估算")} {r.counts.est} / {r.counts.n}</span>
+        <span className="text-xs" data-testid="measure-counts">{r.example ? tr("示例数据吻合") : tr("已验证")} {r.counts.ok} · {tr("校准后吻合")} {r.counts.cal} · {tr("有偏差")} {r.counts.dev} · {tr("仅估算")} {r.counts.est} / {r.counts.n}</span>
       </div>
       <p className="text-xs text-ink-soft">{tr("在实物上量到的读数填在这里（OL = 不导通）。容差也是估算。只有你填的值会被当成实测；记录存在这台设备的浏览器里。")}</p>
       {r.example && <p className="border border-amber-500 bg-amber-50 p-2 text-sm font-semibold text-amber-900" data-testid="example-banner">⚠️ {tr("现在显示的是示例数据（不是实测）：只用来演示，不代表任何真实硬件。")}</p>}
