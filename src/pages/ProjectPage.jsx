@@ -57,7 +57,7 @@ export default function ProjectPage() {
   useLang();
   const [state, setState] = useState(load);
   const [rows, setRows] = useState(null);
-  const [step, setStep] = useState(() => new URLSearchParams(location.search).get("step") || null);
+  const [step, setStep] = useState(() => { const k = new URLSearchParams(location.search).get("step"); return P.STEPS.some((s) => s.k === k) ? k : null; });
   const [q, setQ] = useState("");
   const [wa, setWa] = useState(""); const [wb, setWb] = useState("");
   const [t, setT] = useState(1.0); const [flux, setFlux] = useState(true); const [des, setDes] = useState(false);

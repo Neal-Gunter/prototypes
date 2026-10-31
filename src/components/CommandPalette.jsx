@@ -5,7 +5,7 @@ import { useLang, tr } from "../i18n.js";
 
 const PAGES = [
   ["/", "首页"], ["/example", "示例"], ["/workbench", "工作台"], ["/assembly", "装配台"], ["/assembly/model", "模型 + 功能图（上传模型）"],
-  ["/assembly/guide", "装配台说明"], ["/assembly/octopus-guide", "八爪鱼装配指南"], ["/repair", "维修关卡"], ["/project", "动手做：从零做一只八爪鱼（引导项目 + 制作单）"], ["/repair?tab=editor", "维修关卡编辑器"],
+  ["/assembly/guide", "装配台说明"], ["/assembly/octopus-guide", "八爪鱼装配指南"], ["/repair", "维修关卡"], ["/project", "动手做：从零做一只八爪鱼（引导项目 + 制作单）"], ["/project?step=check", "实测对比：填万用表读数，和估算对比 + 用户校准"], ["/repair?tab=editor", "维修关卡编辑器"],
   ["/parts", "零件库"], ["/pinouts", "引脚表"], ["/credits", "出处与许可"],
 ];
 const SCENES = [

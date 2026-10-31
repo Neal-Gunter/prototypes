@@ -243,4 +243,10 @@ export const EN = {
   "来自": "from",
   "撤销": "Undo",
   "全部撤销": "Undo all",
+  "动手做": "Build it",
+  "示例数据：吻合（不是实测）": "Example data: matches (not measured)",
+  "示例数据：有偏差（不是实测）": "Example data: deviates (not measured)",
+  "示例数据：已按它校准（不是实测）": "Example data: used for calibration (not measured)",
+  "已在实物上验证": "Verified on real hardware",
+  "已按这条实测校准": "Calibrated from this measurement",
 };
