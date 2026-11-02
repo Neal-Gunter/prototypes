@@ -1179,7 +1179,8 @@ class Engine {
     // v31（我的补充，简化）：小件（质量小、常卡在别的零件空腔里）纠正更“硬”：
     // 规定轮数做完还压进去 > xtraMm 就多做几轮（最多 xtraIt 轮），卡死判定也更早（stuckSmall 次而不是 40 次）
     const small = fast && (body._small ??= body.rb.mass() < (this.smallMass ?? 1.5));
-    const xtra = fast ? (small ? this.xtraIt ?? 6 : this.xtraItBig ?? 0) : 0, xtraD = -(this.xtraMm ?? 0.5) / 10;
+    // 落地冲击那一刻（压进 > deepMm）大件也加时：默认关（engine.xtraItDeep = 0）。v31 实测峰值能降但每步更慢、终态穿透反而变大，留作可选
+    const xtra = fast ? (small ? this.xtraIt ?? 6 : this.xtraItDeep ?? 0) : 0, xtraD = -(this.xtraMm ?? 0.5) / 10, deepD = -(this.deepMm ?? 2) / 10;
     for (let it = 0; it < iters + xtra; it++) {
       let worst = null;
       if (fast) {
@@ -1203,7 +1204,7 @@ class Engine {
         this.benchDepen(c1, null, (w) => { if (!worst || w.distance < worst.distance) worst = w; });
       }
       if (!worst) { body.stuckN = 0; break; }
-      if (it >= iters && worst.distance > xtraD) break; // 加时轮只处理压得深的
+      if (it >= iters && worst.distance > (small ? xtraD : deepD)) break; // 加时轮只处理压得深的（大件只在冲击时）
       // v30：卡死处理（我的补充，简化）。小件掉进别的零件的空腔里会被几面墙同时顶住，单方向推来推去推不出去。
       // 同一个刚体连续 40 次检查都还压进去 > 1 mm，而且它的中心比对方高（在上面 / 在空腔里）：把它往上提出来（相当于“拎出来”）
       if (fast && it === iters - 1 && worst.other && worst.distance < -0.1) {

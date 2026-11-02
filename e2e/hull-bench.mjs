@@ -11,7 +11,7 @@ const { engine } = await import("../.tmp/eng-bundle.mjs");
 const { getEntry, toDef } = await import("../.tmp/cat-bundle.mjs");
 await engine.init(); engine.lodExp = !!process.env.LODEXP; if (process.env.SLOWDEPEN) engine.fastDepen = false; // v30：SLOWDEPEN=1 退回 v29 的逐碰撞体全查（对比用）
  if (process.env.ITER) engine.world.numSolverIterations = +process.env.ITER;
- for (const k of ["xtraIt", "xtraItBig", "xtraMm", "smallMass", "stuckSmall"]) if (process.env[k] != null) engine[k] = +process.env[k]; // v31：小件加时纠正参数（对比用）
+ for (const k of ["xtraIt", "xtraItBig", "xtraItDeep", "deepMm", "xtraMm", "smallMass", "stuckSmall"]) if (process.env[k] != null) engine[k] = +process.env[k]; // v31：小件加时纠正参数（对比用）
 const META = new URL("../../libsrc/meta/", import.meta.url);
 const ids = [];
 for (const f of fs.readdirSync(new URL("../public/lib/catalog", import.meta.url))) for (const e of JSON.parse(fs.readFileSync(new URL("../public/lib/catalog/" + f, import.meta.url), "utf8"))) if (e.collider_decomp?.hull) ids.push(e.id);

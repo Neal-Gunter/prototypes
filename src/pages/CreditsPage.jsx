@@ -176,7 +176,7 @@ export default function CreditsPage() {
       <p className="mt-2 leading-7 text-ink-soft" data-testid="credits-netlist">
         v19 的台面网表提取（从 3D 台面上实际放的零件和线生成电路，查悬空 / 短路 / 缺地）、自适应步长（误差控制、最小步长限制、开关 / 欠压 / 限流事件对齐）、实时改参数 + 撤销 + 改前改后对比、八爪鱼 what-if 面板，全部由本项目自写（我的补充）。线阻按 AWG 铜线每米电阻 × 线长，杜邦端子接触电阻、板载 LDO / 主控电流、舵机起步电流、电池老化内阻都是估算，不是数据手册数值。
       </p>
-      <h2 className="mt-8 text-xl font-medium" id="teardown">拆解模式（v29–v30）：灵感来源</h2>
+      <h2 className="mt-8 text-xl font-medium" id="teardown">拆解模式（v29–v31）：灵感来源</h2>
       <p className="mt-2 leading-7 text-ink-soft" data-testid="credits-teardown">
         拆解模式的指南文字、步骤插图（SVG）、爆炸图和近似零件全部由本项目自己编写和程序生成，按公开的通用常识整理，未经实物验证；没有复制下面任何项目的文字、照片或代码。下面这些公开项目只是做法上的灵感（列出它们、并如实写出我们看到的许可）：
       </p>
@@ -187,7 +187,7 @@ export default function CreditsPage() {
         <li><a className="underline" href="https://github.com/gipi/teardown">gipi/teardown</a>：只作参考（拆解记录的组织方式）。</li>
         <li><a className="underline" href="https://github.com/nox-x/TG3442DE-Teardown">nox-x/TG3442DE-Teardown</a>：我们没有看到许可文件，所以只看了它的结构，没有使用任何内容。</li>
       </ul>
-      <p className="mt-2 leading-7 text-ink-soft">零件库里新增的 22 个“近似件 · 拆解模式”（td- 开头）是本项目程序生成（CC0），全部尺寸是估算，形状是示意。</p>
+      <p className="mt-2 leading-7 text-ink-soft">零件库里新增的 27 个“近似件 · 拆解模式”（td- 开头）是本项目程序生成（CC0），全部尺寸是估算，形状是示意。</p>
       <h2 className="mt-8 text-xl font-medium">代码库</h2>
       <p className="mt-2 leading-7 text-ink-soft">
         React、three.js、@dimforge/rapier3d-compat（Apache-2.0，物理碰撞）、@react-three/fiber、@react-three/drei、zustand、Tailwind CSS（除注明外均为 MIT 许可）。模型转换脚本用 glTF‑Transform 和 meshoptimizer（MIT，只在开发时运行）。“模型 + 功能图”页（v11）在浏览器里用 occt-import-js（LGPL‑2.1，读 STEP；作为单独的 JS + wasm 文件按需加载，没有改动，可替换）和 pdfjs-dist（Apache-2.0，读 PDF 功能图，按需加载）。内置示例的八爪鱼 GLB 和功能图 SVG 由本项目从 v10 预设自制；v12 的 2 自由度机械臂示例（OBJ + 功能图 + 工程）由本项目脚本自制，CC0。关节和舵机运动用同一个 Rapier 引擎。
