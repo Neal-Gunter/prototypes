@@ -111,6 +111,7 @@ export default function OctoGuidePage() {
       <h3 className="mt-3 font-medium">13.1 和 v9 方案B 对比</h3>
       <p className="text-xs text-ink-soft">{V10_COMPARE.note}</p>
       <p className="text-xs" data-testid="og-v10-project"><Link to="/project" className="text-copper underline">→ 动手做（v25，我的补充）：按 6 步从零做这只 v10 八爪鱼——选零件、装配、接线、焊接、仿真检查，最后下载可打印的制作单</Link><span data-testid="og-v10-measure">；v26 起可以在“仿真检查”这一步填实物万用表读数，和估算对比、标出偏差，并按实测做可撤销的用户校准。</span></p>
+      <p className="text-xs" data-testid="og-v27-help"><Link to="/help" className="text-copper underline">→ 使用说明（v27）：每个模式怎么用、快捷键、常见问题和诚实的限制</Link>；维修关卡里新加了 3 个八爪鱼故障（舵机插反、舵机电源虚焊、升压输入虚焊），期望读数来自简化仿真，不是实测。</p>
       <T t="og-v10-compare" head={["项目", "v9 方案B 完善版", "v10 紧凑无线版", "说明"]} rows={V10_COMPARE.rows} />
       <h3 className="mt-3 font-medium">13.2 物料（带出处）</h3>
       <p className="text-xs text-ink-soft">{V10_BOM.note}</p>

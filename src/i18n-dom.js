@@ -85,7 +85,7 @@ function stop() {
 }
 export function loadMT() {
   if (DICT) return Promise.resolve(DICT);
-  return (loading ||= fetch("/i18n/en-mt.json").then((r) => r.json()).then((d) => { DICT = d.dict || d; window.__mtMeta = d.meta; return DICT; }).catch(() => (DICT = {})));
+  return (loading ||= fetch(import.meta.env.BASE_URL + "i18n/en-mt.json").then((r) => r.json()).then((d) => { DICT = d.dict || d; window.__mtMeta = d.meta; return DICT; }).catch(() => (DICT = {})));
 }
 async function sync() {
   if (getLang() === "en") { await loadMT(); if (getLang() === "en") start(); } else stop();

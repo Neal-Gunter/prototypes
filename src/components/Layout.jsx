@@ -109,7 +109,7 @@ export default function Layout() {
           <footer className="border-t border-line">
             <div className={`${containerClass} py-8 text-sm leading-6 text-ink-soft`}>
               <p>{tr("硬件验证 · 概念演示")}</p>
-              <p className="mt-1" data-testid="lang-note">界面以中文为主（我的补充）：零件名、数据手册术语和代码保留英文原文。<span lang="en"> The UI is Chinese-first; part names, datasheet terms and code stay in English. v24: an English UI toggle (EN button in the header, remembered on this device) covers the navigation, banner, command palette, bench tour and the main workbench labels; guides, part descriptions, simulation messages and most page body text are still Chinese only.</span></p>
+              <p className="mt-1" data-testid="lang-note">界面以中文为主（我的补充）：零件名、数据手册术语和代码保留英文原文。<span lang="en"> The UI is Chinese-first; part names, datasheet terms and code stay in English. The EN button in the header (remembered on this device) switches the UI to English: navigation, palette, tour, workbench labels and the Help page are hand-written; since v27 the remaining page text (guides, part descriptions, check hints, simulation messages) is machine-assisted translation from an offline dictionary, so some of it reads oddly. Text drawn inside 3D canvases stays Chinese.</span></p>
               <p className="mt-1 max-w-2xl">
                 页面不会加载 MuJoCo，也不会模拟 ESP32‑S3 / RP2040 芯片：固件由 JS 写的迷你解释器运行；焊接台的舵机物理是简化弹簧模型，装配台的碰撞用 Rapier 刚体引擎（简化碰撞盒）。等候名单里的邮箱和回答都不会发出去，也不会保存。
               </p>
