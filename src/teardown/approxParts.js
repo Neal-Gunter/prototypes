@@ -62,4 +62,15 @@ export const TD_PROCEDURAL = [
     [cyl([0, 0.4, 0], 1.7, 0.8, "steel"), cyl([0, 0.95, 0], 0.5, 0.3, "steel")], "冲压金属片上贴应变片，受力时电阻有很小的变化；厨房秤里常是 4 个一组。"),
   make("td-scale-board", "厨房秤主板（模数转换 + 段码屏）", "Kitchen scale board (ADC + segment LCD)", "driver",
     [box([0, 0.08, 0], [2.8, 0.08, 1.4], "green"), box([0, 0.3, 0], [2.0, 0.14, 1.0], "acrylic"), box([-2.2, 0.15, 0.6], [0.3, 0.05, 0.3], "black")], "一颗专用的称重模数转换芯片（或集成在主控里），屏是用导电胶条压在板上的段码液晶。"),
+  // v31（我的补充）：LED 手电筒 / TP4056 充电板的近似件（尺寸全是估算）
+  make("td-fl-led-star", "手电 LED（带圆形铝基板）", "Flashlight LED on round aluminium board", "led",
+    [cyl([0, 0.08, 0], 0.8, 0.16, "steel"), box([0, 0.24, 0], [0.18, 0.08, 0.18], "white"), cyl([0, 0.34, 0], 0.15, 0.08, "acrylic")], "大功率 LED 焊在圆形铝基板上帮它散热，示意成一个金属圆片。"),
+  make("td-fl-driver", "手电驱动板（限流 / 多档）", "Flashlight driver board (current limit / modes)", "driver",
+    [cyl([0, 0.08, 0], 0.85, 0.16, "green"), box([0, 0.24, 0], [0.25, 0.08, 0.2], "black"), cyl([0, -0.15, 0], 0.25, 0.3, "steel")], "圆形小板，背面的弹簧或铜柱顶住电池正极；有的只有一个电阻。"),
+  make("td-fl-reflector", "手电反光杯 + 透镜", "Flashlight reflector + lens", "enclosure",
+    [cyl([0, 0.7, 0], 1.0, 1.4, "steel"), cyl([0, 1.45, 0], 1.05, 0.1, "acrylic")], "抛光或橘皮面的反光杯，前面压一片玻璃或塑料透镜。"),
+  make("td-fl-body", "手电铝筒身", "Flashlight aluminium body", "enclosure",
+    [cyl([0, 0, 0], 0.95, 8.5, "black", "x")], "阳极氧化铝管，两端有螺纹，本身也是电流回路的一部分。"),
+  make("td-tp4056-board", "TP4056 充电板（带保护）", "TP4056 charger board (with protection)", "power",
+    [box([0, 0.06, 0], [1.3, 0.06, 0.85], "blue"), box([-1.1, 0.25, 0], [0.3, 0.14, 0.38], "steel"), box([-0.2, 0.18, 0], [0.25, 0.06, 0.2], "black"), box([0.55, 0.16, -0.25], [0.15, 0.04, 0.15], "black"), box([0.55, 0.16, 0.25], [0.2, 0.04, 0.15], "black")], "TP4056 线性充电芯片 + 保护芯片 + 双 MOS 管 + 两颗指示灯；尺寸按常见小板估算。"),
 ];

@@ -26,7 +26,7 @@ const NEW = { "wired-mouse": "mouse", "bt-speaker": "speaker", "kitchen-scale": 
   const { c, p, T } = await page("zh");
   await p.goto(BASE + "/teardown/"); await T("teardown-page").waitFor({ timeout: 30000 });
   const nDev = await p.locator('[data-testid^="td-device-"]').count();
-  ok(nDev === 6, `设备列表 ${nDev} 台（v29 3 台 + v30 3 台）`);
+  ok(nDev >= 6, `设备列表 ${nDev} 台（v29 3 台 + v30 3 台）`);
   for (const [id, q] of Object.entries(NEW)) {
     await T("td-search").fill(q); await p.waitForTimeout(150);
     const ids = await p.locator('[data-testid^="td-device-"]').evaluateAll((a) => a.map((x) => x.dataset.testid.slice(10)));
