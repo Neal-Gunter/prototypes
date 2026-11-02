@@ -99,7 +99,7 @@ if (typeof window !== "undefined") {
   for (const k of ["alert", "confirm", "prompt"]) { const f = window[k]?.bind(window); if (f) window[k] = (msg, ...r) => f(getLang() === "en" && typeof msg === "string" ? mt(msg) : msg, ...r); }
   window.__mt = mt;
   // 走查用：页面上还剩多少个可见中文字符
-  window.__cjkLeft = () => { const t = document.body.innerText || ""; const m = t.match(/[\u4e00-\u9fff]/g) || []; const runs = [...new Set(t.match(/[\u4e00-\u9fff][\u4e00-\u9fff\s，。、：；（）]*/g) || [])]; return { chars: m.length, total: t.replace(/\s/g, "").length, sample: runs.slice(0, 20) }; };
+  window.__cjkLeft = () => { const t = document.body.innerText || ""; const m = t.match(/[\u4e00-\u9fff]/g) || []; const runs = [...new Set(t.match(/[\u4e00-\u9fff][\u4e00-\u9fff\s，。、：；（）]*/g) || [])]; const tagged = [...document.body.querySelectorAll("[lang^=zh]")].filter((e) => !(e.parentElement && e.parentElement !== document.body && document.body.contains(e.parentElement) && e.parentElement.closest("body [lang^=zh]"))).reduce((n, e) => n + ((e.innerText || "").match(/[\u4e00-\u9fff]/g) || []).length, 0); return { chars: m.length, tagged, untagged: Math.max(0, m.length - tagged), total: t.replace(/\s/g, "").length, sample: runs.slice(0, 20) }; };
   onLang(sync);
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", sync); else sync();
 }

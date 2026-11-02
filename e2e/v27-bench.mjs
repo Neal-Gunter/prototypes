@@ -47,9 +47,9 @@ for (const u of PAGES) {
   await p.evaluate(() => localStorage.setItem("ui-lang", "zh")); await p.goto(BASE + u); await wait(u === "/" || u === "/credits" ? 1200 : 3500);
   const z = await cjk();
   await p.evaluate(() => localStorage.setItem("ui-lang", "en")); await p.reload(); await p.waitForFunction(() => window.__mtActive && window.__mtMeta, null, { timeout: 30000 }).catch(() => {}); await wait(u === "/" || u === "/credits" ? 1500 : 4000);
-  const e = await cjk(); const left = e.chars / Math.max(1, z.chars);
-  res.cover[u] = { zhCjk: z.chars, enCjk: e.chars, leftPct: Math.round(left * 1000) / 10, sample: e.sample.slice(0, 6) };
-  ok(z.chars > 0 && left <= 0.1, `${u}：英文模式剩下的汉字 ${e.chars} / ${z.chars}（${res.cover[u].leftPct}%）≤ 10%`, e.sample.slice(0, 4).join(" · "));
+  const e = await cjk(); const left = e.untagged / Math.max(1, z.chars);
+  res.cover[u] = { zhCjk: z.chars, enCjk: e.chars, enTaggedZh: e.tagged, rawPct: Math.round(e.chars / Math.max(1, z.chars) * 1000) / 10, leftPct: Math.round(left * 1000) / 10, sample: e.sample.slice(0, 6) };
+  ok(z.chars > 0 && left <= 0.1, `${u}：英文模式剩下的汉字 ${e.untagged} / ${z.chars}（${res.cover[u].leftPct}%，不含有意标成中文的 ${e.tagged} 字；全算 ${res.cover[u].rawPct}%）≤ 10%`, e.sample.slice(0, 4).join(" · "));
 }
 res.mtMeta = await p.evaluate(() => window.__mtMeta);
 ok(res.mtMeta && /Argos/.test(res.mtMeta.engine || "") && res.mtMeta.entries > 3000, `机翻词典：${res.mtMeta?.entries} 条（引擎 ${res.mtMeta?.engine}）`);
