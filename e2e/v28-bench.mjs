@@ -77,7 +77,7 @@ const cpl = await T("complaint").innerText();
 ok(/replaced the servo/i.test(cpl) && !CJK.test(cpl), "英文模式：新关卡的客户描述是手译英文", cpl.slice(0, 100));
 await shot("repair-new-en");
 // ④ 可读性抽样：取 50 条译文做明显问题检查（同一份词典，浏览器里再抽一次）
-const rd = await p.evaluate(async () => { const j = await (await fetch(location.pathname.replace(/\/repair$/, "") + "/i18n/en-mt.json")).json().catch(() => null); if (!j) return null; const ks = Object.keys(j.dict); let s = 28; const r = () => ((s = (s * 1103515245 + 12345) % 2147483648) / 2147483648); const out = []; for (let i = 0; i < 50; i++) { const k = ks[Math.floor(r() * ks.length)]; const v = j.dict[k]; out.push({ k, v, bad: !v || /[\u4e00-\u9fff]/.test(v) || /\b(\w{3,})\s+\1\b/i.test(v) || /^(I don't know|I'm sorry|Yeah|Okay)\b/.test(v) }); } return { n: ks.length, bad: out.filter((x) => x.bad) }; });
+const rd = await p.evaluate(async () => { const j = await (await fetch(location.pathname.replace(/\/repair\/?$/, "") + "/i18n/en-mt.json")).json().catch(() => null); if (!j) return null; const ks = Object.keys(j.dict); let s = 28; const r = () => ((s = (s * 1103515245 + 12345) % 2147483648) / 2147483648); const out = []; for (let i = 0; i < 50; i++) { const k = ks[Math.floor(r() * ks.length)]; const v = j.dict[k]; out.push({ k, v, bad: !v || /[\u4e00-\u9fff]/.test(v) || /\b(\w{3,})\s+\1\b/i.test(v) || /^(I don't know|I'm sorry|Yeah|Okay)\b/.test(v) }); } return { n: ks.length, bad: out.filter((x) => x.bad) }; });
 res.readability = rd && { entries: rd.n, bad: rd.bad.length, badSample: rd.bad.slice(0, 5) };
 ok(rd && rd.n > 10000 && rd.bad.length <= 5, `线上词典 ${rd?.n} 条，抽 50 条明显问题 ${rd?.bad.length} 条（≤ 5）`, (rd?.bad || []).slice(0, 2).map((x) => x.k + "→" + x.v).join(" | "));
 await setLang("zh");
