@@ -55,9 +55,9 @@ res.mtMeta = await p.evaluate(() => window.__mtMeta);
 ok(res.mtMeta && /Argos/.test(res.mtMeta.engine || "") && res.mtMeta.entries > 3000, `机翻词典：${res.mtMeta?.entries} 条（引擎 ${res.mtMeta?.engine}）`);
 // 切回中文：还原
 await p.goto(BASE + "/repair"); await p.waitForFunction(() => window.__mtActive, null, { timeout: 30000 }).catch(() => {}); await wait(3000);
-const enTxt = await p.locator("main").innerText();
+const enTxt = await p.locator("#main").innerText();
 await T("lang-toggle").click(); await wait(800);
-const back = await cjk(); const zhTxt = await p.locator("main").innerText();
+const back = await cjk(); const zhTxt = await p.locator("#main").innerText();
 ok(back.chars > 200 && zhTxt !== enTxt && /维修|关卡|故障/.test(zhTxt), `切回中文 → 页面还原成中文（${back.chars} 个汉字）`);
 // ④ 维修关卡 ≥ 21
 const nSc = await p.locator("[data-testid^=sc-]").count(); res.repairLevels = nSc;

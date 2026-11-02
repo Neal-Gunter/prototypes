@@ -6,15 +6,18 @@ import fs from "node:fs";
 const BASE = (process.env.BASE || "http://localhost:4173/prototypes").replace(/\/$/, ""), OUT = process.env.OUT || "/tmp/v23walk", SHOTS = process.env.SHOTS !== "0";
 fs.mkdirSync(OUT, { recursive: true });
 const PAGES = [["home", "/"], ["example", "/example"], ["workbench", "/workbench"], ["assembly", "/assembly"], ["electrics", "/assembly?scene=electrics"], ["fault", "/assembly?scene=fault"], ["smd", "/assembly?scene=smd"], ["octo", "/assembly?scene=octo"],
-  ["model", "/assembly/model"], ["guide", "/assembly/guide"], ["octo-guide", "/assembly/octopus-guide?plan=B&variant=plus"], ["repair", "/repair"], ["project", "/project"], ["repair-editor", "/repair?tab=editor"], ["parts", "/parts"], ["part", "/parts?id=ada-1185"], ["pinouts", "/pinouts"], ["credits", "/credits"], ["404", "/nope"]];
+  ["model", "/assembly/model"], ["guide", "/assembly/guide"], ["octo-guide", "/assembly/octopus-guide?plan=B&variant=plus"], ["repair", "/repair"], ["project", "/project"], ["repair-editor", "/repair?tab=editor"], ["parts", "/parts"], ["part", "/parts?id=ada-1185"], ["pinouts", "/pinouts"], ["credits", "/credits"], ["404", "/nope"],
+  ["help", "/help"], ["blink", "/assembly?scene=blink"], ["button", "/assembly?scene=button"], ["potservo", "/assembly?scene=potservo"], ["fault2", "/assembly?scene=fault2"]]; // v27: 使用说明 + 4 个新场景
 const VPS = [["m", { width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }], ["w", { width: 1440, height: 900 }]];
+// v27: LANG_UI=en 用英文模式再走一遍；WIDE=1920 改宽屏宽度
+if (process.env.WIDE) VPS[1][1].width = +process.env.WIDE;
 const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(",")) : null;
 const b = await chromium.launch({ executablePath: process.env.CHROME || "/usr/bin/google-chrome", args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
 const rep = [];
 for (const [vk, vp] of VPS) for (const [k, u] of PAGES) {
   if (ONLY && !ONLY.has(k)) continue;
   const ctx = await b.newContext({ viewport: { width: vp.width, height: vp.height }, isMobile: vp.isMobile, hasTouch: vp.hasTouch, deviceScaleFactor: vp.deviceScaleFactor || 1 });
-  await ctx.addInitScript(() => { try { localStorage.setItem("asm-tour-v22-done", "1"); } catch { /* */ } });
+  await ctx.addInitScript(([LANG, LANG_KEY]) => { try { localStorage.setItem("asm-tour-v22-done", "1"); if (LANG === "en") localStorage.setItem(LANG_KEY, "en"); } catch { /* */ } }, [process.env.LANG_UI || "zh", "ui-lang"]);
   const p = await ctx.newPage(); const errs = [];
   p.on("pageerror", (e) => errs.push(e.message.slice(0, 160)));
   await p.goto(BASE + u, { waitUntil: "networkidle", timeout: 90000 }).catch((e) => errs.push("goto " + e.message.slice(0, 100)));
