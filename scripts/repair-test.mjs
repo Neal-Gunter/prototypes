@@ -39,6 +39,8 @@ const play = (sc, groups, { fuzz = false } = {}) => {
 };
 
 ok("至少 8 个关卡", SCENARIOS.length >= 8, SCENARIOS.length);
+ok("v28 新增至少 6 个关卡（不同故障组合）", SCENARIOS.filter((s) => s.v28).length >= 6, SCENARIOS.filter((s) => s.v28).length);
+ok("关卡 id 不重复", new Set(SCENARIOS.map((s) => s.id)).size === SCENARIOS.length);
 ok("难度不下降", SCENARIOS.every((s, i) => i === 0 || s.stars >= SCENARIOS[i - 1].stars), SCENARIOS.map((s) => s.stars).join(""));
 ok("覆盖四种板子", ["led", "psu", "sensor", "octo"].every((t) => SCENARIOS.some((s) => s.template === t)));
 ok("关卡是纯 JSON（可存可导出）", SCENARIOS.every((s) => JSON.stringify(JSON.parse(JSON.stringify(s))) === JSON.stringify(s)));

@@ -292,8 +292,9 @@ const V27 = [
     safety: ["拆壳和补焊前拔电池", "升压板背面元件小，补焊时间别超过 3 秒"],
   },
 ];
+import { V28 } from "./scenarios28.js";
 // 按难度稳定排序（同难度保持原来的顺序）
-export const SCENARIOS = [...BASE, ...V27].map((s, i) => [s, i]).sort((a, b) => a[0].stars - b[0].stars || a[1] - b[1]).map(([s]) => s);
+export const SCENARIOS = [...BASE, ...V27, ...V28].map((s, i) => [s, i]).sort((a, b) => a[0].stars - b[0].stars || a[1] - b[1]).map(([s]) => s);
 
 export const STAR = (n) => "★".repeat(n) + "☆".repeat(5 - n);
 export const byId = (id) => SCENARIOS.find((s) => s.id === id);
