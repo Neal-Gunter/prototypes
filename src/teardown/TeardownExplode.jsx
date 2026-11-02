@@ -44,7 +44,7 @@ export default function TeardownExplode({ device, L }) {
   return (
     <div data-testid="td-explode">
       <div className="aspect-[4/3] w-full border border-line bg-paper-2" data-testid="td-explode-canvas">
-        <Canvas shadows camera={{ position: [7, 6, 9], fov: 40 }} dpr={[1, 2]}>
+        <Canvas shadows camera={{ position: [10, 9, 13], fov: 42 }} dpr={[1, 2]}>
           <ambientLight intensity={0.6} />
           <directionalLight position={[6, 10, 6]} intensity={1.2} castShadow />
           <Suspense fallback={null}>
