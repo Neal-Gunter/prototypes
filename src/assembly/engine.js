@@ -110,6 +110,7 @@ class Engine {
       const c = this.world.createCollider(RAPIER.ColliderDesc.cuboid(hx, hy, hz).setTranslation(x, y, z).setFriction(0.8).setCollisionGroups(GROUPS.bench), fixed);
       this.colOwner.set(c.handle, "bench");
       (this.benchCols ||= []).push(c);
+      (this.benchBox ||= []).push({ c: [x, y, z], h: [hx, hy, hz] }); // v30：给“哪些桌面 / 围栏离得近”的快速判断用
     };
     add(BENCH.w / 2 + 5, 1, BENCH.d / 2 + 5, 0, -1, 0);
     add(0.5, 15, BENCH.d / 2, -BENCH.w / 2 - 0.5, 15, 0);
@@ -1064,7 +1065,7 @@ class Engine {
     // 每 4 步把所有刚体都检查一遍（含休眠的），重物压在桌面上的软接触下陷也一起推出来
     this.stepN = (this.stepN || 0) + 1;
     // 醒着的刚体每步都查（落下、碰撞的瞬间最容易压进去），睡着的每 4 步查一次
-    for (const [bid, b] of this.bodies) if (this.drag?.bid !== bid && (this.stepN % 4 === 0 || !b.rb.isSleeping())) this.depenetrate(bid, 2);
+    for (const [bid, b] of this.bodies) if (this.drag?.bid !== bid && (this.stepN % 4 === 0 || !b.rb.isSleeping())) this.depenetrate(bid, this.depenIters || 2);
     if (!this.settling?.size) return;
     for (const [bid, t] of this.settling) {
       const left = t - this.world.timestep;
@@ -1120,13 +1121,62 @@ class Engine {
     // 推开之后还压着（被顶住、或从上往下压）：把被拖的零件退回来
     this.depenetrate(d.bid, 3);
   }
+  // v30（我的补充）：接触面优先的穿透修正。只看 narrow-phase 里真有接触点的碰撞体对（接触面），
+  // 再对这些“接触面”做精确距离查询；桌面 / 围栏先用包围球筛掉离得远的。结果和 v29 的逐个碰撞体全查一样，开销小得多。
+  // this.fastDepen = false 时退回 v29 的全查（hull-bench 对比用）。
+  benchNear(body) {
+    if (!body.sph || !this.benchBox) return null;
+    const t = body.rb.translation(), q = body.rb.rotation();
+    const w = body.sph.c.clone().applyQuaternion(new THREE.Quaternion(q.x, q.y, q.z, q.w));
+    const p = [w.x + t.x, w.y + t.y, w.z + t.z], out = [];
+    for (let k = 0; k < this.benchBox.length; k++) {
+      const { c, h } = this.benchBox[k];
+      let d2 = 0;
+      for (let i = 0; i < 3; i++) { const e = Math.abs(p[i] - c[i]) - h[i]; if (e > 0) d2 += e * e; }
+      if (Math.sqrt(d2) < body.sph.r + 0.05) out.push(k);
+    }
+    return out;
+  }
   depenetrate(bid, iters = 6) {
     const body = this.bodies.get(bid);
     if (!body) return 0;
+    const fast = this.fastDepen !== false;
     let moved = 0;
+    let cand = null, benchK = null; // 快速模式：第一轮从接触流形里挑出来的碰撞体对，之后几轮只精确查这些
+    if (fast) {
+      benchK = this.benchNear(body);
+      const dorm = body.fine && body.fineOn === false ? new Set(body.fine.map((c) => c.handle)) : null;
+      cand = [];
+      const bc = [];
+      for (let i = 0; i < body.rb.numColliders(); i++) {
+        const c1 = body.rb.collider(i);
+        if (c1.isSensor() || this.colOwner.get(c1.handle) === undefined || dorm?.has(c1.handle)) continue;
+        if (benchK?.length || !benchK) bc.push(c1);
+        if (this.outerH.has(c1.handle)) continue; // 外凸包只和桌面碰
+        this.world.contactPairsWith(c1, (c2) => {
+          const o2 = this.colOwner.get(c2.handle);
+          if (o2 === "rope" || o2 === "bench" || o2 === undefined) return;
+          if (c2.parent()?.handle === body.rb.handle) return;
+          if (this.jointed(body.rb.handle, c2.parent()?.handle)) return;
+          // 只要流形里有接触点就算“接触面”。注意：实测凸多面体的流形距离有时是正的、实际却压进去 3 mm（卡在空腔里的小件），
+          // 所以这里不按流形距离筛，而是对有接触点的对再做精确查询
+          let nc = 0;
+          this.world.contactPair(c1, c2, (m) => { nc += m.numContacts(); });
+          if (nc > 0) cand.push([c1, c2]);
+        });
+      }
+      body._bc = bc;
+      if (!cand.length && benchK && !benchK.length) return 0;
+    }
     for (let it = 0; it < iters; it++) {
       let worst = null;
-      for (let i = 0; i < body.rb.numColliders(); i++) {
+      if (fast) {
+        for (const [c1, c2] of cand) {
+          const sc = c1.contactCollider(c2, 0);
+          if (sc && sc.distance < -0.002 && (!worst || sc.distance < worst.distance)) worst = { distance: sc.distance, n: sc.normal1, other: c2.parent() };
+        }
+        for (const c1 of body._bc) this.benchDepen(c1, benchK, (w) => { if (!worst || w.distance < worst.distance) worst = w; });
+      } else for (let i = 0; i < body.rb.numColliders(); i++) {
         const c1 = body.rb.collider(i);
         if (c1.isSensor() || this.colOwner.get(c1.handle) === undefined) continue;
         this.world.contactPairsWith(c1, (c2) => {
@@ -1136,20 +1186,26 @@ class Engine {
           const o2 = this.colOwner.get(c2.handle);
           if (o2 === "bench" || o2 === undefined) return; // 桌面下面单独查
           const sc = c1.contactCollider(c2, 0);
-          if (sc && sc.distance < -0.002 && (!worst || sc.distance < worst.distance)) worst = { distance: sc.distance, n: sc.normal1, who: "bench" + c2.handle + "/" + c1.handle + (c1.isSensor() ? "S" : "") };
-        });
-        // 桌面和围栏直接逐个算距离（刚醒来的刚体，接触对还没建立）
-        for (let k = 0; k < (this.benchCols || []).length; k++) {
-          const c2 = this.benchCols[k];
-          const g1 = c1.collisionGroups(), g2 = c2.collisionGroups();
-          if (!(((g1 >>> 16) & g2 & 0xffff) && ((g2 >>> 16) & g1 & 0xffff))) continue; // 本来就不和桌面碰的碰撞体（如插脚）
-          const sc0 = c1.contactCollider(c2, 0);
-          // 法线不用接触结果给的（实测符号不可靠），按桌面/四面围栏的朝向固定：总是往桌面里、往上推
-          const sc = sc0 && { distance: sc0.distance, normal1: BENCH_N[k] };
           if (sc && sc.distance < -0.002 && (!worst || sc.distance < worst.distance)) worst = { distance: sc.distance, n: sc.normal1 };
+        });
+        this.benchDepen(c1, null, (w) => { if (!worst || w.distance < worst.distance) worst = w; });
+      }
+      if (!worst) { body.stuckN = 0; break; }
+      // v30：卡死处理（我的补充，简化）。小件掉进别的零件的空腔里会被几面墙同时顶住，单方向推来推去推不出去。
+      // 同一个刚体连续 40 次检查都还压进去 > 1 mm，而且它的中心比对方高（在上面 / 在空腔里）：把它往上提出来（相当于“拎出来”）
+      if (fast && it === iters - 1 && worst.other && worst.distance < -0.1) {
+        body.stuckN = (body.stuckN || 0) + 1;
+        if (body.stuckN > 40 && body.rb.translation().y >= worst.other.translation().y) {
+          const t = body.rb.translation();
+          body.rb.setTranslation({ x: t.x, y: t.y - worst.distance + 0.01, z: t.z }, true);
+          const v = body.rb.linvel();
+          if (v.y < 0) body.rb.setLinvel({ x: v.x, y: 0, z: v.z }, true);
+          this.world.propagateModifiedBodyPositionsToColliders();
+          this.lifts = (this.lifts || 0) + 1;
+          moved++;
+          continue;
         }
       }
-      if (!worst) break;
       const t = body.rb.translation();
       const d = worst.distance - 0.001;
       body.rb.setTranslation({ x: t.x + worst.n.x * d, y: t.y + worst.n.y * d, z: t.z + worst.n.z * d }, true);
@@ -1160,6 +1216,19 @@ class Engine {
       moved++;
     }
     return moved;
+  }
+  // 桌面和围栏直接逐个算距离（刚醒来的刚体，接触对还没建立）；ks = 只查这几块（null = 全查）
+  benchDepen(c1, ks, cb) {
+    const list = this.benchCols || [];
+    for (let j = 0; j < (ks ? ks.length : list.length); j++) {
+      const k = ks ? ks[j] : j;
+      const c2 = list[k];
+      const g1 = c1.collisionGroups(), g2 = c2.collisionGroups();
+      if (!(((g1 >>> 16) & g2 & 0xffff) && ((g2 >>> 16) & g1 & 0xffff))) continue; // 本来就不和桌面碰的碰撞体（如插脚）
+      const sc0 = c1.contactCollider(c2, 0);
+      // 法线不用接触结果给的（实测符号不可靠），按桌面/四面围栏的朝向固定：总是往桌面里、往上推
+      if (sc0 && sc0.distance < -0.002) cb({ distance: sc0.distance, n: BENCH_N[k] });
+    }
   }
 
   // ---------------- 穿模测试 ----------------
