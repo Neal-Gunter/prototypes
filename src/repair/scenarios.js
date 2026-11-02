@@ -7,7 +7,7 @@ const net = (n, tp) => ({ net: n, tp });
 const OFF = [{ a: "power", on: false }];
 const BAT_OUT = [{ a: "power", on: false }, { a: "battery", op: "remove" }];
 
-export const SCENARIOS = [
+const BASE = [
   {
     id: "led-dead-battery", stars: 1, template: "led", title: "夜灯不亮了", parMin: 6,
     complaint: "孩子的小夜灯突然不亮了，开关拨来拨去都没反应。",
@@ -169,6 +169,131 @@ export const SCENARIOS = [
     safety: ["插拔舵机线前先拔电池", "锂电池充电时有人看着，远离易燃物"],
   },
 ];
+
+// v27（我的补充）：再加 9 个关卡，故障类型都是已有的物理模型；expect 读数来自本仿真（headless 测试逐条核对），不是实测
+const TOPOFF = { a: "cover", id: "TOP", on: false };
+const SHOFF = { a: "cover", id: "SH1", on: false };
+const V27 = [
+  {
+    id: "led-missing-resistor", stars: 1, template: "led", title: "新焊的夜灯套件不亮", parMin: 8, v27: true,
+    complaint: "照着说明书焊完了夜灯套件，装上电池一点反应都没有。",
+    symptoms: ["LED 不亮", "开关后有电"],
+    faults: [{ type: "missingPart", target: "R1" }],
+    expect: [F(pin("R1", "1"), pin("R1", "2"), "ohm", false, [Infinity, Infinity], [140, 160], "R1 两个焊盘之间的阻值（断电）"), F(pin("D1", "A"), net("GND", "TP2"), "V", true, [-0.05, 0.05], [2.15, 2.4], "LED 正极对地电压（通电）")],
+    solution: [[...BAT_OUT, { a: "place", ref: "R1", item: "res-150" }, { a: "battery", op: "insert" }]],
+    wrong: [[...BAT_OUT, { a: "place", ref: "R1", item: "res-22k" }, { a: "battery", op: "insert" }], [...BAT_OUT, { a: "battery", op: "insert", item: "bat-aa3-new" }]],
+    hints: ["开关后有电、LED 却一点电压都没有：电流从哪里断了？", "看一下 R1 的位置，再断电量 R1 两个焊盘之间的阻值。", "R1 漏焊了（焊盘是空的）。按丝印焊一个 150 Ω（棕-绿-棕）。"],
+    rootCause: "限流电阻 R1 漏装，开关到 LED 之间是开路。",
+    lesson: "焊完套件先对着 BOM 和丝印逐个点名：空焊盘用眼睛就能看出来，比量电压还快。",
+    safety: ["焊零件前拆掉电池", "剪引脚时用手指挡住，免得线头飞进眼睛"],
+  },
+  {
+    id: "led-cold-cathode", stars: 2, template: "led", title: "夜灯摔了一下就不亮了", parMin: 10, v27: true,
+    complaint: "夜灯从床头柜上掉下去以后就不亮了，电池是新换的。",
+    symptoms: ["LED 不亮", "电池和开关都正常"],
+    faults: [{ type: "coldJoint", target: "D1", arg: { pin: "K" } }],
+    expect: [F(pin("D1", "K"), net("GND", "TP2"), "beep", false, [Infinity, Infinity], [0, 1], "通断档：D1 负极脚 ↔ 地"), F(pin("D1", "A"), pin("D1", "K"), "V", true, [-0.05, 0.05], [2.15, 2.4], "LED 两端电压（通电）")],
+    solution: [[...BAT_OUT, { a: "reflow", ref: "D1", pin: "K" }, { a: "battery", op: "insert" }]],
+    wrong: [[...BAT_OUT, { a: "reflow", ref: "D1", pin: "A" }, { a: "battery", op: "insert" }], [...BAT_OUT, { a: "desolder", ref: "R1" }, { a: "place", ref: "R1", item: "res-150" }, { a: "battery", op: "insert" }]],
+    hints: ["摔过的板子，重点看受力大的零件脚：LED 的长脚像杠杆一样。", "LED 两端是 0 V，说明电流根本没流过去。量 D1 每个脚到它所连焊盘的通断。", "D1 的负极（K）焊点裂开了：断电拆电池，加锡补焊 K 脚。"],
+    rootCause: "摔落时 LED 引脚受力，负极焊点开裂，变成虚焊。",
+    lesson: "高出板面的零件（LED、电解电容、插针）焊点受力大，摔过之后先查它们。补焊要补对脚：量一下就知道是哪只脚。",
+    safety: ["补焊前断电并拆掉电池", "烙铁用完放回烙铁架"],
+  },
+  {
+    id: "psu-wrong-ldo", stars: 2, template: "psu", title: "稳压模块输出电压偏高", parMin: 14, v27: true,
+    complaint: "模块是网上买的“3.3 V”，接上我的传感器，传感器摸起来发热。",
+    symptoms: ["电源灯比平时亮", "输出不是 3.3 V"],
+    faults: [{ type: "wrongLdo", target: "U1", arg: { vout: 5.0 } }],
+    expect: [F(net("3V3", "TP2"), net("GND", "TP3"), "V", true, [4.9, 5.05], [3.2, 3.4], "输出电压（通电）"), F(net("VIN", "TP1"), net("GND", "TP3"), "V", true, [8.0, 8.4], [8.0, 8.4], "U1 输入电压（正常，不是输入的问题）")],
+    solution: [[...OFF, { a: "desolder", ref: "U1" }, { a: "place", ref: "U1", item: "ldo-3v3" }]],
+    wrong: [[...OFF, { a: "reflow", ref: "U1" }], [...OFF, { a: "desolder", ref: "U1" }, { a: "place", ref: "U1", item: "ldo-5v0" }]],
+    hints: ["先量输出到底是多少伏，再量输入。", "输入约 8.2 V 正常，输出约 5.0 V：问题在稳压芯片本身。用放大镜看 U1 上的丝印。", "U1 装成了 5.0 V 版本（同封装）。拆下，换 3.3 V 版。补焊没用。"],
+    rootCause: "U1 贴成了同封装的 5.0 V 稳压芯片，输出 5 V，超过 3.3 V 设备的额定电压。",
+    lesson: "同一个封装往往有好几个电压版本，丝印上的型号后缀才是关键。新模块上电先空载量输出，再接设备。",
+    safety: ["拆 SOT-223 时先吸掉散热片焊盘上的锡，别用力撬", "过压可能已经伤到了被测设备：换完后单独检查设备"],
+  },
+  {
+    id: "psu-cold-diode", stars: 2, template: "psu", title: "稳压模块完全没输出", parMin: 12, v27: true,
+    complaint: "适配器是好的（别的设备能用），插到这个模块上就是没输出，电源灯也不亮。",
+    symptoms: ["电源灯不亮", "U1 不发热", "输出 0 V"],
+    faults: [{ type: "coldJoint", target: "D1", arg: { pin: "K" } }],
+    expect: [F(net("VIN", "TP1"), net("GND", "TP3"), "V", true, [-0.05, 0.05], [8.0, 8.4], "U1 输入电压（防反二极管后，通电）"), F(pin("D1", "K"), net("VIN", "TP1"), "beep", false, [Infinity, Infinity], [0, 1], "通断档：D1 负极脚 ↔ VIN 焊盘")],
+    solution: [[...OFF, { a: "reflow", ref: "D1", pin: "K" }]],
+    wrong: [[...OFF, { a: "desolder", ref: "U1" }, { a: "place", ref: "U1", item: "ldo-3v3" }], [...OFF, { a: "reflow", ref: "D1", pin: "A" }]],
+    hints: ["沿着电流走：适配器 → D1 → U1 → 输出，一段一段量。", "TP1（防反二极管后面）是 0 V：电在 D1 那里断了。断电量 D1 每只脚到焊盘。", "D1 的负极（K）焊点虚焊：补焊。U1 没坏，不用换。"],
+    rootCause: "防反二极管 D1 的负极焊点虚焊，输入电压过不去，U1 没有输入。",
+    lesson: "“完全没电”时沿着电流路径一段一段量，第一个没电的点就在故障附近。没发热、没焦味的话，先别急着换芯片。",
+    safety: ["只修低压直流这一侧；不要拆适配器本身（里面是市电）"],
+  },
+  {
+    id: "sensor-weak-pullup", stars: 3, template: "sensor", title: "换过电阻以后传感器不认了", parMin: 18, v27: true,
+    complaint: "我觉得板子耗电大，就把两个 4.7k 电阻换成了 1M 的“省电”。之后传感器就读不到了。",
+    symptoms: ["状态灯亮（主控在跑）", "串口：I2C 找不到传感器"],
+    faults: [{ type: "wrongRes", target: "R3", arg: { ohms: 1000000 } }, { type: "wrongRes", target: "R4", arg: { ohms: 1000000 } }],
+    expect: [F(pin("R3", "1"), pin("R3", "2"), "ohm", false, [950000, 1050000], [4500, 4900], "R3 阻值（断电）"), F(pin("U2", "SDA"), net("3V3", "TP1"), "ohm", false, [950000, 1050000], [4500, 4900], "SDA ↔ 3.3 V 阻值（断电）")],
+    solution: [[...OFF, { a: "desolder", ref: "R3" }, { a: "place", ref: "R3", item: "res-4k7" }], [...OFF, { a: "desolder", ref: "R4" }, { a: "place", ref: "R4", item: "res-4k7" }]],
+    wrong: [[...OFF, { a: "desolder", ref: "R3" }, { a: "place", ref: "R3", item: "res-4k7" }], [...OFF, { a: "reflow", ref: "U2" }]],
+    hints: ["客户自己动过哪里？从那里查起。", "断电量 R3、R4：都是 1 MΩ。I2C 上拉太大会怎样？", "上拉太弱，信号边沿太慢。两个都换回 4.7 kΩ（只换一个不行）。"],
+    rootCause: "I2C 上拉被换成 1 MΩ，SDA / SCL 上升沿太慢，通信失败。",
+    lesson: "上拉电阻只在总线拉低时耗电，4.7 kΩ @ 3.3 V 最多约 0.7 mA。“省电”改动前先算一算：省不了多少，还会让总线失效。",
+    safety: ["USB 供电的小板也先拔线再焊"],
+  },
+  {
+    id: "sensor-i2c-bridge", stars: 3, template: "sensor", title: "返修传感器以后还是读不到", parMin: 20, v27: true,
+    complaint: "传感器坏了，我自己换了一个新的焊上去，结果还是找不到设备。",
+    symptoms: ["状态灯亮", "串口：I2C 总线卡住 / 找不到设备"],
+    faults: [{ type: "bridge", arg: { a: "SDA", b: "SCL", id: "BR2", near: "传感器 U3 引脚之间（防尘罩下面）：" } }],
+    expect: [F(net("SDA"), net("SCL"), "beep", false, [0, 0.05], [9000, 9800], "通断档：SDA ↔ SCL（断电）"), F(pin("U2", "SDA"), net("3V3", "TP1"), "ohm", false, [2200, 2500], [4500, 4900], "SDA ↔ 3.3 V 阻值（两个上拉并联了？）")],
+    solution: [[...OFF, SHOFF, { a: "wick", id: "BR2" }]],
+    wrong: [[...OFF, SHOFF, { a: "reflow", ref: "U3" }], [...OFF, { a: "desolder", ref: "R3" }, { a: "place", ref: "R3", item: "res-4k7" }]],
+    hints: ["新焊的细间距芯片，最常见的问题是什么？", "断电量 SDA 和 SCL 之间：不应该导通。SDA 对 3.3 V 只有约 2.35 kΩ，说明两个上拉并在一起了。", "拆掉防尘罩，U3 的 SDA 和 SCL 脚之间有锡桥：用吸锡带吸掉。"],
+    rootCause: "更换传感器时 SDA 和 SCL 两个相邻引脚之间连锡，两根线短在一起。",
+    lesson: "细间距芯片焊完一定要在放大镜下看一遍，并量相邻信号脚之间不导通。量阻值时“两个上拉并联变成一半”也是锡桥的线索。",
+    safety: ["吸锡带配助焊剂用，加热别超过 3 秒，免得伤到新芯片"],
+  },
+  {
+    id: "octo-servo-reversed", stars: 3, template: "octo", title: "八爪鱼有一条腿不动", parMin: 12, v27: true,
+    complaint: "我把舵机线拔下来清理了一下又插回去，现在 3 号腿不动了。",
+    symptoms: ["其它 7 条腿正常", "舵机 3 不动、也不发热"],
+    faults: [{ type: "reversed", target: "P3" }],
+    expect: [F(pin("M3", "G"), net("GND", "TP2"), "beep", false, [Infinity, Infinity], [0, 1], "通断档：舵机 3 地线 ↔ 板子的地"), F(pin("M3", "S"), net("S3"), "beep", false, [Infinity, Infinity], [0, 1], "通断档：舵机 3 信号线 ↔ S3 焊盘")],
+    solution: [[...BAT_OUT, { a: "flipConn", ref: "P3" }, { a: "battery", op: "insert" }]],
+    wrong: [[...OFF, { a: "reseat", ref: "P3" }], [...BAT_OUT, { a: "battery", op: "insert", item: "bat-lipo-full" }]],
+    hints: ["只有一条腿有问题，而且是插拔过之后：先看插头。", "看 P3 插头的线色：棕 / 黑线应该对着地。再量舵机地线到板子地是不是通的。", "P3 插反了：拔掉电池，把插头掉个头（棕线对地），再插回去。"],
+    rootCause: "舵机 3 的 3 针插头插反，信号和地对调，舵机收不到信号。",
+    lesson: "没有防呆的 3 针插头很容易插反。插之前认一下线色：棕 / 黑 = 地，红 = 电源，橙 / 黄 / 白 = 信号。",
+    safety: ["插拔舵机线前先拔电池"],
+  },
+  {
+    id: "octo-servo-power-cold", stars: 4, template: "octo", title: "八爪鱼 6 号腿偶尔抽一下", parMin: 18, v27: true,
+    complaint: "6 号腿大部分时间不动，偶尔按一下板子会抽一下。舵机换过新的也一样。",
+    symptoms: ["舵机 6 不动", "按板子时偶尔抽动", "换舵机没用"],
+    faults: [{ type: "coldJoint", target: "P6", arg: { pin: "a2" } }],
+    expect: [F(pin("M6", "V"), net("GND", "TP2"), "V", true, [-0.05, 0.05], [5.0, 5.3], "舵机 6 电源线对地电压（通电）"), F(pin("P6", "a2"), net("5VB", "TP4"), "beep", false, [Infinity, Infinity], [0, 1], "通断档：P6 中间针 ↔ 5VB")],
+    solution: [[...BAT_OUT, { a: "reflow", ref: "P6", pin: "a2" }, { a: "battery", op: "insert" }]],
+    wrong: [[...BAT_OUT, { a: "flipConn", ref: "P6" }, { a: "battery", op: "insert" }], [...BAT_OUT, { a: "reflow", ref: "P6", pin: "a1" }, { a: "battery", op: "insert" }]],
+    hints: ["换舵机没用，说明问题在板子这边。舵机需要信号、电源、地三样。", "5VB（TP4）正常，但舵机 6 电源线上是 0 V：断在 5VB 和插针之间。", "P6 中间那根针（5 V）的焊点虚焊：拔电池，补焊 P6 的 a2 脚。"],
+    rootCause: "舵机 6 插针的 5 V 针焊点虚焊，舵机没有电源；按板子时偶尔接触上。",
+    lesson: "“换了新件也一样”说明问题不在那个零件上。分别查信号、电源、地三根线，才不会漏掉电源针。",
+    safety: ["补焊前拔电池", "排针焊点挨得近，补焊时注意别连到旁边的针"],
+  },
+  {
+    id: "octo-boost-cold-in", stars: 4, template: "octo", title: "八爪鱼后面 4 条腿全不动", parMin: 22, v27: true,
+    complaint: "前面 4 条腿正常，后面 4 条腿（4–7 号）完全不动。上次我拆过上壳。",
+    symptoms: ["舵机 0–3 正常", "舵机 4–7 不动", "QT Py 正常"],
+    faults: [{ type: "coldJoint", target: "U3", arg: { pin: "IN" } }],
+    expect: [F(net("5VB", "TP4"), net("GND", "TP2"), "V", true, [-0.05, 0.05], [5.0, 5.3], "升压 B 输出 5VB（通电）"), F(net("5VA", "TP3"), net("GND", "TP2"), "V", true, [5.0, 5.3], [5.0, 5.3], "升压 A 输出 5VA（正常，用来对比）")],
+    solution: [[...BAT_OUT, TOPOFF, { a: "reflow", ref: "U3", pin: "IN" }, { a: "battery", op: "insert" }]],
+    wrong: [[...BAT_OUT, TOPOFF, { a: "reflow", ref: "U2", pin: "IN" }, { a: "battery", op: "insert" }], [...BAT_OUT, { a: "battery", op: "insert", item: "bat-lipo-full" }]],
+    hints: ["4 条腿一起不动，它们共用什么？", "后 4 个舵机都接在升压 B（5VB）上。TP4 是 0 V，TP3（5VA）正常。", "拆上壳，升压 B（U3）的 IN 焊点虚焊：拔电池补焊。"],
+    rootCause: "升压板 B 的输入焊点虚焊，5VB 没有输出，后 4 个舵机全部没电。",
+    lesson: "一组东西一起坏，先找它们共用的部分（同一路电源、同一个插头、同一根地线）。两路对称的电路可以互相对比着量。",
+    safety: ["拆壳和补焊前拔电池", "升压板背面元件小，补焊时间别超过 3 秒"],
+  },
+];
+// 按难度稳定排序（同难度保持原来的顺序）
+export const SCENARIOS = [...BASE, ...V27].map((s, i) => [s, i]).sort((a, b) => a[0].stars - b[0].stars || a[1] - b[1]).map(([s]) => s);
 
 export const STAR = (n) => "★".repeat(n) + "☆".repeat(5 - n);
 export const byId = (id) => SCENARIOS.find((s) => s.id === id);
