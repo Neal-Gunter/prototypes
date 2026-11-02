@@ -65,7 +65,7 @@ export default function HelpPage() {
       <p className="text-xs text-ink-soft">{en ? "Early prototype, simplified simulation" : "早期原型，简化仿真"}</p>
       <h1 className="mt-1 text-2xl font-semibold">{en ? "Help" : "使用说明"}</h1>
       <nav className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-sm" aria-label={en ? "Contents" : "目录"} data-testid="help-toc">
-        {[["quick", T("快速上手", "Quick start")], ["modes", T("各个模式", "Modes")], ["scenes", T("示例场景", "Example scenes")], ["keys", T("快捷键", "Keyboard shortcuts")], ["faq", T("常见问题", "FAQ")], ["limits", T("老实说：限制", "Honest limits")]].map(([id, t]) => <a key={id} href={"#" + id} className="underline">{L(t)}</a>)}
+        {[["quick", T("快速上手", "Quick start")], ["modes", T("各个模式", "Modes")], ["scenes", T("示例场景", "Example scenes")], ["keys", T("快捷键", "Keyboard shortcuts")], ["faq", T("常见问题", "FAQ")], ["limits", T("老实说：限制", "Honest limits")]].map(([id, t]) => <a key={id} href={"#" + id} className="inline-flex min-h-6 items-center underline">{L(t)}</a>)}
       </nav>
       <H2 id="quick">{L(T("快速上手", "Quick start"))}</H2>
       <ol className="mt-3 list-decimal space-y-2 pl-6 text-sm" data-testid="help-quick">{QUICK.map((q, i) => <li key={i}>{L(q)}</li>)}</ol>

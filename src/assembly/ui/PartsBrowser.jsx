@@ -130,7 +130,7 @@ export default function PartsBrowser({ onAdd, compact = false, onPick, favs: fav
               <span className="block truncate text-xs text-ink-soft">{fmt(r.dims)} · {SRC_ZH[r.src] || r.src} · {LIC_SHORT[r.lic] || r.lic}{r.iface?.length ? ` · ${r.iface.map((i) => IFACE_ZH[i] || i).join("/")}` : ""}</span>
             </button>
             {r.sup ? <button type="button" onClick={() => pick(r.sup)} className="shrink-0 border border-line px-1 text-[10px] underline" title="这个近似件已有真实 CAD 版本" data-testid={`sup-${r.id}`}>真实 CAD：{r.sup}</button> : null}
-            <button type="button" onClick={() => favs.toggleFav(r.id)} aria-pressed={favs.fav.includes(r.id)} aria-label={favs.fav.includes(r.id) ? "取消收藏" : "收藏"} className="shrink-0 px-1 text-base" data-testid={`fav-${r.id}`}>{favs.fav.includes(r.id) ? "★" : "☆"}</button>
+            <button type="button" onClick={() => favs.toggleFav(r.id)} aria-pressed={favs.fav.includes(r.id)} aria-label={favs.fav.includes(r.id) ? "取消收藏" : "收藏"} className="shrink-0 min-w-6 min-h-6 px-1 text-base" data-testid={`fav-${r.id}`}>{favs.fav.includes(r.id) ? "★" : "☆"}</button>
             {onCmp && (
               <label className="flex shrink-0 items-center gap-1 text-xs"><input type="checkbox" checked={!!cmp?.includes(r.id)} onChange={() => onCmp(r.id)} data-testid={`cmp-${r.id}`} />对比</label>
             )}
