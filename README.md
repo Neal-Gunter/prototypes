@@ -28,6 +28,7 @@ npm run preview
 - `/electrics` — now redirects to `/assembly?scene=electrics` (v5: one bench for assembly + circuit)
 - `/assembly/guide` — printable assembly guide (BOM, wiring table, breadboard holes, steps, `.ino`, 对照现实 readings, safety notes); `?src=default|bench`
 - `/repair` — **维修关卡（v17）**：12 个由易到难的维修场景 + 关卡编辑器（早期原型，简化仿真）
+- `/teardown` — **拆解模式（v29）**：3 台设备的分步拆解指南 + 安全 + 材料清单 + 完成勾选 + 存进零件库 + 爆炸图（早期原型，简化仿真；按公开资料整理，未经实物验证）
 - `/credits` — asset sources and licences
 - `/example` — eight-tentacle robot driven by an ESP32-S3, with tabs 想法 / 仿真 / 装配 (`?tab=idea|simulate|assemble`)
 
@@ -173,6 +174,19 @@ The script uses `window.__wb` test hooks only to find where things are on the sc
   - 触手的 3D 刚体固定，舵机转动只改画面姿态；位移和转向在俯视图里用摩擦模型估算。
   - 电流是估算值。
   - 只做直流层面的电压、电流检查。
+
+## v29：拆解模式（早期原型，简化仿真）
+
+`/teardown`（中文默认，右上角 EN 切换；英文是手写，不走机翻）。全部文字、插图、近似零件由本项目自己写 / 程序生成，**按公开资料整理，未经实物验证**；没有复制任何外部拆解指南的文字或照片（灵感来源见 `/credits#teardown`）。
+
+- **3 台设备**（`src/teardown/devices.js`）：微型舵机（SG90 一类，7 步）、单节 18650 USB 充电宝（7 步）、USB 桌面小风扇（6 步）。可按名称 / 型号 / 别名搜索（中英文都行）。
+- **每份指南**：概述、安全（含电池的先处理电池、防静电、停止点；通用 4 条 + 设备专属）、材料和工具清单（可勾选）、编号步骤（警告 / 停止点单独标出、每步标“未经实物验证”）、本项目自绘的 SVG 步骤插图（同一张示意图里高亮 / 移开对应部件）。
+- **完成勾选**存在 localStorage `teardown-progress`，刷新还在；设备列表显示已完成步数。
+- **存进零件库**：拆下的模块写进本机 localStorage `bench-inventory`（同一零件累加数量、记来源设备）。能对上的用零件库已有件（`fc-servo-sg90-horn1`、`fc-dc-6v-servo`、`p-cell-18650`、`p-motor-130`、USB-C 母座、拨动开关、3P 杜邦胶壳），对不上的用 10 个**近似件**（`src/teardown/approxParts.js`，id 以 `td-` 开头，名字带“近似件 · 拆解模式”，全部尺寸估算、形状示意，CC0）。零件库和装配台的零件列表里新增视图“拆解所得”，可以直接加到台面上；`/parts?view=inv` 直接打开这个视图。
+- **交互爆炸图**（`src/teardown/TeardownExplode.jsx`）：舵机和风扇，复用零件库 3D 预览的 `ProcMesh` / `Glb`，滑块 0–100% 拆开，悬停高亮，模块标签。位置是示意。
+- **入口**：导航“拆解模式”、Ctrl/⌘ K 命令面板（页面 + 3 台设备）、首页按钮、使用说明页、出处页。
+- **测试**：`node scripts/teardown-test.mjs`（35 项：数据完整性、中英成对、英文无汉字、插图图层、模块都能在零件库找到、近似标记、电池顺序、库存读写）；`node e2e/v29-bench.mjs`（37 项：搜索、步骤 / 插图 / 安全、勾选持久化、爆炸图、存进库存 → 零件库视图 → 装配台、入口链接、出处页、英文 0 汉字、手机 / 宽屏中英文）。
+- **限制**：指南没在实物上验证过，真实设备的螺丝数量、卡扣位置、电芯连接方式都可能不同；近似件尺寸是估算；爆炸图位置是示意，不是装配尺寸；库存只存在当前浏览器。
 
 ## v28：碰撞体分级、八爪鱼指南英文、3D 画布标签英文、可读性抽样、7 个新维修关卡（早期原型，简化仿真）
 

@@ -50,6 +50,8 @@ const FAQ = [
   [T("我的工程丢了？", "My project disappeared?"), T("数据存在浏览器本地。清理浏览器数据、换浏览器或用无痕窗口都会看不到。重要的工程请用“导出”存成文件。", "Data lives in this browser only. Clearing browser data, switching browsers or using a private window hides it. Export important projects to a file.")],
 ];
 const LIMITS = [
+  T("拆解模式（v29）的指南按公开资料整理，未经实物验证：你手上的设备螺丝数量、卡扣、电芯接法都可能不同，以实物为准；有电池的设备务必先处理电池。", "Teardown guides (v29) are compiled from public information and not verified on real devices. Your device may have different screws, clips or cell wiring: trust what you see, and always deal with the battery first."),
+  T("拆解模式里的“近似件”（td- 开头）尺寸全是估算、形状是示意；爆炸图位置也是示意。拆解所得的库存只存在这台浏览器里。", "Teardown 'approximate' parts (ids starting with td-) have estimated sizes and illustrative shapes, and exploded-view positions are illustrative too. The teardown inventory lives only in this browser."),
   T("早期原型，简化仿真：电路是直流 / 简化瞬态模型，物理是刚体近似；没有热、没有电磁干扰。", "Early prototype, simplified simulation: the circuit is a DC / simplified transient model and the physics is rigid-body approximation. No heat, no EMI."),
   T("零件碰撞体是凸包 / 方块近似，少数零件的误差超过 3 mm（零件详情里有标注）。", "Part colliders are convex hulls or boxes. A few parts are off by more than 3 mm (noted on the part page)."),
   T("3D 画布里画出来的文字（工具标签、零件标签、万用表屏、串口绘图图例）v28 起也跟着 EN 开关走，最显眼的是手写译文，其余是机翻；机翻部分会有错，可读性测试只能抓明显的坏句，抓不到意思错。", "Since v28, text drawn in the 3D canvas (tool labels, part labels, the meter screen, plot legends) follows the EN toggle too. The most visible labels are hand-translated and the rest is machine-assisted. Machine-translated text will contain errors; the readability test only catches obvious breakage, not wrong meaning."),
