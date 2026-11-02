@@ -30,8 +30,8 @@ function Checks({ list }) {
         const st = c.ok ? (c.level === "warn" ? "warn" : "ok") : c.level === "warn" ? "warn" : "fail";
         return (
           <li key={i} className="text-sm" data-testid="check" data-state={st}>
-            <span className={st === "ok" ? "text-green-700" : st === "warn" ? "text-amber-700" : "text-red-700"}>{st === "ok" ? "✓" : st === "warn" ? "⚠" : "✗"}</span> {c.group ? <b className="text-ink-soft">{c.group} · </b> : null}{c.zh}
-            {!c.ok && c.hint ? <div className="ml-5 text-xs text-ink-soft" data-testid="hint">{tr("提示")}：{c.hint}</div> : null}
+            <span className={st === "ok" ? "text-green-700" : st === "warn" ? "text-amber-700" : "text-red-700"}>{st === "ok" ? "✓" : st === "warn" ? "⚠" : "✗"}</span> {c.group ? <b className="text-ink-soft">{c.group} · </b> : null}{c.en ? tr(c.zh, c.en) : c.zh}
+            {!c.ok && c.hint ? <div className="ml-5 text-xs text-ink-soft" data-testid="hint">{tr("提示")}：{c.hint_en ? tr(c.hint, c.hint_en) : c.hint}</div> : null}
           </li>
         );
       })}

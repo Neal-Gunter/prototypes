@@ -35,9 +35,16 @@ export const BOM_WHY = {
   "ada-4654": "MiniBoost 5 V 升压，每个带 4 个舵机", "ada-805": "拨动开关（只过 QT Py + EN 的小电流）", "p-octo-vdiv-1s": "100k/100k 分压，电池检测（我的补充）",
   "kc-cp_radial_d6.3mm_p2.50mm": "升压输出电容（容值估算）", "p-octo-frame-v10": "PLA 骨架（自制打印，我的补充）", "p-octo-arm-v10": "PLA 短触手（自制打印，我的补充）",
 };
+// v31：英文界面用的手写说明（原来靠机翻，读出来是“Not good. 1 ×”）
+export const BOM_WHY_EN = {
+  "ada-5426": "controller: 8-channel LEDC PWM + BLE", "ada-2201": "SG51R micro servo, one per tentacle", "ada-258": "1S 1200 mAh LiPo (with protection board)", "ada-4410": "USB-C charger board (JST battery socket + BAT/GND pads)",
+  "ada-4654": "MiniBoost 5 V boost, 4 servos each", "ada-805": "slide switch (carries only the small QT Py + EN current)", "p-octo-vdiv-1s": "100k/100k divider for battery sensing (my addition)",
+  "kc-cp_radial_d6.3mm_p2.50mm": "boost output capacitor (value estimated)", "p-octo-frame-v10": "PLA frame (home-printed, my addition)", "p-octo-arm-v10": "PLA short tentacle (home-printed, my addition)",
+};
 export function checkBom(state) {
   const req = bomRequired(), have = state.bom || {}; const out = [];
-  for (const [id, n] of Object.entries(req)) { const h = have[id] || 0; out.push({ ok: h === n, zh: `${id} × ${n}${h !== n ? `（现在 ${h}）` : ""}`, hint: h < n ? `还差 ${n - h} 个：${BOM_WHY[id] || ""}。在零件库里搜 “${id}”` : h > n ? `多了 ${h - n} 个，减掉` : "" }); }
+  for (const [id, n] of Object.entries(req)) { const h = have[id] || 0; out.push({ ok: h === n, zh: `${id} × ${n}${h !== n ? `（现在 ${h}）` : ""}`, hint: h < n ? `还差 ${n - h} 个：${BOM_WHY[id] || ""}。在零件库里搜 “${id}”` : h > n ? `多了 ${h - n} 个，减掉` : "",
+    en: `${id} × ${n}${h !== n ? ` (now ${h})` : ""}`, hint_en: h < n ? `${n - h} more needed: ${BOM_WHY_EN[id] || ""}. Search the parts library for "${id}"` : h > n ? `${h - n} too many, remove them` : "" }); }
   const extra = Object.keys(have).filter((id) => have[id] > 0 && !req[id]);
   if (extra.length) out.push({ ok: false, level: "warn", zh: `清单外的零件：${extra.join("、")}`, hint: "v10 用不到，删掉（不影响后面的步骤）" });
   return out;

@@ -16,6 +16,9 @@ for (const f of walk("src").filter((f) => /\.(jsx?|mjs)$/.test(f))) {
   for (const m of s.matchAll(STR)) { const body = m[2]; if (!HAS_CJK.test(body)) continue; if (m[1] === "`") { for (const piece of body.split(/\$\{[^}]*\}/)) addText(piece); } else addText(body); }
   // v31：源码里自带英文的 T("中文", "English") 成对文字，运行时直接用英文，不需要机翻：记成 exact（不算“未翻译”）
   for (const m of s.matchAll(/\bT\(\s*"((?:\\.|[^"\\\n])*)"\s*,\s*"((?:\\.|[^"\\\n])*)"/g)) if (HAS_CJK.test(m[1]) && !HAS_CJK.test(m[2])) { const w = m[1].replace(/\s+/g, " ").trim(); paired.add(w); out.exact[w] = m[2].replace(/\\"/g, '"'); }
+  // v31：同样的成对写法还有 L({ zh: "…", en: "…" }) 和近似件 make("id", "中文名", "English name", …)
+  for (const re of [/\bzh:\s*"((?:\\.|[^"\\\n])*)"\s*,\s*en:\s*"((?:\\.|[^"\\\n])*)"/g, /\bmake\(\s*"[^"]*"\s*,\s*"((?:\\.|[^"\\\n])*)"\s*,\s*"((?:\\.|[^"\\\n])*)"/g])
+    for (const m of s.matchAll(re)) if (HAS_CJK.test(m[1]) && !HAS_CJK.test(m[2])) { const w = m[1].replace(/\s+/g, " ").trim(); paired.add(w); out.exact[w] = m[2].replace(/\\"/g, '"'); }
   // JSX 文本（标签之间）
   for (const m of s.matchAll(/>([^<>{}"'`]*[\u4e00-\u9fff][^<>{}"'`]*)</g)) addText(m[1]);
   for (const m of s.match(RUN_RE) || []) addRun(m);
