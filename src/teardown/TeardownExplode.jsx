@@ -1,17 +1,29 @@
 // v29（我的补充）：拆解模式的交互爆炸图 —— 复用零件库 3D 预览的 ProcMesh / Glb；滑块控制拆开程度。
 // 模块位置是示意（估算），不是实测装配尺寸。早期原型，简化仿真。
-import { Suspense, useEffect, useState } from "react";
+import { Component, Suspense, useEffect, useState } from "react";
+import { pub } from "../lib/base.js";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Html } from "@react-three/drei";
 import { getEntry, toDef } from "../assembly/catalog.js";
 import { ProcMesh, Glb } from "../assembly/ui/partMeshes.jsx";
 
+// 模型加载失败（比如网络问题）时退回一个示意方块，不让整页崩掉
+class Fallback extends Component {
+  constructor(p) { super(p); this.state = { bad: false }; }
+  static getDerivedStateFromError() { return { bad: true }; }
+  componentDidCatch() {}
+  render() {
+    if (!this.state.bad) return this.props.children;
+    const d = this.props.dims || { x: 10, y: 10, z: 10 };
+    return <mesh position={[0, d.y / 20, 0]}><boxGeometry args={[d.x / 10, d.y / 10, d.z / 10]} /><meshStandardMaterial color="#9aa3ad" wireframe /></mesh>;
+  }
+}
 function Module({ m, def, k, label, hi, onHover }) {
   const p = m.ex.p.map((v, i) => v + m.ex.d[i] * k);
   const H = (def.dims_mm?.y || 10) / 10;
   return (
     <group position={p} rotation={[m.ex.rx || 0, m.ex.ry || 0, 0]} onPointerOver={(e) => { e.stopPropagation(); onHover(m.key); }} onPointerOut={() => onHover(null)}>
-      <group position={[0, -H / 2, 0]} scale={hi ? 1.04 : 1}>{def.kind === "glb" ? <Glb def={def} /> : <ProcMesh def={def} />}</group>
+      <group position={[0, -H / 2, 0]} scale={hi ? 1.04 : 1}><Fallback dims={def.dims_mm}><Suspense fallback={null}>{def.kind === "glb" ? <Glb def={def} /> : <ProcMesh def={def} />}</Suspense></Fallback></group>
       {k > 0.35 && <Html position={[0, H / 2 + 0.3, 0]} center zIndexRange={[20, 0]}><span className={`pointer-events-none select-none whitespace-nowrap rounded px-1 text-[10px] ${hi ? "bg-ink text-paper" : "bg-white/85 text-ink"}`} data-testid="td-ex-label">{label}</span></Html>}
     </group>
   );
@@ -23,7 +35,7 @@ export default function TeardownExplode({ device, L }) {
   const mods = device.modules.filter((m) => m.ex && !m.suggest);
   useEffect(() => {
     let live = true;
-    Promise.all(mods.map(async (m) => { try { return [m.key, toDef(await getEntry(m.part))]; } catch { return [m.key, null]; } }))
+    Promise.all(mods.map(async (m) => { try { const d = toDef(await getEntry(m.part)); return [m.key, d.glb ? { ...d, glb: pub(d.glb) } : d]; } catch { return [m.key, null]; } }))
       .then((r) => { if (live) setDefs(Object.fromEntries(r.filter((x) => x[1]))); });
     return () => { live = false; };
   }, [device.id]); // eslint-disable-line react-hooks/exhaustive-deps
