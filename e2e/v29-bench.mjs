@@ -11,7 +11,7 @@ const b = await chromium.launch({ slowMo: SHOT ? 60 : 0, executablePath: process
 const ctx = await b.newContext({ viewport: { width: 1440, height: 900 }, ...(SHOT ? { recordVideo: { dir: VID, size: { width: 1440, height: 900 } } } : {}) });
 await ctx.addInitScript(() => { try { localStorage.setItem("asm-tour-v22-done", "1"); if (!sessionStorage.getItem("v29-init")) { localStorage.setItem("ui-lang", "zh"); localStorage.removeItem("bench-inventory"); localStorage.removeItem("teardown-progress"); sessionStorage.setItem("v29-init", "1"); } } catch { /* */ } });
 const p = await ctx.newPage(); const errs = [];
-p.on("pageerror", (e) => errs.push(String(e))); p.on("dialog", (d) => d.accept());
+p.on("pageerror", (e) => errs.push(String(e).slice(0, 160) + " @ " + p.url().replace(/^https?:\/\/[^/]+/, ""))); p.on("dialog", (d) => d.accept());
 const wait = (ms) => p.waitForTimeout(ms);
 const T = (t) => p.locator(`[data-testid="${t}"]`);
 const shot = async (s, pg = p) => { if (SHOT) await pg.screenshot({ path: `${OUT}/${String(++n).padStart(2, "0")}-${s}.png`, fullPage: false }); };

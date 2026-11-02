@@ -23,7 +23,7 @@ function Module({ m, def, k, label, hi, onHover }) {
   const H = (def.dims_mm?.y || 10) / 10;
   return (
     <group position={p} rotation={[m.ex.rx || 0, m.ex.ry || 0, 0]} onPointerOver={(e) => { e.stopPropagation(); onHover(m.key); }} onPointerOut={() => onHover(null)}>
-      <group position={[0, -H / 2, 0]} scale={hi ? 1.04 : 1}><Fallback dims={def.dims_mm}><Suspense fallback={null}>{def.kind === "glb" ? <Glb def={def} /> : <ProcMesh def={def} />}</Suspense></Fallback></group>
+      <group position={[0, -H / 2, 0]} scale={hi ? 1.04 : 1}>{def.kind === "glb" ? <Fallback dims={def.dims_mm}><Glb def={def} /></Fallback> : <ProcMesh def={def} />}</group>
       {k > 0.35 && <Html position={[0, H / 2 + 0.3, 0]} center zIndexRange={[20, 0]}><span className={`pointer-events-none select-none whitespace-nowrap rounded px-1 text-[10px] ${hi ? "bg-ink text-paper" : "bg-white/85 text-ink"}`} data-testid="td-ex-label">{label}</span></Html>}
     </group>
   );
