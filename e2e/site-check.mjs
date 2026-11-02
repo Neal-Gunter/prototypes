@@ -4,7 +4,7 @@ import fs from "node:fs";
 const BASE = (process.argv[2] || "http://localhost:4180/prototypes").replace(/\/$/, ""), OUT = process.argv[3] || "/tmp/sitecheck";
 fs.mkdirSync(OUT, { recursive: true });
 const b = await chromium.launch({ executablePath: "/usr/bin/google-chrome", args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
-const pages = [["home", "/"], ["assembly", "/assembly"], ["octo", "/assembly?scene=octo"], ["parts", "/parts"], ["credits", "/credits"], ["guide", "/assembly/guide"], ["octo-guide", "/assembly/octopus-guide?plan=B&variant=plus"], ["workbench", "/workbench"]];
+const pages = [["home", "/"], ["assembly", "/assembly"], ["octo", "/assembly?scene=octo"], ["parts", "/parts"], ["credits", "/credits"], ["help", "/help"], ["repair", "/repair"], ["project", "/project"], ["guide", "/assembly/guide"], ["octo-guide", "/assembly/octopus-guide?plan=B&variant=plus"], ["workbench", "/workbench"]];
 const out = [];
 for (const [k, u] of pages) {
   const ctx = await b.newContext({ viewport: { width: 1366, height: 768 } }); const p = await ctx.newPage();
