@@ -25,7 +25,7 @@ const inR = (v, r) => Number.isFinite(v) && v >= r[0] - 1e-9 && v <= r[1] + 1e-9
 // ①
 await p.goto(BASE + "/repair"); await p.waitForSelector("[data-testid=board-svg]");
 await L(() => localStorage.clear()); await p.reload(); await p.waitForSelector("[data-testid=board-svg]");
-ok(await p.locator("[data-testid^=sc-]").count() === 12, "原来 12 关还在");
+ok(await p.locator("[data-testid^=sc-]").count() >= 12, "原来 12 关还在（后来新增的关卡也在，≥ 12）");
 ok(/早期原型，简化仿真/.test(await txt("banner")), "维修页顶栏标明“早期原型，简化仿真”");
 const ss = await p.locator("[data-testid^=scope-sc-]").count(); ok(ss === 6, `示波器关卡 ${ss} 个`);
 ok(await p.locator("[data-testid=tool-scope]").count() === 1 && await p.locator("[data-testid=tool-crimper]").count() === 1, "工具栏有示波器（7）和压线钳（8）");

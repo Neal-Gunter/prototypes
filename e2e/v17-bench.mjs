@@ -22,7 +22,7 @@ await p.goto(BASE + "/repair"); await p.waitForSelector("[data-testid=board-svg]
 await L(() => localStorage.clear()); await p.reload(); await p.waitForSelector("[data-testid=board-svg]");
 ok(await p.locator("nav a", { hasText: "维修关卡" }).count() >= 1, "导航栏有“维修关卡”");
 const scs = await p.locator("[data-testid^=sc-]").count();
-ok(scs === 12, `关卡列表 ${scs} 关`);
+ok(scs >= 12, `关卡列表 ${scs} 关（v17 的 12 关 + 后来新增，≥ 12）`);
 ok(/早期原型，简化仿真/.test(await p.locator("main, body").first().innerText()) && /不替代真实安全培训/.test(await p.locator("body").innerText()), "页面标明“早期原型，简化仿真 · 不替代真实安全培训”");
 await shot("repair-start");
 
@@ -96,7 +96,7 @@ res.all = await L(async () => {
   return out;
 });
 for (const r of res.all) ok(r.ok && r.stars >= 1, `浏览器里修好「${r.id}」`, `${r.stars} 星 · ${r.minutes} 分钟（估算）`);
-ok(await L(() => Object.keys(JSON.parse(localStorage.getItem("repair.progress.v1") || "{}")).length) === 12, "12 关的最好成绩记在本机（localStorage）");
+ok(await L(() => Object.keys(JSON.parse(localStorage.getItem("repair.progress.v1") || "{}")).length) >= 12, "≥ 12 关的最好成绩记在本机（localStorage）");
 await shot("all-stars", "scenario-list");
 
 // ⑥ 编辑器
