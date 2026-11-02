@@ -51,7 +51,9 @@ const FAQ = [
 const LIMITS = [
   T("早期原型，简化仿真：电路是直流 / 简化瞬态模型，物理是刚体近似；没有热、没有电磁干扰。", "Early prototype, simplified simulation: the circuit is a DC / simplified transient model and the physics is rigid-body approximation. No heat, no EMI."),
   T("零件碰撞体是凸包 / 方块近似，少数零件的误差超过 3 mm（零件详情里有标注）。", "Part colliders are convex hulls or boxes. A few parts are off by more than 3 mm (noted on the part page)."),
-  T("3D 画布里画出来的文字不翻译；机翻部分会有错。", "Text drawn inside the 3D canvas is not translated, and the machine-translated parts will contain errors."),
+  T("3D 画布里画出来的文字（工具标签、零件标签、万用表屏、串口绘图图例）v28 起也跟着 EN 开关走，最显眼的是手写译文，其余是机翻；机翻部分会有错，可读性测试只能抓明显的坏句，抓不到意思错。", "Since v28, text drawn in the 3D canvas (tool labels, part labels, the meter screen, plot legends) follows the EN toggle too. The most visible labels are hand-translated and the rest is machine-assisted. Machine-translated text will contain errors; the readability test only catches obvious breakage, not wrong meaning."),
+  T("八爪鱼指南里的固件源码（含中文注释）有意不翻译，标成中文原文。", "Firmware source code in the octopus guide (with Chinese comments) is deliberately left untranslated and marked as Chinese."),
+  T("碰撞体分级（v28）：零件附近没有别的零件时只用外凸包，靠近时换细凸包。零件挤得很密的重场景里几乎所有零件都在接触，省不了多少时间；最大穿透仍比 v26 大（估算）。", "Collider level of detail (v28): a part uses only its outer hull until another part comes close, then switches to its fine hulls. In a dense heavy scene almost every part is in contact, so the saving is small, and maximum penetration is still larger than in v26 (estimate)."),
   T("连接实物只在支持 Web Serial / Web Bluetooth 的浏览器里能用，网站不提供固件烧录以外的设备管理。", "The hardware link needs a browser with Web Serial / Web Bluetooth. The site does no device management beyond flashing firmware."),
   T("费用、价格和规格书数值没有编出来：没有来源的地方都标了“估算”。", "Costs, prices and datasheet values are never made up. Anything without a source is marked as an estimate."),
 ];
