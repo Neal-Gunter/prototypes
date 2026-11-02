@@ -29,7 +29,7 @@ function unfill(k, v) {
 }
 for (const f of files) for (let [k, v] of Object.entries(JSON.parse(fs.readFileSync(".tmp/" + f, "utf8")))) {
   v = unfill(k, v); const v0 = v; v = fixTerms(k, v); if (v !== v0) termFixed++;
-  if (v == null || CJK.test(v) || BAD.test(v) || capsJunk(k, v) || /\b(\w+)(?:\W+\1\b){3,}/i.test(v)) { rejected++; continue; } // 最后一道闸：含汉字或幻觉词的一律不要
+  if (v == null || (k.replace(/[^\u4e00-\u9fff]/g, "").length <= 4 && v.length > 8 * Math.max(1, k.length) + 8) /* v31：很短的原文配很长的译文几乎都是幻觉（“来源：” → “is permit to operate…”） */ || CJK.test(v) || BAD.test(v) || capsJunk(k, v) || /\b(\w+)(?:\W+\1\b){3,}/i.test(v)) { rejected++; continue; } // 最后一道闸：含汉字或幻觉词的一律不要
   dict[k] = v;
 }
 let mtN = Object.keys(dict).length;
