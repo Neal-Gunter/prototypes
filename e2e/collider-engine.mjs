@@ -43,7 +43,8 @@ for (const [base, small] of pairs) {
   let dx = tc.c[0], dz = tc.c[2], surf = top;
   if (bd.colliders.some((c) => c.hull)) {
     // 候选点：中心和周围 ±0.35 cm 四点都打到同一高度（整块实体面，小件不会掉进孔或滚下斜边），取最高、再取离中心最近的
-    const ray = (x, z) => { const h = engine.world.castRay({ origin: { x: bp.x + x, y: bp.y + top + 1, z: bp.z + z }, dir: { x: 0, y: -1, z: 0 } }, 3, true); return h ? top + 1 - (h.timeOfImpact ?? h.toi) : -Infinity; };
+    // v28：外凸包只碰桌面，射线不算它
+    const ray = (x, z) => { const h = engine.world.castRay({ origin: { x: bp.x + x, y: bp.y + top + 1, z: bp.z + z }, dir: { x: 0, y: -1, z: 0 } }, 3, true, undefined, undefined, undefined, undefined, (c) => !engine.outerH?.has(c.handle)); return h ? top + 1 - (h.timeOfImpact ?? h.toi) : -Infinity; };
     let best = -Infinity, bestD = Infinity;
     // 搜索范围：所有顶面盒子的外包络（不只最大那块），离零件中心越近越优先（小件落下后滚出窄条的机会最小）
     const tops = bd.colliders.filter((c) => c.c[1] + c.h[1] > top - 0.02);

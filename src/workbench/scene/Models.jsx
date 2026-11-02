@@ -1,3 +1,4 @@
+import { ct, useCanvasLang } from "../../i18n-canvas";
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
@@ -28,7 +29,8 @@ function useCloned(url, patch) {
 }
 
 export function FlatLabel({ text, position, rotation = [-Math.PI / 2, 0, 0], height = 0.22, color = "#f7f3ea", bg = null, opacity = 1 }) {
-  const { tex, aspect } = useMemo(() => textTexture(text, { color, bg }), [text, color, bg]);
+  const lv = useCanvasLang();
+  const { tex, aspect } = useMemo(() => textTexture(ct(text), { color, bg }), [text, color, bg, lv]);
   return (
     <mesh position={position} rotation={rotation} raycast={() => null}>
       <planeGeometry args={[height * aspect, height]} />

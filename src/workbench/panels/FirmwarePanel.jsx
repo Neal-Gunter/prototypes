@@ -1,3 +1,4 @@
+import { ct } from "../../i18n-canvas";
 import { useEffect, useRef } from "react";
 import { DEFAULT_CODE, useBench } from "../store";
 import { sim } from "../sim";
@@ -220,7 +221,7 @@ export function SerialPlotter() {
       g.setLineDash([]);
       sim.plotNames.forEach((name, k) => {
         g.fillStyle = COLORS[k % COLORS.length];
-        g.fillText(name, 50 + k * 190, 22);
+        g.fillText(ct(name), 50 + k * 190, 22);
       });
     };
     draw();

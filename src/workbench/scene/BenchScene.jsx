@@ -1,3 +1,4 @@
+import { ct, useCanvasLang } from "../../i18n-canvas";
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
@@ -28,7 +29,8 @@ function Bridge() {
 }
 
 function SpriteLabel({ text, position, height = 0.55, bg = "rgba(27,24,20,0.78)" }) {
-  const { tex, aspect } = useMemo(() => textTexture(text, { bg, size: 56 }), [text, bg]);
+  const lv = useCanvasLang();
+  const { tex, aspect } = useMemo(() => textTexture(ct(text), { bg, size: 56 }), [text, bg, lv]);
   const ref = useRef();
   const wp = useMemo(() => new THREE.Vector3(), []);
   // 镜头凑近时标签淡出，不挡住要看的焊点

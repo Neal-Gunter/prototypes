@@ -1,3 +1,4 @@
+import { ct } from "../../i18n-canvas";
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { RoundedBox } from "@react-three/drei";
@@ -593,7 +594,7 @@ export function Multimeter() {
     const k = `${m.mode}|${text}|${unit}|${r?.beep}`;
     if (k !== key.current && (!r?.floating || Math.random() < 0.15 || k.split("|")[0] !== key.current.split("|")[0])) {
       key.current = k;
-      drawLcd(lcd.c, { text, unit, mode: m.mode === "cont" ? "通断 •))" : m.mode === "dcv" ? "直流电压 DC V" : "", beep: !!r?.beep, off: m.mode === "off" });
+      drawLcd(lcd.c, { text, unit, mode: ct(m.mode === "cont" ? "通断 •))" : m.mode === "dcv" ? "直流电压 DC V" : ""), beep: !!r?.beep, off: m.mode === "off" });
       lcd.t.needsUpdate = true;
     }
     if (dial.current) dial.current.rotation.y += (DIAL[m.mode] - dial.current.rotation.y) * (1 - Math.exp(-dt * 12));

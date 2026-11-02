@@ -8,11 +8,16 @@ import RAPIER from "@dimforge/rapier3d-compat";
 import * as THREE from "three";
 import { THREAD, CABLES, PROC_BY_ID } from "./procedural";
 
-const G_PART = 1, G_BENCH = 2, G_ROPE = 4, G_TOOL = 8;
+const G_PART = 1, G_BENCH = 2, G_ROPE = 4, G_TOOL = 8, G_OUTER = 16;
 const grp = (member, filter) => ((member & 0xffff) << 16) | (filter & 0xffff);
 const GROUPS = {
   part: grp(G_PART, G_PART | G_BENCH | G_ROPE | G_TOOL),
-  bench: grp(G_BENCH, G_PART | G_ROPE),
+  bench: grp(G_BENCH, G_PART | G_ROPE | G_OUTER),
+  // v28 碰撞体分层（我的补充）：多凸包零件的细凸包只和零件 / 线 / 工具碰；和桌面、围栏（都是平面）碰的是整件的外凸包——
+  // 对平面来说，凸包的最低点就是网格的最低点，所以和用细凸包结果一样，但接触点少得多
+  partFine: grp(G_PART, G_PART | G_ROPE | G_TOOL),
+  dormant: grp(G_PART, 0), // v28：周围没有别的刚体时，细凸包“休眠”（仍在世界里，只是不参与接触）
+  outer: grp(G_OUTER, G_BENCH),
   rope: grp(G_ROPE, G_PART | G_BENCH | G_TOOL),
   tool: grp(G_TOOL, G_PART | G_ROPE),
 };
@@ -32,6 +37,20 @@ const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 
 // 凸包往中心缩 shr（cm），用来做“放下去会不会穿模”的预检（和方块的缩边一样）
 const _hullCache = new WeakMap();
+// v28：多凸包零件的“外凸包”点云（零件坐标系，cm）。只给凸分解出 ≥ 2 个凸包的零件；Rapier 自己求凸包
+const _outerCache = new WeakMap();
+function outerHull(def) {
+  if (!def || !def.collider_decomp?.hull || !def.colliders || def.colliders.filter((c) => c.hull).length < 2) return null;
+  if (_outerCache.has(def)) return _outerCache.get(def);
+  const pts = [];
+  for (const c of def.colliders) {
+    if (c.hull) for (let i = 0; i < c.hull.length; i += 3) pts.push(c.hull[i] + c.c[0], c.hull[i + 1] + c.c[1], c.hull[i + 2] + c.c[2]);
+    else for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1]) pts.push(c.c[0] + sx * c.h[0], c.c[1] + sy * c.h[1], c.c[2] + sz * c.h[2]);
+  }
+  const out = new Float32Array(pts);
+  _outerCache.set(def, out);
+  return out;
+}
 function hullShape(R, hull, shr) {
   const key = typeof hull === "object" ? hull : null;
   if (key && _hullCache.has(key)) return _hullCache.get(key);
@@ -61,6 +80,7 @@ class Engine {
     this.bodies = new Map(); // id → body
     this.edges = []; // {a, b, kind:'seat'|'fasten', why}
     this.cables = [];
+    this.outerH = new Set(); // v28：外凸包碰撞体的句柄（查询时跳过）
     this.colOwner = new Map(); // collider handle → uid / 'rope' / 'bench' / 'tool'
     this.listeners = new Set();
     this.toasts = [];
@@ -283,8 +303,61 @@ class Engine {
       this.addColliders(body, p);
     }
     if (sleep) rb.sleep();
+    this.bodySphere(body);
     this.rebindCables();
     return id;
+  }
+  // v28：刚体的包围球（刚体局部坐标），用于“只在接近时才启用细凸包”
+  bodySphere(body) {
+    const mn = new THREE.Vector3(Infinity, Infinity, Infinity), mx = mn.clone().negate(), pts = [];
+    for (const [u, list] of body.colliders) {
+      const p = this.parts.get(u);
+      if (!p) continue;
+      for (const { c } of list) {
+        const loc = [];
+        if (c.hull) for (let i = 0; i < c.hull.length; i += 3) loc.push(V([c.hull[i] + c.c[0], c.hull[i + 1] + c.c[1], c.hull[i + 2] + c.c[2]]));
+        else for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1]) loc.push(V([c.c[0] + sx * c.h[0], c.c[1] + sy * c.h[1], c.c[2] + sz * c.h[2]]));
+        for (const v of loc) { v.applyQuaternion(p.rel.q).add(p.rel.p); mn.min(v); mx.max(v); pts.push(v); }
+      }
+    }
+    if (!pts.length) { body.sph = null; return; }
+    const ctr = mn.clone().add(mx).multiplyScalar(0.5);
+    let r = 0;
+    for (const v of pts) r = Math.max(r, v.distanceTo(ctr));
+    body.sph = { c: ctr, r };
+  }
+  // v28：碰撞体分级（LOD）。每步按包围球判断：附近（间隙 < 1.5 cm + 速度余量）有别的刚体才启用细凸包，
+  // 否则细凸包休眠，只剩外凸包和桌面接触。有线缆或工具时保守地全部启用。
+  lodTick(dt, force = false) {
+    if (this.colliderLod === false || this.lodExp) return;
+    // 每 4 步判断一次（开销约 0.7 ms/次，93 个零件），速度余量按 4 步 × 4 倍算
+    if ((this._lodN = (this._lodN || 0) + 1) % 4 !== 1 && !force) return;
+    dt *= 4;
+    const list = [];
+    for (const [bid, b] of this.bodies) {
+      if (!b.sph) continue;
+      const t = b.rb.translation(), q = b.rb.rotation(), v = b.rb.linvel();
+      const w = b.sph.c.clone().applyQuaternion(new THREE.Quaternion(q.x, q.y, q.z, q.w)).add(new THREE.Vector3(t.x, t.y, t.z));
+      list.push({ bid, b, w, r: b.sph.r, m: Math.hypot(v.x, v.y, v.z) * dt * 4 + b.sph.r * Math.hypot(b.rb.angvel().x, b.rb.angvel().y, b.rb.angvel().z) * dt * 4 });
+    }
+    const all = this.cables.length > 0 || !!this.tool?.body;
+    const near = new Set();
+    if (!all) for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
+      const A = list[i], B = list[j];
+      const pad = 1.5 + A.m + B.m;
+      if (A.w.distanceTo(B.w) >= A.r + B.r + pad) continue;
+      // 包围球太松（零件挨得密时几乎全部“接近”）：再用两边的外凸包做一次精确距离判断（GJK）
+      let hit = !(A.b.outer && B.b.outer) || !A.b.fine || !B.b.fine;
+      if (!hit) outer: for (const ca of A.b.outer.values()) for (const cb of B.b.outer.values()) if (ca.contactCollider(cb, pad)) { hit = true; break outer; }
+      if (hit) { near.add(A.bid); near.add(B.bid); }
+    }
+    for (const { bid, b } of list) {
+      if (!b.fine) continue;
+      const on = all || near.has(bid) || this.drag?.bid === bid;
+      if (on === (b.fineOn !== false)) continue;
+      b.fineOn = on;
+      for (const col of b.fine) col.setCollisionGroups(on ? GROUPS.partFine : GROUPS.dormant);
+    }
   }
   addColliders(body, p) {
     const R = this.R;
@@ -301,11 +374,26 @@ class Engine {
         .setCollisionGroups(GROUPS.part);
       // 质量：c.m（克，用户填的或按体积估算）优先，否则按密度
       if (c.m > 0) d.setMass(c.m); else d.setDensity(p.def.density || 1.2);
+      const lod = this.colliderLod !== false && outerHull(p.def);
+      if (lod && c.hull) d.setCollisionGroups(this.lodExp ? GROUPS.dormant : GROUPS.partFine);
       const col = this.world.createCollider(d, body.rb);
       this.colOwner.set(col.handle, p.uid);
       list.push({ col, c });
+      if (lod && c.hull) (body.fine ||= []).push(col);
     }
     body.colliders.set(p.uid, list);
+    const oh = this.colliderLod !== false && outerHull(p.def);
+    if (oh) {
+      const d = R.ColliderDesc.convexHull(oh);
+      if (d) {
+        d.setTranslation(p.rel.p.x, p.rel.p.y, p.rel.p.z).setRotation({ x: p.rel.q.x, y: p.rel.q.y, z: p.rel.q.z, w: p.rel.q.w })
+          .setFriction(p.def.friction ?? 0.7).setRestitution(0).setDensity(0).setCollisionGroups(GROUPS.outer);
+        const col = this.world.createCollider(d, body.rb);
+        this.colOwner.set(col.handle, p.uid);
+        this.outerH.add(col.handle);
+        (body.outer ||= new Map()).set(p.uid, col);
+      }
+    }
   }
   // 零件在组内的相对位姿变了（拧螺丝、压舵盘）：只更新它自己的碰撞盒
   updateRel(uid) {
@@ -316,11 +404,15 @@ class Engine {
       col.setTranslationWrtParent({ x: cp.x, y: cp.y, z: cp.z });
       col.setRotationWrtParent({ x: p.rel.q.x, y: p.rel.q.y, z: p.rel.q.z, w: p.rel.q.w });
     }
+    const oc = body.outer?.get(uid);
+    this.bodySphere(body);
+    if (oc) { oc.setTranslationWrtParent({ x: p.rel.p.x, y: p.rel.p.y, z: p.rel.p.z }); oc.setRotationWrtParent({ x: p.rel.q.x, y: p.rel.q.y, z: p.rel.q.z, w: p.rel.q.w }); }
   }
   destroyBody(bid) {
     const b = this.bodies.get(bid);
     if (!b) return;
     for (const list of b.colliders.values()) for (const { col } of list) this.colOwner.delete(col.handle);
+    if (b.outer) for (const col of b.outer.values()) { this.colOwner.delete(col.handle); this.outerH.delete(col.handle); }
     for (const c of this.cables) for (const j of [...c.endJoints, ...(c.tieJoints || [])]) if (j && (j.b1 === b.rb || j.b2 === b.rb)) j.dead = true;
     for (const k of [...this.noContact]) if (k.split(":").includes(String(b.rb.handle))) this.noContact.delete(k);
     this.world.removeRigidBody(b.rb);
@@ -503,9 +595,10 @@ class Engine {
       let toi = dt;
       for (let i = 0; i < body.rb.numColliders(); i++) {
         const c1 = body.rb.collider(i);
+        if (this.outerH.has(c1.handle)) continue;
         const hit = this.world.castShape(c1.translation(), c1.rotation(), { x: 0, y: v.y, z: 0 }, c1.shape, 0.001, dt, false, undefined, undefined, undefined, body.rb, (c) => {
           const o = this.colOwner.get(c.handle);
-          return o !== "rope" && o !== "tool";
+          return o !== "rope" && o !== "tool" && !this.outerH.has(c.handle);
         });
         if (hit && hit.time_of_impact < toi) toi = hit.time_of_impact;
       }
@@ -684,6 +777,7 @@ class Engine {
         const shr = 0.02;
         const shape = c.hull ? hullShape(R, c.hull, shr) : new R.Cuboid(Math.max(0.003, c.h[0] - shr), Math.max(0.003, c.h[1] - shr), Math.max(0.003, c.h[2] - shr));
         this.world.intersectionsWithShape({ x: wc.x, y: wc.y, z: wc.z }, { x: wq.x, y: wq.y, z: wq.z, w: wq.w }, shape, (col) => {
+          if (this.outerH.has(col.handle)) return true;
           const o = this.colOwner.get(col.handle);
           if (o === "bench") {
             hitUid = hitUid || null;
@@ -695,7 +789,7 @@ class Engine {
           if (this.jointed(body.rb.handle, col.parent()?.handle)) return true;
           hitUid = o;
           return false;
-        }, undefined, GROUPS.part, undefined, body.rb);
+        }, undefined, undefined, undefined, body.rb); // v28：不按分组过滤，休眠的细凸包也要查到
         if (hitUid) return hitUid === "__bench" ? null : hitUid;
       }
     }
@@ -927,6 +1021,7 @@ class Engine {
       this.stepDrag();
       this.stepTool();
       this.stepOps(this.world.timestep);
+      this.lodTick(this.world.timestep);
       // 休眠刚体被叫醒的那一步，它和桌面（运动学刚体）之间还没有接触，会白白自由落体一步（实测压进桌面 0.4 mm）。
       // 所以：这一步前睡着、这一步后醒了的刚体，把位置退回到步前、速度清零；下一步接触已经建立了。
       const asleep = [];
@@ -1076,6 +1171,9 @@ class Engine {
         if (!includeRopes && o2 === "rope") return;
         if (c1.handle > c2.handle && o2 !== "bench") return;
         if (this.jointed(c1.parent()?.handle, c2.parent()?.handle)) return;
+        // v28：分组上互不碰撞的一对（外凸包对零件、休眠的细凸包）不算穿模
+        const g1 = c1.collisionGroups(), g2 = c2.collisionGroups();
+        if (!(((g1 >>> 16) & g2 & 0xffff) && ((g2 >>> 16) & g1 & 0xffff))) return;
         // 线头的头两段和它自己连着的插头/零件挨在一起是正常的（线是从插头里出来的）
         const rs = this.ropeSeg?.get(o1 === "rope" ? c1.handle : o2 === "rope" ? c2.handle : -1);
         if (rs && (rs.i <= 1 || rs.i >= rs.N - 2) && this.cables.find((c) => c.id === rs.id)?.ends.includes(o1 === "rope" ? o2 : o1)) return;

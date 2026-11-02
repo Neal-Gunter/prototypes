@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { pinsOfType } from "../parts";
+import { ct, onCanvasLang } from "../../i18n-canvas";
 
 // 程序绘制的贴图（不下载）：Feather 丝印/焊盘、硅胶维修垫、烟雾粒子
 const FONT = `"Noto Sans CJK SC","PingFang SC","Microsoft YaHei",sans-serif`;
@@ -152,8 +153,17 @@ let matTex = null;
 // 蓝灰色耐热硅胶维修垫：1 cm 网格、刻度尺、螺丝分格
 export function matTexture(w = 40, d = 28) {
   if (matTex) return matTex;
-  const k = 40;
   const c = document.createElement("canvas");
+  drawMat(c, w, d);
+  matTex = new THREE.CanvasTexture(c);
+  matTex.colorSpace = THREE.SRGBColorSpace;
+  matTex.anisotropy = 8;
+  // v28：切 EN 后重画垫子上印的字
+  onCanvasLang(() => { drawMat(c, w, d); matTex.needsUpdate = true; });
+  return matTex;
+}
+function drawMat(c, w, d) {
+  const k = 40;
   c.width = w * k;
   c.height = d * k;
   const g = c.getContext("2d");
@@ -200,13 +210,10 @@ export function matTexture(w = 40, d = 28) {
   g.fillStyle = "rgba(240,246,247,0.55)";
   g.font = `600 16px ${FONT}`;
   g.textAlign = "left";
-  g.fillText("螺丝 · 小零件", 32, 150);
+  g.fillText(ct("螺丝 · 小零件"), 32, 150);
   g.font = `600 18px ${FONT}`;
-  g.fillText("耐热硅胶维修垫 · 网格 1 cm", c.width - 300, c.height - 50);
-  matTex = new THREE.CanvasTexture(c);
-  matTex.colorSpace = THREE.SRGBColorSpace;
-  matTex.anisotropy = 8;
-  return matTex;
+  g.textAlign = "right";
+  g.fillText(ct("耐热硅胶维修垫 · 网格 1 cm"), c.width - 30, c.height - 50);
 }
 
 let smokeTex = null;
@@ -247,11 +254,11 @@ export function drawLcd(canvas, { text = "", unit = "", mode = "", beep = false,
   g.textAlign = "left";
   g.fillText(unit, W * 0.8, H * 0.62);
   g.font = `700 ${H * 0.16}px ${FONT}`;
-  g.fillText(mode, W * 0.05, H * 0.17);
+  g.fillText(ct(mode), W * 0.05, H * 0.17);
   if (beep) g.fillText("•))", W * 0.82, H * 0.17);
   if (note) {
     g.font = `600 ${H * 0.13}px ${FONT}`;
-    g.fillText(note, W * 0.05, H * 0.9);
+    g.fillText(ct(note), W * 0.05, H * 0.9);
   }
 }
 

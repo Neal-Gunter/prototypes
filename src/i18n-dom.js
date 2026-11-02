@@ -3,7 +3,7 @@
 // 机器辅助翻译，可能不通顺）。只在英文模式下加载；切回中文时把原文还原。
 // 做法：MutationObserver 盯住正文的文本节点和 title / placeholder / aria-label / alt 属性；
 // 先整句查，查不到再按“中文片段”逐段替换（切分规则和抽取脚本共用 i18n-runs.js）。
-// 已知限制：3D 画布里画出来的文字、浏览器原生对话框以外的系统弹窗不翻译。
+// v28：3D 画布里画出来的文字由 i18n-canvas.js 的 ct() 处理（收到 "mt-change" 后重画）。
 import { EN, getLang, onLang } from "./i18n";
 import { RUN_RE, SUB_RE, HAS_CJK } from "./i18n-runs";
 
@@ -77,6 +77,7 @@ function start() {
   observer.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
   const head = document.querySelector("title"); if (head) new MutationObserver(() => getLang() === "en" && doTitle()).observe(head, { childList: true });
   window.__mtActive = true;
+  window.dispatchEvent(new Event("mt-change"));
 }
 function stop() {
   observer?.disconnect(); observer = null; window.__mtActive = false;
@@ -86,6 +87,7 @@ function stop() {
     if (rec.attrs) for (const [a, v] of Object.entries(rec.attrs)) n.setAttribute(a, v);
   }
   orig.clear(); if (titleOrig && !HAS_CJK.test(document.title)) document.title = titleOrig;
+  window.dispatchEvent(new Event("mt-change"));
 }
 export function loadMT() {
   if (DICT) return Promise.resolve(DICT);
