@@ -1,0 +1,1 @@
+import{n as e}from"./index-BWkoo4q1.js";import{_t as t}from"./three.core-Dp-eO7LC.js";t.setURLModifier(e);
