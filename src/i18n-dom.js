@@ -19,8 +19,10 @@ const look = (k) => EN[k] ?? DICT?.[k];
 export function mt(s) {
   if (!s || !HAS_CJK.test(s)) return s;
   const lead = s.match(/^\s*/)[0], trail = s.match(/\s*$/)[0], core = norm(s);
+  // v30：原文以中文标点结尾（“客户：”）且后面没留空格时，英文要补一个空格，否则和下一段文字粘在一起（“Client:My kid…”）
+  const sp = (o) => (!trail && /[：，；。！？]$/.test(core) && /[:;,.!?]$/.test(o) ? o + " " : o);
   const w = look(core);
-  if (w != null) return lead + w + trail;
+  if (w != null) return lead + sp(w) + trail;
   let out = core.replace(RUN_RE, (run) => {
     const r = look(run.trim());
     if (r != null) return " " + r + " ";
@@ -31,7 +33,7 @@ export function mt(s) {
     });
   });
   out = out.replace(/[（）：，。、；“”‘’！？【】《》～　]/g, (c) => PUNCT[c]).replace(/ {2,}/g, " ").replace(/ ([,.;:!?)])/g, "$1").replace(/\( /g, "(").trim();
-  return lead + out + trail;
+  return lead + sp(out) + trail;
 }
 
 function skipEl(el) {

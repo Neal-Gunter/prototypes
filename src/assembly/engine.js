@@ -1148,6 +1148,10 @@ class Engine {
       const dorm = body.fine && body.fineOn === false ? new Set(body.fine.map((c) => c.handle)) : null;
       cand = [];
       const bc = [];
+      // 流形是上一步求解前算的：拖拽 / 工具直接改位置、或这一步动得快（> 0.5 mm / 步，比如正在下落）时，
+      // 流形还没覆盖新的接触，这时不按“有没有接触点”筛，宽相位里挨着、碰撞分组允许的对都精确查一遍
+      const lv = body.rb.linvel();
+      const gate = !this.drag && !this.tool?.body && Math.hypot(lv.x, lv.y, lv.z) * this.world.timestep < 0.05;
       for (let i = 0; i < body.rb.numColliders(); i++) {
         const c1 = body.rb.collider(i);
         if (c1.isSensor() || this.colOwner.get(c1.handle) === undefined || dorm?.has(c1.handle)) continue;
@@ -1161,7 +1165,11 @@ class Engine {
           // 只要流形里有接触点就算“接触面”。注意：实测凸多面体的流形距离有时是正的、实际却压进去 3 mm（卡在空腔里的小件），
           // 所以这里不按流形距离筛，而是对有接触点的对再做精确查询
           let nc = 0;
-          this.world.contactPair(c1, c2, (m) => { nc += m.numContacts(); });
+          if (gate) this.world.contactPair(c1, c2, (m) => { nc += m.numContacts(); });
+          else { // 不按流形筛时，至少要按碰撞分组筛掉本来就不该碰的对（外凸包 ↔ 细凸包等），否则会被“假穿透”推歪
+            const g1 = c1.collisionGroups(), g2 = c2.collisionGroups();
+            nc = ((g1 >>> 16) & g2 & 0xffff) && ((g2 >>> 16) & g1 & 0xffff) ? 1 : 0;
+          }
           if (nc > 0) cand.push([c1, c2]);
         });
       }
@@ -1195,11 +1203,13 @@ class Engine {
       // 同一个刚体连续 40 次检查都还压进去 > 1 mm，而且它的中心比对方高（在上面 / 在空腔里）：把它往上提出来（相当于“拎出来”）
       if (fast && it === iters - 1 && worst.other && worst.distance < -0.1) {
         body.stuckN = (body.stuckN || 0) + 1;
-        if (body.stuckN > 40 && body.rb.translation().y >= worst.other.translation().y) {
-          const t = body.rb.translation();
-          body.rb.setTranslation({ x: t.x, y: t.y - worst.distance + 0.01, z: t.z }, true);
-          const v = body.rb.linvel();
-          if (v.y < 0) body.rb.setLinvel({ x: v.x, y: 0, z: v.z }, true);
+        // 反过来它在下面（被上面的零件压在桌面上，夹心）：把上面那个提起来
+        const up = body.rb.translation().y >= worst.other.translation().y ? body.rb : worst.other;
+        if (body.stuckN > 40 && up.isDynamic() && !(this.drag && this.bodies.get(this.drag.bid)?.rb === up)) {
+          const t = up.translation();
+          up.setTranslation({ x: t.x, y: t.y - worst.distance + 0.01, z: t.z }, true);
+          const v = up.linvel();
+          if (v.y < 0) up.setLinvel({ x: v.x, y: 0, z: v.z }, true);
           this.world.propagateModifiedBodyPositionsToColliders();
           this.lifts = (this.lifts || 0) + 1;
           moved++;

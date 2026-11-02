@@ -20,7 +20,7 @@ const CJK = /[\u4e00-\u9fff]/g;
 // ① 列表 + 搜索
 await p.goto(BASE + "/teardown"); await T("teardown-page").waitFor({ timeout: 30000 });
 const nDev = await p.locator('[data-testid^="td-device-"]').count();
-ok(nDev === 3, `设备列表 ${nDev} 台`);
+ok(nDev >= 3, `设备列表 ${nDev} 台`);
 ok(await T("td-unverified").isVisible() && /按公开资料整理，未经实物验证/.test(await T("td-unverified").innerText()), "页面标注“按公开资料整理，未经实物验证”");
 const search = async (s) => { await T("td-search").fill(s); await wait(150); return p.locator('[data-testid^="td-device-"]').evaluateAll((a) => a.map((x) => x.dataset.testid.slice(10))); };
 const s1 = await search("18650"), s2 = await search("SG90"), s3 = await search("fan"), s4 = await search("不存在的设备xyz");

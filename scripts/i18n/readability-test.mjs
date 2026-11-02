@@ -1,13 +1,14 @@
-// v28：英文译文抽样可读性测试。按固定种子从 en-mt.json 抽 50 条，逐条查明显的坏译：
+// v28：英文译文抽样可读性测试。按固定种子从 en-mt.json 抽 50 条（v30 起默认 200 条，往返检查见 roundtrip.mjs），逐条查明显的坏译：
 // 残留汉字、空译文、长度比离谱、数字丢失、词语重复、全大写乱码、括号不配对、Markdown 前缀丢失。
 // 只能抓“明显坏掉”的，抓不到“意思译错”（那要人看）。输出 50 条原文 / 译文 / 结果，写到 LOG（默认 /tmp/readability.log）。
 import fs from "node:fs";
 import { TERM_FIX } from "./terms.mjs";
 const j = JSON.parse(fs.readFileSync(new URL("../../public/i18n/en-mt.json", import.meta.url)));
 const hand = JSON.parse(fs.readFileSync(new URL("./hand.json", import.meta.url)));
-const N = +(process.env.N || 50), SEED = +(process.env.SEED || 28);
+const N = +(process.env.N || 200), SEED = +(process.env.SEED || 28);
 let s = SEED >>> 0; const rnd = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32);
 const all = Object.entries(j.dict).filter(([k, v]) => /[\u4e00-\u9fff]/.test(k) && v && v !== k).sort((a, b) => (a[0] < b[0] ? -1 : 1));
+export const SAMPLE = () => [...pick].sort((a, b) => a - b).map((i) => all[i]);
 const pick = new Set(); while (pick.size < Math.min(N, all.length)) pick.add(Math.floor(rnd() * all.length));
 const cjk = (t) => (t.match(/[\u4e00-\u9fff]/g) || []).length;
 const nums = (t) => (t.match(/\d+(?:\.\d+)?/g) || []);
@@ -50,7 +51,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   let fa = 0; const kinds = {}; for (const [zh, en] of all) { const b = check(zh, en); if (b.length) { fa++; for (const k of b) { const t = k.split(" ")[0]; kinds[t] = (kinds[t] || 0) + 1; } } }
   console.log(head);
   console.log(`全库 ${all.length} 条：${fa} 条（${(fa / all.length * 100).toFixed(1)}%）触发检查`, JSON.stringify(kinds));
-  const MAX = +(process.env.MAX_FAIL ?? 5);
+  const MAX = +(process.env.MAX_FAIL ?? 5); // v30：抽样涨到 200 条，阈值仍是 5
   console.log(fail <= MAX ? `readability-test ok（抽样问题 ${fail} ≤ ${MAX}）` : `readability-test FAIL（抽样问题 ${fail} > ${MAX}）`);
   process.exit(fail <= MAX ? 0 : 1);
 }
