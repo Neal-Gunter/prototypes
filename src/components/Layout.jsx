@@ -37,7 +37,7 @@ export default function Layout() {
         ) : (
           <p data-testid="banner">{en ? <>Concept demo, not a finished product<span className="hidden sm:inline"> · <span lang="zh-Hans">概念演示，不是成品</span></span></> : <>概念演示，不是成品<span className="hidden sm:inline"> · <span lang="en">Concept demo, not a finished product</span></span></>}</p>
         )}
-        {en ? <p className="text-xs text-paper-2/80" data-testid="mt-banner">Some text on this site is machine-translated (offline, Argos Translate) and may read oddly. <a href={import.meta.env.BASE_URL + "help#faq"} className="underline">Why?</a></p> : null}
+        {en ? <p className="text-xs text-paper-2/80" data-testid="mt-banner">Some text on this site is machine-translated (offline, Argos Translate) and may be wrong or read oddly; for safety steps (batteries, soldering, power) the Chinese text is authoritative — switch to 中文 to check. <a href={import.meta.env.BASE_URL + "help#faq"} className="underline">Why?</a></p> : null}
       </div>
       <div className="relative flex flex-1 flex-col">
         <div

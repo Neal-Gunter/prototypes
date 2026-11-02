@@ -134,6 +134,34 @@
    "servo"
   ],
   [
+   "\\bRudder\\b",
+   "Servo"
+  ],
+  [
+   "\\bRudders\\b",
+   "Servos"
+  ],
+  [
+   "\\brudders\\b",
+   "servos"
+  ],
+  [
+   "\\bfuselage\\b",
+   "body"
+  ],
+  [
+   "\\bFuselage\\b",
+   "Body"
+  ],
+  [
+   "\\bMy Supplement\\b",
+   "My addition"
+  ],
+  [
+   "\\bmy supplement\\b",
+   "my addition"
+  ],
+  [
    "\\s+([,.;:!?])",
    "\\1"
   ],

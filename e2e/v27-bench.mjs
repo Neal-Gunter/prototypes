@@ -37,7 +37,7 @@ await p.keyboard.press("Enter"); await T("help-page").waitFor({ timeout: 15000 }
 ok(p.url().endsWith("/help"), "回车 → 打开 /help");
 // ② 英文
 await T("lang-toggle").click(); await wait(300);
-ok((await T("help-page").getAttribute("data-lang")) === "en" && /Quick start/i.test(await T("help-quick").innerText()), "切英文 → 使用说明是手写英文（不是机翻）");
+ok((await T("help-page").getAttribute("data-lang")) === "en" && /Quick start/i.test(await T("help-page").innerText()) && !/[\u4e00-\u9fff]{3,}/.test(await T("help-quick").innerText()), "切英文 → 使用说明是手写英文（不是机翻）");
 const hc = await cjk(); res.cover["/help"] = hc;
 ok(await T("mt-banner").isVisible() && /machine-translated/i.test(await T("mt-banner").innerText()), "英文模式顶部写明“部分文字是机器翻译”");
 await shot("help-en");

@@ -1,4 +1,5 @@
 # v27 第二版机翻：先直译原文；不合格（见 qc.py 的 ok()）再试术语预替换；再按中文标点拆句；都不合格记 null（运行时保留中文）。
+# 注意（v27 实测）：同时开两个 ctranslate2 进程会让译文随机变成乱码 / 联合国文件腔（单进程稳定），所以只跑单进程。
 # 用法：SHARD=0/2 mtenv/bin/python scripts/i18n/mt2.py   → .tmp/i18n-v2-0.json（可断点续跑）
 import json, re, os, sys, time, importlib.util
 HERE = os.path.dirname(os.path.abspath(__file__))

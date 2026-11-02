@@ -24,7 +24,11 @@ export function mt(s) {
   let out = core.replace(RUN_RE, (run) => {
     const r = look(run.trim());
     if (r != null) return " " + r + " ";
-    return run.replace(SUB_RE, (sub) => { const t = look(sub); if (t == null) { missing.add(sub); return sub; } return " " + t + " "; });
+    return run.replace(SUB_RE, (sub) => {
+      const t = look(sub); if (t != null) return " " + t + " ";
+      // v27：整段查不到 → 按中文标点再拆一层逐块查（“个：主控” → “个” + “：” + “主控”）
+      return sub.split(/([\u3000-\u303f\uff00-\uffef“”‘’…—·]+)/).map((q) => { if (!HAS_CJK.test(q)) return q; const u = look(q); if (u == null) { missing.add(q); return q; } return " " + u + " "; }).join("");
+    });
   });
   out = out.replace(/[（）：，。、；“”‘’！？【】《》～　]/g, (c) => PUNCT[c]).replace(/ {2,}/g, " ").replace(/ ([,.;:!?)])/g, "$1").replace(/\( /g, "(").trim();
   return lead + out + trail;
