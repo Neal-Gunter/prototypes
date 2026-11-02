@@ -276,6 +276,36 @@ export const PRESETS = {
 };
 // 文本清单 → 步骤；每行一个零件。“#” 后面是注释
 PRESETS.smd = { zh: "贴片转接板练习：TSSOP-16 + SOIC-8 + SOT-23 + 0805", text: SMD_LIST };
+// v27（我的补充）：再加 4 个示例场景（从上面的完整练习里拆出来的小电路 + 一个新的排错练习）
+const HEAD = `# 早期原型，简化仿真。每行一个零件；这张清单可以复制、修改后粘贴到“导入”里重建
+面包板 BB1 p-breadboard-half 0,-4
+# Pico 跨在中间槽上：1 脚在 h1，20 脚在 h20
+板子 U1 kc-raspberrypi_pico 1脚=h1 20脚=h20{COLD}`;
+const LED_LINES = `# LED 电路：GP15(20脚) → 220Ω → LED 阳极；LED 阴极 → 杜邦线 → GND(18脚)
+零件 R1 kc-r_axial_din0207_l6.3mm_d2.5mm_p10.16mm_horizontal i20 i24
+零件 D1 kc-led_d5.0mm g25 g24   # 孔按脚的顺序：阴极K（短脚） 阳极A（长脚）
+导线 W1 dupont-mm j25 j18`;
+const BTN_LINES = `# 按键：按下时 27 列和 29 列接通。GP14(19脚) 用内部上拉，另一边接 GND(13脚)
+零件 SW1 kc-sw_push_6mm f27 f29 i27 i29
+导线 W2 dupont-mm j27 j19
+导线 W3 dupont-mm j29 j13`;
+const POT_LINES = `# 电位器：两端接 GND(38脚) 和 3V3(36脚)，滑片接 GP26/ADC0(31脚)
+零件 RV1 kc-potentiometer_bourns_3386w_horizontal a26 a27 a28
+导线 W4 dupont-mm c26 a3
+导线 W5 dupont-mm c27 a10
+导线 W6 dupont-mm c28 a5`;
+const SERVO_LINES = `# 舵机：棕 GND→23脚、红 VCC→VBUS(40脚, USB 5V)、橙 SIG→GP16(21脚)
+舵机 M1 ada-1143 14,2 d22,d23,d24
+导线 W7 dupont-mm b22 a18
+导线 W8 dupont-mm b23 a1
+导线 W9 dupont-mm b24 a20`;
+const mk = (cold, ...blocks) => [HEAD.replace("{COLD}", cold), ...blocks, "USB U1"].join("\n");
+Object.assign(PRESETS, {
+  blink: { zh: "入门：Pico 点亮一个 LED（220 Ω 限流）", text: mk("", LED_LINES), v27: true },
+  button: { zh: "按键 + LED：按下按键，LED 亮", text: mk("", LED_LINES, BTN_LINES), v27: true },
+  potservo: { zh: "电位器控制舵机角度", text: mk("", POT_LINES, SERVO_LINES), v27: true },
+  fault2: { zh: "排错练习 2：舵机信号脚虚焊（舵机不动）", text: mk(" 虚焊=21", LED_LINES, SERVO_LINES), v27: true },
+});
 export function parseList(text) {
   const steps = [], errors = [];
   text.split(/\r?\n/).forEach((raw, n) => {

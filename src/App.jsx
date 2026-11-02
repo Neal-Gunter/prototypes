@@ -12,6 +12,7 @@ const ModelLabPage = lazy(() => import("./pages/ModelLabPage"));
 const RepairPage = lazy(() => import("./pages/RepairPage"));
 const PinoutsPage = lazy(() => import("./pages/PinoutsPage"));
 const ProjectPage = lazy(() => import("./pages/ProjectPage"));
+const HelpPage = lazy(() => import("./pages/HelpPage"));
 import NotFoundPage from "./pages/NotFoundPage";
 import CreditsPage from "./pages/CreditsPage";
 
@@ -84,6 +85,7 @@ export default function App() {
           <Route path="/pinouts" element={<Suspense fallback={<p className="p-8 text-ink-soft">正在加载引脚表…</p>}><PinoutsPage /></Suspense>} />
           <Route path="/electrics" element={<Navigate to="/assembly?scene=electrics" replace />} />
           <Route path="/credits" element={<CreditsPage />} />
+          <Route path="/help" element={<Suspense fallback={<p className="p-8 text-ink-soft">正在加载使用说明…</p>}><HelpPage /></Suspense>} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

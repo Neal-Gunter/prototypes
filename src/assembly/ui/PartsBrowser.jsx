@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { loadIndex, getEntry } from "../catalog.js";
 import { PROCEDURAL } from "../procedural.js";
 import { Link } from "react-router-dom";
+import { tr, useLang } from "../../i18n";
 
 import { filterRows, voltRange, SRC_ZH, LIC_ZH as LIC_SHORT, IFACE_ZH } from "../partsSearch.js";
 
@@ -159,6 +160,7 @@ function PinoutLink({ id }) {
   return (<><dt className="text-ink-soft">引脚表</dt><dd><Link className="underline" data-testid="pinout-link" to={`/pinouts?b=${b.id}`}>{b.zh}（{b.n} 脚，{b.logicV ? `${b.logicV} V 逻辑` : "电平见说明"}{b.est ? "，估算" : ""}）</Link></dd></>);
 }
 export function PartDetail({ id }) {
+  const [lang] = useLang(); const en = lang === "en";
   const [e, setE] = useState(null);
   const [used, setUsed] = useState(null);
   const [sup, setSup] = useState(null);
@@ -176,22 +178,22 @@ export function PartDetail({ id }) {
   const holes = e.holes || (e.anchors || []).filter((a) => /hole|thread/.test(a.t));
   return (
     <dl className="grid grid-cols-[6em_1fr] gap-x-2 gap-y-1 text-sm" data-testid="part-detail">
-      <dt className="text-ink-soft">名称</dt><dd>{e.name_zh}{e.name && e.name !== e.name_zh ? <span className="text-ink-soft"> · {e.name}</span> : null}</dd>
-      <dt className="text-ink-soft">模型</dt><dd data-testid="model-kind">{e.glb ? (e.derived_from ? `真实 CAD（截面来自 ${e.derived_from}，只沿长度方向缩放到 ${Math.max(e.dims_mm.x, e.dims_mm.y, e.dims_mm.z)} mm）` : "真实 CAD（由来源 STEP 转换）") : <span className="text-amber-800">近似形状（程序生成）：外形按公开标准尺寸拼的简化几何，细节不真实{sup ? `；已有真实 CAD 版本：${sup}` : "；目前没找到许可清楚的真实 CAD"}</span>}</dd>
-      <dt className="text-ink-soft">尺寸</dt><dd>{fmt(e.dims_mm)}<span className="text-ink-soft">（{e.dims_src}）</span></dd>
-      <dt className="text-ink-soft">质量</dt><dd>{m.g} g{m.est ? <span className="text-ink-soft">（估算：碰撞盒体积 × 密度）</span> : null}</dd>
-      <dt className="text-ink-soft">安装孔</dt><dd>{holes.length ? `${holes.length} 个${e.holes?.[0]?.d ? `，孔径 ${e.holes[0].d} mm` : ""}${e.holes_src ? `（${e.holes_src}）` : e.holes ? "（从 CAD 几何提取）" : ""}` : "无"}</dd>
-      <dt className="text-ink-soft">引脚间距</dt><dd>{e.pitch_mm ? `${e.pitch_mm} mm（从 CAD 提取）` : e.spec || (e.pinholes ? `${e.pinholes.length} 个引脚孔` : "—")}</dd>
+      <dt className="text-ink-soft">{tr("名称", "Name")}</dt><dd>{en ? (e.name || e.name_zh) : e.name_zh}{!en && e.name && e.name !== e.name_zh ? <span className="text-ink-soft"> · {e.name}</span> : null}</dd>
+      <dt className="text-ink-soft">{tr("模型", "Model")}</dt><dd data-testid="model-kind">{e.glb ? (e.derived_from ? `真实 CAD（截面来自 ${e.derived_from}，只沿长度方向缩放到 ${Math.max(e.dims_mm.x, e.dims_mm.y, e.dims_mm.z)} mm）` : "真实 CAD（由来源 STEP 转换）") : <span className="text-amber-800">近似形状（程序生成）：外形按公开标准尺寸拼的简化几何，细节不真实{sup ? `；已有真实 CAD 版本：${sup}` : "；目前没找到许可清楚的真实 CAD"}</span>}</dd>
+      <dt className="text-ink-soft">{tr("尺寸", "Size")}</dt><dd>{fmt(e.dims_mm)}<span className="text-ink-soft">（{e.dims_src}）</span></dd>
+      <dt className="text-ink-soft">{tr("质量", "Mass")}</dt><dd>{m.g} g{m.est ? <span className="text-ink-soft">（估算：碰撞盒体积 × 密度）</span> : null}</dd>
+      <dt className="text-ink-soft">{tr("安装孔", "Mounting holes")}</dt><dd>{holes.length ? `${holes.length} 个${e.holes?.[0]?.d ? `，孔径 ${e.holes[0].d} mm` : ""}${e.holes_src ? `（${e.holes_src}）` : e.holes ? "（从 CAD 几何提取）" : ""}` : "无"}</dd>
+      <dt className="text-ink-soft">{tr("引脚间距", "Pin pitch")}</dt><dd>{e.pitch_mm ? `${e.pitch_mm} mm（从 CAD 提取）` : e.spec || (e.pinholes ? `${e.pinholes.length} 个引脚孔` : "—")}</dd>
       <PinoutLink id={e.id || id} />
-      {e.pins ? (<><dt className="text-ink-soft">针数</dt><dd>{e.pins}</dd></>) : null}
-      {e.rating ? (<><dt className="text-ink-soft">额定</dt><dd>{e.rating}<span className="text-ink-soft">（{e.rating_src || "估算"}）</span></dd></>) : null}
-      {e.volt ? (<><dt className="text-ink-soft">电压</dt><dd>{e.volt}</dd></>) : null}
-      {e.iface?.length ? (<><dt className="text-ink-soft">接口</dt><dd>{e.iface.map((i) => IFACE_ZH[i] || i).join("、")}{e.tags_src ? <span className="text-ink-soft">（{e.tags_src}）</span> : null}</dd></>) : null}
-      <dt className="text-ink-soft">来源</dt><dd>{e.url ? <a className="underline" href={e.url} target="_blank" rel="noreferrer">{e.source}</a> : "本项目程序生成"}</dd>
-      {e.author ? (<><dt className="text-ink-soft">作者</dt><dd>{e.author}</dd></>) : null}
-      <dt className="text-ink-soft">许可</dt><dd>{LIC_ZH[e.licence] || e.licence || "CC0（本项目程序生成）"}</dd>
-      <dt className="text-ink-soft">用在</dt><dd data-testid="used-in">{used === null ? "…" : used.length ? used.map((u) => <Link key={u.href} to={u.href} className="mr-2 underline">{u.zh}</Link>) : "现有装配指南里还没用到"}</dd>
-      {e.est?.length ? (<><dt className="text-ink-soft">估算项</dt><dd>{e.est.join("、")}</dd></>) : null}
+      {e.pins ? (<><dt className="text-ink-soft">{tr("针数", "Pins")}</dt><dd>{e.pins}</dd></>) : null}
+      {e.rating ? (<><dt className="text-ink-soft">{tr("额定", "Rating")}</dt><dd>{e.rating}<span className="text-ink-soft">（{e.rating_src || "估算"}）</span></dd></>) : null}
+      {e.volt ? (<><dt className="text-ink-soft">{tr("电压", "Voltage")}</dt><dd>{e.volt}</dd></>) : null}
+      {e.iface?.length ? (<><dt className="text-ink-soft">{tr("接口", "Interfaces")}</dt><dd>{e.iface.map((i) => IFACE_ZH[i] || i).join("、")}{e.tags_src ? <span className="text-ink-soft">（{e.tags_src}）</span> : null}</dd></>) : null}
+      <dt className="text-ink-soft">{tr("来源", "Source")}</dt><dd>{e.url ? <a className="underline" href={e.url} target="_blank" rel="noreferrer">{e.source}</a> : "本项目程序生成"}</dd>
+      {e.author ? (<><dt className="text-ink-soft">{tr("作者", "Author")}</dt><dd>{e.author}</dd></>) : null}
+      <dt className="text-ink-soft">{tr("许可", "Licence")}</dt><dd>{LIC_ZH[e.licence] || e.licence || "CC0（本项目程序生成）"}</dd>
+      <dt className="text-ink-soft">{tr("用在", "Used in")}</dt><dd data-testid="used-in">{used === null ? "…" : used.length ? used.map((u) => <Link key={u.href} to={u.href} className="mr-2 underline">{u.zh}</Link>) : "现有装配指南里还没用到"}</dd>
+      {e.est?.length ? (<><dt className="text-ink-soft">{tr("估算项", "Estimated")}</dt><dd>{e.est.join("、")}</dd></>) : null}
     </dl>
   );
 }

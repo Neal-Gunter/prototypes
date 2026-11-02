@@ -6,11 +6,12 @@ import { useLang, tr } from "../i18n.js";
 const PAGES = [
   ["/", "首页"], ["/example", "示例"], ["/workbench", "工作台"], ["/assembly", "装配台"], ["/assembly/model", "模型 + 功能图（上传模型）"],
   ["/assembly/guide", "装配台说明"], ["/assembly/octopus-guide", "八爪鱼装配指南"], ["/repair", "维修关卡"], ["/project", "动手做：从零做一只八爪鱼（引导项目 + 制作单）"], ["/project?step=check", "实测对比：填万用表读数，和估算对比 + 用户校准"], ["/repair?tab=editor", "维修关卡编辑器"],
-  ["/parts", "零件库"], ["/pinouts", "引脚表"], ["/credits", "出处与许可"],
+  ["/parts", "零件库"], ["/pinouts", "引脚表"], ["/credits", "出处与许可"], ["/help", "使用说明（快速上手、各模式、快捷键、常见问题）"],
 ];
 const SCENES = [
   ["/assembly?scene=electrics", "电路练习：Pico + LED + 按键 + 电位器 + 舵机"], ["/assembly?scene=fault", "排错练习：1 个虚焊、1 个装反"],
   ["/assembly?scene=octo", "八爪鱼（走路 + 连接实物）"], ["/assembly?scene=octoA", "八爪鱼方案 A"], ["/assembly?scene=octoB", "八爪鱼方案 B（小巧版）"],
+  ["/assembly?scene=blink", "入门：Pico 点亮一个 LED"], ["/assembly?scene=button", "按键 + LED"], ["/assembly?scene=potservo", "电位器控制舵机角度"], ["/assembly?scene=fault2", "排错练习 2：舵机信号脚虚焊"],
 ];
 const norm = (s) => String(s || "").toLowerCase();
 

@@ -16,6 +16,7 @@ export function setLang(l) {
   for (const f of subs) f();
 }
 const subscribe = (f) => { subs.add(f); return () => subs.delete(f); };
+export const onLang = subscribe;
 export function useLang() { return [useSyncExternalStore(subscribe, getLang, () => "zh"), setLang]; }
 const missing = typeof window !== "undefined" ? (window.__i18nMissing ||= new Set()) : new Set();
 // tr(中文, 可选英文)：英文模式下优先用第二个参数，其次查词典，都没有就显示中文

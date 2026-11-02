@@ -1,0 +1,145 @@
+{
+ "pre": {
+  "八爪鱼": "octopus robot",
+  "装配台": "workbench",
+  "试验台": "test bench",
+  "模型实验室": "model lab",
+  "零件库": "parts library",
+  "零件": "part",
+  "补焊": "reflow",
+  "虚焊": "cold joint",
+  "焊点": "solder joint",
+  "锡桥": "solder bridge",
+  "连锡": "solder bridge",
+  "吸锡带": "desolder braid",
+  "烙铁": "soldering iron",
+  "焊盘": "pad",
+  "焊接": "soldering",
+  "焊上": "solder on",
+  "拆焊": "desolder",
+  "返修": "rework",
+  "助焊剂": "flux",
+  "通断档": "continuity mode",
+  "万用表": "multimeter",
+  "示波器": "oscilloscope",
+  "探头": "probe",
+  "表笔": "test lead",
+  "舵机": "servo",
+  "步态": "gait",
+  "关节": "joint",
+  "上拉电阻": "pull-up resistor",
+  "上拉": "pull-up",
+  "电阻": "resistor",
+  "电容": "capacitor",
+  "二极管": "diode",
+  "稳压芯片": "voltage regulator",
+  "升压板": "boost board",
+  "升压": "boost",
+  "插针": "header pin",
+  "插头": "plug",
+  "插座": "socket",
+  "压接端子": "crimp terminal",
+  "端子": "terminal",
+  "飞线": "jumper wire",
+  "走线": "trace",
+  "锂电": "LiPo battery",
+  "电池": "battery",
+  "断电": "power off",
+  "通电": "power on",
+  "接地": "ground",
+  "地线": "ground wire",
+  "关卡": "level",
+  "维修": "repair",
+  "估算": "estimate",
+  "仿真": "simulation",
+  "串口": "serial port",
+  "蓝牙": "Bluetooth",
+  "急停": "emergency stop",
+  "碰撞体": "collider",
+  "包围盒": "bounding box",
+  "外壳": "enclosure",
+  "防尘罩": "dust cover",
+  "丝印": "silkscreen",
+  "主控": "MCU",
+  "引脚": "pin",
+  "脚位": "pinout",
+  "锂电池": "LiPo battery",
+  "触手": "tentacle",
+  "固件": "firmware",
+  "有刷电机": "brushed motor",
+  "电机": "motor",
+  "分压板": "voltage divider board",
+  "分压": "voltage divider",
+  "我的补充": "my addition",
+  "程序生成": "procedurally generated",
+  "躯干": "body",
+  "实测": "measured",
+  "规格书": "datasheet",
+  "数据手册": "datasheet",
+  "面包板": "breadboard",
+  "杜邦线": "Dupont wire",
+  "排针": "pin header",
+  "校准": "calibration",
+  "老实说": "honestly",
+  "简化": "simplified",
+  "北京时间": "Beijing time"
+ },
+ "post": [
+  [
+   "\\bwelding\\b",
+   "soldering"
+  ],
+  [
+   "\\bWelding\\b",
+   "Soldering"
+  ],
+  [
+   "\\bwelded\\b",
+   "soldered"
+  ],
+  [
+   "\\bweld\\b",
+   "solder"
+  ],
+  [
+   "\\bWeld\\b",
+   "Solder"
+  ],
+  [
+   "\\bfoot\\b",
+   "pin"
+  ],
+  [
+   "\\bfeet\\b",
+   "pins"
+  ],
+  [
+   "\\bPower outage\\b",
+   "Power off"
+  ],
+  [
+   "\\bpower outage\\b",
+   "power off"
+  ],
+  [
+   "\\bsteering gear\\b",
+   "servo"
+  ],
+  [
+   "\\bSteering gear\\b",
+   "Servo"
+  ],
+  [
+   "\\brudder\\b",
+   "servo"
+  ],
+  [
+   "\\s+([,.;:!?])",
+   "\\1"
+  ],
+  [
+   "\\s{2,}",
+   " "
+  ]
+ ]
+}

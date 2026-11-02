@@ -13,7 +13,7 @@ function navClass({ isActive }) {
 }
 
 // 这些页面是能交互的早期原型（不是纯概念图）
-const PROTO_PATHS = ["/workbench", "/assembly", "/parts", "/credits", "/repair", "/project"];
+const PROTO_PATHS = ["/workbench", "/assembly", "/parts", "/credits", "/repair", "/project", "/help"];
 
 export default function Layout() {
   const { pathname } = useLocation();
@@ -37,6 +37,7 @@ export default function Layout() {
         ) : (
           <p data-testid="banner">{en ? <>Concept demo, not a finished product<span className="hidden sm:inline"> · <span lang="zh-Hans">概念演示，不是成品</span></span></> : <>概念演示，不是成品<span className="hidden sm:inline"> · <span lang="en">Concept demo, not a finished product</span></span></>}</p>
         )}
+        {en ? <p className="text-xs text-paper-2/80" data-testid="mt-banner">Some text on this site is machine-translated (offline, Argos Translate) and may read oddly. <a href={import.meta.env.BASE_URL + "help#faq"} className="underline">Why?</a></p> : null}
       </div>
       <div className="relative flex flex-1 flex-col">
         <div
@@ -85,6 +86,9 @@ export default function Layout() {
                 </NavLink>
                 <NavLink to="/pinouts" className={navClass}>
                   {tr("引脚表")}
+                </NavLink>
+                <NavLink to="/help" className={navClass} data-testid="nav-help">
+                  {tr("使用说明", "Help")}
                 </NavLink>
                 <NavLink to="/credits" className={navClass}>
                   {tr("素材与许可")}
