@@ -506,6 +506,7 @@ function tool(kind) {
 }
 
 import { OCTO_PROCEDURAL } from "./octopus/parts.js";
+import { TD_PROCEDURAL } from "../teardown/approxParts.js";
 export const PROCEDURAL = [
   plate(),
   bracket(),
@@ -527,6 +528,7 @@ export const PROCEDURAL = [
   ...[["M2", 4], ["M2", 8], ["M2", 12], ["M2.5", 8], ["M2.5", 12], ["M2.5", 16], ["M3", 4], ["M3", 5], ["M3", 25], ["M3", 30], ["M3", 35], ["M3", 40]].map(([a, b]) => capScrew(a, b)),
   ...STD_PROCEDURAL,
   ...FP_PROCEDURAL, // v22：按 KiCad 封装生成的 12 块板/模块（引脚物理位置）
+  ...TD_PROCEDURAL, // v29：拆解模式拆下的近似件（全部估算）
   ...BREAKOUT_PROCEDURAL, // v23：贴片转接板 13 种 + 没有 CAD 的贴片封装 7 种
 ].map((d) => ({ ...d, licence: LIC_SELF, kind: "proc", thumb: `/lib/thumbs/${d.id}.webp` }));
 

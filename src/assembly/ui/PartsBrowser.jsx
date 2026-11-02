@@ -3,6 +3,7 @@ import { pub } from "../../lib/base";
 import { useEffect, useMemo, useState } from "react";
 import { loadIndex, getEntry } from "../catalog.js";
 import { PROCEDURAL } from "../procedural.js";
+import { readInventory } from "../../teardown/inventory.js";
 import { Link } from "react-router-dom";
 import { tr, useLang } from "../../i18n";
 
@@ -53,7 +54,9 @@ export default function PartsBrowser({ onAdd, compact = false, onPick, favs: fav
   const own = useFavs();
   const favs = favsIn || own;
   const [q, setQ] = useState("");
-  const [f, setF] = useState({ cat: "all", kind: "all", iface: "all", volt: "all", lic: "all", src: "all", minMm: "", maxMm: "", view: "all" });
+  const [inv, setInv] = useState(readInventory); // v29：拆解所得（本机工作台库存）
+  useEffect(() => { const g = () => setInv(readInventory()); window.addEventListener("inventory-change", g); window.addEventListener("storage", g); return () => { window.removeEventListener("inventory-change", g); window.removeEventListener("storage", g); }; }, []);
+  const [f, setF] = useState({ cat: "all", kind: "all", iface: "all", volt: "all", lic: "all", src: "all", minMm: "", maxMm: "", view: typeof location !== "undefined" && new URLSearchParams(location.search).get("view") === "inv" ? "inv" : "all" });
   const set = (k) => (e) => setF((o) => ({ ...o, [k]: e.target.value }));
   const [limit, setLimit] = useState(compact ? 60 : 200);
   useEffect(() => setLimit(compact ? 60 : 200), [q, f, compact]);
@@ -64,11 +67,11 @@ export default function PartsBrowser({ onAdd, compact = false, onPick, favs: fav
   }, [rows]);
   const ifaces = useMemo(() => { const m = {}; for (const r of rows) for (const i of r.iface || []) m[i] = (m[i] || 0) + 1; return Object.entries(m).sort((a, b) => b[1] - a[1]); }, [rows]);
   const list = useMemo(() => {
-    const only = f.view === "fav" ? new Set(favs.fav) : f.view === "recent" ? new Set(favs.recent) : null;
+    const only = f.view === "fav" ? new Set(favs.fav) : f.view === "recent" ? new Set(favs.recent) : f.view === "inv" ? new Set(inv.map((r) => r.part)) : null;
     let out = filterRows(rows, { ...f, q, only });
     if (f.view === "recent") { const o = favs.recent; out = out.sort((a, b) => o.indexOf(a.id) - o.indexOf(b.id)); }
     return out;
-  }, [rows, q, f, favs.fav, favs.recent]);
+  }, [rows, q, f, favs.fav, favs.recent, inv]);
   const pick = (id) => { favs.touch(id); onPick?.(id); };
   if (!idx) return <p className="text-sm text-ink-soft">正在加载零件目录…</p>;
   return (
@@ -79,7 +82,7 @@ export default function PartsBrowser({ onAdd, compact = false, onPick, favs: fav
       </label>
       <div className="flex flex-wrap gap-1 text-xs" data-testid="parts-filters">
         <select value={f.view} onChange={set("view")} className={SEL} aria-label="视图" data-testid="f-view">
-          <option value="all">全部</option><option value="fav">收藏（{favs.fav.length}）</option><option value="recent">最近使用（{favs.recent.length}）</option>
+          <option value="all">全部</option><option value="fav">收藏（{favs.fav.length}）</option><option value="recent">最近使用（{favs.recent.length}）</option><option value="inv">拆解所得（{inv.length}）</option>
         </select>
         <select value={f.cat} onChange={set("cat")} className={SEL} aria-label="分类" data-testid="f-cat">
           <option value="all">全部分类（{rows.length}）</option>
