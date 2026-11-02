@@ -963,5 +963,21 @@
  "静止时量舵机 5 的电压正常，运行时再量一次；拨一下 P5 看看。": "At rest servo 5 reads normal; measure again while running, and wiggle P5.",
  "静止时量舵机 5 的电压正常，运行时再量一次；拨一下 P5 看看": "At rest servo 5 reads normal; measure again while running, and wiggle P5",
  "舵机 5 插针的簧片疲劳，静止时接触正常，振动时瞬间断开。": "The contacts in servo 5's header socket are fatigued: fine at rest, but they open for an instant under vibration.",
- "舵机 5 插针的簧片疲劳，静止时接触正常，振动时瞬间断开": "The contacts in servo 5's header socket are fatigued: fine at rest, but they open for an instant under vibration"
+ "舵机 5 插针的簧片疲劳，静止时接触正常，振动时瞬间断开": "The contacts in servo 5's header socket are fatigued: fine at rest, but they open for an instant under vibration",
+ "螺丝 · 小零件": "Screws · small parts",
+ "耐热硅胶维修垫 · 网格 1 cm": "Heat-resistant silicone repair mat · 1 cm grid",
+ "底板 24 × 16 cm（铅笔线：1 cm 网格）": "Base board 24 × 16 cm (pencil lines: 1 cm grid)",
+ "烙铁架": "Iron stand",
+ "无铅焊锡丝 SAC305 · 0.8 mm · 松香芯": "Lead-free solder wire SAC305 · 0.8 mm · rosin core",
+ "助焊剂笔": "Flux pen",
+ "吸锡带": "Desoldering braid",
+ "吸锡器": "Solder sucker",
+ "十字螺丝刀 PH0": "Phillips screwdriver PH0",
+ "剥线钳 20–30 AWG": "Wire stripper 20–30 AWG",
+ "数字万用表（简化）": "Digital multimeter (simplified)",
+ "通断 •))": "Continuity •))",
+ "直流电压 DC V": "DC voltage DC V",
+ "电池盒": "Battery box",
+ "4×AA 电池盒": "4×AA battery box",
+ "微型金属齿舵机": "Micro metal-gear servo"
 }

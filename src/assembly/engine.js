@@ -359,6 +359,12 @@ class Engine {
       for (const col of b.fine) col.setCollisionGroups(on ? GROUPS.partFine : GROUPS.dormant);
     }
   }
+  // v28：测试 / 调试用，返回有细凸包的刚体数和其中启用的数量
+  lodStats() {
+    let withFine = 0, fineOn = 0;
+    for (const b of this.bodies.values()) if (b.fine) { withFine++; if (b.fineOn !== false) fineOn++; }
+    return { lod: this.colliderLod !== false, withFine, fineOn, all: this.cables.length > 0 || !!this.tool?.body };
+  }
   addColliders(body, p) {
     const R = this.R;
     const list = [];
