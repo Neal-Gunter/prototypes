@@ -1179,7 +1179,7 @@ class Engine {
     // v31（我的补充，简化）：小件（质量小、常卡在别的零件空腔里）纠正更“硬”：
     // 规定轮数做完还压进去 > xtraMm 就多做几轮（最多 xtraIt 轮），卡死判定也更早（stuckSmall 次而不是 40 次）
     const small = fast && (body._small ??= body.rb.mass() < (this.smallMass ?? 1.5));
-    const xtra = fast ? (small ? this.xtraIt ?? 6 : this.xtraItBig ?? 2) : 0, xtraD = -(this.xtraMm ?? 0.5) / 10;
+    const xtra = fast ? (small ? this.xtraIt ?? 6 : this.xtraItBig ?? 0) : 0, xtraD = -(this.xtraMm ?? 0.5) / 10;
     for (let it = 0; it < iters + xtra; it++) {
       let worst = null;
       if (fast) {

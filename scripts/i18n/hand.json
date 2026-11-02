@@ -1592,5 +1592,14 @@
  "条": "",
  "板上有": "The board has",
  "转成": "converted to",
- "里没画": "not drawn in"
+ "里没画": "not drawn in",
+ "TP4056 线性充电芯片 + 保护芯片 + 双 MOS 管 + 两颗指示灯；尺寸按常见小板估算。": "TP4056 linear charger chip, protection chip, dual MOSFET and two indicator LEDs. Sizes estimated from the common small board.",
+ "充电模块": "Charger module",
+ "手电": "Flashlight",
+ "手电筒": "Flashlight",
+ "圆形小板，背面的弹簧或铜柱顶住电池正极；有的只有一个电阻。": "A small round board. A spring or brass post on the back presses on the cell's positive end. Some have just a resistor.",
+ "大功率 LED 焊在圆形铝基板上帮它散热，示意成一个金属圆片。": "A high-power LED soldered to a round aluminium board that spreads its heat, shown as a metal disc.",
+ "抛光或橘皮面的反光杯，前面压一片玻璃或塑料透镜。": "A smooth or orange-peel reflector with a glass or plastic lens pressed in front.",
+ "阳极氧化铝管，两端有螺纹，本身也是电流回路的一部分。": "An anodised aluminium tube, threaded at both ends. It also carries part of the current.",
+ "根": ""
 }
