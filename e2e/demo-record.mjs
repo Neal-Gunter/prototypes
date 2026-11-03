@@ -4,6 +4,7 @@
 // v34：加一段键盘操作 3D 场景（Tab 聚焦、方向键选零件、Alt + 方向键平移）和致谢页的 v34 调研。
 // v35：新设备换成红外遥控器，加打印版指南（弹出页内容放回主页面录下来）、键盘 R 旋转、致谢页 v35。
 // v36：新设备换成电子厨房计时器，打印版指南录目录 + 图例，键盘加 T / F 倾斜、N 摆正，致谢页 v36。
+// v37：新设备换成电池感应小夜灯，打印版录二维码，再打开二维码指向的那一步；键盘倾斜来回按回原样、转不开时往旁边挪；致谢页 v37。
 // 用法：BASE=http://localhost:4173 OUT=/workspace/proto-site/v33 node e2e/demo-record.mjs  然后用 ffmpeg 转 mp4
 import { chromium } from "playwright";
 import fs from "node:fs";
@@ -24,17 +25,21 @@ await step("拆解：设备列表 + 搜索", async () => {
   await p.goto(BASE + "/teardown/"); await T("teardown-page").waitFor({ timeout: 30000 }); await w(1500);
   await T("td-search").pressSequentially("tp4056", { delay: 120 }); await w(1500); await T("td-search").fill(""); await w(800);
 }, "拆解模式：按名称或型号搜设备");
-await step("拆解：市电提示 + 厨房计时器", async () => {
+await step("拆解：市电提示 + 小夜灯", async () => {
   await T("td-search").pressSequentially("充电头", { delay: 120 }); await w(2500); await T("td-search").fill(""); await w(500);
-  await T("td-search").pressSequentially("计时器", { delay: 120 }); await w(1500); await T("td-search").fill(""); await w(400);
-  await p.goto(BASE + "/teardown/?d=kitchen-timer"); await T("td-guide").waitFor({ timeout: 20000 }); await w(1500); await scroll(350, 6, 400);
-}, "只收低压直流设备：搜“充电头”会提示不拆市电设备；v36 新加的电子厨房计时器（一节 AAA，1.5 V）");
+  await T("td-search").pressSequentially("夜灯", { delay: 120 }); await w(1500); await T("td-search").fill(""); await w(400);
+  await p.goto(BASE + "/teardown/?d=night-light"); await T("td-guide").waitFor({ timeout: 20000 }); await w(1500); await scroll(350, 6, 400);
+}, "只收低压直流设备：搜“充电头”会提示不拆市电设备；v37 新加的电池感应小夜灯（三节 AAA，4.5 V，按公开资料整理，未经实物验证）");
 await step("拆解：打印版指南", async () => {
   await T("td-print-bar").scrollIntoViewIfNeeded(); await w(1200);
   const [pop] = await Promise.all([c.waitForEvent("page", { timeout: 10000 }), T("td-print").click()]);
   await pop.waitForLoadState("load"); const html = await pop.content(); await pop.close(); await w(800);
   await p.setContent(html); await w(2500); await scroll(400, 10, 450);
-}, "v36：打印版第一页是目录（可点击跳转），每页底部有“第 N 页 / 共 M 页”；放不下的图上标签改成编号，图下列对照（浏览器里生成，不上传）");
+}, "v37：打印版封面和每一步旁边都有二维码，扫码打开网页版的那一步（二维码在浏览器里生成，不上传）；v36：目录和页码");
+await step("拆解：二维码打开的那一步", async () => {
+  await p.goto(BASE + "/teardown/?d=night-light&s=3"); await T("td-guide").waitFor({ timeout: 20000 }); await w(3500);
+  await p.keyboard.press("Tab"); await w(1500);
+}, "v37：二维码网址带步号（…&s=3），打开后直接滚到第 3 步并把键盘焦点放在这一步上");
 await step("拆解：LED 手电指南 + 爆炸图", async () => {
   await p.goto(BASE + "/teardown/?d=led-flashlight"); await T("td-guide").waitFor({ timeout: 20000 }); await w(1500);
   await scroll(350, 8, 400);
@@ -68,14 +73,18 @@ await step("装配台：键盘操作", async () => {
   for (let i = 0; i < 3; i++) { await p.keyboard.press("Alt+ArrowUp"); await w(450); }
   for (let i = 0; i < 2; i++) { await p.keyboard.press("r"); await w(900); }
   await p.keyboard.press("t"); await w(1200); await p.keyboard.press("f"); await w(1200); await p.keyboard.press("Shift+f"); await w(900); await p.keyboard.press("Shift+t"); await w(900);
+  for (let i = 0; i < 6; i++) { await p.keyboard.press("r"); await w(700); }
   await p.keyboard.press("Alt+r"); await w(600); await p.keyboard.press("n"); await w(900);
   await p.keyboard.press("Enter"); await w(1200);
-}, "v36：T 前后倾、F 左右倾（Shift 反向，Alt 15°），N 摆正到 90°，角度自动吸附，倾斜后放不下会先抬起；v35：键盘也能转零件——R 转 90°，Alt + R 转 15°，会穿模时不转；v34：3D 场景可以用键盘操作——Tab 聚焦，方向键选零件，Alt + 方向键平移 1 cm，读屏会读出选中的零件和位置");
-await step("致谢：v36", async () => {
-  await p.goto(BASE + "/credits#v36-print"); await w(1500);
-  await T("credits-v36").scrollIntoViewIfNeeded().catch(() => {}); await w(3000);
-}, "v36：打印版用浏览器自带 CSS 分页做页码；PDF 检查用 pdftotext（GPL-2.0，只在测试里用）；axe 也查打开的面板和菜单，11 个状态严重问题 0");
-await step("工作台", async () => { await p.goto(BASE + "/workbench/"); await w(4000); await scroll(300, 4); }, "工作台：项目和零件的汇总");
+}, "v37：倾斜改用四元数叠加，来回按回到原样、朝向不漂；原地转不开时往旁边找空位并读出挪了多少；v36：T 前后倾、F 左右倾（Shift 反向，Alt 15°），N 摆正到 90°，角度自动吸附，倾斜后放不下会先抬起；v35：键盘也能转零件——R 转 90°，Alt + R 转 15°，会穿模时不转；v34：3D 场景可以用键盘操作——Tab 聚焦，方向键选零件，Alt + 方向键平移 1 cm，读屏会读出选中的零件和位置");
+await step("致谢：v37", async () => {
+  await p.goto(BASE + "/credits#v37-qr"); await w(1500);
+  await T("credits-v37").scrollIntoViewIfNeeded().catch(() => {}); await w(3500);
+}, "v37：二维码编码用 uqr（MIT），测试里用 jsQR（Apache-2.0）解码核对；新增 11 个页面的键盘焦点顺序检查");
+await step("工作台：固件编辑器", async () => {
+  await p.goto(BASE + "/workbench/"); await T("code").waitFor({ timeout: 30000 }); await w(2500);
+  await T("code").focus(); await w(800); await p.keyboard.press("Tab"); await w(1500);
+}, "v37：修好了固件编辑器的焦点陷阱——用 Tab 进来时 Tab 照常移到下一个控件，开始打字后才缩进，Esc 恢复");
 const vid = p.video(); await c.close(); const path = await vid.path(); await b.close();
 fs.copyFileSync(path, `${OUT}/demo-raw.webm`); fs.rmSync(VD, { recursive: true, force: true });
 fs.mkdirSync(`${OUT}/logs`, { recursive: true }); fs.writeFileSync(`${OUT}/logs/demo-record.txt`, log.join("\n") + "\n");
