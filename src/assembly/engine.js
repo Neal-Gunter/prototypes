@@ -1139,7 +1139,10 @@ class Engine {
               // 被拖的零件直接碰到的：沿拖动方向推（像手推着走），而不是沿接触法线（法线朝上时会“骑”上去）
               if (rbA === dragRb && hv.lengthSq() > 1e-4) n = hv.clone();
               if (n.lengthSq() < 0.04 * (rbA === dragRb ? 0 : 1) || n.lengthSq() < 1e-8) return;
-              n.normalize().multiplyScalar(-sc.distance + 0.001);
+              // v33（我的补充）：沿拖动方向推时，推的距离要除以“拖动方向和接触法线的夹角余弦”，否则斜着碰到时推不够（上限 3 倍）
+              n.normalize();
+              const cosA = Math.abs(n.x * sc.normal1.x + n.z * sc.normal1.z) / (Math.hypot(sc.normal1.x, sc.normal1.y, sc.normal1.z) || 1);
+              n.multiplyScalar((-sc.distance + 0.001) / Math.max(1 / 3, cosA));
               const cur = push.get(rb);
               if (!cur || n.lengthSq() > cur.lengthSq()) push.set(rb, n);
             });
