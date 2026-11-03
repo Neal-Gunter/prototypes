@@ -15,6 +15,7 @@ export function CodeEditor() {
   const code = useBench((s) => s.code);
   const errLine = useBench((s) => s.fw.errorLine);
   const gutter = useRef();
+  const indent = useRef(false);
   const lines = code.split("\n").length;
   return (
     <div className="flex h-80 border border-ink bg-[#14120f] font-mono text-[13px] leading-5 text-[#efe7d6]">
@@ -34,8 +35,17 @@ export function CodeEditor() {
         onScroll={(e) => {
           if (gutter.current) gutter.current.scrollTop = e.target.scrollTop;
         }}
+        // v37：原来 Tab 永远插两个空格，键盘用户进了编辑器就出不来（焦点陷阱）。
+        //   现在：用 Tab 键进来时 Tab / Shift+Tab 照常移动焦点；开始打字或用鼠标点进来后 Tab 才缩进；
+        //   随时按 Esc 恢复“Tab 移动焦点”；Shift+Tab 永远往回移动焦点。
+        aria-describedby="code-tab-hint"
+        onFocus={() => { indent.current = false; }}
+        onMouseDown={() => { indent.current = true; }}
         onKeyDown={(e) => {
-          if (e.key === "Tab") {
+          if (e.key === "Escape") { indent.current = false; return; }
+          if (e.key !== "Tab") { if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key.length === 1) indent.current = true; return; }
+          if (e.shiftKey || !indent.current) return;
+          {
             e.preventDefault();
             const t = e.target;
             const s = t.selectionStart;
@@ -44,8 +54,9 @@ export function CodeEditor() {
             requestAnimationFrame(() => (t.selectionStart = t.selectionEnd = s + 2));
           }
         }}
-        className="flex-1 resize-none bg-transparent px-3 py-2 outline-none"
+        className="flex-1 resize-none bg-transparent px-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-700"
       />
+      <p id="code-tab-hint" className="sr-only">开始输入后 Tab 键插入缩进；按 Esc 后 Tab 键移到下一个控件。</p>
     </div>
   );
 }
