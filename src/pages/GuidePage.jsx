@@ -52,7 +52,7 @@ export default function GuidePage() {
       <section className="mt-5 break-inside-avoid">
         <h2 className="text-lg font-medium">{tr("1. 物料清单（BOM）", "1. Bill of materials (BOM)")}</h2>
         <p className="text-xs text-ink-soft">尺寸取自 3D 模型的包围盒（长 × 宽 × 高），标“估算”的没有查到原始资料。链接是资料或模型来源，不是购买推荐，也不含价格。</p>
-        <table className="mt-2 w-full border-collapse text-left text-xs" data-testid="guide-bom">
+        <div className="mt-2 overflow-x-auto"><table className="w-full border-collapse text-left text-xs" data-testid="guide-bom">
           <thead><tr className="border-b border-ink"><th className="py-1 pr-2">#</th><th className="pr-2">名称 / 规格</th><th className="pr-2">数量</th><th className="pr-2">位号</th><th className="pr-2">尺寸</th><th>资料</th></tr></thead>
           <tbody>
             {g.bom.map((b, i) => (
@@ -62,11 +62,11 @@ export default function GuidePage() {
                 <td className="pr-2">{b.qty}</td>
                 <td className="pr-2">{b.refs.join(" ")}</td>
                 <td className="pr-2">{b.dims}{/估算/.test(b.dims_src || b.dims) && <span className="text-copper"> 估算</span>}</td>
-                <td>{b.links.map((l) => <a key={l.url} href={l.url} target="_blank" rel="noreferrer" className="mr-2 block break-all underline">{l.zh}</a>)}</td>
+                <td>{b.links.map((l) => <a key={l.url} href={l.url} target="_blank" rel="noreferrer" className="mr-2 block min-h-6 whitespace-nowrap py-0.5 underline">{l.zh}</a>)}</td>
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
         <p className="mt-1 text-xs text-ink-soft">另外需要：电烙铁和烙铁架、焊锡丝、助焊剂、斜口钳、万用表、一台装好 Arduino IDE 的电脑（具体型号不限）。</p>
       </section>
 
