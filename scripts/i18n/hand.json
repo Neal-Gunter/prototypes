@@ -1,5 +1,5 @@
 {
- "_note": "v27 手写补充（不是机翻）：机翻被质检拒掉、或覆盖率测试发现漏翻的常见片段。 v28：八爪鱼指南的标题/表头/短句手译（276 条）。 v28：可读性抽样查出的坏译（凭空口头语、重复词、Markdown 标题等）手译 79 条。 v29：拆解模式相关的首页按钮、出处页、命令面板、零件库视图手译。 v30：/workbench 页面手译 90 条、维修场景（标题/客户描述/症状/界面）手译 172 条。 v30：往返检查（中→英→中）查出的明显错译手改 60 条。 v33：往返检查查出的明显错译手改 9 条。",
+ "_note": "v27 手写补充（不是机翻）：机翻被质检拒掉、或覆盖率测试发现漏翻的常见片段。 v28：八爪鱼指南的标题/表头/短句手译（276 条）。 v28：可读性抽样查出的坏译（凭空口头语、重复词、Markdown 标题等）手译 79 条。 v29：拆解模式相关的首页按钮、出处页、命令面板、零件库视图手译。 v30：/workbench 页面手译 90 条、维修场景（标题/客户描述/症状/界面）手译 172 条。 v30：往返检查（中→英→中）查出的明显错译手改 60 条。 v33：往返检查查出的明显错译手改 9 条。 v37：小夜灯近似件说明、固件编辑器 Tab 提示、二维码标签、键盘旋转提示手译 16 条。",
  "也不会模拟": "is not simulated either",
  "概念演示": "concept demo",
  "不是成品": "not a finished product",
@@ -1968,5 +1968,19 @@
  "导电胶条": "Elastomer strip",
  "导电胶": "Elastomer",
  "液晶": "LCD",
- "蜂鸣": "Beeper"
+ "蜂鸣": "Beeper",
+ "一块长条板：一排贴片 LED，一颗控制芯片，旁边是限流电阻和开关管。尺寸是估算，具体芯片型号各厂不同。": "A long board: a row of SMD LEDs and one control chip, with current-limiting resistors and a switching transistor next to them. Sizes are estimates; the chip model varies by maker.",
+ "白色圆顶是菲涅尔透镜，下面是一颗带小窗口的金属圆罐热释电传感器，焊在一小块板上。尺寸是估算。": "The white dome is a Fresnel lens. Under it is a small metal-can pyroelectric sensor with a window, soldered to a small board. Sizes are estimates.",
+ "长条形塑料壳，示意成后盖加一片乳白色灯罩：灯罩把几颗 LED 的光打散，后盖里是 3 节 AAA 的电池仓。尺寸是估算。": "A long plastic case, shown as a back cover plus a milky diffuser: the diffuser spreads the light of the LEDs, and the back cover holds the 3 × AAA battery bay. Sizes are estimates.",
+ "开始输入后 Tab 键插入缩进；按 Esc 后 Tab 键移到下一个控件。": "Once you start typing, Tab inserts an indent. Press Esc and Tab moves to the next control again.",
+ "扫码打开网页版": "Scan to open on the web",
+ "这份指南网页版的二维码": "QR code for this guide on the web",
+ "小夜灯": "night light",
+ "感应灯": "motion light",
+ "人体感应": "motion sensor",
+ "光敏电阻": "light-dependent resistor",
+ "橱柜灯": "closet light",
+ "床头灯": "bedside light",
+ "这里转不开（会和别的零件穿模，旁边 6 厘米内也没有空位），先挪开一点再转": "Can't rotate here (it would overlap another part, and there is no free spot within 6 cm). Move it a little first, then rotate.",
+ "（原地放不下，往旁边挪了": "(no room in place; moved"
 }

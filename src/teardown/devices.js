@@ -655,6 +655,56 @@ export const DEVICES = [
     ],
     explode: true,
   },
+  // v37（我的补充）：电池款感应小夜灯（3 节 AAA，光敏 + 人体感应）。只收电池款，插墙款是市电设备，不收
+  {
+    id: "night-light",
+    name: T("电池感应小夜灯（3 节 AAA，光敏 + 人体感应）", "Battery motion night light (3 × AAA, light + motion sensor)"),
+    model: "Generic stick-on battery LED night light, 3 × AAA, LDR dusk sensor, PIR motion sensor, slide switch",
+    alias: ["night light", "nightlight", "motion light", "closet light", "pir", "ldr", "photoresistor", "夜灯", "小夜灯", "感应灯", "人体感应", "光敏", "光敏电阻", "橱柜灯", "床头灯"],
+    volts: 4.5,
+    difficulty: 2, minutes: 20,
+    summary: T("贴在柜子或走廊墙上的小灯：3 节 AAA 电池、一块排着几颗贴片 LED 的电路板、一颗光敏电阻（天黑才工作）、一个带白色圆顶的人体感应头（有人走过才亮），外加一个三档拨动开关。拆开能看到“传感器 → 控制芯片 → 三极管/MOS 管 → LED”这条最简单的自动控制链。注意：这里只讲电池款，插墙用的小夜灯是市电设备，不在这里拆。", "A small light you stick inside a cupboard or on a hallway wall: 3 × AAA cells, a board with a row of SMD LEDs, a light-dependent resistor (works only in the dark), a PIR motion head under a white dome (lights up when someone walks by), and a 3-position slide switch. Inside you can see the simplest automatic control chain: sensor → control chip → transistor or MOSFET → LEDs. Note: this covers battery models only. Plug-in night lights run on mains power and are not covered here."),
+    battery: true,
+    materials: [
+      T("小号十字螺丝刀（常见 2–4 颗螺丝，有的在电池仓里）", "Small Phillips screwdriver (usually 2–4 screws, some inside the battery bay)"),
+      T("塑料撬片", "Plastic spudger"),
+      T("万用表", "Multimeter"),
+      T("一块不透光的布或纸杯（遮住光敏电阻假装天黑）", "An opaque cloth or a paper cup (cover the light sensor to fake darkness)"),
+      T("分格的小盒子（放螺丝和小零件）", "A small tray with compartments (for screws and small parts)"),
+    ],
+    safety: [
+      T("电池先处理：先打开电池盖取出 3 节 AAA，再拆螺丝。3 节串联约 4.5 V，电压低，但电池短路会发热。", "Battery first: open the cover and take out all 3 AAA cells before removing any screw. Three in series is about 4.5 V. That is low, but a shorted battery still gets hot."),
+      T("只拆电池款。外壳上印着 220 V / 110 V、或者直接插在墙上的小夜灯是市电设备，不要拆。", "Battery models only. If the case says 220 V / 110 V, or the light plugs straight into a wall socket, it is a mains device. Do not open it."),
+      T("背面常有双面胶或磁铁贴片，揭下来时别用刀片朝手的方向撬。", "The back often has double-sided tape or a magnetic pad. When you peel it off, never pry with a blade towards your hand."),
+    ],
+    fig: [
+      { id: "cover", x: 8, y: 6, w: 184, h: 20, c: "#f1efe9", t: T("灯罩", "Diffuser") },
+      { id: "pir", x: 150, y: 30, w: 40, h: 26, c: "#ffffff", round: true, t: T("感应头", "PIR head") },
+      { id: "ldr", x: 124, y: 34, w: 18, h: 14, c: "#d9792b", round: true, t: T("光敏", "LDR") },
+      { id: "leds", x: 14, y: 32, w: 100, h: 14, c: "#fff4b8", t: T("LED", "LEDs") },
+      { id: "pcb", x: 10, y: 52, w: 136, h: 22, c: "#2f8f4e", t: T("电路板", "Board") },
+      { id: "sw", x: 152, y: 62, w: 36, h: 12, c: "#5b6168", t: T("开关", "Switch") },
+      { id: "batt", x: 10, y: 84, w: 150, h: 26, c: "#d9792b", t: T("3 节 AAA", "3 × AAA") },
+    ],
+    steps: [
+      { t: T("先试一遍：哪种情况不亮", "Test first: when does it fail to light"), d: T("装着电池把开关拨到“自动”档：白天或开着灯时它不该亮；用布或纸杯盖住光敏电阻（假装天黑），再在感应头前挥手，应该亮十几秒后自己灭（估算）。拨到“常亮”档应该一直亮。只有自动档不亮，多半是传感器那一路；常亮档也不亮，多半是电池、开关或 LED 那一路。", "With batteries in, set the switch to AUTO. It should stay dark in daylight or with the room light on. Cover the light sensor with a cloth or paper cup to fake darkness, then wave in front of the motion head: it should light for some seconds and then turn off (estimate). On ON it should stay lit. If only AUTO fails, suspect the sensor side. If ON also fails, suspect the batteries, the switch or the LEDs."), fig: { hi: ["pir", "ldr"] } },
+      { t: T("取出电池，量电压", "Take out the batteries and measure them"), d: T("打开电池盖取出 3 节 AAA。万用表直流电压档逐节量：新电池约 1.5 V；3 节加起来低于约 3.6 V 时 LED 会明显变暗或不亮（估算）。看看电池弹片有没有锈或电池漏液的白色结晶。", "Open the cover and take out the 3 AAA cells. Measure each one on DC volts: a fresh cell reads about 1.5 V. When the three add up to less than about 3.6 V, the LEDs get clearly dim or stay off (estimate). Check the springs for rust or white crystals from a leaking cell."), stop: T("停止点：电池漏液腐蚀了弹片，先清理或换电池座，别急着往下拆。", "Stop point: if a leaking cell has corroded the springs, clean them or replace the holder first. Don't go further yet."), fig: { hi: ["batt"] } },
+      { t: T("拆螺丝、取下灯罩", "Remove the screws and the diffuser"), d: T("螺丝多在电池仓里或背面胶垫下。拧下后，乳白色灯罩一般是卡扣卡住的，用撬片从有缝的一边慢慢撬开一圈。螺丝按位置分格放。", "The screws are usually inside the battery bay or under the adhesive pad. After that, the milky diffuser is usually held by clips: work a spudger slowly around from the side with a gap. Keep the screws sorted by position."), warn: T("灯罩是薄塑料，卡扣容易断，撬不动就换个位置，别硬掰。", "The diffuser is thin plastic and the clips break easily. If it won't move, try another spot instead of forcing it."), fig: { hi: ["cover"] } },
+      { t: T("找到三个关键件：光敏电阻、感应头、开关", "Find the three key parts: LDR, PIR head and switch"), d: T("光敏电阻是一颗带蛇形纹的小圆片，通常对着外壳上的一个小孔。感应头是那个白色圆顶（菲涅尔透镜），里面是一颗带小窗口的金属圆罐（热释电传感器）。拨动开关在侧面，常见三档：关 / 自动 / 常亮。拍照记下光敏电阻和感应头对着哪个孔。", "The LDR is a small disc with a zig-zag pattern, usually facing a small hole in the case. The PIR head is the white dome (a Fresnel lens) with a small metal can with a window inside (the pyroelectric sensor). The slide switch is on the side, usually with 3 positions: OFF / AUTO / ON. Take a photo of which hole the LDR and the PIR face."), fig: { hi: ["ldr", "pir", "sw"] } },
+      { t: T("看懂电路：传感器 → 芯片 → 管子 → LED", "Understand the circuit: sensor → chip → transistor → LEDs"), d: T("板子上常有一颗小控制芯片（不少是专用的人体感应芯片，也有的用通用小单片机），光敏电阻和感应头的信号都进它；它再通过一颗三极管或 MOS 管去开关那排 LED。每颗 LED 旁边常有一颗限流电阻。这些芯片的型号各厂不同，这里不写具体型号和参数。", "The board usually has a small control chip (often a dedicated PIR controller, sometimes a general small microcontroller). Both the LDR and the PIR head feed into it, and it switches the row of LEDs through a transistor or MOSFET. Each LED often has a current-limiting resistor next to it. Chip models vary by maker, so no part numbers or ratings are given here."), fig: { hi: ["pcb", "leds"] } },
+      { t: T("（可选）量一下光敏电阻", "(Optional) Measure the LDR"), d: T("断电状态下，万用表电阻档量光敏电阻两脚：有光时阻值小，用手指盖住时阻值明显变大。具体数值各型号差很多，看变化就行，不必和任何数据对照。", "With power off, measure across the two LDR legs on the resistance range: it reads low in light and clearly higher when you cover it with a finger. Values differ a lot between parts, so just look for the change. No need to compare with any datasheet."), fig: { hi: ["ldr"] } },
+      { t: T("整理模块，存进零件库", "Sort the modules and save them to the parts library"), d: T("一般能得到：外壳和灯罩、LED 灯板（带控制芯片）、人体感应头、光敏电阻、拨动开关、3 节 AAA 电池座。光敏电阻和感应头可以直接用在自己的“天黑 + 有人才亮”实验里，接到 3.3–5 V 的开发板上试。", "You usually get: the shell and diffuser, the LED board (with the control chip), the PIR head, the LDR, the slide switch and the 3 × AAA holder. The LDR and the PIR head can go straight into your own 'light only when dark and someone is there' experiment on a 3.3–5 V dev board."), fig: { hi: ["pcb", "pir", "ldr", "batt"] } },
+    ],
+    modules: [
+      { key: "shell", part: "td-nlight-shell", match: "approx", t: T("外壳 + 乳白灯罩（近似件）", "Shell + milky diffuser (approximate)"), ex: { p: [0, -0.3, 0], d: [0, -1.4, 0] } },
+      { key: "pcb", part: "td-nlight-pcb", match: "approx", t: T("LED 灯板 + 控制芯片（近似件）", "LED board with control chip (approximate)"), ex: { p: [0, 0.6, 0], d: [0, 1.6, 0] } },
+      { key: "pir", part: "td-nlight-pir", match: "approx", t: T("人体感应头（菲涅尔透镜 + 热释电传感器，近似件）", "PIR head (Fresnel lens + pyroelectric sensor, approximate)"), ex: { p: [2.6, 0.8, 0], d: [1.4, 1.2, 0] } },
+      { key: "ldr", part: "kc-r_ldr_5.0x4.1mm_p3mm_vertical", match: "similar", t: T("光敏电阻（示意为 5 mm 光敏电阻）", "Light-dependent resistor (shown as a 5 mm LDR)"), ex: { p: [1.5, 0.8, 0.6], d: [0.8, 1.4, 0.6] } },
+      { key: "led", part: "kc-led_d5.0mm", match: "similar", t: T("LED（示意为 5 mm 直插 LED；实物多是贴片 LED）", "LED (shown as a 5 mm through-hole LED; real ones are mostly SMD)"), ex: { p: [-1.6, 0.8, 0], d: [-0.8, 1.4, 0.6] } },
+      { key: "batt", part: "kc-batteryholder_keystone_2479_3xaaa", match: "similar", t: T("3 × AAA 电池座（相近的现成件）", "3 × AAA battery holder (similar ready-made part)"), ex: { p: [0, 0.2, -1.8], d: [-1.2, 0.8, -1.2] } },
+    ],
+    explode: true,
+  },
 ];
 // v32（我的补充）：安全规则——只收低压直流设备（≤ 24 V），市电设备不收。搜到市电类关键词时页面给出提示
 export const MAX_VOLTS = 24;

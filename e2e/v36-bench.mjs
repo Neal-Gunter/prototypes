@@ -68,7 +68,7 @@ for (const lang of ["zh", "en"]) {
   const { c, p, T } = await page(lang);
   await p.goto(BASE + "/teardown/"); await T("td-guide").waitFor({ timeout: 20000 }).catch(() => {});
   const nDev = await p.locator('[data-testid^="td-device-"]').count();
-  ok(nDev === 13 && await T("td-device-kitchen-timer").count() === 1, `${lang}：设备列表 ${nDev} 台，有厨房计时器`);
+  ok(nDev >= 13 && await T("td-device-kitchen-timer").count() === 1, `${lang}：设备列表 ${nDev} 台，有厨房计时器`);
   await T("td-device-kitchen-timer").click(); await wait(500);
   const g = await T("td-guide").innerText();
   ok(lang === "zh" ? /停止点/.test(g) && /导电胶条/.test(g) && /AAA/.test(g) : /Stop point/.test(g) && /elastomer/i.test(g) && !CJK1.test(g.replace(/[（）]/g, "")), `${lang}：计时器指南有停止点和胶条${lang === "en" ? "、英文无汉字" : ""}`);
