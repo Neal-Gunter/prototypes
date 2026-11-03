@@ -108,7 +108,7 @@ export default function GuidePage() {
       {g.sketch && (
         <section className="mt-6">
           <h2 className="text-lg font-medium">{tr("5. 固件（Arduino 风格，按接线自动生成）", "5. Firmware (Arduino-style, generated from the wiring)")}</h2>
-          <pre className="mt-2 overflow-x-auto border border-line bg-white p-2 font-mono text-[11px] leading-4" data-testid="guide-code">{g.sketch}</pre>
+          <pre className="mt-2 overflow-x-auto border border-line bg-white p-2 font-mono text-[11px] leading-4" role="region" tabIndex={0} aria-label="示例代码（可滚动）" data-testid="guide-code">{g.sketch}</pre>
         </section>
       )}
 

@@ -333,7 +333,7 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
             {snap.servos.map((s) => <tr key={s.role} className={s.buzz || s.collide ? "text-red-700" : ""}><td>{s.ch}</td><td>{s.role}{s.type === "360" ? "(360°)" : ""}</td><td>{s.us ? s.us.toFixed(0) : "—"}</td><td>{s.cmd == null ? "—" : s.cmd.toFixed(0)}</td><td>{s.ang.toFixed(0)}</td><td>{s.I.toFixed(2)}</td><td>{s.collide ? "碰" : s.buzz ? "响" : ""}</td></tr>)}
           </tbody></table>
         </details>}
-        {snap.log.length > 0 && <pre className="max-h-32 overflow-auto border border-line bg-white p-1 text-[10px]" data-testid="octo-log">{snap.log.slice(-14).join("\n")}</pre>}
+        {snap.log.length > 0 && <pre className="max-h-32 overflow-auto border border-line bg-white p-1 text-[10px]" role="region" tabIndex={0} aria-label="运行日志（可滚动）" data-testid="octo-log">{snap.log.slice(-14).join("\n")}</pre>}
         {snap.events.length > 0 && <ul className="text-[11px] text-ink-soft">{snap.events.slice(-5).map((e, i) => <li key={i}>{e.t}s {e.zh}</li>)}</ul>}
         <p className="text-ink-soft">{EST.friction}。{variant === "v10" ? V10_EST.gap : isB ? EST.gap : ""}</p>
       </>}

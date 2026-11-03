@@ -100,7 +100,7 @@ export default function Layout() {
               <button type="button" onClick={() => window.dispatchEvent(new Event("open-palette"))} className="inline-flex min-h-9 shrink-0 items-center gap-1 whitespace-nowrap border border-line px-2 text-xs text-ink-soft hover:text-ink" title={tr("命令面板：跳到页面、零件、场景")} data-testid="palette-btn">
                 {tr("搜索跳转")} <kbd className="hidden font-mono sm:inline">Ctrl/⌘ K</kbd>
               </button>
-              <button type="button" onClick={() => setLang(en ? "zh" : "en")} className="inline-flex min-h-9 shrink-0 items-center whitespace-nowrap border border-line px-2 text-xs text-ink-soft hover:text-ink" aria-label={en ? "切换到中文界面" : "Switch the UI to English"} title={tr("切换界面语言")} data-testid="lang-toggle" data-lang={lang}>
+              <button type="button" onClick={() => setLang(en ? "zh" : "en")} className="inline-flex min-h-9 shrink-0 items-center whitespace-nowrap border border-line px-2 text-xs text-ink-soft hover:text-ink" aria-label={en ? "中文：切换到中文界面" : "EN: Switch the UI to English"} title={tr("切换界面语言")} data-testid="lang-toggle" data-lang={lang}>
                 {en ? "中文" : "EN"}
               </button>
             </div>

@@ -84,7 +84,7 @@ export default function OctoGuidePage() {
       <div className="mt-2 flex flex-wrap gap-1 text-xs">{Object.keys(MD_SOURCES).map((k) => <button key={k} type="button" onClick={() => setFile(k)} className={`border px-2 py-0.5 ${file === k ? "border-ink bg-ink text-paper-2" : "border-line bg-white"}`}>{k}</button>)}
         <button type="button" onClick={() => save(file, MD_SOURCES[file])} className="border border-copper px-2 py-0.5" data-testid="og-save">下载 {file}</button></div>
       <p className="mt-2 text-[11px] text-ink-soft">源码原样显示（注释是中文原文，英文模式下也不做机翻，免得改坏代码；下载的文件和这里一字不差）。</p>
-      <pre lang="zh" translate="no" data-no-mt="" className="mt-1 max-h-[32rem] overflow-auto border border-line bg-white p-2 text-[11px] leading-4 print:max-h-none" data-testid="og-ino">{MD_SOURCES[file]}</pre>
+      <pre lang="zh" translate="no" data-no-mt="" className="mt-1 max-h-[32rem] overflow-auto border border-line bg-white p-2 text-[11px] leading-4 print:max-h-none" role="region" tabIndex={0} aria-label="固件源代码（可滚动）" data-testid="og-ino">{MD_SOURCES[file]}</pre>
 
       <h2 id="plus" className="mt-8 text-lg font-medium text-copper">9. 完善版改动表（我的补充）</h2>
       <p className="text-xs text-ink-soft">md 原样模式不受影响（上面第 8 节一字未改）。下面每一行都是我按自己的判断补的：“出处”里 datasheet＝芯片 / 模块资料查得到的事实，推理＝读 md 代码或简单计算，估算＝台面仿真或经验值、需要实物验证。没有编任何 datasheet 数字和价格。</p>
@@ -101,7 +101,7 @@ export default function OctoGuidePage() {
         <button type="button" onClick={() => save(pfile.split("/").pop(), PLUS_SOURCES[pfile])} className="border border-copper px-2 py-0.5" data-testid="og-plus-save">下载 {pfile.split("/").pop()}</button>
         <button type="button" onClick={() => Object.keys(PLUS_SOURCES).forEach((k, i) => setTimeout(() => save(k.split("/").pop(), PLUS_SOURCES[k]), i * 300))} className="border border-copper px-2 py-0.5" data-testid="og-plus-save-all">全部下载（{Object.keys(PLUS_SOURCES).length} 个文件）</button></div>
       <p className="mt-2 text-[11px] text-ink-soft">源码原样显示（注释是中文原文，英文模式下也不做机翻，免得改坏代码；下载的文件和这里一字不差）。</p>
-      <pre lang="zh" translate="no" data-no-mt="" className="mt-1 max-h-[32rem] overflow-auto border border-line bg-white p-2 text-[11px] leading-4 print:max-h-none" data-testid="og-plus-src">{PLUS_SOURCES[pfile]}</pre>
+      <pre lang="zh" translate="no" data-no-mt="" className="mt-1 max-h-[32rem] overflow-auto border border-line bg-white p-2 text-[11px] leading-4 print:max-h-none" role="region" tabIndex={0} aria-label="加强版固件源代码（可滚动）" data-testid="og-plus-src">{PLUS_SOURCES[pfile]}</pre>
 
       <h2 id="s12" className="mt-8 text-lg font-medium text-copper">12. 如何实际动手做（我的补充）</h2>
       <p className="text-xs text-ink-soft">把上面每一节对到现实里的步骤。事实只取自你的 md 和 datasheet；没有出处的只写做法，不写数字。台面是简化仿真，实物以实测为准。</p>

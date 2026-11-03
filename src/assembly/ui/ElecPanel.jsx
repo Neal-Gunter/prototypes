@@ -85,7 +85,7 @@ export default function ElecPanel({ probes, setProbes, tool, setTool }) {
               : st?.done ? "程序结束" : <span className="text-ink-soft">还没上传</span>}
             {st?.warn && <span className="ml-1 text-amber-700">{st.warn}</span>}
           </p>
-          <pre className="mt-1 h-24 overflow-y-auto border border-line bg-ink p-1 font-mono text-[11px] leading-4 text-paper-2" data-testid="serial">{(st?.serial || "").slice(-1500) || "（串口监视器）"}</pre>
+          <pre className="mt-1 h-24 overflow-y-auto border border-line bg-ink p-1 font-mono text-[11px] leading-4 text-paper-2" role="region" tabIndex={0} aria-label="串口监视器（可滚动）" data-testid="serial">{(st?.serial || "").slice(-1500) || "（串口监视器）"}</pre>
         </section>
       )}
 

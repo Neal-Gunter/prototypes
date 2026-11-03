@@ -1931,5 +1931,10 @@
  "（GPL-3.0）：开源硬件文档的元数据规范（许可、版本、制作说明的位置），只作参考，没有使用其中的内容。": " (GPL-3.0): a metadata specification for open hardware documentation (licence, version, where the build instructions are). Reference only; none of its content is used.",
  "：GitHub 上许可标为“其他”（NOASSERTION），零件库另有许可。只看了“面包板视图 / 原理图 / PCB 三视图”的做法，没有使用代码或零件图。": ": GitHub lists its licence as 'other' (NOASSERTION), and the parts library has its own licence. We only looked at the breadboard / schematic / PCB three-view approach and used none of its code or part graphics.",
  "（GPL-2.0）：面包板界面的电路仿真，只作参考。": " (GPL-2.0): circuit simulators with a breadboard interface. Reference only.",
- "常见的维修指南网站把每份指南分成难度、所需时间、工具、零件和逐步说明（每步配图，注意事项单独标出）。它们的指南内容多用 CC BY-NC-SA 许可，本项目没有使用；本项目的拆解指南本来就有难度、时间、工具和停止点，这次加了自动检查。": "Common repair guide sites split each guide into difficulty, time needed, tools, parts and step-by-step instructions (each step with a picture and cautions marked separately). Their guide content is mostly CC BY-NC-SA, and this project uses none of it. Our teardown guides already had difficulty, time, tools and stop points; v34 adds an automatic check."
+ "常见的维修指南网站把每份指南分成难度、所需时间、工具、零件和逐步说明（每步配图，注意事项单独标出）。它们的指南内容多用 CC BY-NC-SA 许可，本项目没有使用；本项目的拆解指南本来就有难度、时间、工具和停止点，这次加了自动检查。": "Common repair guide sites split each guide into difficulty, time needed, tools, parts and step-by-step instructions (each step with a picture and cautions marked separately). Their guide content is mostly CC BY-NC-SA, and this project uses none of it. Our teardown guides already had difficulty, time, tools and stop points; v34 adds an automatic check.",
+ "示例代码（可滚动）": "Example code (scrollable)",
+ "串口监视器（可滚动）": "Serial monitor (scrollable)",
+ "运行日志（可滚动）": "Run log (scrollable)",
+ "固件源代码（可滚动）": "Firmware source (scrollable)",
+ "加强版固件源代码（可滚动）": "Plus firmware source (scrollable)"
 }
