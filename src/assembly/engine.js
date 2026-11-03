@@ -1098,14 +1098,25 @@ class Engine {
     // v32（我的补充）：醒着、但最近 3 次检查都没推过、也没在快速移动的刚体（“安静”），改成每 coldEvery 步（默认 2，错开相位；3 更快但分层场景终态穿透到 0.8 mm）查一次。
     // 实测凸包模式里穿透修正占了每步一半时间，大多花在这些已经贴合、只是还没睡着的刚体上。engine.coldEvery = 1 退回每步都查；正在拖动零件时总是每步都查（拖动推挤要求全程 < 0.1 mm）
     const ce = this.drag ? 1 : (this.coldEvery ?? 2), dt = this.world.timestep;
+    // v34：零件少的时候不放宽（两三个零件单独叠落时放宽会让螺丝压进 0.35 mm；零件少本来也不慢）
+    let awake = 0; for (const b of this.bodies.values()) if (!b.rb.isSleeping()) awake++;
+    const crowd = awake >= (this.coldCrowd ?? 12);
     for (const [bid, b] of this.bodies) {
       if (this.drag?.bid === bid) continue;
       const sleeping = b.rb.isSleeping();
-      if (!sleeping && ce > 1 && (b._quiet || 0) >= 3 && (this.stepN + (b._ph ??= (+bid || 0) % ce)) % ce !== 0) {
+      // v34（我的补充）：检查间隔按穿透深度自适应。安静 ≥ 3 次 → 每 ce 步；安静 ≥ 12 次 → 每 coldMax 步（默认 3；试过 4：凸包场景终态出现过一次 4.2 mm）。
+      // 只推了很浅（< shallowMm，默认 0.1 mm）的不清零“安静”计数，只退回每 ce 步；推得深才退回每步都查。engine.coldMax = 0 关掉（= v33）
+      const q = b._quiet || 0, cm = crowd ? this.coldMax ?? 3 : 0;
+      const every = ce <= 1 || q < 3 ? 1 : (cm > ce && q >= 12 ? cm : ce);
+      if (!sleeping && every > 1 && (this.stepN + (b._ph ??= (+bid || 0) % 12)) % every !== 0) {
         const v = b.rb.linvel();
         if (Math.hypot(v.x, v.y, v.z) * dt < 0.05) continue;
       }
-      if (this.stepN % 4 === 0 || !sleeping) { const m = this.depenetrate(bid, this.depenIters || 2); b._quiet = m ? 0 : (b._quiet || 0) + 1; }
+      if (this.stepN % 4 === 0 || !sleeping) {
+        this._dep = 0;
+        const m = this.depenetrate(bid, this.depenIters || 2);
+        b._quiet = !m ? q + 1 : (cm && this._dep < (this.shallowMm ?? 0.1) / 10 && q >= 3 ? Math.min(q, 11) : 0);
+      }
     }
     if (!this.settling?.size) return;
     for (const [bid, t] of this.settling) {
@@ -1248,6 +1259,7 @@ class Engine {
         this.benchDepen(c1, null, (w) => { if (!worst || w.distance < worst.distance) worst = w; });
       }
       if (!worst) { body.stuckN = 0; break; }
+      if (it === 0 && -worst.distance > (this._dep || 0)) this._dep = -worst.distance; // v34：本次检查看到的最深穿透（cm），给自适应间隔用
       if (it >= iters && worst.distance > (small ? xtraD : deepD)) break; // 加时轮只处理压得深的（大件只在冲击时）
       // v30：卡死处理（我的补充，简化）。小件掉进别的零件的空腔里会被几面墙同时顶住，单方向推来推去推不出去。
       // 同一个刚体连续 40 次检查都还压进去 > 1 mm，而且它的中心比对方高（在上面 / 在空腔里）：把它往上提出来（相当于“拎出来”）

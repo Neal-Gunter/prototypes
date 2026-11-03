@@ -11,7 +11,7 @@ const { engine } = await import("../.tmp/eng-bundle.mjs");
 const { getEntry, toDef } = await import("../.tmp/cat-bundle.mjs");
 await engine.init(); engine.lodExp = !!process.env.LODEXP; if (process.env.SLOWDEPEN) engine.fastDepen = false; // v30：SLOWDEPEN=1 退回 v29 的逐碰撞体全查（对比用）
  if (process.env.ITER) engine.world.numSolverIterations = +process.env.ITER;
- for (const k of ["xtraIt", "xtraItBig", "xtraItDeep", "deepMm", "xtraMm", "smallMass", "stuckSmall", "stackPush", "stackMm", "coldEvery"]) if (process.env[k] != null) engine[k] = +process.env[k]; // v31：小件加时纠正参数（对比用）
+ for (const k of ["xtraIt", "xtraItBig", "xtraItDeep", "deepMm", "xtraMm", "smallMass", "stuckSmall", "stackPush", "stackMm", "coldEvery", "coldMax", "shallowMm"]) if (process.env[k] != null) engine[k] = +process.env[k]; // v31：小件加时纠正参数（对比用）
 // v32：PROF=1 时把每步耗时拆成 world.step / settleStep（穿透修正）/ lodTick / 其它
 const PROF = {}; if (process.env.PROF) { const wrap = (o, k, name) => { const f = o[k].bind(o); o[k] = (...a) => { const t0 = performance.now(); const r = f(...a); PROF[name] = (PROF[name] || 0) + performance.now() - t0; return r; }; }; wrap(engine.world, "step", "world.step"); wrap(engine, "settleStep", "settleStep"); wrap(engine, "lodTick", "lodTick"); wrap(engine, "dragDepenetrate", "dragDepen"); }
 const META = new URL("../../libsrc/meta/", import.meta.url);
