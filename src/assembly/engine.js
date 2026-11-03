@@ -1066,8 +1066,8 @@ class Engine {
     this.stepN = (this.stepN || 0) + 1;
     // 醒着的刚体每步都查（落下、碰撞的瞬间最容易压进去），睡着的每 4 步查一次
     // v32（我的补充）：醒着、但最近 3 次检查都没推过、也没在快速移动的刚体（“安静”），改成每 coldEvery 步（默认 2，错开相位；3 更快但分层场景终态穿透到 0.8 mm）查一次。
-    // 实测凸包模式里穿透修正占了每步一半时间，大多花在这些已经贴合、只是还没睡着的刚体上。engine.coldEvery = 1 退回每步都查
-    const ce = this.coldEvery ?? 2, dt = this.world.timestep;
+    // 实测凸包模式里穿透修正占了每步一半时间，大多花在这些已经贴合、只是还没睡着的刚体上。engine.coldEvery = 1 退回每步都查；正在拖动零件时总是每步都查（拖动推挤要求全程 < 0.1 mm）
+    const ce = this.drag ? 1 : (this.coldEvery ?? 2), dt = this.world.timestep;
     for (const [bid, b] of this.bodies) {
       if (this.drag?.bid === bid) continue;
       const sleeping = b.rb.isSleeping();
