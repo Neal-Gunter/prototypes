@@ -7,6 +7,7 @@ import { useLang } from "../i18n";
 import { DEVICES, DEVICE_BY_ID, COMMON_SAFETY, UNVERIFIED, searchDevices, isMainsQuery, MAX_VOLTS } from "../teardown/devices.js";
 import { addToInventory, readInventory, removeFromInventory, readProgress, setProgress } from "../teardown/inventory.js";
 import { PROC_BY_ID } from "../assembly/procedural.js";
+import { guideHtml } from "../teardown/guideSheet.js";
 const TeardownExplode = lazy(() => import("../teardown/TeardownExplode.jsx"));
 
 const MATCH = {
@@ -79,6 +80,16 @@ export default function TeardownPage() {
     setSaved(L({ zh: `已存入 ${mods.length} 个模块（其中 ${na} 个是近似件）。在零件库或装配台的零件列表里选“拆解所得”就能看到。`, en: `Saved ${mods.length} modules (${na} approximate). Pick 'From teardowns' in the parts list on the Parts page or the assembly bench to see them.` }));
   };
   const done = prog.steps.length, total = dev.steps.length;
+  // v35：打印版 / PDF（浏览器里生成，用浏览器的“打印 → 存成 PDF”）
+  const [pmsg, setPmsg] = useState("");
+  const sheet = () => guideHtml(dev, lang, { prog });
+  const openPrint = () => {
+    const url = URL.createObjectURL(new Blob([sheet()], { type: "text/html;charset=utf-8" }));
+    const w = window.open(url, "_blank");
+    setPmsg(w ? L({ zh: "已在新标签页打开打印版，点上面的“打印 / 存成 PDF”，目标选“另存为 PDF”。", en: "The print version opened in a new tab. Click 'Print / save as PDF' there and choose 'Save as PDF'." }) : L({ zh: "浏览器拦住了新标签页，请改用“下载 HTML”，再用浏览器打开打印。", en: "The browser blocked the new tab. Use 'Download HTML' and print it from the browser instead." }));
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  };
+  const dlHtml = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([sheet()], { type: "text/html;charset=utf-8" })); a.download = `teardown-${dev.id}-${lang}.html`; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); };
   return (
     <div className={`${containerClass} py-8`} data-testid="teardown-page" lang={en ? "en" : "zh"} translate="no" data-no-mt>
       <p className="text-xs text-ink-soft">{L({ zh: "早期原型，简化仿真", en: "Early prototype, simplified simulation" })}</p>
@@ -106,7 +117,7 @@ export default function TeardownPage() {
                 </li>
               );
             })}
-            {!list.length && <li className="text-sm text-ink-soft" data-testid="td-none">{L({ zh: "没有找到。目前只有 3 台设备。", en: "Nothing found. There are only 3 devices so far." })}</li>}
+            {!list.length && <li className="text-sm text-ink-soft" data-testid="td-none">{L({ zh: `没有找到。目前共有 ${DEVICES.length} 台设备。`, en: `Nothing found. There are ${DEVICES.length} devices so far.` })}</li>}
           </ul>
         </aside>
 
@@ -115,6 +126,12 @@ export default function TeardownPage() {
           <p className="mt-1 font-mono text-xs text-ink-soft">{dev.model}</p>
           <p className="mt-2 text-sm">{L(dev.summary)}</p>
           <p className="mt-1 text-xs text-amber-800">{L(UNVERIFIED)}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-2" data-testid="td-print-bar">
+            <button type="button" onClick={openPrint} className="border border-ink px-3 py-1.5 text-sm hover:bg-ink hover:text-paper" data-testid="td-print">{L({ zh: "打印 / 存成 PDF", en: "Print / save as PDF" })}</button>
+            <button type="button" onClick={dlHtml} className="border border-line px-3 py-1.5 text-sm hover:border-ink" data-testid="td-print-html">{L({ zh: "下载打印版 HTML", en: "Download print version (HTML)" })}</button>
+            <span className="text-xs text-ink-soft">{L({ zh: "在浏览器里生成，不上传；含安全、材料、步骤插图、停止点和模块表", en: "Made in your browser, nothing uploaded; includes safety, materials, step diagrams, stop points and modules" })}</span>
+          </div>
+          {pmsg ? <p className="mt-1 text-xs text-ink-soft" role="status" data-testid="td-print-msg">{pmsg}</p> : null}
 
           <section className="mt-5 border border-red-700 bg-red-50 p-3" data-testid="td-safety">
             <h3 className="font-semibold text-red-900">{L({ zh: "安全（先读）", en: "Safety (read first)" })}</h3>
