@@ -15,7 +15,7 @@ const lint = (d, lang, html) => {
   const steps = html.split('<li class="step"').slice(1);
   if (steps.length !== d.steps.length) bad("count", `打印页 ${steps.length} 步，数据 ${d.steps.length} 步`);
   steps.forEach((s, i) => {
-    const svg = s.slice(s.indexOf("<svg"), s.indexOf("</svg>"));
+    const svg = (s.split("</li>")[0].match(/<svg xmlns[\s\S]*?<\/svg>/) || [""])[0]; // v37：跳过二维码（class="qr"）
     if (!svg || (svg.match(/<rect /g) || []).length < 1) bad("fig", `第 ${i + 1} 步没有示意图`);
   });
   d.steps.forEach((s, i) => { for (const h of s.fig?.hi || []) if (!(d.fig || []).some((g) => g.id === h)) bad("fig", `第 ${i + 1} 步高亮的图层 ${h} 不存在`); });
@@ -39,6 +39,12 @@ const lint = (d, lang, html) => {
     for (const n of nums) if (!new RegExp(`<span>${n} = `).test(lg)) bad("legend", `第 ${i + 1} 步方块里写了编号 ${n}，图例里没有`);
   });
   if (/(停止点：\s*停止点：|Stop point:\s*Stop point:)/i.test(html)) bad("dup", "停止点前缀重复");
+  // v37：二维码。封面一个（指向这台设备），每步一个（指向第 N 步）；每格至少 0.4 毫米，手机才好扫
+  const qrs = [...html.matchAll(/<svg class="qr"[^>]*width="([\d.]+)mm"[^>]*data-qr="([^"]+)" data-qr-size="(\d+)"/g)].map((m) => ({ mm: +m[1], u: m[2].replace(/&amp;/g, "&"), n: +m[3] }));
+  const want = [`?d=${d.id}`, ...d.steps.map((_, i) => `?d=${d.id}&s=${i + 1}`)];
+  if (qrs.length !== want.length) bad("qr", `二维码 ${qrs.length} 个，应为 ${want.length} 个`);
+  qrs.forEach((q, i) => { if (!q.u.endsWith("/teardown/" + want[i])) bad("qr", `第 ${i} 个二维码指向 ${q.u}`); if (q.mm / (q.n + 8) < 0.4) bad("qr", `第 ${i} 个二维码每格只有 ${(q.mm / (q.n + 8)).toFixed(2)} 毫米`); });
+  steps.forEach((st, i) => { if (!st.split("</li>")[0].includes(`&amp;s=${i + 1}"`)) bad("qr", `第 ${i + 1} 步的方块里没有它自己的二维码`); });
   return P;
 };
 let all = [], n = 0;
@@ -58,6 +64,8 @@ const cases = [
   ["toc", h0.replace('href="#step-1"', 'href="#step-99"')],
   ["cjk", h0.replace("</h1>", "汉</h1>")],
   ["dup", h0.replace('<p class="stop">■ ', '<p class="stop">■ Stop point: ')],
+  ["qr", h0.replace("&amp;s=2", "&amp;s=3")],
+  ["qr", h0.replace(/width="20mm"/, 'width="8mm"')],
 ];
 let ok = 0;
 for (const [k, h] of cases) { const hit = lint(d0, "en", h).some((x) => x.k === k); console.log(hit ? "✓" : "✗", `改坏 ${k} → ${hit ? "查出" : "没查出"}`); ok += hit; }
