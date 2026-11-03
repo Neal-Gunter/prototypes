@@ -11,7 +11,9 @@ const { engine } = await import("../.tmp/eng-bundle.mjs");
 const { getEntry, toDef } = await import("../.tmp/cat-bundle.mjs");
 await engine.init(); engine.lodExp = !!process.env.LODEXP; if (process.env.SLOWDEPEN) engine.fastDepen = false; // v30：SLOWDEPEN=1 退回 v29 的逐碰撞体全查（对比用）
  if (process.env.ITER) engine.world.numSolverIterations = +process.env.ITER;
- for (const k of ["xtraIt", "xtraItBig", "xtraItDeep", "deepMm", "xtraMm", "smallMass", "stuckSmall"]) if (process.env[k] != null) engine[k] = +process.env[k]; // v31：小件加时纠正参数（对比用）
+ for (const k of ["xtraIt", "xtraItBig", "xtraItDeep", "deepMm", "xtraMm", "smallMass", "stuckSmall", "stackPush", "stackMm", "coldEvery"]) if (process.env[k] != null) engine[k] = +process.env[k]; // v31：小件加时纠正参数（对比用）
+// v32：PROF=1 时把每步耗时拆成 world.step / settleStep（穿透修正）/ lodTick / 其它
+const PROF = {}; if (process.env.PROF) { const wrap = (o, k, name) => { const f = o[k].bind(o); o[k] = (...a) => { const t0 = performance.now(); const r = f(...a); PROF[name] = (PROF[name] || 0) + performance.now() - t0; return r; }; }; wrap(engine.world, "step", "world.step"); wrap(engine, "settleStep", "settleStep"); wrap(engine, "lodTick", "lodTick"); wrap(engine, "dragDepenetrate", "dragDepen"); }
 const META = new URL("../../libsrc/meta/", import.meta.url);
 const ids = [];
 for (const f of fs.readdirSync(new URL("../public/lib/catalog", import.meta.url))) for (const e of JSON.parse(fs.readFileSync(new URL("../public/lib/catalog/" + f, import.meta.url), "utf8"))) if (e.collider_decomp?.hull) ids.push(e.id);
@@ -30,8 +32,9 @@ async function scene(useBoxes, lod = false) {
     else us.push(engine.addPart(def, P((gx - 3.5) * 9, 1 + gy * 12 + (k % 3) * 0.7, (gz - 3.5) * 9)));
   }
   for (let i = 0; i < 30; i++) engine.update(1 / 120); // 预热
-  const t = []; let pen = 0;
+  const t = []; let pen = 0; for (const k in PROF) PROF[k] = 0;
   for (let i = 0; i < STEPS; i++) { const t0 = performance.now(); engine.update(1 / 120); t.push(performance.now() - t0); }
+  if (process.env.PROF) { const tot = t.reduce((s, v) => s + v, 0); console.log("  prof ms/step:", Object.entries(PROF).map(([k, v]) => `${k} ${(v / STEPS).toFixed(2)}`).join(" · "), `· 其它 ${((tot - Object.values(PROF).reduce((s, v) => s + v, 0)) / STEPS).toFixed(2)}`); }
   const ot = engine.overlapTest(); pen = ot.maxPenetrationMm; if (process.env.WORST) console.log("  worst", JSON.stringify(ot.worstPair?.map((u) => engine.parts.get(u)?.def?.id || u)), pen);
   let fb = 0, fo = 0; for (const b of engine.bodies.values()) if (b.fine) { fb++; if (b.fineOn !== false) fo++; }
   if (lod) { const t0 = performance.now(); for (let i = 0; i < 20; i++) engine.lodTick(1 / 120, true); let sl = 0; for (const b of engine.bodies.values()) if (b.rb.isSleeping()) sl++; console.log("  fine on:", fo, "/", fb, "bodies; lodTick", ((performance.now() - t0) / 20).toFixed(3), "ms; sleeping", sl); }

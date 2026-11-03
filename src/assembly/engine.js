@@ -1065,7 +1065,18 @@ class Engine {
     // 每 4 步把所有刚体都检查一遍（含休眠的），重物压在桌面上的软接触下陷也一起推出来
     this.stepN = (this.stepN || 0) + 1;
     // 醒着的刚体每步都查（落下、碰撞的瞬间最容易压进去），睡着的每 4 步查一次
-    for (const [bid, b] of this.bodies) if (this.drag?.bid !== bid && (this.stepN % 4 === 0 || !b.rb.isSleeping())) this.depenetrate(bid, this.depenIters || 2);
+    // v32（我的补充）：醒着、但最近 3 次检查都没推过、也没在快速移动的刚体（“安静”），改成每 coldEvery 步（默认 3，错开相位）查一次。
+    // 实测凸包模式里穿透修正占了每步一半时间，大多花在这些已经贴合、只是还没睡着的刚体上。engine.coldEvery = 1 退回每步都查
+    const ce = this.coldEvery ?? 3, dt = this.world.timestep;
+    for (const [bid, b] of this.bodies) {
+      if (this.drag?.bid === bid) continue;
+      const sleeping = b.rb.isSleeping();
+      if (!sleeping && ce > 1 && (b._quiet || 0) >= 3 && (this.stepN + (b._ph ??= (+bid || 0) % ce)) % ce !== 0) {
+        const v = b.rb.linvel();
+        if (Math.hypot(v.x, v.y, v.z) * dt < 0.05) continue;
+      }
+      if (this.stepN % 4 === 0 || !sleeping) { const m = this.depenetrate(bid, this.depenIters || 2); b._quiet = m ? 0 : (b._quiet || 0) + 1; }
+    }
     if (!this.settling?.size) return;
     for (const [bid, t] of this.settling) {
       const left = t - this.world.timestep;
@@ -1225,9 +1236,9 @@ class Engine {
       const t = body.rb.translation();
       const d = worst.distance - 0.001;
       // v32（我的补充，简化）：叠放落地时的“夹心”。下面的零件被上面的压进去，按法线推会把它往下推（再被桌面顶回来，来回抵消），
-      // 所以接近竖直的零件↔零件接触、推的方向朝下时，改成把上面那个往上推（像一摞东西从下往上理顺）。engine.stackPush = false 关掉
+      // 所以接近竖直的零件↔零件接触、推的方向朝下、压进 > stackMm（默认 0.3 mm）时，改成把上面那个往上推（像一摞东西从下往上理顺）。engine.stackPush = 0 关掉
       const o = worst.other;
-      if (fast && (this.stackPush ?? true) && o && o.isDynamic() && worst.n.y * d < 0 && Math.abs(worst.n.y) > 0.6 && !(this.drag && this.bodies.get(this.drag.bid)?.rb === o)) {
+      if (fast && (this.stackPush ?? true) && worst.distance < -(this.stackMm ?? 0.3) / 10 && o && o.isDynamic() && worst.n.y * d < 0 && Math.abs(worst.n.y) > 0.6 && !(this.drag && this.bodies.get(this.drag.bid)?.rb === o)) {
         const to = o.translation();
         o.setTranslation({ x: to.x - worst.n.x * d, y: to.y - worst.n.y * d, z: to.z - worst.n.z * d }, true);
         const v = o.linvel(), vn = -(v.x * worst.n.x + v.y * worst.n.y + v.z * worst.n.z);
