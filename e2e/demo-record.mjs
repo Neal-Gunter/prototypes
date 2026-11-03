@@ -1,6 +1,7 @@
 // v31：真实录屏演示（Playwright recordVideo，不是截图拼接）：拆解 → 引导项目 → 维修关卡 → 装配台。早期原型，简化仿真。
 // v32：每一步记录在录像里的起止时间，写出中文字幕 demo.srt（OUT 目录），再用 ffmpeg 烧进视频
-// 用法：BASE=http://localhost:4173 OUT=/workspace/proto-site/v32 node e2e/demo-record.mjs  然后用 ffmpeg 转 mp4
+// v33：演示新设备换成 AA 电池玩具车。
+// 用法：BASE=http://localhost:4173 OUT=/workspace/proto-site/v33 node e2e/demo-record.mjs  然后用 ffmpeg 转 mp4
 import { chromium } from "playwright";
 import fs from "node:fs";
 const BASE = process.env.BASE || "http://localhost:4173", OUT = process.env.OUT || "/workspace/proto-site/v31";
@@ -20,10 +21,11 @@ await step("拆解：设备列表 + 搜索", async () => {
   await p.goto(BASE + "/teardown/"); await T("teardown-page").waitFor({ timeout: 30000 }); await w(1500);
   await T("td-search").pressSequentially("tp4056", { delay: 120 }); await w(1500); await T("td-search").fill(""); await w(800);
 }, "拆解模式：按名称或型号搜设备");
-await step("拆解：市电提示 + 9V LED 测试器", async () => {
+await step("拆解：市电提示 + AA 玩具车", async () => {
   await T("td-search").pressSequentially("充电头", { delay: 120 }); await w(2500); await T("td-search").fill(""); await w(500);
-  await p.goto(BASE + "/teardown/?d=led-tester-9v"); await T("td-guide").waitFor({ timeout: 20000 }); await w(1500); await scroll(350, 6, 400);
-}, "只收低压直流设备：搜“充电头”会提示不拆市电设备；新加的 9V LED 测试器");
+  await T("td-search").pressSequentially("玩具车", { delay: 120 }); await w(1500); await T("td-search").fill(""); await w(400);
+  await p.goto(BASE + "/teardown/?d=aa-toy-car"); await T("td-guide").waitFor({ timeout: 20000 }); await w(1500); await scroll(350, 6, 400);
+}, "只收低压直流设备：搜“充电头”会提示不拆市电设备；v33 新加的 AA 电池玩具车（3 V）");
 await step("拆解：LED 手电指南 + 爆炸图", async () => {
   await p.goto(BASE + "/teardown/?d=led-flashlight"); await T("td-guide").waitFor({ timeout: 20000 }); await w(1500);
   await scroll(350, 8, 400);
