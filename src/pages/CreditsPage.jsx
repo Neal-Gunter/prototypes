@@ -215,6 +215,14 @@ export default function CreditsPage() {
         <li><a className="underline" href="https://poppler.freedesktop.org/">poppler / pdftotext</a>（GPL-2.0）：只在测试脚本 e2e/sheet-pdf-lint.mjs 里调用，没有修改或打包进网站。</li>
         <li><a className="underline" href="https://www.w3.org/TR/css-page-3/">W3C CSS Paged Media Module Level 3</a>：页边框和页码计数的写法按这份规范，代码是自己写的。</li>
       </ul>
+      <h2 className="mt-8 text-xl font-medium" id="v37-qr">v37：打印版二维码、焦点检查和小夜灯</h2>
+      <p className="mt-2 leading-7 text-ink-soft" data-testid="credits-v37">
+        v37 打印版上的二维码用 uqr 在浏览器里编码，画成 SVG 的代码是自己写的；测试里用 jsQR 把每个二维码重新解码一遍，确认扫出来的就是对应那一步的网址。键盘倾斜改用四元数，代码是自己写的，没有用额外的库。键盘焦点顺序检查是自己写的 Playwright 脚本。电池感应小夜灯拆解指南的文字和示意图都是本项目自己写、自己画的，没有复制任何外部拆解指南；尺寸标了估算。
+      </p>
+      <ul className="mt-2 list-disc space-y-1 pl-6 text-sm leading-6 text-ink-soft" data-testid="credits-v37-list">
+        <li><a className="underline" href="https://github.com/unjs/uqr">unjs/uqr</a>（MIT）：二维码编码，打包进拆解页（按需加载的那一块）。它的算法来自 <a className="underline" href="https://github.com/nayuki/QR-Code-generator">Project Nayuki 的 QR-Code-generator</a>（MIT）。</li>
+        <li><a className="underline" href="https://github.com/cozmo/jsQR">cozmo/jsQR</a>（Apache-2.0）：二维码解码，只在测试脚本 e2e/qr-decode.mjs 里用，没有修改或打包进网站。</li>
+      </ul>
       <h2 className="mt-8 text-xl font-medium">代码库</h2>
       <p className="mt-2 leading-7 text-ink-soft">
         React、three.js、@dimforge/rapier3d-compat（Apache-2.0，物理碰撞）、@react-three/fiber、@react-three/drei、zustand、Tailwind CSS（除注明外均为 MIT 许可）。模型转换脚本用 glTF‑Transform 和 meshoptimizer（MIT，只在开发时运行）。“模型 + 功能图”页（v11）在浏览器里用 occt-import-js（LGPL‑2.1，读 STEP；作为单独的 JS + wasm 文件按需加载，没有改动，可替换）和 pdfjs-dist（Apache-2.0，读 PDF 功能图，按需加载）。内置示例的八爪鱼 GLB 和功能图 SVG 由本项目从 v10 预设自制；v12 的 2 自由度机械臂示例（OBJ + 功能图 + 工程）由本项目脚本自制，CC0。关节和舵机运动用同一个 Rapier 引擎。
