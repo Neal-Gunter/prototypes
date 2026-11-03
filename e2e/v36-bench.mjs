@@ -77,7 +77,7 @@ for (const lang of ["zh", "en"]) {
   const st = await pop.evaluate(() => {
     const links = [...document.querySelectorAll("nav.toc a[href^='#']")].map((a) => a.getAttribute("href"));
     const css = [...document.querySelectorAll("style")].map((s) => s.textContent).join("");
-    return { steps: document.querySelectorAll("li.step").length, svgs: document.querySelectorAll("li.step svg").length, links: links.length, dead: links.filter((h) => !document.getElementById(h.slice(1))).length, tocSteps: document.querySelectorAll("nav.toc a[href^='#step-']").length, pageno: /counter\(page\)/.test(css) && /counter\(pages\)/.test(css), legends: document.querySelectorAll(".legend").length, text: document.body.innerText };
+    return { steps: document.querySelectorAll("li.step").length, svgs: document.querySelectorAll("li.step svg:not(.qr)").length, links: links.length, dead: links.filter((h) => !document.getElementById(h.slice(1))).length, tocSteps: document.querySelectorAll("nav.toc a[href^='#step-']").length, pageno: /counter\(page\)/.test(css) && /counter\(pages\)/.test(css), legends: document.querySelectorAll(".legend").length, text: document.body.innerText };
   });
   ok(st.steps === 7 && st.svgs === 7, `${lang}：打印页 ${st.steps} 步、每步一张图`);
   ok(st.links >= 12 && st.dead === 0 && st.tocSteps === 7, `${lang}：目录 ${st.links} 个链接、0 个死链、7 步都在目录里`, `dead ${st.dead}`);
