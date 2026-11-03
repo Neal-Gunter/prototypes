@@ -2,7 +2,7 @@
 //   步骤数和数据一致、每一步都有示意图（SVG 里至少 1 个图层，高亮的图层存在）、每步 CSS 不在中间分页（break-inside:avoid）、
 //   有页码（@page counter(page) / counter(pages)）、目录里的每个链接都能跳到页面里的 id、英文版没有汉字、
 //   示意图里每段文字按它实际的字号估算宽度，不超出它的方块（估算：汉字 1 个字号宽，其他字符 0.56 个字号宽；放不下的改成编号 + 图例）、
-//   图例里的编号和方块里的编号对得上。
+//   图例里的编号和方块里的编号对得上、停止点前缀不重复（v36 录演示时发现“停止点：停止点：”）。
 // 真正分页后的检查（每页页码、步骤没被切开）在 e2e/sheet-pdf-lint.mjs。
 // 用法：node scripts/sheet-lint.mjs   自测：MUTATE=1 node scripts/sheet-lint.mjs（故意改坏，必须每项都查出来）
 const { DEVICES } = await import("../src/teardown/devices.js");
@@ -38,6 +38,7 @@ const lint = (d, lang, html) => {
     const lg = (st.match(/<p class="legend">([\s\S]*?)<\/p>/) || [])[1] || "";
     for (const n of nums) if (!new RegExp(`<span>${n} = `).test(lg)) bad("legend", `第 ${i + 1} 步方块里写了编号 ${n}，图例里没有`);
   });
+  if (/(停止点：\s*停止点：|Stop point:\s*Stop point:)/i.test(html)) bad("dup", "停止点前缀重复");
   return P;
 };
 let all = [], n = 0;
@@ -56,6 +57,7 @@ const cases = [
   ["pageno", h0.replace(/counter\(page\)/g, "1")],
   ["toc", h0.replace('href="#step-1"', 'href="#step-99"')],
   ["cjk", h0.replace("</h1>", "汉</h1>")],
+  ["dup", h0.replace('<p class="stop">■ ', '<p class="stop">■ Stop point: ')],
 ];
 let ok = 0;
 for (const [k, h] of cases) { const hit = lint(d0, "en", h).some((x) => x.k === k); console.log(hit ? "✓" : "✗", `改坏 ${k} → ${hit ? "查出" : "没查出"}`); ok += hit; }

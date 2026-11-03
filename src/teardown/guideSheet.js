@@ -43,7 +43,7 @@ export function guideHtml(dev, lang = "zh", { now = new Date(), prog = null } = 
   const box = (on) => (on ? "☑" : "☐");
   const date = now.toISOString().slice(0, 10);
   const t = (zh, e) => (en ? e : zh);
-  const steps = dev.steps.map((s, i) => `<li class="step" id="step-${i + 1}" data-step="${i + 1}" data-fig="${(s.fig?.hi || []).length || (dev.fig || []).length}"><div><h3>${box(prog?.steps?.includes(i))} ${i + 1}. ${esc(L(s.t))}</h3><p>${esc(L(s.d))}</p>${s.warn ? `<p class="warn">⚠ ${esc(L(s.warn))}</p>` : ""}${s.stop ? `<p class="stop">■ ${t("停止点：", "Stop point: ")}${esc(L(s.stop))}</p>` : ""}</div><div class="fig">${figSvg(dev, s.fig, L, i)}</div></li>`).join("");
+  const steps = dev.steps.map((s, i) => `<li class="step" id="step-${i + 1}" data-step="${i + 1}" data-fig="${(s.fig?.hi || []).length || (dev.fig || []).length}"><div><h3>${box(prog?.steps?.includes(i))} ${i + 1}. ${esc(L(s.t))}</h3><p>${esc(L(s.d))}</p>${s.warn ? `<p class="warn">⚠ ${esc(L(s.warn))}</p>` : ""}${s.stop ? `<p class="stop">■ ${stopText(L(s.stop), t)}</p>` : ""}</div><div class="fig">${figSvg(dev, s.fig, L, i)}</div></li>`).join("");
   const css = (x) => String(x).replace(/[\\"\n]/g, " ");
   const sec = [["safety", t("1. 安全（先读）", "1. Safety (read first)")], ["mats", t("2. 材料和工具", "2. Materials and tools")], ["steps", t("3. 拆解步骤", "3. Steps")], ["modules", t("4. 拆下来的模块", "4. Modules you get")], ["notes", t("5. 说明", "5. Notes")]];
   const toc = `<nav class="toc" aria-label="${t("目录", "Contents")}"><h2 id="toc">${t("目录", "Contents")}</h2><ol>${sec.map(([id, h]) => `<li><a href="#${id}">${esc(h)}</a>${id === "steps" ? `<ol>${dev.steps.map((s, i) => `<li><a href="#step-${i + 1}">${i + 1}. ${esc(L(s.t))}</a>${s.stop ? ` <span class="tag">${t("停止点", "stop")}</span>` : ""}</li>`).join("")}</ol>` : ""}</li>`).join("")}</ol></nav>`;
@@ -74,3 +74,6 @@ ${toc}
 <h2 id="notes">${H.notes}</h2><p>${t("指南文字和插图都是本项目自己写、自己画的，没有复制任何外部拆解指南的文字或照片。", "All guide text and diagrams are written and drawn by this project. No text or photos were copied from any outside teardown guide.")}</p>
 </body></html>`;
 }
+
+// v36：数据里的停止点文字本来就以“停止点：”开头，只在缺前缀时补上，避免重复
+export function stopText(x, t) { const p = t("停止点：", "Stop point: "); const e = esc(x); return /^(停止点[：:]|stop point:)/i.test(x.trim()) ? e : p + e; }

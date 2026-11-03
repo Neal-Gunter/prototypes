@@ -3,6 +3,7 @@
 // v33：演示新设备换成 AA 电池玩具车。
 // v34：加一段键盘操作 3D 场景（Tab 聚焦、方向键选零件、Alt + 方向键平移）和致谢页的 v34 调研。
 // v35：新设备换成红外遥控器，加打印版指南（弹出页内容放回主页面录下来）、键盘 R 旋转、致谢页 v35。
+// v36：新设备换成电子厨房计时器，打印版指南录目录 + 图例，键盘加 T / F 倾斜、N 摆正，致谢页 v36。
 // 用法：BASE=http://localhost:4173 OUT=/workspace/proto-site/v33 node e2e/demo-record.mjs  然后用 ffmpeg 转 mp4
 import { chromium } from "playwright";
 import fs from "node:fs";
@@ -23,17 +24,17 @@ await step("拆解：设备列表 + 搜索", async () => {
   await p.goto(BASE + "/teardown/"); await T("teardown-page").waitFor({ timeout: 30000 }); await w(1500);
   await T("td-search").pressSequentially("tp4056", { delay: 120 }); await w(1500); await T("td-search").fill(""); await w(800);
 }, "拆解模式：按名称或型号搜设备");
-await step("拆解：市电提示 + 红外遥控器", async () => {
+await step("拆解：市电提示 + 厨房计时器", async () => {
   await T("td-search").pressSequentially("充电头", { delay: 120 }); await w(2500); await T("td-search").fill(""); await w(500);
-  await T("td-search").pressSequentially("遥控器", { delay: 120 }); await w(1500); await T("td-search").fill(""); await w(400);
-  await p.goto(BASE + "/teardown/?d=ir-remote"); await T("td-guide").waitFor({ timeout: 20000 }); await w(1500); await scroll(350, 6, 400);
-}, "只收低压直流设备：搜“充电头”会提示不拆市电设备；v35 新加的红外遥控器（两节 AAA，3 V）");
+  await T("td-search").pressSequentially("计时器", { delay: 120 }); await w(1500); await T("td-search").fill(""); await w(400);
+  await p.goto(BASE + "/teardown/?d=kitchen-timer"); await T("td-guide").waitFor({ timeout: 20000 }); await w(1500); await scroll(350, 6, 400);
+}, "只收低压直流设备：搜“充电头”会提示不拆市电设备；v36 新加的电子厨房计时器（一节 AAA，1.5 V）");
 await step("拆解：打印版指南", async () => {
   await T("td-print-bar").scrollIntoViewIfNeeded(); await w(1200);
   const [pop] = await Promise.all([c.waitForEvent("page", { timeout: 10000 }), T("td-print").click()]);
   await pop.waitForLoadState("load"); const html = await pop.content(); await pop.close(); await w(800);
-  await p.setContent(html); await w(1500); await scroll(400, 10, 450);
-}, "v35：拆解指南一键生成打印版，在打印对话框里选“另存为 PDF”就能离线保存（浏览器里生成，不上传）");
+  await p.setContent(html); await w(2500); await scroll(400, 10, 450);
+}, "v36：打印版第一页是目录（可点击跳转），每页底部有“第 N 页 / 共 M 页”；放不下的图上标签改成编号，图下列对照（浏览器里生成，不上传）");
 await step("拆解：LED 手电指南 + 爆炸图", async () => {
   await p.goto(BASE + "/teardown/?d=led-flashlight"); await T("td-guide").waitFor({ timeout: 20000 }); await w(1500);
   await scroll(350, 8, 400);
@@ -66,13 +67,14 @@ await step("装配台：键盘操作", async () => {
   for (let i = 0; i < 4; i++) { await p.keyboard.press("Alt+ArrowRight"); await w(450); }
   for (let i = 0; i < 3; i++) { await p.keyboard.press("Alt+ArrowUp"); await w(450); }
   for (let i = 0; i < 2; i++) { await p.keyboard.press("r"); await w(900); }
-  for (let i = 0; i < 3; i++) { await p.keyboard.press("Alt+r"); await w(600); }
+  await p.keyboard.press("t"); await w(1200); await p.keyboard.press("f"); await w(1200); await p.keyboard.press("Shift+f"); await w(900); await p.keyboard.press("Shift+t"); await w(900);
+  await p.keyboard.press("Alt+r"); await w(600); await p.keyboard.press("n"); await w(900);
   await p.keyboard.press("Enter"); await w(1200);
-}, "v35：键盘也能转零件——R 转 90°，Alt + R 转 15°，会穿模时不转；v34：3D 场景可以用键盘操作——Tab 聚焦，方向键选零件，Alt + 方向键平移 1 cm，读屏会读出选中的零件和位置");
-await step("致谢：v35", async () => {
-  await p.goto(BASE + "/credits#v35-a11y"); await w(1500);
-  await T("credits-v35").scrollIntoViewIfNeeded().catch(() => {}); await w(3000);
-}, "v35：无障碍自动检查用 axe-core（MPL-2.0，只在开发测试里用，不进网站）；16 个页面中英文严重问题 0");
+}, "v36：T 前后倾、F 左右倾（Shift 反向，Alt 15°），N 摆正到 90°，角度自动吸附，倾斜后放不下会先抬起；v35：键盘也能转零件——R 转 90°，Alt + R 转 15°，会穿模时不转；v34：3D 场景可以用键盘操作——Tab 聚焦，方向键选零件，Alt + 方向键平移 1 cm，读屏会读出选中的零件和位置");
+await step("致谢：v36", async () => {
+  await p.goto(BASE + "/credits#v36-print"); await w(1500);
+  await T("credits-v36").scrollIntoViewIfNeeded().catch(() => {}); await w(3000);
+}, "v36：打印版用浏览器自带 CSS 分页做页码；PDF 检查用 pdftotext（GPL-2.0，只在测试里用）；axe 也查打开的面板和菜单，11 个状态严重问题 0");
 await step("工作台", async () => { await p.goto(BASE + "/workbench/"); await w(4000); await scroll(300, 4); }, "工作台：项目和零件的汇总");
 const vid = p.video(); await c.close(); const path = await vid.path(); await b.close();
 fs.copyFileSync(path, `${OUT}/demo-raw.webm`); fs.rmSync(VD, { recursive: true, force: true });
