@@ -25,7 +25,9 @@ export const dedupeKey = (p) => normalize(`${p.title} ${p.language || ""} ${p.lo
 
 // 5.5 难度：LOC 1–50 intro，51–300 intermediate，301+ advanced；code-check 多文件/多阶段上调一级
 export function difficultyForLoc(loc, { bumpMultiStage = false } = {}) {
-  let d = loc == null || loc <= 50 ? 0 : loc <= 300 ? 1 : 2;
+  // 我的补充：原版 Section 7「Building an FPGA board」「Bringup」没有 LOC；spec 没规定，这里按 intermediate 处理
+  // （硬件板级任务不算入门），并在 docs 里注明。
+  let d = loc == null ? 1 : loc <= 50 ? 0 : loc <= 300 ? 1 : 2;
   if (bumpMultiStage) d = Math.min(2, d + 1);
   return DIFFICULTIES[d];
 }
@@ -50,5 +52,13 @@ export function modesForProject(p) {
 // 多文件/多阶段输出的 code-check 项目（assembler→binary→linker、compiler→asm）
 export const isMultiStage = (p) => /\b(compiler|linker|dynamic linking)\b/.test(normalize(p.title));
 
+// 我的补充：内容不变时保留上次的时间戳，避免 workflow 每次都产生一个只改时间的提交
+export function writeJSONStable(p, v, key = "generatedAt") {
+  const prev = readJSON(p);
+  const strip = (o) => JSON.stringify({ ...o, [key]: null });
+  if (prev && strip(prev) === strip(v)) v = { ...v, [key]: prev[key] };
+  writeJSON(p, v);
+  return v[key];
+}
 export function stamp() { return new Date().toISOString(); }
 export function log(...a) { if (!process.env.QUIET) console.log(...a); }

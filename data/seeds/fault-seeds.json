@@ -1,0 +1,551 @@
+{
+  "note": "纯规则提取（关键词 + 症状 + 来源类型打分）；症状文字为自己撰写",
+  "seeds": [
+    {
+      "id": "fault-reverse-polarity-01",
+      "source": {
+        "type": "public-failure-analysis",
+        "ref": "nasa-llis-1398",
+        "url": "https://llis.nasa.gov/lesson/1398",
+        "title": "NASA Lessons Learned 1398",
+        "license": "public-domain (US Gov)",
+        "extractedAt": "2026-11-03"
+      },
+      "failureMode": "reverse-polarity",
+      "matchedKeywords": [
+        "reversed polarity",
+        "反接"
+      ],
+      "symptomHints": [
+        "no power",
+        "不上电"
+      ],
+      "symptom": [
+        "上电无反应",
+        "保护器件动作或发热"
+      ],
+      "symptomEn": [
+        "no response at power-on",
+        "protection part trips or heats"
+      ],
+      "injectAt": {
+        "target": "led-reversed",
+        "type": "component-orientation"
+      },
+      "repairScenarios": [
+        "led-reversed",
+        "psu-diode-reversed",
+        "octo-servo-reversed"
+      ],
+      "verification": {
+        "type": "faultRepaired",
+        "scenario": "led-reversed"
+      },
+      "difficulty": "intro",
+      "score": 0.9,
+      "confidence": "high"
+    },
+    {
+      "id": "fault-connector-misinsert-01",
+      "source": {
+        "type": "public-failure-analysis",
+        "ref": "nasa-llis-53",
+        "url": "https://llis.nasa.gov/lesson/53",
+        "title": "NASA Lessons Learned 53",
+        "license": "public-domain (US Gov)",
+        "extractedAt": "2026-11-03"
+      },
+      "failureMode": "connector-misinsert",
+      "matchedKeywords": [
+        "wrong half",
+        "mismate",
+        "连接器误插"
+      ],
+      "symptomHints": [
+        "short",
+        "no output"
+      ],
+      "symptom": [
+        "某一路没有输出或输出错位"
+      ],
+      "symptomEn": [
+        "one channel has no or wrong output"
+      ],
+      "injectAt": {
+        "target": "octo-plug-out",
+        "type": "connector"
+      },
+      "repairScenarios": [
+        "octo-plug-out",
+        "octo-loose-jst",
+        "octo-servo-plug-worn"
+      ],
+      "verification": {
+        "type": "faultRepaired",
+        "scenario": "octo-plug-out"
+      },
+      "difficulty": "intro",
+      "score": 0.9,
+      "confidence": "high"
+    },
+    {
+      "id": "fault-connector-misinsert-02",
+      "source": {
+        "type": "public-failure-analysis",
+        "ref": "nasa-llis-386",
+        "url": "https://llis.nasa.gov/lesson/386",
+        "title": "NASA Lessons Learned 386",
+        "license": "public-domain (US Gov)",
+        "extractedAt": "2026-11-03"
+      },
+      "failureMode": "connector-misinsert",
+      "matchedKeywords": [
+        "misinsert"
+      ],
+      "symptomHints": [
+        "short"
+      ],
+      "symptom": [
+        "某一路没有输出或输出错位"
+      ],
+      "symptomEn": [
+        "one channel has no or wrong output"
+      ],
+      "injectAt": {
+        "target": "octo-plug-out",
+        "type": "connector"
+      },
+      "repairScenarios": [
+        "octo-plug-out",
+        "octo-loose-jst",
+        "octo-servo-plug-worn"
+      ],
+      "verification": {
+        "type": "faultRepaired",
+        "scenario": "octo-plug-out"
+      },
+      "difficulty": "intro",
+      "score": 0.5,
+      "confidence": "medium"
+    },
+    {
+      "id": "fault-connector-misinsert-03",
+      "source": {
+        "type": "public-failure-analysis",
+        "ref": "nasa-llis-431",
+        "url": "https://llis.nasa.gov/lesson/431",
+        "title": "NASA Lessons Learned 431",
+        "license": "public-domain (US Gov)",
+        "extractedAt": "2026-11-03"
+      },
+      "failureMode": "connector-misinsert",
+      "matchedKeywords": [
+        "misinsert",
+        "swapped"
+      ],
+      "symptomHints": [
+        "no output",
+        "wrong or no output"
+      ],
+      "symptom": [
+        "某一路没有输出或输出错位"
+      ],
+      "symptomEn": [
+        "one channel has no or wrong output"
+      ],
+      "injectAt": {
+        "target": "octo-plug-out",
+        "type": "connector"
+      },
+      "repairScenarios": [
+        "octo-plug-out",
+        "octo-loose-jst",
+        "octo-servo-plug-worn"
+      ],
+      "verification": {
+        "type": "faultRepaired",
+        "scenario": "octo-plug-out"
+      },
+      "difficulty": "intro",
+      "score": 0.9,
+      "confidence": "high"
+    },
+    {
+      "id": "fault-harness-overbend-03",
+      "source": {
+        "type": "public-failure-analysis",
+        "ref": "nasa-llis-722",
+        "url": "https://llis.nasa.gov/lesson/722",
+        "title": "NASA Lessons Learned 722",
+        "license": "public-domain (US Gov)",
+        "extractedAt": "2026-11-03"
+      },
+      "failureMode": "harness-overbend",
+      "matchedKeywords": [
+        "bend radius",
+        "harness",
+        "flex"
+      ],
+      "symptomHints": [
+        "open",
+        "intermittent"
+      ],
+      "symptom": [
+        "线束弯折处间歇性断开"
+      ],
+      "symptomEn": [
+        "intermittent open at a tight bend"
+      ],
+      "injectAt": {
+        "target": "octo-thin-wire",
+        "type": "harness"
+      },
+      "repairScenarios": [
+        "octo-thin-wire"
+      ],
+      "verification": {
+        "type": "faultRepaired",
+        "scenario": "octo-thin-wire"
+      },
+      "difficulty": "intermediate",
+      "score": 0.9,
+      "confidence": "high"
+    },
+    {
+      "id": "fault-cold-solder-01",
+      "source": {
+        "type": "public-failure-analysis",
+        "ref": "nasa-std-8739-3",
+        "url": "https://standards.nasa.gov/standard/NASA/NASA-STD-87393",
+        "title": "NASA-STD-8739.3 Soldered Electrical Connections",
+        "license": "public-domain (US Gov)",
+        "extractedAt": "2026-11-03"
+      },
+      "failureMode": "cold-solder",
+      "matchedKeywords": [
+        "cold solder",
+        "dull joint",
+        "poor wetting"
+      ],
+      "symptomHints": [
+        "intermittent",
+        "vibration"
+      ],
+      "symptom": [
+        "间歇性工作",
+        "轻敲或晃动后恢复"
+      ],
+      "symptomEn": [
+        "works intermittently",
+        "recovers when tapped or flexed"
+      ],
+      "injectAt": {
+        "target": "led-switch-cold",
+        "type": "solder-joint"
+      },
+      "repairScenarios": [
+        "led-switch-cold",
+        "led-cold-joint",
+        "led-cold-cathode",
+        "psu-cold-diode",
+        "sensor-led-cold",
+        "octo-mcu-sig-cold",
+        "octo-servo-power-cold",
+        "octo-boost-cold-in"
+      ],
+      "verification": {
+        "type": "faultRepaired",
+        "scenario": "led-switch-cold"
+      },
+      "difficulty": "intermediate",
+      "score": 0.9,
+      "confidence": "high"
+    },
+    {
+      "id": "fault-harness-overbend-04",
+      "source": {
+        "type": "public-failure-analysis",
+        "ref": "nasa-std-8739-4",
+        "url": "https://standards.nasa.gov/standard/NASA/NASA-STD-87394",
+        "title": "NASA-STD-8739.4 Crimping, Interconnecting Cables, Harnesses, and Wiring",
+        "license": "public-domain (US Gov)",
+        "extractedAt": "2026-11-03"
+      },
+      "failureMode": "harness-overbend",
+      "matchedKeywords": [
+        "harness",
+        "flex",
+        "bend radius"
+      ],
+      "symptomHints": [
+        "open",
+        "intermittent"
+      ],
+      "symptom": [
+        "线束弯折处间歇性断开"
+      ],
+      "symptomEn": [
+        "intermittent open at a tight bend"
+      ],
+      "injectAt": {
+        "target": "octo-thin-wire",
+        "type": "harness"
+      },
+      "repairScenarios": [
+        "octo-thin-wire"
+      ],
+      "verification": {
+        "type": "faultRepaired",
+        "scenario": "octo-thin-wire"
+      },
+      "difficulty": "intermediate",
+      "score": 0.9,
+      "confidence": "high"
+    },
+    {
+      "id": "fault-pad-lift-01",
+      "source": {
+        "type": "public-failure-analysis",
+        "ref": "nasa-msfc-proc-3260",
+        "url": "https://standards.nasa.gov/standard/MSFC/MSFC-PROC-3260",
+        "title": "MSFC-PROC-3260 Repair of Lifted Solder Pads and Conductors on Printed Wiring Boards",
+        "license": "public-domain (US Gov)",
+        "extractedAt": "2026-11-03"
+      },
+      "failureMode": "pad-lift",
+      "matchedKeywords": [
+        "lifted pad",
+        "焊盘起翘",
+        "detaches the pad"
+      ],
+      "symptomHints": [
+        "open"
+      ],
+      "symptom": [
+        "焊点看着正常，但对应走线开路"
+      ],
+      "symptomEn": [
+        "joint looks fine but the trace is open"
+      ],
+      "injectAt": {
+        "target": "sensor-cracked-trace",
+        "type": "solder-pad"
+      },
+      "repairScenarios": [
+        "sensor-cracked-trace"
+      ],
+      "verification": {
+        "type": "faultRepaired",
+        "scenario": "sensor-cracked-trace"
+      },
+      "difficulty": "intermediate",
+      "score": 0.9,
+      "confidence": "high"
+    },
+    {
+      "id": "fault-thermal-failure-01",
+      "source": {
+        "type": "public-failure-analysis",
+        "ref": "nasa-ntrs-20190031786",
+        "url": "https://ntrs.nasa.gov/citations/20190031786",
+        "title": "NASA GSFC study on repeated rework of component sites (NTRS 20190031786)",
+        "license": "public-domain (US Gov)",
+        "extractedAt": "2026-11-03"
+      },
+      "failureMode": "thermal-failure",
+      "matchedKeywords": [
+        "thermal excursion",
+        "overheat"
+      ],
+      "symptomHints": [
+        "drift",
+        "参数漂移"
+      ],
+      "symptom": [
+        "带载后输出下降或漂移"
+      ],
+      "symptomEn": [
+        "output drops or drifts under load"
+      ],
+      "injectAt": {
+        "target": "psu-wrong-ldo",
+        "type": "power-component"
+      },
+      "repairScenarios": [
+        "psu-wrong-ldo"
+      ],
+      "verification": {
+        "type": "faultRepaired",
+        "scenario": "psu-wrong-ldo"
+      },
+      "difficulty": "advanced",
+      "score": 0.9,
+      "confidence": "high"
+    },
+    {
+      "id": "fault-imc-thick-01",
+      "source": {
+        "type": "public-failure-analysis",
+        "ref": "nasa-nepp-ccga-pbga",
+        "url": "https://nepp.nasa.gov/files/16326/05_075%20Ghaffarian%20Report%201.pdf",
+        "title": "NASA NEPP/JPL report: thermal cycle reliability of CCGA and PBGA assemblies",
+        "license": "public-domain (US Gov)",
+        "extractedAt": "2026-11-03"
+      },
+      "failureMode": "imc-thick",
+      "matchedKeywords": [
+        "intermetallic",
+        "imc"
+      ],
+      "symptomHints": [
+        "open",
+        "brittle",
+        "intermittent"
+      ],
+      "symptom": [
+        "温度变化时出现开路"
+      ],
+      "symptomEn": [
+        "opens appear with temperature change"
+      ],
+      "injectAt": {
+        "target": null,
+        "type": "solder-joint"
+      },
+      "repairScenarios": [],
+      "verification": {
+        "type": "faultRepaired",
+        "scenario": null
+      },
+      "difficulty": "advanced",
+      "score": 0.9,
+      "confidence": "high"
+    },
+    {
+      "id": "fault-reverse-polarity-03",
+      "source": {
+        "type": "datasheet",
+        "ref": "ds-led-reverse",
+        "url": null,
+        "title": "通用 datasheet 事实：LED 反向电压",
+        "license": "own words",
+        "extractedAt": "2026-11-03"
+      },
+      "failureMode": "reverse-polarity",
+      "matchedKeywords": [
+        "reversed",
+        "反接"
+      ],
+      "symptomHints": [
+        "not light",
+        "不亮"
+      ],
+      "symptom": [
+        "上电无反应",
+        "保护器件动作或发热"
+      ],
+      "symptomEn": [
+        "no response at power-on",
+        "protection part trips or heats"
+      ],
+      "injectAt": {
+        "target": "led-reversed",
+        "type": "component-orientation"
+      },
+      "repairScenarios": [
+        "led-reversed",
+        "psu-diode-reversed",
+        "octo-servo-reversed"
+      ],
+      "verification": {
+        "type": "faultRepaired",
+        "scenario": "led-reversed"
+      },
+      "difficulty": "intro",
+      "score": 0.8,
+      "confidence": "high"
+    },
+    {
+      "id": "fault-thermal-failure-03",
+      "source": {
+        "type": "datasheet",
+        "ref": "ds-ldo-thermal",
+        "url": null,
+        "title": "通用 datasheet 事实：线性稳压器的热关断",
+        "license": "own words",
+        "extractedAt": "2026-11-03"
+      },
+      "failureMode": "thermal-failure",
+      "matchedKeywords": [
+        "thermal shutdown",
+        "overheat",
+        "过温"
+      ],
+      "symptomHints": [
+        "drift",
+        "dropout"
+      ],
+      "symptom": [
+        "带载后输出下降或漂移"
+      ],
+      "symptomEn": [
+        "output drops or drifts under load"
+      ],
+      "injectAt": {
+        "target": "psu-wrong-ldo",
+        "type": "power-component"
+      },
+      "repairScenarios": [
+        "psu-wrong-ldo"
+      ],
+      "verification": {
+        "type": "faultRepaired",
+        "scenario": "psu-wrong-ldo"
+      },
+      "difficulty": "advanced",
+      "score": 0.8,
+      "confidence": "high"
+    },
+    {
+      "id": "fault-reverse-polarity-04",
+      "source": {
+        "type": "datasheet",
+        "ref": "ds-electrolytic-polarity",
+        "url": null,
+        "title": "通用 datasheet 事实：电解电容极性",
+        "license": "own words",
+        "extractedAt": "2026-11-03"
+      },
+      "failureMode": "reverse-polarity",
+      "matchedKeywords": [
+        "polarised",
+        "reversed polarity"
+      ],
+      "symptomHints": [],
+      "symptom": [
+        "上电无反应",
+        "保护器件动作或发热"
+      ],
+      "symptomEn": [
+        "no response at power-on",
+        "protection part trips or heats"
+      ],
+      "injectAt": {
+        "target": "led-reversed",
+        "type": "component-orientation"
+      },
+      "repairScenarios": [
+        "led-reversed",
+        "psu-diode-reversed",
+        "octo-servo-reversed"
+      ],
+      "verification": {
+        "type": "faultRepaired",
+        "scenario": "led-reversed"
+      },
+      "difficulty": "intro",
+      "score": 0.5,
+      "confidence": "medium"
+    }
+  ]
+}

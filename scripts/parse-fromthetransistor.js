@@ -2,7 +2,7 @@
 // 输出只含事实（标题 / 语言 / LOC / Section），写到 data/meta/ftt-projects.json（已提交，离线构建的兜底）。
 import { join } from "node:path";
 import { existsSync, readFileSync } from "node:fs";
-import { CACHE, DATA, ORIGIN, readJSON, writeJSON, dedupeKey, stamp, log } from "./bank/lib.js";
+import { CACHE, DATA, ORIGIN, readJSON, writeJSONStable, dedupeKey, stamp, log } from "./bank/lib.js";
 import { parseReadme } from "./bank/ftt-parsers.js";
 import { cacheName } from "./fetch-sources.js";
 
@@ -48,7 +48,7 @@ function main() {
   const r = mergeForks(forksDoc.forks, readReadme, readOverride);
   const formats = {};
   for (const f of r.perFork) formats[f.via === "override" ? "override" : f.format] = (formats[f.via === "override" ? "override" : f.format] || 0) + 1;
-  writeJSON(out, { generatedAt: stamp(), note: "只含标题 / 语言 / LOC / Section 事实，不含原文描述", forks: forksDoc.forks.length, parsedForks: r.perFork.length, formats, skipped: r.skipped, projects: r.projects.map(({ key, ...p }) => p) });
+  writeJSONStable(out, { generatedAt: stamp(), note: "只含标题 / 语言 / LOC / Section 事实，不含原文描述", forks: forksDoc.forks.length, parsedForks: r.perFork.length, formats, skipped: r.skipped, projects: r.projects.map(({ key, ...p }) => p) });
   log(`parse-fromthetransistor：${r.perFork.length} 个 fork 解析成功（${JSON.stringify(formats)}），_skipped ${r.skipped.length} 个，去重后 ${r.projects.length} 个项目`);
 }
 if (import.meta.url === `file://${process.argv[1]}`) main();

@@ -1,0 +1,367 @@
+{
+  "note": "review 队列：不阻断入库；把 status 改成 promoted 并写 promotedBy 即可手动提升",
+  "items": [
+    {
+      "id": "fault-harness-overbend-01",
+      "source": {
+        "type": "public-failure-analysis",
+        "ref": "nasa-llis-1398",
+        "url": "https://llis.nasa.gov/lesson/1398",
+        "title": "NASA Lessons Learned 1398",
+        "license": "public-domain (US Gov)",
+        "extractedAt": "2026-11-03"
+      },
+      "failureMode": "harness-overbend",
+      "matchedKeywords": [
+        "harness"
+      ],
+      "symptomHints": [],
+      "symptom": [
+        "线束弯折处间歇性断开"
+      ],
+      "symptomEn": [
+        "intermittent open at a tight bend"
+      ],
+      "injectAt": {
+        "target": "octo-thin-wire",
+        "type": "harness"
+      },
+      "repairScenarios": [
+        "octo-thin-wire"
+      ],
+      "verification": {
+        "type": "faultRepaired",
+        "scenario": "octo-thin-wire"
+      },
+      "difficulty": "intermediate",
+      "score": 0.2,
+      "confidence": "low",
+      "reviewReason": "低分：只写 review，不入库",
+      "status": "pending"
+    },
+    {
+      "id": "fault-reverse-polarity-02",
+      "source": {
+        "type": "public-failure-analysis",
+        "ref": "nasa-llis-729",
+        "url": "https://llis.nasa.gov/lesson/729",
+        "title": "NASA Lessons Learned 729",
+        "license": "public-domain (US Gov)",
+        "extractedAt": "2026-11-03"
+      },
+      "failureMode": "reverse-polarity",
+      "matchedKeywords": [
+        "reverse polarity"
+      ],
+      "symptomHints": [],
+      "symptom": [
+        "上电无反应",
+        "保护器件动作或发热"
+      ],
+      "symptomEn": [
+        "no response at power-on",
+        "protection part trips or heats"
+      ],
+      "injectAt": {
+        "target": "led-reversed",
+        "type": "component-orientation"
+      },
+      "repairScenarios": [
+        "led-reversed",
+        "psu-diode-reversed",
+        "octo-servo-reversed"
+      ],
+      "verification": {
+        "type": "faultRepaired",
+        "scenario": "led-reversed"
+      },
+      "difficulty": "intro",
+      "score": 0.2,
+      "confidence": "low",
+      "reviewReason": "低分：只写 review，不入库",
+      "status": "pending"
+    },
+    {
+      "id": "fault-harness-overbend-02",
+      "source": {
+        "type": "public-failure-analysis",
+        "ref": "nasa-llis-53",
+        "url": "https://llis.nasa.gov/lesson/53",
+        "title": "NASA Lessons Learned 53",
+        "license": "public-domain (US Gov)",
+        "extractedAt": "2026-11-03"
+      },
+      "failureMode": "harness-overbend",
+      "matchedKeywords": [
+        "harness"
+      ],
+      "symptomHints": [],
+      "symptom": [
+        "线束弯折处间歇性断开"
+      ],
+      "symptomEn": [
+        "intermittent open at a tight bend"
+      ],
+      "injectAt": {
+        "target": "octo-thin-wire",
+        "type": "harness"
+      },
+      "repairScenarios": [
+        "octo-thin-wire"
+      ],
+      "verification": {
+        "type": "faultRepaired",
+        "scenario": "octo-thin-wire"
+      },
+      "difficulty": "intermediate",
+      "score": 0.2,
+      "confidence": "low",
+      "reviewReason": "低分：只写 review，不入库",
+      "status": "pending"
+    },
+    {
+      "id": "fault-connector-misinsert-02",
+      "source": {
+        "type": "public-failure-analysis",
+        "ref": "nasa-llis-386",
+        "url": "https://llis.nasa.gov/lesson/386",
+        "title": "NASA Lessons Learned 386",
+        "license": "public-domain (US Gov)",
+        "extractedAt": "2026-11-03"
+      },
+      "failureMode": "connector-misinsert",
+      "matchedKeywords": [
+        "misinsert"
+      ],
+      "symptomHints": [
+        "short"
+      ],
+      "symptom": [
+        "某一路没有输出或输出错位"
+      ],
+      "symptomEn": [
+        "one channel has no or wrong output"
+      ],
+      "injectAt": {
+        "target": "octo-plug-out",
+        "type": "connector"
+      },
+      "repairScenarios": [
+        "octo-plug-out",
+        "octo-loose-jst",
+        "octo-servo-plug-worn"
+      ],
+      "verification": {
+        "type": "faultRepaired",
+        "scenario": "octo-plug-out"
+      },
+      "difficulty": "intro",
+      "score": 0.5,
+      "confidence": "medium",
+      "reviewReason": "中分：已入库，同时待复核",
+      "status": "pending"
+    },
+    {
+      "id": "fault-thermal-failure-02",
+      "source": {
+        "type": "public-failure-analysis",
+        "ref": "nasa-nepp-ccga-pbga",
+        "url": "https://nepp.nasa.gov/files/16326/05_075%20Ghaffarian%20Report%201.pdf",
+        "title": "NASA NEPP/JPL report: thermal cycle reliability of CCGA and PBGA assemblies",
+        "license": "public-domain (US Gov)",
+        "extractedAt": "2026-11-03"
+      },
+      "failureMode": "thermal-failure",
+      "matchedKeywords": [
+        "thermal"
+      ],
+      "symptomHints": [],
+      "symptom": [
+        "带载后输出下降或漂移"
+      ],
+      "symptomEn": [
+        "output drops or drifts under load"
+      ],
+      "injectAt": {
+        "target": "psu-wrong-ldo",
+        "type": "power-component"
+      },
+      "repairScenarios": [
+        "psu-wrong-ldo"
+      ],
+      "verification": {
+        "type": "faultRepaired",
+        "scenario": "psu-wrong-ldo"
+      },
+      "difficulty": "advanced",
+      "score": 0.2,
+      "confidence": "low",
+      "reviewReason": "低分：只写 review，不入库",
+      "status": "pending"
+    },
+    {
+      "id": "fault-reverse-polarity-04",
+      "source": {
+        "type": "datasheet",
+        "ref": "ds-electrolytic-polarity",
+        "url": null,
+        "title": "通用 datasheet 事实：电解电容极性",
+        "license": "own words",
+        "extractedAt": "2026-11-03"
+      },
+      "failureMode": "reverse-polarity",
+      "matchedKeywords": [
+        "polarised",
+        "reversed polarity"
+      ],
+      "symptomHints": [],
+      "symptom": [
+        "上电无反应",
+        "保护器件动作或发热"
+      ],
+      "symptomEn": [
+        "no response at power-on",
+        "protection part trips or heats"
+      ],
+      "injectAt": {
+        "target": "led-reversed",
+        "type": "component-orientation"
+      },
+      "repairScenarios": [
+        "led-reversed",
+        "psu-diode-reversed",
+        "octo-servo-reversed"
+      ],
+      "verification": {
+        "type": "faultRepaired",
+        "scenario": "led-reversed"
+      },
+      "difficulty": "intro",
+      "score": 0.5,
+      "confidence": "medium",
+      "reviewReason": "中分：已入库，同时待复核",
+      "status": "pending"
+    },
+    {
+      "id": "fault-stripped-screw-01",
+      "source": {
+        "type": "link-only",
+        "ref": "ifixit-stripped-screw",
+        "url": "https://www.ifixit.com/Guide/How+to+Remove+a+Stripped+Screw/13213",
+        "title": "iFixit: How to Remove a Stripped Screw",
+        "license": "CC BY-NC-SA（只存链接）",
+        "extractedAt": "2026-11-03"
+      },
+      "failureMode": "stripped-screw",
+      "matchedKeywords": [
+        "stripped screw"
+      ],
+      "symptomHints": [],
+      "symptom": [
+        "固定不牢，振动后松动"
+      ],
+      "symptomEn": [
+        "part not held, loosens under vibration"
+      ],
+      "injectAt": {
+        "target": null,
+        "type": "fastener"
+      },
+      "repairScenarios": [],
+      "verification": {
+        "type": "faultRepaired",
+        "scenario": null
+      },
+      "difficulty": "intro",
+      "score": 0,
+      "confidence": "low",
+      "reviewReason": "仅链接来源：只保留链接与失效模式名，不入库",
+      "status": "pending"
+    },
+    {
+      "id": "fault-cold-solder-02",
+      "source": {
+        "type": "link-only",
+        "ref": "ifixit-soldering",
+        "url": "https://www.ifixit.com/Wiki/Soldering",
+        "title": "iFixit Wiki: Soldering",
+        "license": "CC BY-NC-SA（只存链接）",
+        "extractedAt": "2026-11-03"
+      },
+      "failureMode": "cold-solder",
+      "matchedKeywords": [
+        "cold solder"
+      ],
+      "symptomHints": [],
+      "symptom": [
+        "间歇性工作",
+        "轻敲或晃动后恢复"
+      ],
+      "symptomEn": [
+        "works intermittently",
+        "recovers when tapped or flexed"
+      ],
+      "injectAt": {
+        "target": "led-switch-cold",
+        "type": "solder-joint"
+      },
+      "repairScenarios": [
+        "led-switch-cold",
+        "led-cold-joint",
+        "led-cold-cathode",
+        "psu-cold-diode",
+        "sensor-led-cold",
+        "octo-mcu-sig-cold",
+        "octo-servo-power-cold",
+        "octo-boost-cold-in"
+      ],
+      "verification": {
+        "type": "faultRepaired",
+        "scenario": "led-switch-cold"
+      },
+      "difficulty": "intermediate",
+      "score": 0,
+      "confidence": "low",
+      "reviewReason": "仅链接来源：只保留链接与失效模式名，不入库",
+      "status": "pending"
+    },
+    {
+      "id": "fault-thermal-failure-04",
+      "source": {
+        "type": "link-only",
+        "ref": "eevblog-repair-forum",
+        "url": "https://www.eevblog.com/forum/repair/",
+        "title": "EEVblog Forum: Repair",
+        "license": "版权内容（只存链接）",
+        "extractedAt": "2026-11-03"
+      },
+      "failureMode": "thermal-failure",
+      "matchedKeywords": [
+        "thermal"
+      ],
+      "symptomHints": [],
+      "symptom": [
+        "带载后输出下降或漂移"
+      ],
+      "symptomEn": [
+        "output drops or drifts under load"
+      ],
+      "injectAt": {
+        "target": "psu-wrong-ldo",
+        "type": "power-component"
+      },
+      "repairScenarios": [
+        "psu-wrong-ldo"
+      ],
+      "verification": {
+        "type": "faultRepaired",
+        "scenario": "psu-wrong-ldo"
+      },
+      "difficulty": "advanced",
+      "score": 0,
+      "confidence": "low",
+      "reviewReason": "仅链接来源：只保留链接与失效模式名，不入库",
+      "status": "pending"
+    }
+  ]
+}

@@ -1,0 +1,425 @@
+{
+  "generatedAt": "2026-11-03T09:11:09.627Z",
+  "source": "https://github.com/kitspace/awesome-electronics",
+  "license": "CC0-1.0",
+  "note": "只记名称 + 链接 + 分类；判断点由关键词规则得出",
+  "tools": [
+    {
+      "name": "Soldering is Easy",
+      "url": "https://mightyohm.com/blog/2011/04/soldering-is-easy-comic-book/",
+      "section": "Learning / Technical Tutorials",
+      "points": [
+        "soldering"
+      ]
+    },
+    {
+      "name": "Uses of Different Soldering Iron Tips",
+      "url": "https://www.instructables.com/id/Uses-of-Different-Soldering-Iron-Tips/",
+      "section": "Learning / Technical Tutorials",
+      "points": [
+        "soldering"
+      ]
+    },
+    {
+      "name": "How to design a motherboard for your electronics project",
+      "url": "https://www.staycaffeinated.com/2021/02/21/how-to-design-a-motherboard-for-your-project-part-1",
+      "section": "Learning / Technical Tutorials",
+      "points": [
+        "schematic-pcb"
+      ]
+    },
+    {
+      "name": "Khan Academy - Electrical Engineering",
+      "url": "https://www.khanacademy.org/science/electrical-engineering",
+      "section": "Learning / Courses",
+      "points": [
+        "theory"
+      ]
+    },
+    {
+      "name": "NEETS (Navy Electricity and Electronics Training Series)",
+      "url": "https://www.fcctests.com/neets/Neets.htm",
+      "section": "Learning / Courses",
+      "points": [
+        "theory"
+      ]
+    },
+    {
+      "name": "NPTEL",
+      "url": "https://nptel.ac.in/course.html",
+      "section": "Learning / Courses",
+      "points": [
+        "theory"
+      ]
+    },
+    {
+      "name": "Udemy courses related to Electronics",
+      "url": "https://www.udemy.com/topic/electronics/",
+      "section": "Learning / Courses",
+      "points": [
+        "theory"
+      ]
+    },
+    {
+      "name": "Coursera courses related to Electronics",
+      "url": "https://www.coursera.org/courses?query=electronics",
+      "section": "Learning / Courses",
+      "points": [
+        "theory"
+      ]
+    },
+    {
+      "name": "Electronics textbook",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/e/ee/Electronics.pdf",
+      "section": "Learning / Theory",
+      "points": [
+        "circuit-sim",
+        "theory"
+      ]
+    },
+    {
+      "name": "Student Handbook",
+      "url": "http://cbseacademic.nic.in/web_material/Curriculum/Vocational/2018/Basic_Electronics_XI.pdf",
+      "section": "Learning / Theory",
+      "points": [
+        "theory"
+      ]
+    },
+    {
+      "name": "Electronics circuits and systems",
+      "url": "http://aems.edu.sd/wp-content/uploads/2019/02/Electronics-Circuits-and-Systems-Fourth-Edition-PDFDrive.com-.pdf",
+      "section": "Learning / Theory",
+      "points": [
+        "circuit-sim",
+        "theory"
+      ]
+    },
+    {
+      "name": "Lessons In Electric Circuits",
+      "url": "https://www.ibiblio.org/kuphaldt/electricCircuits/",
+      "section": "Learning / Theory",
+      "points": [
+        "circuit-sim",
+        "theory"
+      ]
+    },
+    {
+      "name": "Ultimate Electronics: Practical Circuit Design and Analysis",
+      "url": "https://ultimateelectronicsbook.com/",
+      "section": "Learning / Theory",
+      "points": [
+        "circuit-sim",
+        "schematic-pcb",
+        "theory"
+      ]
+    },
+    {
+      "name": "Berkeley EECS",
+      "url": "http://inst.eecs.berkeley.edu/classes-eecs.html",
+      "section": "Learning / University Course Archives",
+      "points": [
+        "theory"
+      ]
+    },
+    {
+      "name": "Dr. Jacob Baker",
+      "url": "http://cmosedu.com",
+      "section": "Learning / University Course Archives",
+      "points": [
+        "theory"
+      ]
+    },
+    {
+      "name": "LTspice",
+      "url": "https://www.analog.com/en/design-center/design-tools-and-calculators/ltspice-simulator.html",
+      "section": "Simulators / Analog and Mixed Signal Circuit Simulators",
+      "points": [
+        "circuit-sim"
+      ]
+    },
+    {
+      "name": "ngspice",
+      "url": "http://ngspice.sourceforge.net/",
+      "section": "Simulators / Analog and Mixed Signal Circuit Simulators",
+      "points": [
+        "circuit-sim"
+      ]
+    },
+    {
+      "name": "Circuit JS/Falstad",
+      "url": "http://www.falstad.com/circuit/circuitjs.html",
+      "section": "Simulators / Analog and Mixed Signal Circuit Simulators",
+      "points": [
+        "circuit-sim"
+      ]
+    },
+    {
+      "name": "EveryCircuit",
+      "url": "https://everycircuit.com",
+      "section": "Simulators / Analog and Mixed Signal Circuit Simulators",
+      "points": [
+        "circuit-sim"
+      ]
+    },
+    {
+      "name": "Qucs",
+      "url": "http://qucs.sourceforge.net/",
+      "section": "Simulators / Analog and Mixed Signal Circuit Simulators",
+      "points": [
+        "circuit-sim"
+      ]
+    },
+    {
+      "name": "Qucs-S",
+      "url": "https://ra3xdh.github.io/",
+      "section": "Simulators / Analog and Mixed Signal Circuit Simulators",
+      "points": [
+        "circuit-sim"
+      ]
+    },
+    {
+      "name": "QucsStudio",
+      "url": "http://qucsstudio.de/",
+      "section": "Simulators / Analog and Mixed Signal Circuit Simulators",
+      "points": [
+        "circuit-sim"
+      ]
+    },
+    {
+      "name": "Open Circuit Design Software",
+      "url": "http://opencircuitdesign.com",
+      "section": "Simulators / Analog and Mixed Signal Circuit Simulators",
+      "points": [
+        "circuit-sim",
+        "schematic-pcb"
+      ]
+    },
+    {
+      "name": "TINA-TI",
+      "url": "http://www.ti.com/tool/TINA-TI",
+      "section": "Simulators / Analog and Mixed Signal Circuit Simulators",
+      "points": [
+        "circuit-sim"
+      ]
+    },
+    {
+      "name": "CppSim",
+      "url": "https://www.cppsim.com/",
+      "section": "Simulators / Analog and Mixed Signal Circuit Simulators",
+      "points": [
+        "circuit-sim"
+      ]
+    },
+    {
+      "name": "Scilab with Xcos",
+      "url": "https://www.scilab.org/",
+      "section": "Simulators / Analog and Mixed Signal Circuit Simulators",
+      "points": [
+        "circuit-sim"
+      ]
+    },
+    {
+      "name": "iCircuit",
+      "url": "http://icircuitapp.com/",
+      "section": "Simulators / Analog and Mixed Signal Circuit Simulators",
+      "points": [
+        "timing",
+        "circuit-sim"
+      ]
+    },
+    {
+      "name": "Micro-Cap",
+      "url": "http://www.spectrum-soft.com/download/download.shtm",
+      "section": "Simulators / Analog and Mixed Signal Circuit Simulators",
+      "points": [
+        "circuit-sim"
+      ]
+    },
+    {
+      "name": "GeckoCIRCUITS",
+      "url": "https://de.wikipedia.org/wiki/GeckoCircuits",
+      "section": "Simulators / Analog and Mixed Signal Circuit Simulators",
+      "points": [
+        "circuit-sim"
+      ]
+    },
+    {
+      "name": "Proteus",
+      "url": "https://www.labcenter.com/",
+      "section": "Simulators / Analog and Mixed Signal Circuit Simulators",
+      "points": [
+        "circuit-sim",
+        "schematic-pcb"
+      ]
+    },
+    {
+      "name": "Verilator",
+      "url": "https://www.veripool.org/wiki/verilator",
+      "section": "Simulators / Verilog HDL Simulators",
+      "points": [
+        "timing",
+        "circuit-sim"
+      ]
+    },
+    {
+      "name": "Icarus Verilog",
+      "url": "http://iverilog.icarus.com/",
+      "section": "Simulators / Verilog HDL Simulators",
+      "points": [
+        "timing",
+        "circuit-sim"
+      ]
+    },
+    {
+      "name": "Tracespace Viewer",
+      "url": "https://tracespace.io/",
+      "section": "Gerber Viewers / Online",
+      "points": [
+        "gerber-check",
+        "schematic-pcb"
+      ]
+    },
+    {
+      "name": "Gerblook",
+      "url": "https://www.gerblook.org/",
+      "section": "Gerber Viewers / Online",
+      "points": [
+        "gerber-check"
+      ]
+    },
+    {
+      "name": "Mayhew Labs 3dpcb",
+      "url": "http://mayhewlabs.com/3dpcb",
+      "section": "Gerber Viewers / Online",
+      "points": [
+        "gerber-check",
+        "schematic-pcb"
+      ]
+    },
+    {
+      "name": "CircuitPeople",
+      "url": "https://circuitpeople.com",
+      "section": "Gerber Viewers / Online",
+      "points": [
+        "circuit-sim",
+        "gerber-check"
+      ]
+    },
+    {
+      "name": "Stackrate Viewer",
+      "url": "https://stackrate.de/viewer/",
+      "section": "Gerber Viewers / Online",
+      "points": [
+        "gerber-check"
+      ]
+    },
+    {
+      "name": "Gerbv",
+      "url": "http://gerbv.geda-project.org/",
+      "section": "Gerber Viewers / Installable",
+      "points": [
+        "gerber-check"
+      ]
+    },
+    {
+      "name": "KiCAD Gerbview",
+      "url": "https://kicad.org/",
+      "section": "Gerber Viewers / Installable",
+      "points": [
+        "gerber-check",
+        "schematic-pcb"
+      ]
+    },
+    {
+      "name": "GC-Prevue",
+      "url": "http://www.graphicode.com/GC-Prevue_Gerber_Viewer",
+      "section": "Gerber Viewers / Installable",
+      "points": [
+        "gerber-check",
+        "schematic-pcb"
+      ]
+    },
+    {
+      "name": "ZofZPCB",
+      "url": "https://www.zofzpcb.com/",
+      "section": "Gerber Viewers / Installable",
+      "points": [
+        "gerber-check",
+        "schematic-pcb"
+      ]
+    },
+    {
+      "name": "KiCad",
+      "url": "https://kicad.org/",
+      "section": "Free EDA Packages",
+      "points": [
+        "schematic-pcb"
+      ]
+    },
+    {
+      "name": "Eagle",
+      "url": "https://www.autodesk.com/products/eagle/overview",
+      "section": "Free EDA Packages",
+      "points": [
+        "schematic-pcb"
+      ]
+    },
+    {
+      "name": "DesignSpark PCB",
+      "url": "https://www.rs-online.com/designspark/pcb-software",
+      "section": "Free EDA Packages",
+      "points": [
+        "schematic-pcb"
+      ]
+    },
+    {
+      "name": "Altium CircuitMaker",
+      "url": "https://circuitmaker.com/",
+      "section": "Free EDA Packages",
+      "points": [
+        "circuit-sim",
+        "schematic-pcb"
+      ]
+    },
+    {
+      "name": "gEDA",
+      "url": "http://geda-project.org",
+      "section": "Free EDA Packages",
+      "points": [
+        "schematic-pcb"
+      ]
+    },
+    {
+      "name": "DipTrace",
+      "url": "https://diptrace.com",
+      "section": "Free EDA Packages",
+      "points": [
+        "schematic-pcb"
+      ]
+    },
+    {
+      "name": "LibrePCB",
+      "url": "https://librepcb.org/",
+      "section": "Free EDA Packages",
+      "points": [
+        "schematic-pcb"
+      ]
+    },
+    {
+      "name": "Horizon EDA",
+      "url": "https://github.com/horizon-eda/horizon",
+      "section": "Free EDA Packages",
+      "points": [
+        "schematic-pcb"
+      ]
+    },
+    {
+      "name": "EasyEDA",
+      "url": "https://easyeda.com/",
+      "section": "Free EDA Packages",
+      "points": [
+        "schematic-pcb"
+      ]
+    }
+  ]
+}

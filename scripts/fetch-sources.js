@@ -2,7 +2,7 @@
 // 离线（BANK_OFFLINE=1 或网络失败）时什么都不抓，后续解析器回退到已提交的事实快照 data/meta/ftt-projects.json。
 import { join } from "node:path";
 import { mkdirSync, writeFileSync } from "node:fs";
-import { CACHE, DATA, readJSON, writeJSON, hash, stamp, log } from "./bank/lib.js";
+import { CACHE, DATA, readJSON, writeJSON, writeJSONStable, hash, stamp, log } from "./bank/lib.js";
 
 export const cacheName = (repo) => repo.replace("/", "__") + ".md";
 const LIMIT = +(process.env.FETCH_FORKS || 1000), CONC = 8;
@@ -19,7 +19,7 @@ async function getReadme(repo, branch) {
 async function main() {
   const forks = (readJSON(join(DATA, "meta/forks.json"))?.forks || []).slice(0, LIMIT);
   const out = { generatedAt: stamp(), mode: "live", fromthetransistor: {}, awesomeElectronics: null };
-  if (process.env.BANK_OFFLINE === "1") { log("fetch-sources：离线，跳过"); writeJSON(join(DATA, "meta/sources.json"), { ...(readJSON(join(DATA, "meta/sources.json")) || {}), lastOfflineRun: stamp() }); return; }
+  if (process.env.BANK_OFFLINE === "1") { log("fetch-sources：离线，跳过"); writeJSON(join(DATA, "meta/sources.json"), { ...(readJSON(join(DATA, "meta/sources.json")) || {}) }); return; }
   mkdirSync(join(CACHE, "ftt"), { recursive: true });
   let ok = 0, miss = 0, i = 0;
   await Promise.all(Array.from({ length: CONC }, async () => {
@@ -36,7 +36,7 @@ async function main() {
   if (ae) { writeFileSync(join(CACHE, "awesome-electronics.md"), ae); out.awesomeElectronics = { status: "ok", bytes: ae.length, sha256: hash(ae).slice(0, 16) }; }
   else out.awesomeElectronics = { status: "missing" };
   out.summary = { forks: forks.length, ok, missing: miss, distinctReadmes: new Set(Object.values(out.fromthetransistor).map((x) => x.sha256).filter(Boolean)).size };
-  writeJSON(join(DATA, "meta/sources.json"), out);
+  writeJSONStable(join(DATA, "meta/sources.json"), out);
   log(`fetch-sources：README ${ok} 个，缺 ${miss} 个，不同内容 ${out.summary.distinctReadmes} 种；awesome-electronics ${out.awesomeElectronics.status}`);
 }
 if (import.meta.url === `file://${process.argv[1]}`) main();

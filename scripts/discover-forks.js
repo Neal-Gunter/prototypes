@@ -5,7 +5,7 @@
 //  - stars: Infinity 在 JSON 里会变成 null，改成 original: true + 真实星数，排序时原版永远第一
 //  - spec 写了“其余按星数降序”但代码没排序，这里补上；并记录 forks_count 方便核对覆盖率
 import { join } from "node:path";
-import { DATA, ORIGIN, readJSON, writeJSON, stamp, log } from "./bank/lib.js";
+import { DATA, ORIGIN, readJSON, writeJSON, writeJSONStable, stamp, log } from "./bank/lib.js";
 
 const OUT = join(DATA, "meta/forks.json");
 const MAX_PAGES = +(process.env.MAX_FORK_CALLS || 120); // API 调用上限（无 token 时 60 次/小时）
@@ -59,7 +59,7 @@ async function main() {
   }
   try {
     const { forks, forksCount, truncated, missing } = await discoverForks();
-    writeJSON(OUT, { generatedAt: stamp(), mode: "live", forksCount, truncated, missing, count: forks.length, forks });
+    writeJSONStable(OUT, { generatedAt: stamp(), mode: "live", forksCount, truncated, missing, count: forks.length, forks });
     log(`discover-forks：在线发现 ${forks.length} 个（含原版；API forks_count=${forksCount}${truncated ? "，已截断" : ""}）`);
   } catch (e) {
     log(`discover-forks：在线失败（${e.message}），沿用已提交的 forks.json`);
