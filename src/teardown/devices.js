@@ -506,6 +506,55 @@ export const DEVICES = [
     ],
     explode: true,
   },
+  // v33（我的补充）：两节 AA 电池的玩具小车。低压直流（3 V），文字全部本项目自写，按公开资料整理，未经实物验证
+  {
+    id: "aa-toy-car",
+    name: T("AA 电池玩具小车", "AA battery toy car"),
+    model: "Toy car with 2 × AA batteries, slide switch, small DC motor + gearbox (generic)",
+    alias: ["toy car", "玩具车", "小车", "电动车", "aa", "电池车", "直流电机", "dc motor", "gearbox", "齿轮箱"],
+    volts: 3,
+    difficulty: 2, minutes: 25,
+    summary: T("最常见的电动玩具之一：两节 AA 电池经过一个拨动开关给一颗小直流电机供电，电机通过一组塑料减速齿轮带动后轮。拆开能看到“电池—开关—电机”这条最短的回路，以及齿轮为什么能让小电机推得动整辆车。", "One of the most common electric toys: two AA batteries power a small DC motor through a slide switch, and the motor drives the rear wheels through a set of plastic reduction gears. Taking it apart shows the shortest possible battery, switch and motor loop, and why gears let a tiny motor push the whole car."),
+    battery: true,
+    materials: [
+      T("小号十字螺丝刀（玩具常用很小的螺丝）", "Small Phillips screwdriver (toys often use very small screws)"),
+      T("塑料撬片", "Plastic spudger"),
+      T("万用表", "Multimeter"),
+      T("小盒子或磁性托盘（放螺丝和小齿轮）", "A small box or magnetic tray for the screws and small gears"),
+    ],
+    safety: [
+      T("电池先处理：先把开关拨到关，再取出两节 AA 电池。", "Battery first: switch it off, then take out both AA batteries."),
+      T("电池有漏液（白色或绿色结晶）时戴手套处理，不要碰眼睛，电池仓用干布擦净。", "If a battery has leaked (white or green crust), wear gloves, keep it away from your eyes and wipe the bay with a dry cloth."),
+      T("小齿轮、小螺丝和小轴容易被小孩误吞，拆的时候放在孩子够不到的地方。", "Small gears, screws and axles are a choking hazard for young children. Keep them out of reach while you work."),
+    ],
+    fig: [
+      { id: "body", x: 14, y: 16, w: 172, h: 30, c: "#d64545", t: T("车壳", "Body shell") },
+      { id: "chassis", x: 14, y: 50, w: 172, h: 34, c: "#26272a", t: T("底盘", "Chassis") },
+      { id: "batt", x: 30, y: 56, w: 50, h: 22, c: "#d9792b", t: T("2 × AA 电池", "2 × AA batteries") },
+      { id: "sw", x: 86, y: 58, w: 14, h: 10, c: "#5b6168", t: T("开关", "Switch") },
+      { id: "motor", x: 124, y: 56, w: 22, h: 20, c: "#b8bcc2", t: T("直流电机", "DC motor") },
+      { id: "gear", x: 148, y: 54, w: 24, h: 24, c: "#e2b524", t: T("齿轮箱", "Gearbox") },
+      { id: "wheels", x: 150, y: 86, w: 36, h: 14, c: "#3a3f45", t: T("车轮", "Wheels") },
+    ],
+    steps: [
+      { t: T("关开关、取电池", "Switch off and take out the batteries"), d: T("底部的拨动开关拨到 OFF，拧开电池盖取出两节 AA 电池。用万用表量一下两节串起来的电压，新电池合起来约 3 V，明显低于 2.4 V 时车会跑得很慢。", "Slide the switch underneath to OFF, unscrew the battery door and take out both AA cells. Measure the two in series: fresh cells give about 3 V together, and well below 2.4 V the car runs slowly."), fig: { hi: ["batt", "sw"], off: { batt: [0, 40] } }, stop: T("停止点：电池漏液、鼓包就停，先按安全提示清理。", "Stop point: if a battery has leaked or swollen, stop and clean up as the safety notes say first.") },
+      { t: T("拧下底盘螺丝、拿掉车壳", "Remove the chassis screws and the body shell"), d: T("底盘上通常有 2 到 6 颗小螺丝，有的藏在贴纸下面。拧下后车壳一般向上就能取下；如果还卡着，用撬片在前后保险杠处轻轻松开卡扣。", "The chassis usually has 2 to 6 small screws, some under stickers. With them out, the body shell normally lifts straight off. If it is still held, release the clips at the front and rear bumpers gently with the spudger."), fig: { hi: ["body"], off: { batt: [0, 40], body: [0, -20] } } },
+      { t: T("沿着回路走一遍", "Follow the circuit"), d: T("从电池仓的正极弹片出发：经过拨动开关，到电机的一个端子，电机的另一个端子回到电池仓负极。没有电路板也没有电阻，就是一条串联回路。有的车多一个换向开关，它只是把电机两根线对调，车就倒着走。", "Start at the positive contact of the battery bay: through the slide switch, to one motor terminal, and from the other motor terminal back to the negative contact. There is no circuit board and no resistor, just one series loop. Some cars add a reversing switch, which only swaps the two motor wires so the car drives backwards."), fig: { hi: ["batt", "sw", "motor"], off: { batt: [0, 40], body: [0, -20] } } },
+      { t: T("看电机和齿轮箱", "Look at the motor and gearbox"), d: T("小直流电机转得很快但力气小，齿轮箱用几级“小齿轮带大齿轮”把转速降下来、把力矩放大，这样才推得动车。数一数每一级两个齿轮的齿数，相除再相乘就是总减速比（估算）。", "A small DC motor spins fast but has little torque. The gearbox uses several stages of a small gear driving a large one to lower the speed and raise the torque so it can push the car. Count the teeth of the two gears in each stage; dividing and multiplying them gives the overall reduction ratio (an estimate)."), fig: { hi: ["motor", "gear"], off: { batt: [0, 40], body: [0, -20] } }, stop: T("停止点：只想看懂原理的话到这里就够了，齿轮箱可以不拆。", "Stop point: if you only want to understand how it works, stop here. You do not need to open the gearbox.") },
+      { t: T("（可选）短时间通电试电机", "(Optional) Run the motor briefly"), d: T("装回电池、拨到 ON，车轮离地让它空转几秒，看哪对轮子转。然后马上关掉。如果电机响但轮子不转，多半是齿轮打滑或缺齿。", "Put the batteries back, switch ON with the wheels off the table and let it spin for a few seconds to see which wheels turn. Then switch off at once. If the motor hums but the wheels do not turn, a gear is probably slipping or has lost teeth."), warn: T("手指、头发离开转动的齿轮和车轮；试完先关开关再取电池。", "Keep fingers and hair away from the turning gears and wheels; switch off before you take the batteries out again."), fig: { hi: ["motor", "gear", "wheels"], off: { body: [0, -20] } } },
+      { t: T("（可选）拆下电机和车轮", "(Optional) Remove the motor and wheels"), d: T("电机两根线常是直接焊在端子上的，拆焊前拍照记下红黑线各接哪边。车轮一般是压在轴上的，捏住轴另一端，转着往外拔。", "The two motor wires are usually soldered straight to its terminals; photograph which side the red and black wires go before desoldering. The wheels are usually press-fitted on the axle: hold the other end of the axle and twist the wheel off."), warn: T("烙铁头约 300 °C 以上，电机外壳上的塑料端盖很容易烫化。", "The iron tip is above about 300 °C and the plastic end cap of the motor melts easily."), fig: { hi: ["motor", "wheels"], off: { batt: [0, 40], body: [0, -20], motor: [0, 20], wheels: [0, 10] } } },
+      { t: T("整理模块，存进零件库", "Sort the modules and save them to the parts library"), d: T("一般能得到：电池仓、拨动开关、直流电机、齿轮箱、车轮和底盘。电机和车轮可以直接用在自己的小车里。点下面“存进零件库”。", "You usually get the battery bay, the slide switch, the DC motor, the gearbox, the wheels and the chassis. The motor and wheels can go straight into a car of your own. Press 'Save modules to parts library' below."), fig: { off: { batt: [0, 40], body: [0, -20], motor: [0, 20], wheels: [0, 10] } } },
+    ],
+    modules: [
+      { key: "chassis", part: "td-aa-car-chassis", match: "approx", t: T("底盘（含电池仓，近似件）", "Chassis with battery bay (approximate)"), ex: { p: [0, -0.4, 0], d: [0, -1.2, 0] } },
+      { key: "batt", part: "ada-770", match: "similar", t: T("2 × AA 电池盒（相近的现成件）", "2 × AA battery holder (similar ready-made part)"), ex: { p: [-1.2, 0.6, 0], d: [-1.0, 1.2, 0] } },
+      { key: "sw", part: "kc-sw_slide_spdt_straight_ck_os102011ms2q", match: "similar", t: T("拨动开关", "Slide switch"), ex: { p: [0.6, 0.6, 0], d: [0.2, 1.4, 0] } },
+      { key: "gear", part: "td-aa-car-gearbox", match: "approx", t: T("电机齿轮箱（近似件）", "Motor gearbox (approximate)"), ex: { p: [3.2, 0.2, 0], d: [1.2, 0.8, 0] } },
+      { key: "motor", part: "ada-711", match: "similar", t: T("小直流电机", "Small DC motor"), ex: { p: [3.2, 1.8, 0], d: [1.4, 1.4, 0] } },
+      { key: "wheel", part: "fc-wheel-tt-65", match: "similar", t: T("车轮（示意为 TT 电机轮）", "Wheel (shown as a TT motor wheel)"), ex: { p: [4.6, 0.4, 3.2], d: [1.0, 0.4, 1.4] } },
+    ],
+    explode: true,
+  },
 ];
 // v32（我的补充）：安全规则——只收低压直流设备（≤ 24 V），市电设备不收。搜到市电类关键词时页面给出提示
 export const MAX_VOLTS = 24;
