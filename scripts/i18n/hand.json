@@ -1982,5 +1982,10 @@
  "橱柜灯": "closet light",
  "床头灯": "bedside light",
  "这里转不开（会和别的零件穿模，旁边 6 厘米内也没有空位），先挪开一点再转": "Can't rotate here (it would overlap another part, and there is no free spot within 6 cm). Move it a little first, then rotate.",
- "（原地放不下，往旁边挪了": "(no room in place; moved"
+ "（原地放不下，往旁边挪了": "(no room in place; moved",
+ "v37 打印版上的二维码用 uqr 在浏览器里编码，画成 SVG 的代码是自己写的；测试里用 jsQR 把每个二维码重新解码一遍，确认扫出来的就是对应那一步的网址。键盘倾斜改用四元数，代码是自己写的，没有用额外的库。键盘焦点顺序检查是自己写的 Playwright 脚本。电池感应小夜灯拆解指南的文字和示意图都是本项目自己写、自己画的，没有复制任何外部拆解指南；尺寸标了估算。": "In v37 the QR codes on the print sheet are encoded in the browser with uqr, and the code that draws them as SVG is our own; the tests decode every QR code again with jsQR to confirm it opens the matching step. Keyboard tilt now uses quaternions, with our own code and no extra library. The keyboard focus-order check is our own Playwright script. The text and diagrams of the battery motion night light teardown guide were written and drawn for this project; no external teardown guide was copied, and sizes are marked as estimates.",
+ "v37：打印版二维码、焦点检查和小夜灯": "v37: print-sheet QR codes, focus check and night light",
+ "（Apache-2.0）：二维码解码，只在测试脚本 e2e/qr-decode.mjs 里用，没有修改或打包进网站。": " (Apache-2.0): QR decoding, used only in the test script e2e/qr-decode.mjs; not modified or bundled into the site.",
+ "（MIT）：二维码编码，打包进拆解页（按需加载的那一块）。它的算法来自": " (MIT): QR encoding, bundled into the teardown page (the lazily loaded chunk). Its algorithm comes from",
+ "Project Nayuki 的 QR-Code-generator": "Project Nayuki's QR-Code-generator"
 }

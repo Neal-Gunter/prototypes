@@ -142,7 +142,7 @@ export function Toolbar() {
             </button>
           </span>
         )}
-        <span className="ml-auto flex items-center gap-1">
+        <span className="ml-auto flex min-w-0 flex-wrap items-center gap-1">
           <span className="text-ink-soft">视角</span>
           {CAMS.map(([k, l]) => (
             <button key={k} className={btn(false)} data-cam={k} onClick={() => sceneApi.preset?.(k)}>
