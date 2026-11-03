@@ -86,7 +86,7 @@ export default function TeardownPage() {
       <p className="mt-2 max-w-3xl text-sm text-ink-soft">{L({ zh: "一步一步拆开常见的小设备，看懂里面的模块，再把拆下来的模块存进本机的零件库，拿到装配台上用。指南文字和插图都是本项目自己写、自己画的。", en: "Take common small devices apart step by step, understand the modules inside, then save the removed modules to the parts library in this browser and use them on the assembly bench. All guide text and diagrams are written and drawn by this project." })}</p>
       <p className="mt-2 inline-block border border-amber-700 bg-amber-50 px-2 py-1 text-sm text-amber-900" data-testid="td-unverified">{L(UNVERIFIED)}{L({ zh: "。你的设备可能和这里写的不一样，以实物为准。", en: ". Your device may differ; trust what you see." })}</p>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[16rem_1fr]">
+      <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-6 [overflow-wrap:anywhere] lg:grid-cols-[16rem_minmax(0,1fr)]">
         <aside>
           <label className="text-sm">
             <span className="sr-only">{L({ zh: "搜索设备", en: "Search devices" })}</span>
