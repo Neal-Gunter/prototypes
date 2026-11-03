@@ -295,6 +295,9 @@ class Engine {
     const id = bodySeq++;
     const body = { id, rb, parts: new Set(uids), colliders: new Map() };
     this.bodies.set(id, body);
+    // v33（我的补充）：Rapier 的场景查询（宽相）只在 world.step 里更新，同一帧里刚加的刚体查不到。
+    // 记下"上一步之后新建的刚体"，overlapAt 对它们逐个形状直接测试。
+    (this._fresh ||= new Set()).add(id);
     const inv = lp.q.clone().invert();
     for (const u of uids) {
       const p = this.parts.get(u);
@@ -775,6 +778,18 @@ class Engine {
     const body = this.bodies.get(bid);
     const R = this.R;
     let hitUid = null;
+    // v33：新刚体先用包围球粗筛，离得远的不做逐形状测试（一帧里批量放 200 多个零件时省掉大部分开销）
+    let near = null;
+    if (this._fresh?.size && this.freshCheck !== false) {
+      near = [];
+      const sc = body.sph ? body.sph.c.clone().applyQuaternion(q).add(pos) : pos, sr = body.sph?.r ?? 50;
+      for (const fb of this._fresh) {
+        const ob = this.bodies.get(fb);
+        if (fb === bid || !ob) continue;
+        if (ob.sph) { const t = ob.rb.translation(), r = ob.rb.rotation(); const oc = ob.sph.c.clone().applyQuaternion(new THREE.Quaternion(r.x, r.y, r.z, r.w)).add(V([t.x, t.y, t.z])); if (oc.distanceTo(sc) > sr + ob.sph.r + 0.05) continue; }
+        near.push(ob);
+      }
+    }
     for (const [uid, list] of body.colliders) {
       const p = this.parts.get(uid);
       for (const { c } of list) {
@@ -798,6 +813,12 @@ class Engine {
           return false;
         }, undefined, undefined, undefined, body.rb); // v28：不按分组过滤，休眠的细凸包也要查到
         if (hitUid) return hitUid === "__bench" ? null : hitUid;
+        if (near) for (const ob of near) {
+          for (const [ou, ol] of ob.colliders) {
+            if (allowed.has(ou)) continue;
+            for (const { col } of ol) if (col.intersectsShape(shape, { x: wc.x, y: wc.y, z: wc.z }, { x: wq.x, y: wq.y, z: wq.z, w: wq.w })) return ou;
+          }
+        }
       }
     }
     return null;
@@ -1034,6 +1055,7 @@ class Engine {
       const asleep = [];
       for (const [bid, b] of this.bodies) if (b.rb.isSleeping() && this.drag?.bid !== bid) { const t = b.rb.translation(), r = b.rb.rotation(); asleep.push([b.rb, { x: t.x, y: t.y, z: t.z }, { x: r.x, y: r.y, z: r.z, w: r.w }]); }
       this.world.step();
+      this._fresh?.clear();
       for (const [rb, t, r] of asleep) if (!rb.isSleeping() && rb.translation().y < t.y) {
         rb.setTranslation(t, false); rb.setRotation(r, false);
         rb.setLinvel({ x: 0, y: 0, z: 0 }, false); rb.setAngvel({ x: 0, y: 0, z: 0 }, false);

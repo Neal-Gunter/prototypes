@@ -20,6 +20,7 @@ engine.colliderLod = !process.env.NOLOD; for (const k of ["xtraIt","xtraItBig","
 const us=[]; let k=0;
 for (let c = 0; c < COPIES; c++) for (const id of ids) { const def = toDef(await getEntry(id)); const gx = k % 8, gz = Math.floor(k / 8) % 8, gy = Math.floor(k / 64); k++; us.push(engine.addPart(def, P((gx - 3.5) * 9, 1 + gy * 12 + (k % 3) * 0.7 + (((k * (+process.env.SEED || 0)) % 7) * 0.13), (gz - 3.5) * 9))); }
 let peak=0, at=-1, pk=null, peakAfter=0; const xs=[];
-for (let i = 0; i < 390; i++) { engine.update(1/120); if (i%5==4){const ot=engine.overlapTest(); xs.push(ot.maxPenetrationMm); if (ot.maxPenetrationMm>peak){peak=ot.maxPenetrationMm;at=i;pk=ot.worstPair;} if(i>=30&&ot.maxPenetrationMm>peakAfter)peakAfter=ot.maxPenetrationMm;} }
+if (process.env.T0) { const o0 = engine.overlapTest(); console.log("t0", o0.maxPenetrationMm, JSON.stringify(o0.worstPair)); }
+for (let i = 0; i < 390; i++) { engine.update(1/120); if (process.env.T0 && i < 12) { const o = engine.overlapTest(); console.log("i", i, o.maxPenetrationMm, JSON.stringify(o.worstPair)); } if (i%5==4){const ot=engine.overlapTest(); xs.push(ot.maxPenetrationMm); if (ot.maxPenetrationMm>peak){peak=ot.maxPenetrationMm;at=i;pk=ot.worstPair;} if(i>=30&&ot.maxPenetrationMm>peakAfter)peakAfter=ot.maxPenetrationMm;} }
 xs.sort((a,b)=>a-b);
 console.log(JSON.stringify({peak, at, peakAfterWarmup:peakAfter, p95:xs[Math.floor(xs.length*0.95)], median:xs[xs.length>>1], end:engine.overlapTest().maxPenetrationMm, pk: process.env.PK ? pk : undefined}));
