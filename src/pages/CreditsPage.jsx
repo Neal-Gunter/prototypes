@@ -188,6 +188,18 @@ export default function CreditsPage() {
         <li><a className="underline" href="https://github.com/nox-x/TG3442DE-Teardown">nox-x/TG3442DE-Teardown</a>：我们没有看到许可文件，所以只看了它的结构，没有使用任何内容。</li>
       </ul>
       <p className="mt-2 leading-7 text-ink-soft">零件库里新增的 33 个“近似件 · 拆解模式”（td- 开头）是本项目程序生成（CC0），全部尺寸是估算，形状是示意。</p>
+      <h2 className="mt-8 text-xl font-medium" id="v34-research">v34 调研：维修 / 装配指南格式和面包板工具</h2>
+      <p className="mt-2 leading-7 text-ink-soft" data-testid="credits-v34">
+        v34 先查了许可，再看了下面这些公开项目的做法。没有复制任何文字、图片或代码；v34 新增的指南检查脚本（scripts/guide-lint.mjs）和 3D 场景键盘操作都是本项目自己写的。
+      </p>
+      <ul className="mt-2 list-disc space-y-1 pl-6 text-sm leading-6 text-ink-soft" data-testid="credits-v34-list">
+        <li><a className="underline" href="https://github.com/wokwi/wokwi-docs">wokwi/wokwi-docs</a>（MIT）：电路文件里“零件列表 + 连线列表”的结构，和用命令行工具检查文件（重复 id、未知零件）的做法，启发了 guide-lint 这个检查脚本。</li>
+        <li><a className="underline" href="https://github.com/wokwi/wokwi-elements">wokwi/wokwi-elements</a>（MIT）：把电子零件做成网页组件的思路，只作参考。</li>
+        <li><a className="underline" href="https://github.com/iop-alliance/OpenKnowHow">iop-alliance/OpenKnowHow</a>（GPL-3.0）：开源硬件文档的元数据规范（许可、版本、制作说明的位置），只作参考，没有使用其中的内容。</li>
+        <li><a className="underline" href="https://github.com/fritzing/fritzing-app">fritzing/fritzing-app</a>：GitHub 上许可标为“其他”（NOASSERTION），零件库另有许可。只看了“面包板视图 / 原理图 / PCB 三视图”的做法，没有使用代码或零件图。</li>
+        <li><a className="underline" href="https://github.com/gatecat/BreadboardSim">gatecat/BreadboardSim</a>（GPL-3.0）、<a className="underline" href="https://github.com/pfalstad/circuitjs1">pfalstad/circuitjs1</a>（GPL-2.0）：面包板界面的电路仿真，只作参考。</li>
+        <li>常见的维修指南网站把每份指南分成难度、所需时间、工具、零件和逐步说明（每步配图，注意事项单独标出）。它们的指南内容多用 CC BY-NC-SA 许可，本项目没有使用；本项目的拆解指南本来就有难度、时间、工具和停止点，这次加了自动检查。</li>
+      </ul>
       <h2 className="mt-8 text-xl font-medium">代码库</h2>
       <p className="mt-2 leading-7 text-ink-soft">
         React、three.js、@dimforge/rapier3d-compat（Apache-2.0，物理碰撞）、@react-three/fiber、@react-three/drei、zustand、Tailwind CSS（除注明外均为 MIT 许可）。模型转换脚本用 glTF‑Transform 和 meshoptimizer（MIT，只在开发时运行）。“模型 + 功能图”页（v11）在浏览器里用 occt-import-js（LGPL‑2.1，读 STEP；作为单独的 JS + wasm 文件按需加载，没有改动，可替换）和 pdfjs-dist（Apache-2.0，读 PDF 功能图，按需加载）。内置示例的八爪鱼 GLB 和功能图 SVG 由本项目从 v10 预设自制；v12 的 2 自由度机械臂示例（OBJ + 功能图 + 工程）由本项目脚本自制，CC0。关节和舵机运动用同一个 Rapier 引擎。

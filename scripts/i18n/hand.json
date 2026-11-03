@@ -1923,5 +1923,13 @@
  "光耦": "Optocoupler",
  "八条触手的示意图，不是仿真结果": "Diagram of the eight tentacles, not a simulation result",
  "以内，不会超过相邻": " or less, never more than the adjacent",
- "导线是 24 AWG": "the wire is 24 AWG"
+ "导线是 24 AWG": "the wire is 24 AWG",
+ "v34 调研：维修 / 装配指南格式和面包板工具": "v34 research: repair / assembly guide formats and breadboard tools",
+ "v34 先查了许可，再看了下面这些公开项目的做法。没有复制任何文字、图片或代码；v34 新增的指南检查脚本（scripts/guide-lint.mjs）和 3D 场景键盘操作都是本项目自己写的。": "For v34 we checked the licences first, then looked at how the public projects below do things. No text, images or code were copied; the new guide check script (scripts/guide-lint.mjs) and the keyboard controls for the 3D scene were written for this project.",
+ "（MIT）：电路文件里“零件列表 + 连线列表”的结构，和用命令行工具检查文件（重复 id、未知零件）的做法，启发了 guide-lint 这个检查脚本。": " (MIT): the 'list of parts + list of connections' layout of a circuit file, and checking that file with a command-line tool (duplicate ids, unknown parts), inspired the guide-lint check script.",
+ "（MIT）：把电子零件做成网页组件的思路，只作参考。": " (MIT): the idea of making electronic parts into web components. Reference only.",
+ "（GPL-3.0）：开源硬件文档的元数据规范（许可、版本、制作说明的位置），只作参考，没有使用其中的内容。": " (GPL-3.0): a metadata specification for open hardware documentation (licence, version, where the build instructions are). Reference only; none of its content is used.",
+ "：GitHub 上许可标为“其他”（NOASSERTION），零件库另有许可。只看了“面包板视图 / 原理图 / PCB 三视图”的做法，没有使用代码或零件图。": ": GitHub lists its licence as 'other' (NOASSERTION), and the parts library has its own licence. We only looked at the breadboard / schematic / PCB three-view approach and used none of its code or part graphics.",
+ "（GPL-2.0）：面包板界面的电路仿真，只作参考。": " (GPL-2.0): circuit simulators with a breadboard interface. Reference only.",
+ "常见的维修指南网站把每份指南分成难度、所需时间、工具、零件和逐步说明（每步配图，注意事项单独标出）。它们的指南内容多用 CC BY-NC-SA 许可，本项目没有使用；本项目的拆解指南本来就有难度、时间、工具和停止点，这次加了自动检查。": "Common repair guide sites split each guide into difficulty, time needed, tools, parts and step-by-step instructions (each step with a picture and cautions marked separately). Their guide content is mostly CC BY-NC-SA, and this project uses none of it. Our teardown guides already had difficulty, time, tools and stop points; v34 adds an automatic check."
 }
