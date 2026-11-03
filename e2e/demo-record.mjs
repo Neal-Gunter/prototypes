@@ -1,6 +1,7 @@
 // v31：真实录屏演示（Playwright recordVideo，不是截图拼接）：拆解 → 引导项目 → 维修关卡 → 装配台。早期原型，简化仿真。
 // v32：每一步记录在录像里的起止时间，写出中文字幕 demo.srt（OUT 目录），再用 ffmpeg 烧进视频
 // v33：演示新设备换成 AA 电池玩具车。
+// v34：加一段键盘操作 3D 场景（Tab 聚焦、方向键选零件、Alt + 方向键平移）和致谢页的 v34 调研。
 // 用法：BASE=http://localhost:4173 OUT=/workspace/proto-site/v33 node e2e/demo-record.mjs  然后用 ffmpeg 转 mp4
 import { chromium } from "playwright";
 import fs from "node:fs";
@@ -52,6 +53,17 @@ await step("装配台：3D 场景", async () => {
   const cv = p.locator("canvas").first();
   if (await cv.count()) { const bb = await cv.boundingBox(); if (bb) { const cx = bb.x + bb.width / 2, cy = bb.y + bb.height / 2; await p.mouse.move(cx, cy); await p.mouse.down({ button: "left" }); for (let i = 0; i < 30; i++) { await p.mouse.move(cx + i * 8, cy + Math.sin(i / 5) * 20); await w(60); } await p.mouse.up(); await w(1500); await p.mouse.wheel(0, -400); await w(2000); } }
 }, "装配台：3D 物理场景，拖动零件、缩放视角");
+await step("装配台：键盘操作", async () => {
+  await T("asm-a11y").focus(); await w(800);
+  for (let i = 0; i < 3; i++) { await p.keyboard.press("ArrowRight"); await w(700); }
+  for (let i = 0; i < 4; i++) { await p.keyboard.press("Alt+ArrowRight"); await w(450); }
+  for (let i = 0; i < 3; i++) { await p.keyboard.press("Alt+ArrowUp"); await w(450); }
+  await p.keyboard.press("Enter"); await w(1200);
+}, "v34：3D 场景可以用键盘操作——Tab 聚焦，方向键选零件，Alt + 方向键平移 1 cm，读屏会读出选中的零件和位置");
+await step("致谢：v34 调研", async () => {
+  await p.goto(BASE + "/credits#v34-research"); await w(1500);
+  await T("credits-v34").scrollIntoViewIfNeeded().catch(() => {}); await w(3000);
+}, "v34：先查许可再看的指南格式和面包板工具，都写在致谢页；代码和文字全部自己写");
 await step("工作台", async () => { await p.goto(BASE + "/workbench/"); await w(4000); await scroll(300, 4); }, "工作台：项目和零件的汇总");
 const vid = p.video(); await c.close(); const path = await vid.path(); await b.close();
 fs.copyFileSync(path, `${OUT}/demo-raw.webm`); fs.rmSync(VD, { recursive: true, force: true });
