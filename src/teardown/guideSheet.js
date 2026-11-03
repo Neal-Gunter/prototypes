@@ -59,7 +59,7 @@ h1{font-size:22px;margin:0 0 4px}h2{font-size:16px;border-bottom:2px solid #333;
 .legend{font-size:10px;margin:2px 0 0;color:#333}.fig svg{width:200px;height:auto;border:1px solid #ccc;background:#fff}ol{padding-left:0;list-style:none}ul.mats{list-style:none;padding-left:0}
 table{border-collapse:collapse;width:100%}th,td{border:1px solid #999;padding:3px 6px;text-align:left}th{background:#eee}.mono{font-family:ui-monospace,monospace;font-size:11px}
 @page{size:A4;margin:16mm 12mm 18mm;@top-right{content:"${css(L(dev.name))}";font-size:9px;color:#555}@bottom-center{content:${en ? '"Page " counter(page) " of " counter(pages)' : '"第 " counter(page) " 页 / 共 " counter(pages) " 页"'};font-size:9px;color:#555}}
-.cover{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.qrbox{display:flex;gap:6px;align-items:center;margin-top:6px;font-size:9px;color:#333;break-inside:avoid}.qrbox svg{flex:none}.qrcover{flex-direction:column;text-align:center;width:30mm;margin:0}
+.cover{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.qrbox{display:flex;flex-direction:column;gap:3px;align-items:center;text-align:center;margin-top:6px;font-size:9px;color:#333;break-inside:avoid}.qrbox svg{flex:none}.qrbox span{display:block;width:34mm;max-width:100%;line-height:1.3}.qrcover{flex-direction:column;text-align:center;width:30mm;margin:0}
 .toc ol{list-style:none;padding-left:0;margin:0}.toc ol ol{padding-left:16px;columns:2}.toc a{color:#1d4ed8;text-decoration:none}.tag{font-size:10px;border:1px solid #b91c1c;color:#7f1d1d;padding:0 3px;border-radius:3px}
 @media print{.toc{break-after:page}body{margin:0;max-width:none;font-size:11px}.noprint{display:none}h2{break-after:avoid}tr{break-inside:avoid}}
 </style></head><body>

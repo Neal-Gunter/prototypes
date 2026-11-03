@@ -83,6 +83,8 @@ for (const lang of ["zh", "en"]) {
   const cover = q.filter((x) => !x.inStep), steps = q.filter((x) => x.inStep);
   ok(q.length === 8 && cover.length === 1 && /\/teardown\/\?d=night-light$/.test(cover[0].u), `${lang}：打印页 ${q.length} 个二维码（封面 1 个指向这台设备）`, cover[0]?.u);
   ok(steps.length === 7 && steps.every((x, i) => x.u.endsWith(`/teardown/?d=night-light&s=${i + 1}`) && x.u.startsWith(BASE)), `${lang}：7 步每步一个二维码、网址带步号、指向当前站点`, steps[0]?.u);
+  const capW = await pop.evaluate(() => Math.min(...[...document.querySelectorAll(".qrbox span")].map((e) => e.getBoundingClientRect().width)));
+  ok(capW >= 60, `${lang}：二维码说明文字没被挤成一列（最窄 ${Math.round(capW)} px）`);
   ok(q.every((x) => x.mm >= 20), `${lang}：二维码印出来 ≥ 20 mm`, q.map((x) => x.mm).join(","));
   if (lang === "zh" && SHOT) await pop.screenshot({ path: `${OUT}/${String(++n).padStart(2, "0")}-print-qr-zh.png` });
   await pop.close();
