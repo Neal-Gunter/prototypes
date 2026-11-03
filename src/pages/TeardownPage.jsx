@@ -70,6 +70,9 @@ export default function TeardownPage() {
   const list = useMemo(() => searchDevices(q), [q]);
   const dev = DEVICE_BY_ID[params.get("d")] || DEVICES[0];
   const [prog, setProg] = useState(() => readProgress(dev.id));
+  // v37：打印页二维码带 &s=N，打开后滚到第 N 步并把焦点放上去
+  const sN = Math.max(0, Math.min(dev.steps.length, parseInt(params.get("s"), 10) || 0));
+  useEffect(() => { if (!sN) return; const el = document.getElementById(`td-step-${sN}`); if (el) { el.scrollIntoView({ block: "center" }); el.focus({ preventScroll: true }); } }, [sN, dev.id]);
   useEffect(() => setProg(readProgress(dev.id)), [dev.id]);
   const [saved, setSaved] = useState("");
   useEffect(() => { document.title = (en ? "Teardown mode" : "拆解模式") + " · Prototypes"; setSaved(""); }, [en, dev.id]);
@@ -86,7 +89,7 @@ export default function TeardownPage() {
   const done = prog.steps.length, total = dev.steps.length;
   // v35：打印版 / PDF（浏览器里生成，用浏览器的“打印 → 存成 PDF”）
   const [pmsg, setPmsg] = useState("");
-  const sheet = () => guideHtml(dev, lang, { prog });
+  const sheet = () => guideHtml(dev, lang, { prog, base: window.location.origin + import.meta.env.BASE_URL });
   const openPrint = () => {
     const url = URL.createObjectURL(new Blob([sheet()], { type: "text/html;charset=utf-8" }));
     const w = window.open(url, "_blank");
@@ -162,7 +165,7 @@ export default function TeardownPage() {
             </div>
             <ol className="mt-2 space-y-4" data-testid="td-steps">
               {dev.steps.map((s, i) => (
-                <li key={i} className={`grid gap-3 border p-3 sm:grid-cols-[1fr_14rem] ${prog.steps.includes(i) ? "border-green-700 bg-green-50" : "border-line bg-white"}`} data-testid="td-step">
+                <li key={i} id={`td-step-${i + 1}`} tabIndex={-1} aria-current={sN === i + 1 ? "step" : undefined} className={`grid gap-3 border p-3 sm:grid-cols-[1fr_14rem] ${prog.steps.includes(i) ? "border-green-700 bg-green-50" : "border-line bg-white"} ${sN === i + 1 ? "outline outline-4 outline-blue-700" : ""}`} data-testid="td-step">
                   <div>
                     <label className="flex items-start gap-2 font-medium">
                       <input type="checkbox" checked={prog.steps.includes(i)} onChange={() => toggle("steps", i)} data-testid={`td-step-check-${i}`} className="mt-1" />

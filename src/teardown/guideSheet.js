@@ -3,6 +3,7 @@
 // v36：加目录（可点击跳转，PDF 里也是链接）和页码（CSS @page 页边框，“第 N 页 / 共 M 页”，页眉写设备名）；
 //   每一步都带 data-step / data-fig，给 scripts/sheet-lint.mjs 和 e2e/sheet-pdf-lint.mjs 检查用。
 import { COMMON_SAFETY, UNVERIFIED } from "./devices.js";
+import { qrSvg, stepUrl, LIVE } from "./qr.js";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const MATCH = { same: { zh: "零件库同类件", en: "Library part (same type)" }, similar: { zh: "零件库相近件（尺寸可能不同）", en: "Library part (similar; size may differ)" }, approx: { zh: "近似件（程序生成，尺寸估算）", en: "Approximate part (procedural, estimated size)" } };
@@ -38,12 +39,12 @@ export function figSvg(dev, fig, L, i) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 124" role="img" aria-label="${esc(L({ zh: `第 ${i + 1} 步示意图（本项目自绘）`, en: `Step ${i + 1} diagram (drawn by this project)` }))}">${g}</svg>${lg.length ? `<p class="legend">${lg.map(([n, t]) => `<span>${n} = ${esc(t)}</span>`).join(" · ")}</p>` : ""}`;
 }
 
-export function guideHtml(dev, lang = "zh", { now = new Date(), prog = null } = {}) {
+export function guideHtml(dev, lang = "zh", { now = new Date(), prog = null, base = LIVE } = {}) {
   const en = lang === "en", L = (x) => (x == null ? "" : typeof x === "string" ? x : en ? x.en : x.zh);
   const box = (on) => (on ? "☑" : "☐");
   const date = now.toISOString().slice(0, 10);
   const t = (zh, e) => (en ? e : zh);
-  const steps = dev.steps.map((s, i) => `<li class="step" id="step-${i + 1}" data-step="${i + 1}" data-fig="${(s.fig?.hi || []).length || (dev.fig || []).length}"><div><h3>${box(prog?.steps?.includes(i))} ${i + 1}. ${esc(L(s.t))}</h3><p>${esc(L(s.d))}</p>${s.warn ? `<p class="warn">⚠ ${esc(L(s.warn))}</p>` : ""}${s.stop ? `<p class="stop">■ ${stopText(L(s.stop), t)}</p>` : ""}</div><div class="fig">${figSvg(dev, s.fig, L, i)}</div></li>`).join("");
+  const steps = dev.steps.map((s, i) => `<li class="step" id="step-${i + 1}" data-step="${i + 1}" data-fig="${(s.fig?.hi || []).length || (dev.fig || []).length}"><div><h3>${box(prog?.steps?.includes(i))} ${i + 1}. ${esc(L(s.t))}</h3><p>${esc(L(s.d))}</p>${s.warn ? `<p class="warn">⚠ ${esc(L(s.warn))}</p>` : ""}${s.stop ? `<p class="stop">■ ${stopText(L(s.stop), t)}</p>` : ""}</div><div class="fig">${figSvg(dev, s.fig, L, i)}<div class="qrbox">${qrSvg(stepUrl(base, dev.id, i + 1), { mm: 20, label: t(`第 ${i + 1} 步网页版的二维码`, `QR code for step ${i + 1} on the web`) })}<span>${t(`扫码看第 ${i + 1} 步网页版（可交互爆炸图）`, `Scan for step ${i + 1} on the web (interactive exploded view)`)}</span></div></div></li>`).join("");
   const css = (x) => String(x).replace(/[\\"\n]/g, " ");
   const sec = [["safety", t("1. 安全（先读）", "1. Safety (read first)")], ["mats", t("2. 材料和工具", "2. Materials and tools")], ["steps", t("3. 拆解步骤", "3. Steps")], ["modules", t("4. 拆下来的模块", "4. Modules you get")], ["notes", t("5. 说明", "5. Notes")]];
   const toc = `<nav class="toc" aria-label="${t("目录", "Contents")}"><h2 id="toc">${t("目录", "Contents")}</h2><ol>${sec.map(([id, h]) => `<li><a href="#${id}">${esc(h)}</a>${id === "steps" ? `<ol>${dev.steps.map((s, i) => `<li><a href="#step-${i + 1}">${i + 1}. ${esc(L(s.t))}</a>${s.stop ? ` <span class="tag">${t("停止点", "stop")}</span>` : ""}</li>`).join("")}</ol>` : ""}</li>`).join("")}</ol></nav>`;
@@ -58,11 +59,12 @@ h1{font-size:22px;margin:0 0 4px}h2{font-size:16px;border-bottom:2px solid #333;
 .legend{font-size:10px;margin:2px 0 0;color:#333}.fig svg{width:200px;height:auto;border:1px solid #ccc;background:#fff}ol{padding-left:0;list-style:none}ul.mats{list-style:none;padding-left:0}
 table{border-collapse:collapse;width:100%}th,td{border:1px solid #999;padding:3px 6px;text-align:left}th{background:#eee}.mono{font-family:ui-monospace,monospace;font-size:11px}
 @page{size:A4;margin:16mm 12mm 18mm;@top-right{content:"${css(L(dev.name))}";font-size:9px;color:#555}@bottom-center{content:${en ? '"Page " counter(page) " of " counter(pages)' : '"第 " counter(page) " 页 / 共 " counter(pages) " 页"'};font-size:9px;color:#555}}
+.cover{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.qrbox{display:flex;gap:6px;align-items:center;margin-top:6px;font-size:9px;color:#333;break-inside:avoid}.qrbox svg{flex:none}.qrcover{flex-direction:column;text-align:center;width:30mm;margin:0}
 .toc ol{list-style:none;padding-left:0;margin:0}.toc ol ol{padding-left:16px;columns:2}.toc a{color:#1d4ed8;text-decoration:none}.tag{font-size:10px;border:1px solid #b91c1c;color:#7f1d1d;padding:0 3px;border-radius:3px}
 @media print{.toc{break-after:page}body{margin:0;max-width:none;font-size:11px}.noprint{display:none}h2{break-after:avoid}tr{break-inside:avoid}}
 </style></head><body>
 <p class="noprint"><button onclick="print()">${t("打印 / 存成 PDF", "Print / save as PDF")}</button></p>
-<h1>${esc(L(dev.name))}</h1><p class="mono">${esc(dev.model)}</p>
+<div class="cover"><div><h1>${esc(L(dev.name))}</h1><p class="mono">${esc(dev.model)}</p></div><div class="qrbox qrcover">${qrSvg(stepUrl(base, dev.id, 0), { mm: 26, label: t("这份指南网页版的二维码", "QR code for this guide on the web") })}<span>${t("扫码打开网页版", "Scan to open on the web")}</span></div></div>
 <p class="note">${t("早期原型，简化仿真", "Early prototype, simplified simulation")} · ${esc(L(UNVERIFIED))} · ${t("你的设备可能和这里写的不一样，以实物为准", "Your device may differ; trust what you see")} · ${t("生成日期", "Generated")} ${date}</p>
 <p>${esc(L(dev.summary))}</p>
 <p>${t(`${dev.steps.length} 步 · 约 ${dev.minutes} 分钟 · ${dev.battery ? "含电池" : "无电池"} · ${dev.volts} V 直流`, `${dev.steps.length} steps · about ${dev.minutes} min · ${dev.battery ? "has a battery" : "no battery"} · ${dev.volts} V DC`)}</p>
