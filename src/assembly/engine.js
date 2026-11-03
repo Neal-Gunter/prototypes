@@ -1054,6 +1054,14 @@ class Engine {
       // 所以：这一步前睡着、这一步后醒了的刚体，把位置退回到步前、速度清零；下一步接触已经建立了。
       const asleep = [];
       for (const [bid, b] of this.bodies) if (b.rb.isSleeping() && this.drag?.bid !== bid) { const t = b.rb.translation(), r = b.rb.rotation(); asleep.push([b.rb, { x: t.x, y: t.y, z: t.z }, { x: r.x, y: r.y, z: r.z, w: r.w }]); }
+      // v33（我的补充，简化仿真）：下落速度上限 fallMax（cm/s，默认 30；0 = 关闭）。密集落下时薄板一步走 4 mm 以上就会压进别的零件。
+      // 在 world.step 之前限速（步后再改速度会盖掉求解器刚算好的接触速度，实测会出现单步 0.9 mm 的尖峰）。代价：高处落下比真实自由落体慢。
+      const fm = this.fallMax ?? 30;
+      if (fm > 0) {
+        // 只在“密集”时生效：醒着的零件 ≥ fallCrowd（默认 6）。两三个零件单独落下时不限速（实测限速反而让细长螺丝换个姿态落地，出现单步 0.8 mm 尖峰）。
+        const awake = []; for (const [bid, b] of this.bodies) if (!b.rb.isSleeping() && this.drag?.bid !== bid && b.rb.isDynamic()) awake.push(b);
+        if (awake.length >= (this.fallCrowd ?? 6)) for (const b of awake) { const v = b.rb.linvel(); if (v.y < -fm) b.rb.setLinvel({ x: v.x, y: -fm, z: v.z }, false); }
+      }
       this.world.step();
       this._fresh?.clear();
       for (const [rb, t, r] of asleep) if (!rb.isSleeping() && rb.translation().y < t.y) {
@@ -1093,10 +1101,6 @@ class Engine {
     for (const [bid, b] of this.bodies) {
       if (this.drag?.bid === bid) continue;
       const sleeping = b.rb.isSleeping();
-      // v33（我的补充，简化仿真）：下落速度上限 fallMax（cm/s，默认 30；0 = 关闭）。密集落下时薄板一步走 4 mm 以上就会压进别的零件，
-      // 限速后 peak-bench 5 个种子的最大穿透从 4–9 mm 降到 1–3 mm（估算，见 REPORT）。代价：高处落下比真实自由落体慢。
-      const fm = this.fallMax ?? 30;
-      if (!sleeping && fm > 0) { const v = b.rb.linvel(); if (v.y < -fm) b.rb.setLinvel({ x: v.x, y: -fm, z: v.z }, true); }
       if (!sleeping && ce > 1 && (b._quiet || 0) >= 3 && (this.stepN + (b._ph ??= (+bid || 0) % ce)) % ce !== 0) {
         const v = b.rb.linvel();
         if (Math.hypot(v.x, v.y, v.z) * dt < 0.05) continue;
