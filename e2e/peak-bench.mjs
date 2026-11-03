@@ -16,7 +16,7 @@ const ids = [];
 for (const f of fs.readdirSync(new URL("../public/lib/catalog", import.meta.url))) for (const e of JSON.parse(fs.readFileSync(new URL("../public/lib/catalog/" + f, import.meta.url), "utf8"))) if (e.collider_decomp?.hull) ids.push(e.id);
 const COPIES = +(process.env.COPIES || 3), STEPS = +(process.env.STEPS || 360), SPARSE = !!process.env.SPARSE, SPACING = +(process.env.SPACING || 14);
 const P = (x, y, z) => ({ p: new THREE.Vector3(x, y, z), q: new THREE.Quaternion() });
-engine.colliderLod = !process.env.NOLOD; for (const k of ["xtraIt","xtraItBig","xtraItDeep","deepMm","xtraMm","smallMass","stuckSmall","stackPush","stackMm","coldEvery"]) if (process.env[k]!=null) engine[k]=+process.env[k];
+engine.colliderLod = !process.env.NOLOD; for (const k of ["xtraIt","xtraItBig","xtraItDeep","deepMm","xtraMm","smallMass","stuckSmall","stackPush","stackMm","coldEvery","fallMax"]) if (process.env[k]!=null) engine[k]=+process.env[k];
 const us=[]; let k=0;
 for (let c = 0; c < COPIES; c++) for (const id of ids) { const def = toDef(await getEntry(id)); const gx = k % 8, gz = Math.floor(k / 8) % 8, gy = Math.floor(k / 64); k++; us.push(engine.addPart(def, P((gx - 3.5) * 9, 1 + gy * 12 + (k % 3) * 0.7 + (((k * (+process.env.SEED || 0)) % 7) * 0.13), (gz - 3.5) * 9))); }
 let peak=0, at=-1, pk=null, peakAfter=0; const xs=[];

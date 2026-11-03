@@ -1093,6 +1093,10 @@ class Engine {
     for (const [bid, b] of this.bodies) {
       if (this.drag?.bid === bid) continue;
       const sleeping = b.rb.isSleeping();
+      // v33（我的补充，简化仿真）：下落速度上限 fallMax（cm/s，默认 30；0 = 关闭）。密集落下时薄板一步走 4 mm 以上就会压进别的零件，
+      // 限速后 peak-bench 5 个种子的最大穿透从 4–9 mm 降到 1–3 mm（估算，见 REPORT）。代价：高处落下比真实自由落体慢。
+      const fm = this.fallMax ?? 30;
+      if (!sleeping && fm > 0) { const v = b.rb.linvel(); if (v.y < -fm) b.rb.setLinvel({ x: v.x, y: -fm, z: v.z }, true); }
       if (!sleeping && ce > 1 && (b._quiet || 0) >= 3 && (this.stepN + (b._ph ??= (+bid || 0) % ce)) % ce !== 0) {
         const v = b.rb.linvel();
         if (Math.hypot(v.x, v.y, v.z) * dt < 0.05) continue;
