@@ -2,6 +2,7 @@
 // v32：每一步记录在录像里的起止时间，写出中文字幕 demo.srt（OUT 目录），再用 ffmpeg 烧进视频
 // v33：演示新设备换成 AA 电池玩具车。
 // v34：加一段键盘操作 3D 场景（Tab 聚焦、方向键选零件、Alt + 方向键平移）和致谢页的 v34 调研。
+// v35：新设备换成红外遥控器，加打印版指南（弹出页内容放回主页面录下来）、键盘 R 旋转、致谢页 v35。
 // 用法：BASE=http://localhost:4173 OUT=/workspace/proto-site/v33 node e2e/demo-record.mjs  然后用 ffmpeg 转 mp4
 import { chromium } from "playwright";
 import fs from "node:fs";
@@ -22,11 +23,17 @@ await step("拆解：设备列表 + 搜索", async () => {
   await p.goto(BASE + "/teardown/"); await T("teardown-page").waitFor({ timeout: 30000 }); await w(1500);
   await T("td-search").pressSequentially("tp4056", { delay: 120 }); await w(1500); await T("td-search").fill(""); await w(800);
 }, "拆解模式：按名称或型号搜设备");
-await step("拆解：市电提示 + AA 玩具车", async () => {
+await step("拆解：市电提示 + 红外遥控器", async () => {
   await T("td-search").pressSequentially("充电头", { delay: 120 }); await w(2500); await T("td-search").fill(""); await w(500);
-  await T("td-search").pressSequentially("玩具车", { delay: 120 }); await w(1500); await T("td-search").fill(""); await w(400);
-  await p.goto(BASE + "/teardown/?d=aa-toy-car"); await T("td-guide").waitFor({ timeout: 20000 }); await w(1500); await scroll(350, 6, 400);
-}, "只收低压直流设备：搜“充电头”会提示不拆市电设备；v33 新加的 AA 电池玩具车（3 V）");
+  await T("td-search").pressSequentially("遥控器", { delay: 120 }); await w(1500); await T("td-search").fill(""); await w(400);
+  await p.goto(BASE + "/teardown/?d=ir-remote"); await T("td-guide").waitFor({ timeout: 20000 }); await w(1500); await scroll(350, 6, 400);
+}, "只收低压直流设备：搜“充电头”会提示不拆市电设备；v35 新加的红外遥控器（两节 AAA，3 V）");
+await step("拆解：打印版指南", async () => {
+  await T("td-print-bar").scrollIntoViewIfNeeded(); await w(1200);
+  const [pop] = await Promise.all([c.waitForEvent("page", { timeout: 10000 }), T("td-print").click()]);
+  await pop.waitForLoadState("load"); const html = await pop.content(); await pop.close(); await w(800);
+  await p.setContent(html); await w(1500); await scroll(400, 10, 450);
+}, "v35：拆解指南一键生成打印版，在打印对话框里选“另存为 PDF”就能离线保存（浏览器里生成，不上传）");
 await step("拆解：LED 手电指南 + 爆炸图", async () => {
   await p.goto(BASE + "/teardown/?d=led-flashlight"); await T("td-guide").waitFor({ timeout: 20000 }); await w(1500);
   await scroll(350, 8, 400);
@@ -58,12 +65,14 @@ await step("装配台：键盘操作", async () => {
   for (let i = 0; i < 3; i++) { await p.keyboard.press("ArrowRight"); await w(700); }
   for (let i = 0; i < 4; i++) { await p.keyboard.press("Alt+ArrowRight"); await w(450); }
   for (let i = 0; i < 3; i++) { await p.keyboard.press("Alt+ArrowUp"); await w(450); }
+  for (let i = 0; i < 2; i++) { await p.keyboard.press("r"); await w(900); }
+  for (let i = 0; i < 3; i++) { await p.keyboard.press("Alt+r"); await w(600); }
   await p.keyboard.press("Enter"); await w(1200);
-}, "v34：3D 场景可以用键盘操作——Tab 聚焦，方向键选零件，Alt + 方向键平移 1 cm，读屏会读出选中的零件和位置");
-await step("致谢：v34 调研", async () => {
-  await p.goto(BASE + "/credits#v34-research"); await w(1500);
-  await T("credits-v34").scrollIntoViewIfNeeded().catch(() => {}); await w(3000);
-}, "v34：先查许可再看的指南格式和面包板工具，都写在致谢页；代码和文字全部自己写");
+}, "v35：键盘也能转零件——R 转 90°，Alt + R 转 15°，会穿模时不转；v34：3D 场景可以用键盘操作——Tab 聚焦，方向键选零件，Alt + 方向键平移 1 cm，读屏会读出选中的零件和位置");
+await step("致谢：v35", async () => {
+  await p.goto(BASE + "/credits#v35-a11y"); await w(1500);
+  await T("credits-v35").scrollIntoViewIfNeeded().catch(() => {}); await w(3000);
+}, "v35：无障碍自动检查用 axe-core（MPL-2.0，只在开发测试里用，不进网站）；16 个页面中英文严重问题 0");
 await step("工作台", async () => { await p.goto(BASE + "/workbench/"); await w(4000); await scroll(300, 4); }, "工作台：项目和零件的汇总");
 const vid = p.video(); await c.close(); const path = await vid.path(); await b.close();
 fs.copyFileSync(path, `${OUT}/demo-raw.webm`); fs.rmSync(VD, { recursive: true, force: true });
