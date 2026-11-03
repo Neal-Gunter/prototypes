@@ -7,7 +7,7 @@ import { useLang } from "../i18n";
 import { DEVICES, DEVICE_BY_ID, COMMON_SAFETY, UNVERIFIED, searchDevices, isMainsQuery, MAX_VOLTS } from "../teardown/devices.js";
 import { addToInventory, readInventory, removeFromInventory, readProgress, setProgress } from "../teardown/inventory.js";
 import { PROC_BY_ID } from "../assembly/procedural.js";
-import { guideHtml } from "../teardown/guideSheet.js";
+import { guideHtml, labelFit, legendNo, figLegend } from "../teardown/guideSheet.js";
 const TeardownExplode = lazy(() => import("../teardown/TeardownExplode.jsx"));
 
 const MATCH = {
@@ -17,21 +17,25 @@ const MATCH = {
 };
 
 function StepFig({ dev, fig, L, i }) {
-  const off = fig?.off || {}, hi = new Set(fig?.hi || []);
+  const off = fig?.off || {}, hi = new Set(fig?.hi || []), no = legendNo(dev, L), lg = figLegend(dev, fig, L);
   return (
-    <svg viewBox="0 0 200 124" className="h-auto w-full max-w-xs border border-line bg-white" role="img" aria-label={L({ zh: `第 ${i + 1} 步示意图（本项目自绘）`, en: `Step ${i + 1} diagram (drawn by this project)` })} data-testid="td-fig">
-      {dev.fig.map((s) => {
-        const [dx, dy] = off[s.id] || [0, 0];
-        const on = hi.has(s.id);
-        const x = Math.max(1, Math.min(199 - s.w, s.x + dx)), y = Math.max(1, Math.min(123 - s.h, s.y + dy));
-        return (
-          <g key={s.id} opacity={hi.size && !on ? 0.45 : 1}>
-            <rect x={x} y={y} width={s.w} height={s.h} rx={s.round ? s.w / 2 : 2} fill={s.c} stroke={on ? "#d9792b" : "#26272a"} strokeWidth={on ? 2 : 0.6} />
-            {(on || !hi.size) && s.w >= 14 ? <text x={x + s.w / 2} y={y + s.h / 2 + 3} textAnchor="middle" fontSize="7" fill={/#(2f6fd6|26272a|2f8f4e|5b6168)/.test(s.c) ? "#fff" : "#26272a"}>{L(s.t)}</text> : null}
-          </g>
-        );
-      })}
-    </svg>
+    <div className="w-full max-w-xs">
+      <svg viewBox="0 0 200 124" className="h-auto w-full border border-line bg-white" role="img" aria-label={L({ zh: `第 ${i + 1} 步示意图（本项目自绘）`, en: `Step ${i + 1} diagram (drawn by this project)` })} data-testid="td-fig">
+        {dev.fig.map((s) => {
+          const [dx, dy] = off[s.id] || [0, 0];
+          const on = hi.has(s.id);
+          const x = Math.max(1, Math.min(199 - s.w, s.x + dx)), y = Math.max(1, Math.min(123 - s.h, s.y + dy));
+          const f = labelFit(L(s.t), s.w), fs = f.legend ? 6 : f.fs;
+          return (
+            <g key={s.id} opacity={hi.size && !on ? 0.45 : 1}>
+              <rect x={x} y={y} width={s.w} height={s.h} rx={s.round ? s.w / 2 : 2} fill={s.c} stroke={on ? "#d9792b" : "#26272a"} strokeWidth={on ? 2 : 0.6} />
+              {(on || !hi.size) && s.w >= 14 ? <text x={x + s.w / 2} y={y + s.h / 2 + fs * 0.4} textAnchor="middle" fontSize={fs} fill={/#(2f6fd6|26272a|2f8f4e|5b6168)/.test(s.c) ? "#fff" : "#26272a"}>{f.legend ? no.get(s.id) : L(s.t)}</text> : null}
+            </g>
+          );
+        })}
+      </svg>
+      {lg.length ? <p className="mt-1 text-xs text-ink-soft" data-testid="td-fig-legend">{lg.map(([n, t]) => `${n} = ${t}`).join(" · ")}</p> : null}
+    </div>
   );
 }
 
