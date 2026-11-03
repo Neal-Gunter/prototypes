@@ -7,6 +7,7 @@ import { engine } from "../assembly/engine.js";
 import { getEntry, toDef } from "../assembly/catalog.js";
 import { runDemo } from "../assembly/demo.js";
 import AsmScene from "../assembly/ui/AsmScene.jsx";
+import SceneA11y from "../assembly/ui/SceneA11y.jsx";
 import PartsBrowser from "../assembly/ui/PartsBrowser.jsx";
 import ElecPanel from "../assembly/ui/ElecPanel.jsx";
 import { elec } from "../assembly/elecStore.js";
@@ -277,6 +278,7 @@ export default function AssemblyPage() {
       </aside>
       <div className="relative min-h-[60vh] flex-1 border border-line bg-paper-2">
         {ready ? <AsmScene uids={uids} tool={tool} debug={debug} flux={flux} vis={vis} onTick={onTick} onSelect={setSel} probes={probes} onProbe={(k, t) => setProbes((p) => ({ ...p, [k]: t }))} onPin={setPin} /> : <p className="p-6 text-ink-soft">{tr("正在加载物理引擎…")}</p>}
+        {ready ? <SceneA11y uids={uids} sel={sel} onSelect={setSel} /> : null}
         {pin && (
           <div className="pointer-events-none fixed z-50 max-w-xs border border-ink/30 bg-paper-2/95 px-2 py-1 text-xs shadow" style={{ left: pin.x + 14, top: pin.y + 10 }} data-testid="pin-hover">
             <div className="font-semibold text-ink">{pin.ref ? pin.ref + " · " : ""}{pin.title}</div>
