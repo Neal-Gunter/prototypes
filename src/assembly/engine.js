@@ -1224,6 +1224,19 @@ class Engine {
       }
       const t = body.rb.translation();
       const d = worst.distance - 0.001;
+      // v32（我的补充，简化）：叠放落地时的“夹心”。下面的零件被上面的压进去，按法线推会把它往下推（再被桌面顶回来，来回抵消），
+      // 所以接近竖直的零件↔零件接触、推的方向朝下时，改成把上面那个往上推（像一摞东西从下往上理顺）。engine.stackPush = false 关掉
+      const o = worst.other;
+      if (fast && (this.stackPush ?? true) && o && o.isDynamic() && worst.n.y * d < 0 && Math.abs(worst.n.y) > 0.6 && !(this.drag && this.bodies.get(this.drag.bid)?.rb === o)) {
+        const to = o.translation();
+        o.setTranslation({ x: to.x - worst.n.x * d, y: to.y - worst.n.y * d, z: to.z - worst.n.z * d }, true);
+        const v = o.linvel(), vn = -(v.x * worst.n.x + v.y * worst.n.y + v.z * worst.n.z);
+        if (vn > 0) o.setLinvel({ x: v.x + vn * worst.n.x, y: v.y + vn * worst.n.y, z: v.z + vn * worst.n.z }, true);
+        this.world.propagateModifiedBodyPositionsToColliders();
+        this.stackPushes = (this.stackPushes || 0) + 1;
+        moved++;
+        continue;
+      }
       body.rb.setTranslation({ x: t.x + worst.n.x * d, y: t.y + worst.n.y * d, z: t.z + worst.n.z * d }, true);
       // 速度里朝着对方的分量也清掉，不然下一步又压进去（位置推出来、速度还在累积）
       const v = body.rb.linvel(), vn = v.x * worst.n.x + v.y * worst.n.y + v.z * worst.n.z;

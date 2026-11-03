@@ -4,7 +4,7 @@ import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { containerClass } from "../container";
 import { useLang } from "../i18n";
-import { DEVICES, DEVICE_BY_ID, COMMON_SAFETY, UNVERIFIED, searchDevices } from "../teardown/devices.js";
+import { DEVICES, DEVICE_BY_ID, COMMON_SAFETY, UNVERIFIED, searchDevices, isMainsQuery, MAX_VOLTS } from "../teardown/devices.js";
 import { addToInventory, readInventory, removeFromInventory, readProgress, setProgress } from "../teardown/inventory.js";
 import { PROC_BY_ID } from "../assembly/procedural.js";
 const TeardownExplode = lazy(() => import("../teardown/TeardownExplode.jsx"));
@@ -92,6 +92,7 @@ export default function TeardownPage() {
             <span className="sr-only">{L({ zh: "搜索设备", en: "Search devices" })}</span>
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={L({ zh: "按名称或型号搜：舵机、18650、风扇…", en: "Search by name or model: servo, 18650, fan…" })} className="w-full border border-line bg-white px-2 py-1.5 text-sm" data-testid="td-search" />
           </label>
+          {isMainsQuery(q) && <p className="mt-2 border border-red-700 bg-red-50 px-2 py-1 text-xs text-red-900" role="alert" data-testid="td-mains">{L({ zh: `这里只收低压直流设备（电池或 USB 供电，≤ ${MAX_VOLTS} V）。插市电的设备（充电头、适配器、家电）有高压和断电后仍带电的电容，不提供拆解步骤，也请不要自己拆。`, en: `Low-voltage DC devices only (battery or USB powered, ${MAX_VOLTS} V or less). Mains devices (chargers, adapters, appliances) carry high voltage and capacitors that stay charged after unplugging, so there are no teardown steps for them. Please do not open them yourself.` })}</p>}
           <ul className="mt-2 space-y-2" data-testid="td-list">
             {list.map((d) => {
               const p = readProgress(d.id).steps.length;
@@ -100,7 +101,7 @@ export default function TeardownPage() {
                   <button type="button" onClick={() => setParams({ d: d.id })} className={`w-full border px-3 py-2 text-left text-sm ${d.id === dev.id ? "border-ink bg-ink text-paper" : "border-line bg-white hover:border-ink"}`} data-testid={`td-device-${d.id}`} aria-current={d.id === dev.id ? "true" : undefined}>
                     <span className="block font-medium">{L(d.name)}</span>
                     <span className={`block font-mono text-[11px] ${d.id === dev.id ? "text-paper-2" : "text-ink-soft"}`}>{d.model}</span>
-                    <span className={`block text-[11px] ${d.id === dev.id ? "text-paper-2" : "text-ink-soft"}`}>{L({ zh: `${d.steps.length} 步 · 约 ${d.minutes} 分钟 · ${d.battery ? "含电池" : "无电池"} · 已完成 ${p}`, en: `${d.steps.length} steps · about ${d.minutes} min · ${d.battery ? "has a battery" : "no battery"} · ${p} done` })}</span>
+                    <span className={`block text-[11px] ${d.id === dev.id ? "text-paper-2" : "text-ink-soft"}`}>{L({ zh: `${d.steps.length} 步 · 约 ${d.minutes} 分钟 · ${d.battery ? "含电池" : "无电池"} · ${d.volts} V 直流 · 已完成 ${p}`, en: `${d.steps.length} steps · about ${d.minutes} min · ${d.battery ? "has a battery" : "no battery"} · ${d.volts} V DC · ${p} done` })}</span>
                   </button>
                 </li>
               );
