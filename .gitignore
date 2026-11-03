@@ -7,3 +7,4 @@ e2e-shots/
 .tmp/
 .scratch/
 __pycache__/
+.cache/

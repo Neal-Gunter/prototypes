@@ -1,0 +1,9 @@
+{
+  "repo": "notwlsn/fromthetransistor",
+  "reason": "README 用编号列表（1. 2. 3.），自动解析器不支持；按 README 手工记下标题 / 语言 / LOC（只记事实）",
+  "writtenAt": "2026-11-03",
+  "projects": [
+    { "section": "Section 2: Bringup: What language is hardware coded in?", "title": "Blinking an LED", "language": "Verilog", "locEstimate": 10, "locPlus": false },
+    { "section": "Section 2: Bringup: What language is hardware coded in?", "title": "Building a UART", "language": "Verilog", "locEstimate": 100, "locPlus": false }
+  ]
+}

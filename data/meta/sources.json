@@ -1,0 +1,2183 @@
+{
+  "generatedAt": "2026-11-03T09:09:07.134Z",
+  "mode": "live",
+  "fromthetransistor": {
+    "geohot/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "andrewn6/fromthetransistor": {
+      "status": "ok",
+      "bytes": 5114,
+      "sha256": "ecf45f95df2943ad"
+    },
+    "BunsDev/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "pynchmeister/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "michaelgold3n/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "C0MPU73R/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "automata/fromthetransistor": {
+      "status": "ok",
+      "bytes": 5874,
+      "sha256": "5daf4664402e4036"
+    },
+    "sergiu128/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "ceciliamvrie/fromthetransistor": {
+      "status": "ok",
+      "bytes": 5096,
+      "sha256": "237aa820251c3be8"
+    },
+    "zhirenliew/old_fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "3lvy/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "timbees44/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "arthtyagi/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "andradefil/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "aboulaakoul-Elwalid/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "bhagwat-rahul/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "badwin00/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "BrendanGlancy/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "chukspimp1983/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "byt3x0r/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "chclam/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4952,
+      "sha256": "271c33194f843a6f"
+    },
+    "bhaskar1001101/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4956,
+      "sha256": "86248a5cb626e85a"
+    },
+    "deepxmatter/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "hamptonjc/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "gabrielmougard/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "InvisibleX90/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "johanmani/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "KopyWasTaken/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "kentaasvang/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "binarycook/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4749,
+      "sha256": "93deab2ffb3dae64"
+    },
+    "mbilalsardar/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "mitchellmolnar/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "gandalffoogray/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4749,
+      "sha256": "93deab2ffb3dae64"
+    },
+    "harmankang/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4749,
+      "sha256": "93deab2ffb3dae64"
+    },
+    "hamadatakaki/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4749,
+      "sha256": "93deab2ffb3dae64"
+    },
+    "notwlsn/fromthetransistor": {
+      "status": "ok",
+      "bytes": 1316,
+      "sha256": "eb3f6831c5db56f2"
+    },
+    "oven-one/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Peter-Bergman/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "patrlkk/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "opofingob/fromthetransistor": {
+      "status": "missing"
+    },
+    "R41D3R/fromthetransistor": {
+      "status": "ok",
+      "bytes": 5299,
+      "sha256": "5294ea79b384e2fb"
+    },
+    "letsdodatascience/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4749,
+      "sha256": "93deab2ffb3dae64"
+    },
+    "Shingii/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "madnc/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4749,
+      "sha256": "93deab2ffb3dae64"
+    },
+    "si-mikey/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "turkonthelurk/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "virksukh/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "tonyukukkula/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Shnippers/fromthetransistor": {
+      "status": "missing"
+    },
+    "willlogs/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4234,
+      "sha256": "d96f3911706262ce"
+    },
+    "xevansz/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4926,
+      "sha256": "ffc364d3dccb3897"
+    },
+    "zenwor/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "00mjk/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "0xAryan/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "0x7B5/fromthetransistor": {
+      "status": "ok",
+      "bytes": 5533,
+      "sha256": "4278684de5b3c47e"
+    },
+    "rajucoolsuraj/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4749,
+      "sha256": "93deab2ffb3dae64"
+    },
+    "0xbadcoffe/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "0xf965/fromthetransistor-course": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "0xsimulacra/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "1957-001B/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "0xYoshi/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "1barizon/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "aadithyanr/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Aakash-Engineer/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "AbdimulhinYussuf3675/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "abhi-abhiram/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "abbyzak/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "acwdc/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Aditya-Chandrabhatla/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "accounts-accounting/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "afloresep/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "akolaarthurali/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "akatau/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "alejandraro1992/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "alenazeng/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "ADCGEG4848/fromthetransistor": {
+      "status": "missing"
+    },
+    "ADSADPKLP/fromthetransistor": {
+      "status": "missing"
+    },
+    "AFASF284/fromthetransistor": {
+      "status": "missing"
+    },
+    "alexhraber/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "alfanick/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Allan-Perez/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "alexhomm87/fromthetransistor3": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "AmosAidoo/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "alzze/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "andrew-werdna/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "andreivisan/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "aniveshpandey/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "anandketan/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "anurag-desp/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "andrii/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Ans-A/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "apollohuang1/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "ar2427/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "ArghaRay00/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "arbazalam01/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "arielccjr/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "anjalyr/fromthetransistor": {
+      "status": "missing"
+    },
+    "arjun-warp/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "asdfako/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "asdsadee1/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "asdasfafaf/fromthetransistor": {
+      "status": "missing"
+    },
+    "asdasfwedwed/fromthetransistor": {
+      "status": "missing"
+    },
+    "asdfefef151/fromthetransistor": {
+      "status": "missing"
+    },
+    "ASDASHU4874/fromthetransistor": {
+      "status": "missing"
+    },
+    "asdsadfwwww/fromthetransistor": {
+      "status": "missing"
+    },
+    "asdsadwedw/fromthetransistor": {
+      "status": "missing"
+    },
+    "ASDSAF8489/fromthetransistor": {
+      "status": "missing"
+    },
+    "ASDSF54184/fromthetransistor": {
+      "status": "missing"
+    },
+    "ashutosh-dave/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "asfasasgvx/fromthetransistor": {
+      "status": "missing"
+    },
+    "asfqawrf99/fromthetransistor": {
+      "status": "missing"
+    },
+    "ASFDAFSFWQA/fromthetransistor": {
+      "status": "missing"
+    },
+    "ASFASFXCW/fromthetransistor": {
+      "status": "missing"
+    },
+    "asxot/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "asgaa62/fromthetransistor": {
+      "status": "missing"
+    },
+    "Auspicus/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Atul-Bhatt/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "avashraj/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4928,
+      "sha256": "4801e1381f2db590"
+    },
+    "bhushtix/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "awaisdoto/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "barisozmen/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "avivnur/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Bichwaa/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "BlaskStone/From_george-hotz_fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "blacknand/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "bothsec/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "BritvaBo/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "BradenEverson/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "buddywhitman/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "bidex32/fromthetransistor": {
+      "status": "missing"
+    },
+    "Bulalu/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "buraksirma/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "canoriz/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "cassis163/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "btcyell/fromthetransistor": {
+      "status": "missing"
+    },
+    "catasaurus/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "CatchTheDog/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "bufufau/fromthetransistor": {
+      "status": "missing"
+    },
+    "catch-moment/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "chebbal/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "cdifranco1/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "chenasuser/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "chsjiang/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "christophermaxell/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "cjaewon/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "chuma-beep/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "cihancolak/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "CloudBee7/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "coderboyisongithub/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "clalexni/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "cometyang/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "cristianImonzon/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "CosmicBitflip/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "crispycarrot/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "crywas/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "D4C-lolu/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "d1joseph/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "da5ch0/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Dan6200/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "daniel-stevens/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "davernlon/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "danny-1k/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Davidadebiyi/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "devgiri0082/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "ddmilado/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "DevComplex/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "DivineElikem/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "di-sukharev/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "DookiTaco/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "dos-m0nk3y/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "dominiksakic/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "dnzlk/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "drukpa1455/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "dragande/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "dtellz/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "ebyaug007/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Duks31/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Edza01/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Ekaji/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "elduderino238/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "egor-lukin/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "eliophan/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "elgreaso/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "DSKJDIiijdas/fromthetransistor": {
+      "status": "missing"
+    },
+    "Elleonors/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "EmanuelCampos/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "enahsor/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "ericdalva/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "emanuelegurini/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "erisanolasheni/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "ezsinehan/fromthetransistor": {
+      "status": "ok",
+      "bytes": 5673,
+      "sha256": "a1a0144bdee8f681"
+    },
+    "evertonse/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "faresl33t/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "ffdm/fromthetransistor": {
+      "status": "ok",
+      "bytes": 5213,
+      "sha256": "8bed750621374215"
+    },
+    "fil1n/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "gabbrousset/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Fun-YJ/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "gacogo/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "fasdcxa/fromthetransistor": {
+      "status": "missing"
+    },
+    "GanLay20/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "fghdtd/fromthetransistor": {
+      "status": "missing"
+    },
+    "fqnweipeco/fromthetransistor": {
+      "status": "missing"
+    },
+    "gbrezeanu/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "giulianopz/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "geraldokereke/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "GeneticAlgorithms/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "H0rowitz/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "gWOLF3/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "HamzaM95/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "hafizann87/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "HaleysCommit/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "hamzaomer11/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "hanishNavuluri/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "gsdghdsgh/6666": {
+      "status": "missing"
+    },
+    "harin-ideaforge/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "harshithkalki/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "HavokMaster/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "havenokarma/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "hashedgrey/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "hmmm3012/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "hbcbh1999/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "hn-yu/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "hemanthkapa/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "hobo0xcc/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "hritikbtw/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "igngra/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "ilivinus/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "iemviktor/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "innofarah/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "icedaway/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "imaolo/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "intincrab/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "j-2-r/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "japrozs/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "J-Liciaga/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "IntrovertInDisguise/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Jekatucha/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "jackjill8/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "jbro885/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "JeronimoLa/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "JIANG-YU06/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "jiangwei2112/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "jintailangjianyou4-cmyk/From-the-Transistor-to-the-Web-Browser": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "josh28x/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "johan237/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "jisunglim/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "jozef-javorsky-dodo/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "JoshuaMXWLL/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "jrsd2023/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "jumzzz/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "k--chow/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "kapoorsaumitra/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "KailashGanesh/fromthetransistor": {
+      "status": "ok",
+      "bytes": 6907,
+      "sha256": "e95d721cd863a387"
+    },
+    "jenniferhao/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4749,
+      "sha256": "93deab2ffb3dae64"
+    },
+    "kana800/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "karbon0x/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "kaushal07wick/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "jw79yt/fromthetransistord": {
+      "status": "missing"
+    },
+    "kevinlu310/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "keysemails/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "kevivlabs/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "kijz/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Kodylow/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Kimxons/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "kjj6198/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "ktag0629/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "KylianJ41/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "leafaar/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "later-3/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "liudehuau2/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "leandrositorus/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "louiskwt/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "lmarte17/CS_Stack": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "loftyyyy/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "LouMarinho/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "LucasUTNFRD/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "majuyi/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "make-drop/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "malswhajy/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "manthenavamsi/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "majuyitan/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "marcosncosta1/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "mard0n/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "masterj122517/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "marodorse/fromthetransistor": {
+      "status": "ok",
+      "bytes": 95,
+      "sha256": "282f3031b2e31557"
+    },
+    "mawnark/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "MekongDelta-mind/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Mcnoble1/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "mcwachira/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Mezmu73/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "MINDWELLKonu/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Momo-010/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "mkosei/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "mrm8488/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "MMindbreak/fromthetransistor": {
+      "status": "ok",
+      "bytes": 5874,
+      "sha256": "5daf4664402e4036"
+    },
+    "muddlebee/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Muki-SkyWalker/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "muguryalcin/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "mvind/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Najib632/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "n1ckkkkkkkk/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "naruto678/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Moterpik/fromthetransistor": {
+      "status": "missing"
+    },
+    "naman-modi/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "NathanaelTamirat/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "nicholas-entis/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "NguyenNhu2018/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "NawasNaziru/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "NinnjA254/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "NopenAI/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "nippun-live/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "nsarka/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "noralithic/FromTheTransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "odudu-usoro/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "OleOlga/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "onehr/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "OlgaPlato/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "OpulentiaAI/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Oyelowo/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "othiagorossi/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "OrangeAFK/fromthetransistor": {
+      "status": "ok",
+      "bytes": 5478,
+      "sha256": "dbc85e858db1d86b"
+    },
+    "pagdjll/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "oneofthefellowglitches/12week_course": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "paideia1200bce/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "paradimes/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "parandcor/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "paul-jds/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Parzival7x/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Paras0111/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "ouggadmi/fromthetransistor": {
+      "status": "missing"
+    },
+    "PaulSebalu/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "pbkompasz/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "pedrommaiaa/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "phxvlabsio-experiments/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "pcw263/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "pgrisales/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "pindjouf/fromthetransistor": {
+      "status": "ok",
+      "bytes": 1960,
+      "sha256": "c11de3fff818ac4b"
+    },
+    "pjoshi1/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "planetminguez/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "pavelin12/fromthetransistor": {
+      "status": "missing"
+    },
+    "PMArkive/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Prashant118/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "pnyro/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Pramod20221/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Ramtin-BeheshtAeen/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "purohitprachi72/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "ramund0/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "rhkdgh255/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "rickandm00rty/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "ririyad/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "rjeye/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "rmallof/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "qrxnz/fromthetransistor": {
+      "status": "missing"
+    },
+    "RJSD3V/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "romapirogov/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "rohithkrdy/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "ras770v/fromthetransistor": {
+      "status": "missing"
+    },
+    "RushingChris/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "roni5/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "rustanacexd/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "RustyMeg/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "s1dd0/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "sagnikc760/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Samarthi/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "SADASD48848/fromthetransistor": {
+      "status": "missing"
+    },
+    "SADASFXC62/fromthetransistor": {
+      "status": "missing"
+    },
+    "SADASF548/fromthetransistor": {
+      "status": "missing"
+    },
+    "sailings/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "sadlsakdaosld/fromthetransistor": {
+      "status": "missing"
+    },
+    "SADSAD26888541/fromthetransistor": {
+      "status": "missing"
+    },
+    "Sanjeevvarmabetter/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "SebastianJerry/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "seulle-raphael/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "seojuncha/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "ShadyD45/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "shashankyld/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "SherwinVarghese/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "sdkjur/fromthetransistor": {
+      "status": "missing"
+    },
+    "shikamaru-cc/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "SDSADA955/fromthetransistor": {
+      "status": "missing"
+    },
+    "SheryConcepts/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "shradiphylleia/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "shubhxms/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4982,
+      "sha256": "f732e8a95370d733"
+    },
+    "Sibusiso-Gumede/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "sideeq12/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "sipho-mokoena/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "snktshrma272/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "skpanigrahy/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "ShirakuGIT/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Solanacodes/fromthetransistor-1": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "sikiyang2048/fromthetransistor": {
+      "status": "missing"
+    },
+    "stagediving/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "starfishpanda/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "starstuffchavan/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "STELIORD/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "stellaaartn/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "stjordanis/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "SSDASWEWEW/fromthetransistor": {
+      "status": "missing"
+    },
+    "SunsetOnMoon/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Sunfl4wer/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "swdtxcg/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "swagyg/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "sysang/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "szkennminn/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Ta-nay/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "taraktry/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "tcsqrd/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "tejbytes23/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Tewodros00/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "thesanju/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "throwoutofcoffeeexception/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "timdesrochers/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "tinfoil-knight/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "TrilochanSati/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "TimothyMunene/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Udit-takkar/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "uberbinge/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "utkaxsh/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "vadzimr/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "ValValu/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "VenkataBhaskarr/fromthetransistor": {
+      "status": "ok",
+      "bytes": 10268,
+      "sha256": "d698c4badb173ece"
+    },
+    "venkman00/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "trivinli/fromthetransistor": {
+      "status": "missing"
+    },
+    "usernammmmmme1/fromthetransistor": {
+      "status": "missing"
+    },
+    "thamada/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4749,
+      "sha256": "93deab2ffb3dae64"
+    },
+    "vgangal101/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "VipassanaCoder/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "vkpatel007/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "vkylamba/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "VrindavanSanap/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "warhazzard/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "waleedrizwan/fromthetransistor": {
+      "status": "ok",
+      "bytes": 5013,
+      "sha256": "1df206fad439a3e2"
+    },
+    "wf34/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "willmalcs/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Warkanlock/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "x-tinkerer/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "xbz-24/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "YilmazAral/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "xalpesh/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "youshy/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "wantj8/fromthetransistor3": {
+      "status": "missing"
+    },
+    "yungGriff/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "YurdakosKaan/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "ZeroXClem/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "vlad-palii/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4749,
+      "sha256": "93deab2ffb3dae64"
+    },
+    "yyasun/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "xthqcq2008/fromthetransistor": {
+      "status": "missing"
+    },
+    "Ziyanda-Tembe/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "Zikt/fromthetransistor": {
+      "status": "ok",
+      "bytes": 5088,
+      "sha256": "488e12b80c26e180"
+    },
+    "ztz002/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    },
+    "ZacherySandford5/fromthetransistor": {
+      "status": "missing"
+    },
+    "zzzzzfb/fromthetransistor": {
+      "status": "ok",
+      "bytes": 4871,
+      "sha256": "f83614bdca0aaabb"
+    }
+  },
+  "awesomeElectronics": {
+    "status": "ok",
+    "bytes": 25167,
+    "sha256": "30594056d521622e"
+  },
+  "summary": {
+    "forks": 452,
+    "ok": 405,
+    "missing": 47,
+    "distinctReadmes": 23
+  }
+}
