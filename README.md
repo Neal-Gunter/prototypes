@@ -175,6 +175,16 @@ The script uses `window.__wb` test hooks only to find where things are on the sc
   - 电流是估算值。
   - 只做直流层面的电压、电流检查。
 
+## v35：键盘旋转 + 拆解指南打印 / 存成 PDF + axe-core 无障碍检查 + guide-lint 覆盖维修关卡 + 红外遥控器拆解（早期原型，简化仿真）
+
+- **键盘旋转（我的补充，`SceneA11y.jsx`）**：3D 场景里选中零件后按 R 绕竖直轴转 90°，Shift + R 反向，Alt + R 每次 15°。转之前用 `engine.overlapAt` 预检，会穿模就不转并读出原因；固定件拒绝。读屏描述里多了“朝向 N°”。
+- **打印 / 存 PDF（`src/teardown/guideSheet.js`）**：拆解指南页新增“打印 / 存成 PDF”和“下载打印版 HTML”。在浏览器里生成一页独立的 HTML（安全须知、工具材料勾选、每步 SVG 示意图、警告、停止点、模块表、笔记），用浏览器自带的“另存为 PDF”。不依赖付费服务和额外库。
+- **axe-core 无障碍检查（开发依赖，MPL-2.0）**：`node e2e/axe-check.mjs`（`LANG_UI=en` 查英文）检查 16 个页面，规则集 WCAG 2.0 / 2.1 A + AA，严重（critical / serious）问题必须为 0。第一次跑查出：语言切换按钮的读屏名称不含可见文字（label-content-name-mismatch，每页都有）、可滚动的代码块不能用键盘聚焦（scrollable-region-focusable）。已修。axe 只在测试里注入页面，不进发布包。
+- **guide-lint 覆盖维修关卡**：`scripts/guide-lint.mjs` 现在也检查 28 个维修关卡（id、星级、模板、故障类型和目标、量测点、期望读数区间、操作名和对象、换件在零件箱里、提示 ≥ 2、安全须知、电池 ≤ 24 V）。`scripts/guide-lint-selftest.mjs` 故意造 12 种错误，确认每种都能查出来。
+- **红外遥控器拆解（第 12 台，3 V 直流）**：7 步、2 个停止点、6 个模块（3 个新近似件 + 红外 LED / 晶振 / 2 × AAA 电池座三个相近现成件）。文字本项目自写，按公开资料整理，未经实物验证。
+- **测试**：`node e2e/v35-bench.mjs`（R / Shift + R / Alt + R、固定件拒绝、帮助标签、打印页弹出和内容、下载 HTML、page.pdf 生成真 PDF、英文页无汉字、帮助 / 致谢中英文、手机 / 宽屏不溢出）。
+- **限制**：只能绕竖直轴转；打印版用的是简化示意图，不是照片；axe 自动检查只能查出一部分无障碍问题，读屏的实际体验没有真人测过。
+
 ## v34：按穿透深度放宽冷检间隔 + 细长件加时修穿透 + 3D 场景键盘和读屏 + 指南格式调研和 guide-lint（早期原型，简化仿真）
 
 - **冷检间隔按穿透深度放宽（我的补充）**：醒着的零件 ≥ 12 个（`engine.coldCrowd`）时，已经连续 12 步以上没压进、或者压进不到 0.1 mm（`engine.shallowMm`）的零件改为每 3 步查一次（`engine.coldMax`，0 = 关闭）；压得深的立即回到每步查。`depenetrate()` 记下第一轮最深的穿透（`_dep`）来做判断。

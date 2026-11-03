@@ -12,7 +12,7 @@ const CJK = /[\u4e00-\u9fff]/;
 const pairs = [];
 const walk = (o, path) => { if (o && typeof o === "object") { if ("zh" in o && "en" in o && Object.keys(o).length === 2) pairs.push([path, o]); else for (const [k, v] of Object.entries(o)) walk(v, path + "." + k); } };
 walk(DEVICES, "D"); walk(COMMON_SAFETY, "S"); walk(UNVERIFIED, "U");
-ok(DEVICES.length === 11, `11 台设备（v30 加了有线鼠标 / 蓝牙音箱 / 厨房秤，v31 加了 LED 手电 / TP4056 充电板，v32 加了 9V LED 测试器 / OTG 集线器，v33 加了 AA 电池玩具车）（${DEVICES.map((d) => d.id).join(", ")}）`);
+ok(DEVICES.length === 12, `12 台设备（v35 加了红外遥控器，v30 加了有线鼠标 / 蓝牙音箱 / 厨房秤，v31 加了 LED 手电 / TP4056 充电板，v32 加了 9V LED 测试器 / OTG 集线器，v33 加了 AA 电池玩具车）（${DEVICES.map((d) => d.id).join(", ")}）`);
 ok(pairs.length >= 100, `中英成对文字 ${pairs.length} 条`);
 const badPair = pairs.filter(([, o]) => !o.zh || !o.en || !CJK.test(o.zh) && !/^[\w\s().,-]+$/.test(o.zh) || CJK.test(o.en));
 ok(badPair.length === 0, "每条都有中文和英文、英文里没有汉字", badPair.slice(0, 3).map((x) => x[0]).join(" "));
@@ -34,9 +34,9 @@ const iCut = pb.steps.findIndex((s) => /断开电芯/.test(s.t.zh)), iBoard = pb
 ok(pb.steps[0].stop && iCut > 0 && iCut < iBoard && /电池先处理/.test(pb.safety[0].zh), `含电池的设备：先检查（停止点）→ 断开电芯（第 ${iCut + 1} 步）→ 再碰控制板（第 ${iBoard + 1} 步）`);
 ok(/先处理电池/.test(COMMON_SAFETY[0].zh) && COMMON_SAFETY.some((s) => /防静电/.test(s.zh)) && COMMON_SAFETY.some((s) => /停止点/.test(s.zh)), "通用安全：电池先处理 / 防静电 / 停止点");
 ok(UNVERIFIED.zh === "按公开资料整理，未经实物验证", "未经实物验证标签");
-ok(TD_PROCEDURAL.length === 33 && TD_PROCEDURAL.every((p) => p.approx && /近似件/.test(p.name_zh) && /approximate/.test(p.name) && p.est.length && p.dims_mm.x > 0 && p.dims_mm.y > 0 && p.dims_mm.z > 0 && p.colliders.length === p.proc.prims.length), "10 个近似件：名字标“近似件”、尺寸 > 0、标估算、碰撞盒齐全");
+ok(TD_PROCEDURAL.length === 36 && TD_PROCEDURAL.every((p) => p.approx && /近似件/.test(p.name_zh) && /approximate/.test(p.name) && p.est.length && p.dims_mm.x > 0 && p.dims_mm.y > 0 && p.dims_mm.z > 0 && p.colliders.length === p.proc.prims.length), "10 个近似件：名字标“近似件”、尺寸 > 0、标估算、碰撞盒齐全");
 ok(TD_PROCEDURAL.every((p) => PROC_BY_ID[p.id]?.licence?.includes("CC0")), "近似件进了程序零件表（CC0）");
-ok(searchDevices("sg90").length === 1 && searchDevices("充电宝").length === 1 && searchDevices("FAN").length === 1 && searchDevices("").length === 11 && searchDevices("玩具车").length === 1 && searchDevices("toy car").length === 1 && searchDevices("9v").length === 1 && searchDevices("OTG").length === 1 && searchDevices("tp4056").length === 1 && searchDevices("手电").length === 1 && searchDevices("zzz").length === 0, "搜索（大小写、中英文、空串、无结果）");
+ok(searchDevices("sg90").length === 1 && searchDevices("充电宝").length === 1 && searchDevices("FAN").length === 1 && searchDevices("").length === 12 && searchDevices("玩具车").length === 1 && searchDevices("toy car").length === 1 && searchDevices("9v").length === 1 && searchDevices("OTG").length === 1 && searchDevices("tp4056").length === 1 && searchDevices("手电").length === 1 && searchDevices("zzz").length === 0, "搜索（大小写、中英文、空串、无结果）");
 // v32：安全规则——只收低压直流设备，市电设备不收
 ok(MAX_VOLTS === 24 && DEVICES.every((d) => typeof d.volts === "number" && d.volts > 0 && d.volts <= MAX_VOLTS), `每台设备都标了供电电压且 ≤ ${MAX_VOLTS} V（${DEVICES.map((d) => d.volts).join("/")}）`);
 ok(DEVICES.every((d) => ![d.name.zh, d.name.en, d.model, ...d.alias].some(isMainsQuery)), "设备名 / 型号 / 别名里没有市电类设备");

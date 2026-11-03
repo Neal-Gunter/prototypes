@@ -87,4 +87,11 @@ export const TD_PROCEDURAL = [
     [box([0, 0.15, 0], [6.0, 0.15, 2.8], "black"), box([-1.0, 0.6, 0], [1.6, 0.3, 1.5], "black"), box([0, 0.5, 2.7], [6.0, 0.35, 0.1], "black"), box([0, 0.5, -2.7], [6.0, 0.35, 0.1], "black")], "一块塑料底盘，中间是放两节 AA 电池的凹槽，两侧有轴孔；示意成平板 + 电池仓 + 两条侧边。"),
   make("td-aa-car-gearbox", "电机齿轮箱（小直流电机 + 减速齿轮）", "Motor gearbox (small DC motor + reduction gears)", "mech",
     [box([0, 0.9, 0], [1.6, 0.9, 1.1], "yellow"), cyl([-2.2, 0.9, 0], 0.7, 1.2, "steel"), cyl([0.6, 0.9, 1.5], 0.15, 0.6, "steel"), cyl([0.6, 0.9, -1.5], 0.15, 0.6, "steel")], "常见的透明或黄色齿轮箱，一头伸出小直流电机，两侧伸出驱动轴；尺寸是估算。"),
+  // v35（我的补充）：两节 AAA 的红外遥控器的三个近似件，尺寸按常见电视遥控器估算
+  make("td-ir-remote-shell", "遥控器外壳（下半壳，带电池仓）", "Remote control shell (lower half, with battery bay)", "enclosure",
+    [box([0, 0.1, 0], [2.2, 0.1, 8.0], "black"), box([2.1, 0.6, 0], [0.1, 0.5, 8.0], "black"), box([-2.1, 0.6, 0], [0.1, 0.5, 8.0], "black"), box([0, 0.45, -5.4], [1.3, 0.35, 2.4], "black")], "上下两半卡在一起的长条塑料壳，示意成下半壳，一头是放两节 AAA 电池的凹槽。"),
+  make("td-ir-remote-keypad", "硅胶按键垫（带导电碳点）", "Silicone keypad (with conductive carbon pads)", "mech",
+    [box([0, 0.08, 0], [1.9, 0.08, 5.0], "white"), box([0, 0.35, -1.5], [1.2, 0.2, 1.2], "white"), box([0, 0.35, 2.0], [1.2, 0.2, 1.8], "white")], "一整块软硅胶，每个按键背面有一颗导电碳点；按下时碳点把电路板上的两片梳齿铜皮接通。形状是示意。"),
+  make("td-ir-remote-pcb", "遥控器电路板（梳齿触点 + 编码芯片）", "Remote control board (interdigitated pads + encoder chip)", "module",
+    [box([0, 0.06, 0], [1.9, 0.06, 5.6], "green"), box([0.6, 0.2, 4.4], [0.35, 0.1, 0.5], "black"), cyl([0, 0.3, 5.9], 0.25, 0.6, "white", "z")], "一块单面电路板：按键位置是成对的梳齿铜皮，一头有一颗编码芯片（常是黑色胶封）和红外 LED。尺寸是估算。"),
 ];

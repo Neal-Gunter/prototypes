@@ -187,7 +187,7 @@ export default function CreditsPage() {
         <li><a className="underline" href="https://github.com/gipi/teardown">gipi/teardown</a>：只作参考（拆解记录的组织方式）。</li>
         <li><a className="underline" href="https://github.com/nox-x/TG3442DE-Teardown">nox-x/TG3442DE-Teardown</a>：我们没有看到许可文件，所以只看了它的结构，没有使用任何内容。</li>
       </ul>
-      <p className="mt-2 leading-7 text-ink-soft">零件库里新增的 33 个“近似件 · 拆解模式”（td- 开头）是本项目程序生成（CC0），全部尺寸是估算，形状是示意。</p>
+      <p className="mt-2 leading-7 text-ink-soft">零件库里新增的 36 个“近似件 · 拆解模式”（td- 开头）是本项目程序生成（CC0），全部尺寸是估算，形状是示意。</p>
       <h2 className="mt-8 text-xl font-medium" id="v34-research">v34 调研：维修 / 装配指南格式和面包板工具</h2>
       <p className="mt-2 leading-7 text-ink-soft" data-testid="credits-v34">
         v34 先查了许可，再看了下面这些公开项目的做法。没有复制任何文字、图片或代码；v34 新增的指南检查脚本（scripts/guide-lint.mjs）和 3D 场景键盘操作都是本项目自己写的。
@@ -199,6 +199,13 @@ export default function CreditsPage() {
         <li><a className="underline" href="https://github.com/fritzing/fritzing-app">fritzing/fritzing-app</a>：GitHub 上许可标为“其他”（NOASSERTION），零件库另有许可。只看了“面包板视图 / 原理图 / PCB 三视图”的做法，没有使用代码或零件图。</li>
         <li><a className="underline" href="https://github.com/gatecat/BreadboardSim">gatecat/BreadboardSim</a>（GPL-3.0）、<a className="underline" href="https://github.com/pfalstad/circuitjs1">pfalstad/circuitjs1</a>（GPL-2.0）：面包板界面的电路仿真，只作参考。</li>
         <li>常见的维修指南网站把每份指南分成难度、所需时间、工具、零件和逐步说明（每步配图，注意事项单独标出）。它们的指南内容多用 CC BY-NC-SA 许可，本项目没有使用；本项目的拆解指南本来就有难度、时间、工具和停止点，这次加了自动检查。</li>
+      </ul>
+      <h2 className="mt-8 text-xl font-medium" id="v35-a11y">v35：无障碍检查和打印导出</h2>
+      <p className="mt-2 leading-7 text-ink-soft" data-testid="credits-v35">
+        v35 新增了无障碍自动检查：开发时用 axe-core（MPL-2.0，只作为开发依赖，只在测试里注入页面，不进网站的发布包）检查 16 个页面的中英文界面。打印 / 导出 PDF 用的是浏览器自带的“打印 → 另存为 PDF”，没有用付费服务或额外的库。红外遥控器拆解指南的文字和示意图是本项目自己写的，按公开资料整理，未经实物验证。
+      </p>
+      <ul className="mt-2 list-disc space-y-1 pl-6 text-sm leading-6 text-ink-soft" data-testid="credits-v35-list">
+        <li><a className="underline" href="https://github.com/dequelabs/axe-core">dequelabs/axe-core</a>（MPL-2.0）：网页无障碍规则引擎。只在开发测试里用（e2e/axe-check.mjs），没有修改或打包进网站。</li>
       </ul>
       <h2 className="mt-8 text-xl font-medium">代码库</h2>
       <p className="mt-2 leading-7 text-ink-soft">
