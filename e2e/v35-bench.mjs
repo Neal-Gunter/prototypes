@@ -58,7 +58,7 @@ for (const lang of ["zh", "en"]) {
   const { c, p, T } = await page(lang);
   await p.goto(BASE + "/teardown/"); await T("td-guide").waitFor({ timeout: 20000 }).catch(() => {});
   const nDev = await p.locator('[data-testid^="td-device-"]').count();
-  ok(nDev === 12 && await T("td-device-ir-remote").count() === 1, `${lang}：设备列表 ${nDev} 台，有红外遥控器`);
+  ok(nDev >= 12 && await T("td-device-ir-remote").count() === 1, `${lang}：设备列表 ${nDev} 台，有红外遥控器`);
   await T("td-device-ir-remote").click(); await wait(500);
   const g = await T("td-guide").innerText();
   ok(lang === "zh" ? /停止点/.test(g) && /异丙醇/.test(g) : /Stop point/.test(g) && !CJK1.test(g.replace(/[（）]/g, "")), `${lang}：遥控器指南有停止点${lang === "en" ? "、英文无汉字" : ""}`);
@@ -79,7 +79,7 @@ for (const lang of ["zh", "en"]) {
   const fp = await dl.path(); const html = fs.readFileSync(fp, "utf8");
   ok(dl.suggestedFilename() === `teardown-ir-remote-${lang}.html` && /<svg/.test(html) && html.length > 5000, `${lang}：下载打印版 HTML`, dl.suggestedFilename() + " " + html.length);
   const t = await p.locator("body").innerText();
-  ok(lang === "zh" ? t.includes("12 台") || !/只有 \d+ 台/.test(t) : true, `${lang}：设备数文字跟着实际数量`);
+  ok(lang === "zh" ? t.includes(`${nDev} 台`) || !/只有 \d+ 台/.test(t) : true, `${lang}：设备数文字跟着实际数量`);
   if (lang === "zh") await shot(p, "teardown-ir-remote-zh");
   await c.close();
 }

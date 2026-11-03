@@ -90,7 +90,7 @@ export default function LinkPanel({ tid = "link" }) {
           <label key={k} className={`flex items-center gap-0.5 rounded border px-1 ${kind === k ? "border-copper bg-copper/10" : "border-line"}`}>
             <input type="radio" name={`${tid}-kind`} checked={kind === k} disabled={st !== "idle"} onChange={() => setKind(k)} data-testid={`${tid}-kind-${k}`} />{zh}
           </label>))}
-        {kind === "mock" && <select value={flavor} disabled={st !== "idle"} onChange={(e) => setFlavor(e.target.value)} className="border border-line bg-white" data-testid={`${tid}-flavor`}><option value="ble">像蓝牙（延迟 {MOCK_PRESETS.ble.latencyMs}±{MOCK_PRESETS.ble.jitterMs} ms，丢包 {MOCK_PRESETS.ble.drop * 100}%）</option><option value="serial">像 USB 串口（延迟 {MOCK_PRESETS.serial.latencyMs} ms）</option></select>}
+        {kind === "mock" && <select aria-label="模拟设备类型" value={flavor} disabled={st !== "idle"} onChange={(e) => setFlavor(e.target.value)} className="border border-line bg-white" data-testid={`${tid}-flavor`}><option value="ble">像蓝牙（延迟 {MOCK_PRESETS.ble.latencyMs}±{MOCK_PRESETS.ble.jitterMs} ms，丢包 {MOCK_PRESETS.ble.drop * 100}%）</option><option value="serial">像 USB 串口（延迟 {MOCK_PRESETS.serial.latencyMs} ms）</option></select>}
         <label className="flex items-center gap-0.5" title="演练：不打开串口 / 蓝牙，一个字节都不发，指令只喂给仿真孪生"><input type="checkbox" checked={dry} disabled={st !== "idle"} onChange={(e) => setDry(e.target.checked)} data-testid={`${tid}-dry`} />演练（不发送）</label>
       </div>
       {kind === "mock" && <p className="text-[11px] text-ink-soft" data-testid={`${tid}-mock-note`}>模拟设备 = 浏览器里的一块虚拟板子：跑的是同一份固件逻辑（firmware.js 孪生 + OCTL/1），加了延迟、丢包、坏帧、时钟漂移、电池压降和合成的 IMU 晃动（都是估算）。它只用来演示和测试，<b>不代表真机效果</b>。</p>}
@@ -107,9 +107,9 @@ export default function LinkPanel({ tid = "link" }) {
 
       <fieldset className="flex flex-col gap-1" disabled={!live}>
         <div className="grid grid-cols-[3.5rem_1fr_2.5rem] items-center gap-x-1">
-          <span>油门</span><input type="range" min="0" max="1" step="0.05" value={thr} onChange={(e) => setThr(+e.target.value)} data-testid={`${tid}-thr`} /><span>{thr.toFixed(2)}</span>
-          <span>转向</span><input type="range" min="-1" max="1" step="0.05" value={steer} onChange={(e) => setSteer(+e.target.value)} data-testid={`${tid}-steer`} /><span>{steer.toFixed(2)}</span>
-          <span>限速</span><input type="range" min="30" max="240" step="10" value={rate} onChange={(e) => setRate(+e.target.value)} data-testid={`${tid}-rate`} /><span>{rate}°/s</span>
+          <span>油门</span><input aria-label="油门" type="range" min="0" max="1" step="0.05" value={thr} onChange={(e) => setThr(+e.target.value)} data-testid={`${tid}-thr`} /><span>{thr.toFixed(2)}</span>
+          <span>转向</span><input aria-label="转向" type="range" min="-1" max="1" step="0.05" value={steer} onChange={(e) => setSteer(+e.target.value)} data-testid={`${tid}-steer`} /><span>{steer.toFixed(2)}</span>
+          <span>限速</span><input aria-label="限速" type="range" min="30" max="240" step="10" value={rate} onChange={(e) => setRate(+e.target.value)} data-testid={`${tid}-rate`} /><span>{rate}°/s</span>
         </div>
         <div className="flex flex-wrap gap-1">
           <B t={`${tid}-go`} on={() => run(S.current.go(thr, steer))} cls="border-copper">▶ 开始 / 更新速度</B>
@@ -120,7 +120,7 @@ export default function LinkPanel({ tid = "link" }) {
           <div className="mt-1 grid grid-cols-4 gap-1">{pose.map((v, i) => <label key={i} className="flex flex-col text-[10px]">舵机 {i}：{v}°<input type="range" min="-55" max="55" value={v} onChange={(e) => setPose(pose.map((x, j) => (j === i ? +e.target.value : x)))} data-testid={`${tid}-pose-${i}`} /></label>)}</div>
           <B t={`${tid}-send-pose`} on={() => run(S.current.pose(pose))}>发姿势（POSE，按校准限位裁剪）</B>
           <div className="mt-1 grid grid-cols-[4.5rem_1fr_3rem] items-center gap-x-1">
-            {[["freq_hz", "频率 Hz", 0.1, 1.2, 0.05], ["yaw_amp_deg", "摆幅 °", 0, 55, 1], ["lift_amp_deg", "抬幅 °", 0, 55, 1], ["phase_deg", "相位差 °", 0, 360, 5], ["duty", "划水占比", 0.3, 0.9, 0.05], ["press_deg", "下压 °", 0, 40, 1]].map(([k, zh, lo, hi, step]) => [<span key={k + "l"}>{zh}</span>, <input key={k} type="range" min={lo} max={hi} step={step} value={gait[k]} onChange={(e) => setGait({ ...gait, [k]: +e.target.value })} data-testid={`${tid}-gait-${k}`} />, <span key={k + "v"}>{gait[k]}</span>])}
+            {[["freq_hz", "频率 Hz", 0.1, 1.2, 0.05], ["yaw_amp_deg", "摆幅 °", 0, 55, 1], ["lift_amp_deg", "抬幅 °", 0, 55, 1], ["phase_deg", "相位差 °", 0, 360, 5], ["duty", "划水占比", 0.3, 0.9, 0.05], ["press_deg", "下压 °", 0, 40, 1]].map(([k, zh, lo, hi, step]) => [<span key={k + "l"}>{zh}</span>, <input key={k} aria-label={zh} type="range" min={lo} max={hi} step={step} value={gait[k]} onChange={(e) => setGait({ ...gait, [k]: +e.target.value })} data-testid={`${tid}-gait-${k}`} />, <span key={k + "v"}>{gait[k]}</span>])}
           </div>
           <p className="text-[11px] text-ink-soft">估算峰值角速度 {gaitPeakRate(gait).toFixed(0)} °/s{gaitPeakRate(gait) > SAFETY.rateCap ? `，超过 ${SAFETY.rateCap} °/s，发送时自动降频` : ""}。</p>
           <B t={`${tid}-send-gait`} on={() => run(S.current.gait(gait))}>发步态参数（GAIT）</B>
@@ -135,7 +135,7 @@ export default function LinkPanel({ tid = "link" }) {
       </div>}
 
       {s && (s.hist.length > 0 || s.dryRun) && <>
-        <div className="flex items-center gap-1">看哪一路：<select value={ch} onChange={(e) => setCh(+e.target.value)} className="border border-line bg-white" data-testid={`${tid}-ch`}>{Array.from({ length: 8 }, (_, i) => <option key={i} value={i}>舵机 {i}</option>)}</select></div>
+        <div className="flex items-center gap-1">看哪一路：<select aria-label="看哪一路" value={ch} onChange={(e) => setCh(+e.target.value)} className="border border-line bg-white" data-testid={`${tid}-ch`}>{Array.from({ length: 8 }, (_, i) => <option key={i} value={i}>舵机 {i}</option>)}</select></div>
         {s.dryRun ? <p className="text-ink-soft" data-testid={`${tid}-dry-note`}>演练模式没有板子遥测，只显示仿真孪生：模式 {MODES[s.ref?.snapshot().mode] || "—"}，舵机 {ch} = {f(s.ref?.snapshot().a[ch])}°。本来要发的最近几帧：<code className="block break-all text-[10px]" data-testid={`${tid}-dry-frames`}>{s.dry.slice(-4).join("  ")}</code></p>
           : <Chart hist={s.hist} ch={ch} now={now} />}
         {!s.dryRun && d && <table className="w-full font-mono text-[11px]" data-testid={`${tid}-diff`}><tbody>

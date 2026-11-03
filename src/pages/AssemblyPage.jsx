@@ -313,7 +313,7 @@ export default function AssemblyPage() {
           </div>
           <details className="mt-1 text-xs">
             <summary className="cursor-pointer">{tr("导入清单（粘贴文字清单，照着装配）")}</summary>
-            <textarea value={listText} onChange={(e) => setListText(e.target.value)} rows={8} spellCheck={false} className="mt-1 w-full border border-line bg-white p-1 font-mono text-[11px] leading-4" data-testid="list-text" />
+            <textarea aria-label="零件清单文本" value={listText} onChange={(e) => setListText(e.target.value)} rows={8} spellCheck={false} className="mt-1 w-full border border-line bg-white p-1 font-mono text-[11px] leading-4" data-testid="list-text" />
             <button type="button" disabled={!ready || (demo && !demo.done)} onClick={() => buildList(listText)} className="min-h-8 border border-ink px-2 disabled:opacity-50" data-testid="list-build">{tr("照清单装配")}</button>
             <p className="mt-1 text-ink-soft">每行一件：面包板 / 板子 / 零件 / 跳线 / 导线 / 舵机 / USB，“#”后是注释。<Link to="/assembly/guide" className="underline">看装配指南格式</Link></p>
           </details>

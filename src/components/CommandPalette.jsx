@@ -69,9 +69,9 @@ export default function CommandPalette() {
           className="w-full border-b border-line bg-white px-3 py-2 text-base outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-copper" data-testid="palette-input" />
         <ul ref={list} id="pal-list" role="listbox" aria-label={tr("结果")} className="max-h-[50vh] overflow-auto text-sm" data-testid="palette-list">
           {items.map((it, i) => (
-            <li key={it[1]} id={`pal-opt-${i}`} role="option" aria-selected={i === sel}><button type="button" tabIndex={-1} onMouseEnter={() => setSel(i)} onClick={() => go(it)} className={`flex w-full gap-2 px-3 py-1.5 text-left ${i === sel ? "bg-ink text-paper-2" : ""}`} data-testid="palette-item">
-              <span className={`${lang === "en" ? "w-12" : "w-8"} shrink-0 text-xs opacity-70`}>{tr(it[0])}</span><span className="truncate">{L(it)}</span>{it[3] && <span className="ml-auto shrink-0 font-mono text-[11px] opacity-60">{it[3]}</span>}
-            </button></li>
+            <li key={it[1]} id={`pal-opt-${i}`} role="option" aria-selected={i === sel} onMouseEnter={() => setSel(i)} onClick={() => go(it)} className={`flex w-full cursor-pointer gap-2 px-3 py-1.5 text-left ${i === sel ? "bg-ink text-paper-2" : ""}`} data-testid="palette-item">
+              <span className={`${lang === "en" ? "w-12" : "w-8"} shrink-0 text-xs opacity-90`}>{tr(it[0])}</span><span className="truncate">{L(it)}</span>{it[3] && <span className="ml-auto shrink-0 font-mono text-[11px] opacity-90">{it[3]}</span>}
+            </li>
           ))}
           {!items.length && <li role="option" aria-selected="false" aria-disabled="true" className="px-3 py-2 text-ink-soft">{extra.parts.length ? tr("没找到") : tr("正在加载零件索引…")}</li>}
         </ul>

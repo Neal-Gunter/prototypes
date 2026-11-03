@@ -207,6 +207,14 @@ export default function CreditsPage() {
       <ul className="mt-2 list-disc space-y-1 pl-6 text-sm leading-6 text-ink-soft" data-testid="credits-v35-list">
         <li><a className="underline" href="https://github.com/dequelabs/axe-core">dequelabs/axe-core</a>（MPL-2.0）：网页无障碍规则引擎。只在开发测试里用（e2e/axe-check.mjs），没有修改或打包进网站。</li>
       </ul>
+      <h2 className="mt-8 text-xl font-medium" id="v36-print">v36：打印版检查和厨房计时器</h2>
+      <p className="mt-2 leading-7 text-ink-soft" data-testid="credits-v36">
+        v36 的打印版页码用的是浏览器自带的 CSS 分页（@page 页边框里的页码计数），目录是普通的页内链接，没有用额外的库或付费服务。检查打印版 PDF 时用 Playwright 生成 PDF，再用 poppler-utils 里的 pdftotext（GPL-2.0，只在开发机上的测试里调用，不进网站的发布包）逐页读出文字。电子厨房计时器拆解指南的文字和示意图是本项目自己写的，按公开资料整理，未经实物验证；尺寸都是估算。
+      </p>
+      <ul className="mt-2 list-disc space-y-1 pl-6 text-sm leading-6 text-ink-soft" data-testid="credits-v36-list">
+        <li><a className="underline" href="https://poppler.freedesktop.org/">poppler / pdftotext</a>（GPL-2.0）：只在测试脚本 e2e/sheet-pdf-lint.mjs 里调用，没有修改或打包进网站。</li>
+        <li><a className="underline" href="https://www.w3.org/TR/css-page-3/">W3C CSS Paged Media Module Level 3</a>：页边框和页码计数的写法按这份规范，代码是自己写的。</li>
+      </ul>
       <h2 className="mt-8 text-xl font-medium">代码库</h2>
       <p className="mt-2 leading-7 text-ink-soft">
         React、three.js、@dimforge/rapier3d-compat（Apache-2.0，物理碰撞）、@react-three/fiber、@react-three/drei、zustand、Tailwind CSS（除注明外均为 MIT 许可）。模型转换脚本用 glTF‑Transform 和 meshoptimizer（MIT，只在开发时运行）。“模型 + 功能图”页（v11）在浏览器里用 occt-import-js（LGPL‑2.1，读 STEP；作为单独的 JS + wasm 文件按需加载，没有改动，可替换）和 pdfjs-dist（Apache-2.0，读 PDF 功能图，按需加载）。内置示例的八爪鱼 GLB 和功能图 SVG 由本项目从 v10 预设自制；v12 的 2 自由度机械臂示例（OBJ + 功能图 + 工程）由本项目脚本自制，CC0。关节和舵机运动用同一个 Rapier 引擎。

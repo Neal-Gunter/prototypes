@@ -71,7 +71,7 @@ export default function ElecPanel({ probes, setProbes, tool, setTool }) {
       {cur && (
         <section>
           <p className="font-medium">固件（{cur.ref}）</p>
-          <textarea value={code} onChange={(e) => setCode(e.target.value)} spellCheck={false} rows={9} placeholder="点“按接线自动生成”，或者自己写 Arduino 风格代码" className="mt-1 w-full border border-line bg-white p-1 font-mono text-[11px] leading-4" data-testid="fw-code" />
+          <textarea aria-label="固件代码" value={code} onChange={(e) => setCode(e.target.value)} spellCheck={false} rows={9} placeholder="点“按接线自动生成”，或者自己写 Arduino 风格代码" className="mt-1 w-full border border-line bg-white p-1 font-mono text-[11px] leading-4" data-testid="fw-code" />
           <div className="mt-1 flex flex-wrap gap-1 text-xs">
             <button type="button" onClick={auto} className="min-h-8 border border-line bg-white px-2" data-testid="fw-auto">按接线自动生成</button>
             <button type="button" onClick={upload} className="min-h-8 border border-ink bg-ink px-2 text-paper-2" data-testid="fw-upload">上传并运行</button>
