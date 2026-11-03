@@ -82,7 +82,27 @@
   "校准": "calibration",
   "老实说": "honestly",
   "简化": "simplified",
-  "北京时间": "Beijing time"
+  "北京时间": "Beijing time",
+  "滑片": "wiper",
+  "地夹": "ground clip",
+  "储能电容": "bulk capacitor",
+  "近似件": "approximate part",
+  "拆解": "teardown",
+  "爆炸图": "exploded view",
+  "电位器": "potentiometer",
+  "轻触按键": "tactile button",
+  "阳极": "anode",
+  "阴极": "cathode",
+  "限流电阻": "current-limiting resistor",
+  "转接板": "breakout board",
+  "铜柱": "standoff",
+  "热熔螺母": "heat-set insert",
+  "物料清单": "bill of materials",
+  "接线表": "wiring table",
+  "色环": "colour bands",
+  "护目镜": "eye protection",
+  "电池扣": "battery clip",
+  "集线器": "hub"
  },
  "post": [
   [
