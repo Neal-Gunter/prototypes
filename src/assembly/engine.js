@@ -1106,6 +1106,8 @@ class Engine {
       const sleeping = b.rb.isSleeping();
       // v34（我的补充）：检查间隔按穿透深度自适应。安静 ≥ 3 次 → 每 ce 步；安静 ≥ 12 次 → 每 coldMax 步（默认 3；试过 4：凸包场景终态出现过一次 4.2 mm）。
       // 只推了很浅（< shallowMm，默认 0.1 mm）的不清零“安静”计数，只退回每 ce 步；推得深才退回每步都查。engine.coldMax = 0 关掉（= v33）
+      // v34（我的补充）：细长件转动阻尼加大（thinDamp，默认 2 = 和其它零件一样，不变），落桌时少翘、少来回晃
+      if (b._thinD === undefined && (b._thinD = this.isThin(b)) && (this.thinDamp ?? 2) !== 2) b.rb.setAngularDamping(this.thinDamp);
       const q = b._quiet || 0, cm = crowd ? this.coldMax ?? 3 : 0;
       const every = ce <= 1 || q < 3 ? 1 : (cm > ce && q >= 12 ? cm : ce);
       if (!sleeping && every > 1 && (this.stepN + (b._ph ??= (+bid || 0) % 12)) % every !== 0) {
@@ -1192,6 +1194,16 @@ class Engine {
     }
     return out;
   }
+  // v34（我的补充）：细长件（单个零件，最细的一边 ≤ thinMm 默认 12 mm、最长边 ≥ 4 倍第二长边，例如光轴、长螺丝）也按“小件”加时修穿透。
+  // 两根细轴交叉叠落时，上面那根一步能走 2 cm，比轴本身还粗；不加时的话会留下一帧 3 mm 左右的压进。engine.thinMm = 0 关掉
+  isThin(body) {
+    const tm = this.thinMm ?? 12;
+    if (!tm || body.parts.size !== 1) return false;
+    const d = this.parts.get([...body.parts][0])?.def?.dims_mm;
+    if (!d) return false;
+    const a = [d.x, d.y, d.z].sort((x, y) => x - y);
+    return a[0] > 0 && a[0] <= tm && a[2] >= 4 * a[1];
+  }
   depenetrate(bid, iters = 6) {
     const body = this.bodies.get(bid);
     if (!body) return 0;
@@ -1233,7 +1245,7 @@ class Engine {
     }
     // v31（我的补充，简化）：小件（质量小、常卡在别的零件空腔里）纠正更“硬”：
     // 规定轮数做完还压进去 > xtraMm 就多做几轮（最多 xtraIt 轮），卡死判定也更早（stuckSmall 次而不是 40 次）
-    const small = fast && (body._small ??= body.rb.mass() < (this.smallMass ?? 1.5));
+    const small = fast && (body._small ??= body.rb.mass() < (this.smallMass ?? 1.5) || this.isThin(body));
     // 落地冲击那一刻（压进 > deepMm）大件也加时：默认关（engine.xtraItDeep = 0）。v31 实测峰值能降但每步更慢、终态穿透反而变大，留作可选
     const xtra = fast ? (small ? this.xtraIt ?? 6 : this.xtraItDeep ?? 0) : 0, xtraD = -(this.xtraMm ?? 0.5) / 10, deepD = -(this.deepMm ?? 2) / 10;
     for (let it = 0; it < iters + xtra; it++) {
