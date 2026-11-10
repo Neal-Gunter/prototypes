@@ -1,16 +1,22 @@
 {
-  "generatedAt": "2026-11-03T09:10:36.509Z",
+  "generatedAt": "2026-11-10T01:52:50.205Z",
   "note": "只含标题 / 语言 / LOC / Section 事实，不含原文描述",
   "forks": 452,
-  "parsedForks": 404,
+  "parsedForks": 403,
   "formats": {
-    "dash-paren": 389,
+    "dash-paren": 388,
     "checkbox-list": 2,
     "plain-lines": 10,
     "override": 1,
     "markdown-table": 2
   },
   "skipped": [
+    {
+      "repo": "andrewn6/fromthetransistor",
+      "_skipped": true,
+      "reason": "parse-failed",
+      "tried": []
+    },
     {
       "repo": "opofingob/fromthetransistor",
       "_skipped": true,
@@ -266,7 +272,6 @@
         "via": "auto",
         "priority": 0,
         "alsoFoundIn": [
-          "andrewn6/fromthetransistor",
           "automata/fromthetransistor",
           "pynchmeister/fromthetransistor",
           "michaelgold3n/fromthetransistor",
@@ -679,7 +684,6 @@
         "via": "auto",
         "priority": 0,
         "alsoFoundIn": [
-          "andrewn6/fromthetransistor",
           "automata/fromthetransistor",
           "pynchmeister/fromthetransistor",
           "michaelgold3n/fromthetransistor",
@@ -1082,7 +1086,6 @@
         "via": "auto",
         "priority": 0,
         "alsoFoundIn": [
-          "andrewn6/fromthetransistor",
           "automata/fromthetransistor",
           "pynchmeister/fromthetransistor",
           "michaelgold3n/fromthetransistor",
@@ -1497,7 +1500,6 @@
         "via": "auto",
         "priority": 0,
         "alsoFoundIn": [
-          "andrewn6/fromthetransistor",
           "automata/fromthetransistor",
           "pynchmeister/fromthetransistor",
           "michaelgold3n/fromthetransistor",
@@ -1912,7 +1914,6 @@
         "via": "auto",
         "priority": 0,
         "alsoFoundIn": [
-          "andrewn6/fromthetransistor",
           "automata/fromthetransistor",
           "pynchmeister/fromthetransistor",
           "michaelgold3n/fromthetransistor",
@@ -2326,7 +2327,6 @@
         "via": "auto",
         "priority": 0,
         "alsoFoundIn": [
-          "andrewn6/fromthetransistor",
           "automata/fromthetransistor",
           "pynchmeister/fromthetransistor",
           "michaelgold3n/fromthetransistor",
@@ -2738,7 +2738,6 @@
         "via": "auto",
         "priority": 0,
         "alsoFoundIn": [
-          "andrewn6/fromthetransistor",
           "automata/fromthetransistor",
           "pynchmeister/fromthetransistor",
           "michaelgold3n/fromthetransistor",
@@ -3152,7 +3151,6 @@
         "via": "auto",
         "priority": 0,
         "alsoFoundIn": [
-          "andrewn6/fromthetransistor",
           "automata/fromthetransistor",
           "pynchmeister/fromthetransistor",
           "michaelgold3n/fromthetransistor",
@@ -3567,7 +3565,6 @@
         "via": "auto",
         "priority": 0,
         "alsoFoundIn": [
-          "andrewn6/fromthetransistor",
           "automata/fromthetransistor",
           "pynchmeister/fromthetransistor",
           "michaelgold3n/fromthetransistor",
@@ -3982,7 +3979,6 @@
         "via": "auto",
         "priority": 0,
         "alsoFoundIn": [
-          "andrewn6/fromthetransistor",
           "automata/fromthetransistor",
           "pynchmeister/fromthetransistor",
           "michaelgold3n/fromthetransistor",
@@ -4397,7 +4393,6 @@
         "via": "auto",
         "priority": 0,
         "alsoFoundIn": [
-          "andrewn6/fromthetransistor",
           "automata/fromthetransistor",
           "pynchmeister/fromthetransistor",
           "michaelgold3n/fromthetransistor",
@@ -4812,7 +4807,6 @@
         "via": "auto",
         "priority": 0,
         "alsoFoundIn": [
-          "andrewn6/fromthetransistor",
           "automata/fromthetransistor",
           "pynchmeister/fromthetransistor",
           "michaelgold3n/fromthetransistor",
@@ -5227,7 +5221,6 @@
         "via": "auto",
         "priority": 0,
         "alsoFoundIn": [
-          "andrewn6/fromthetransistor",
           "automata/fromthetransistor",
           "pynchmeister/fromthetransistor",
           "michaelgold3n/fromthetransistor",
@@ -5642,7 +5635,6 @@
         "via": "auto",
         "priority": 0,
         "alsoFoundIn": [
-          "andrewn6/fromthetransistor",
           "automata/fromthetransistor",
           "pynchmeister/fromthetransistor",
           "michaelgold3n/fromthetransistor",
@@ -6057,7 +6049,6 @@
         "via": "auto",
         "priority": 0,
         "alsoFoundIn": [
-          "andrewn6/fromthetransistor",
           "automata/fromthetransistor",
           "pynchmeister/fromthetransistor",
           "michaelgold3n/fromthetransistor",
@@ -6472,7 +6463,6 @@
         "via": "auto",
         "priority": 0,
         "alsoFoundIn": [
-          "andrewn6/fromthetransistor",
           "automata/fromthetransistor",
           "pynchmeister/fromthetransistor",
           "michaelgold3n/fromthetransistor",
@@ -6887,7 +6877,6 @@
         "via": "auto",
         "priority": 0,
         "alsoFoundIn": [
-          "andrewn6/fromthetransistor",
           "automata/fromthetransistor",
           "pynchmeister/fromthetransistor",
           "michaelgold3n/fromthetransistor",
@@ -7302,7 +7291,6 @@
         "via": "auto",
         "priority": 0,
         "alsoFoundIn": [
-          "andrewn6/fromthetransistor",
           "automata/fromthetransistor",
           "pynchmeister/fromthetransistor",
           "michaelgold3n/fromthetransistor",
@@ -7717,7 +7705,6 @@
         "via": "auto",
         "priority": 0,
         "alsoFoundIn": [
-          "andrewn6/fromthetransistor",
           "automata/fromthetransistor",
           "pynchmeister/fromthetransistor",
           "michaelgold3n/fromthetransistor",
@@ -8132,7 +8119,6 @@
         "via": "auto",
         "priority": 0,
         "alsoFoundIn": [
-          "andrewn6/fromthetransistor",
           "automata/fromthetransistor",
           "pynchmeister/fromthetransistor",
           "michaelgold3n/fromthetransistor",
@@ -8547,7 +8533,6 @@
         "via": "auto",
         "priority": 0,
         "alsoFoundIn": [
-          "andrewn6/fromthetransistor",
           "automata/fromthetransistor",
           "pynchmeister/fromthetransistor",
           "michaelgold3n/fromthetransistor",
@@ -8962,7 +8947,6 @@
         "via": "auto",
         "priority": 0,
         "alsoFoundIn": [
-          "andrewn6/fromthetransistor",
           "automata/fromthetransistor",
           "pynchmeister/fromthetransistor",
           "michaelgold3n/fromthetransistor",
@@ -9377,7 +9361,6 @@
         "via": "auto",
         "priority": 0,
         "alsoFoundIn": [
-          "andrewn6/fromthetransistor",
           "automata/fromthetransistor",
           "pynchmeister/fromthetransistor",
           "michaelgold3n/fromthetransistor",
@@ -9792,7 +9775,6 @@
         "via": "auto",
         "priority": 0,
         "alsoFoundIn": [
-          "andrewn6/fromthetransistor",
           "automata/fromthetransistor",
           "pynchmeister/fromthetransistor",
           "michaelgold3n/fromthetransistor",

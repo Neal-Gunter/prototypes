@@ -58,7 +58,6 @@
       "adaptation": "translated-to-js-timing",
       "note": "只取标题、语言和 LOC；题面自己写",
       "alsoFoundIn": [
-        "andrewn6/fromthetransistor",
         "automata/fromthetransistor",
         "pynchmeister/fromthetransistor",
         "michaelgold3n/fromthetransistor",
