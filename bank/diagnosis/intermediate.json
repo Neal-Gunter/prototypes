@@ -110,6 +110,56 @@
   {
     "attribution": "按公开资料整理",
     "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "dx-octo-batt-01",
+    "mode": "diagnosis",
+    "difficulty": "intermediate",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original-diagnosis-prompt",
+      "note": "题面自己写；连到 octo-low-battery"
+    },
+    "title": "八爪鱼能开机但不走路：先查电池电压",
+    "titleEn": "The octopus powers on but will not walk: check the battery voltage first",
+    "prompt": "八爪鱼指示灯能亮，舵机却没劲、不迈步。更合理的第一步是什么？做完可进入对应维修关卡。按公开资料整理。",
+    "promptEn": "The octopus indicator lights, but the servos have no strength and it will not take a step. What is the more reasonable first step? You can then open the matching repair level. Compiled from public information.",
+    "passCondition": {
+      "type": "diagnosisQuiz",
+      "repairUrl": "/repair?s=octo-low-battery",
+      "scenario": "octo-low-battery",
+      "questions": [
+        {
+          "id": "q1",
+          "prompt": "更合理的第一步？",
+          "promptEn": "The more reasonable first step?",
+          "options": [
+            {
+              "id": "a",
+              "zh": "先量电池或电源在空载和带舵机负载时的电压，电压过低就先充电或更换，再查别的",
+              "en": "Measure the battery or supply voltage with no load and with the servos connected; if it is too low, charge or replace it before looking for other faults"
+            },
+            {
+              "id": "b",
+              "zh": "先改固件把步态幅度加到最大",
+              "en": "Change the firmware to the largest gait first"
+            },
+            {
+              "id": "c",
+              "zh": "先把所有舵机同时拆下来换新",
+              "en": "Replace every servo at once"
+            }
+          ],
+          "answer": "a"
+        }
+      ]
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
     "hints": [
       "相关公开工具（awesome-electronics，CC0 名录）：Soldering is Easy",
       "相关公开工具（awesome-electronics，CC0 名录）：Uses of Different Soldering Iron Tips"
@@ -158,6 +208,72 @@
               "id": "c",
               "zh": "更换整块电源模块，不再测量",
               "en": "Replace the whole power module without measuring"
+            }
+          ],
+          "answer": "a"
+        }
+      ]
+    },
+    "toolLinks": [
+      {
+        "name": "Soldering is Easy",
+        "url": "https://mightyohm.com/blog/2011/04/soldering-is-easy-comic-book/"
+      },
+      {
+        "name": "Uses of Different Soldering Iron Tips",
+        "url": "https://www.instructables.com/id/Uses-of-Different-Soldering-Iron-Tips/"
+      }
+    ],
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [
+      "相关公开工具（awesome-electronics，CC0 名录）：Soldering is Easy",
+      "相关公开工具（awesome-electronics，CC0 名录）：Uses of Different Soldering Iron Tips"
+    ],
+    "hintsEn": [
+      "Related public tool (awesome-electronics, CC0 list): Soldering is Easy",
+      "Related public tool (awesome-electronics, CC0 list): Uses of Different Soldering Iron Tips"
+    ],
+    "id": "dx-psu-bridge-01",
+    "mode": "diagnosis",
+    "difficulty": "intermediate",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original-diagnosis-prompt",
+      "note": "题面自己写；连到 psu-output-bridge"
+    },
+    "title": "稳压模块一插上就烫手：会不会是输出被焊锡桥短接？",
+    "titleEn": "The regulator gets hot as soon as it is plugged in: is the output bridged?",
+    "prompt": "一块低压稳压模块刚插上（输入仍是直流低压）就很快发烫。输出端两焊盘看起来很近。更稳妥的做法？本题不涉及市电。按公开资料整理。",
+    "promptEn": "A low-voltage regulator module gets hot almost as soon as it is plugged in (the input is still low-voltage DC). The two output pads look very close. What is the safer action? This task does not involve mains. Compiled from public information.",
+    "passCondition": {
+      "type": "diagnosisQuiz",
+      "repairUrl": "/repair?s=psu-output-bridge",
+      "scenario": "psu-output-bridge",
+      "questions": [
+        {
+          "id": "q1",
+          "prompt": "更稳妥的做法？",
+          "promptEn": "The safer action?",
+          "options": [
+            {
+              "id": "a",
+              "zh": "先断电，用放大镜看出端有没有焊锡桥，再用表量输出正负是否短路，确认后再考虑通电",
+              "en": "Power down first, inspect the output pads for a solder bridge, and measure whether the output is shorted, before considering applying power again"
+            },
+            {
+              "id": "b",
+              "zh": "先加大输入电压看它还烫不烫",
+              "en": "Raise the input voltage to see if it still gets hot"
+            },
+            {
+              "id": "c",
+              "zh": "先用手按住发热的芯片继续通电",
+              "en": "Hold the hot chip down by hand and leave the power on"
             }
           ],
           "answer": "a"

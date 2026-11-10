@@ -2,6 +2,61 @@
   {
     "attribution": "按公开资料整理",
     "staleAfter": "2027-11-01",
+    "hints": [
+      "相关公开工具（awesome-electronics，CC0 名录）：Soldering is Easy",
+      "相关公开工具（awesome-electronics，CC0 名录）：Uses of Different Soldering Iron Tips"
+    ],
+    "hintsEn": [
+      "Related public tool (awesome-electronics, CC0 list): Soldering is Easy",
+      "Related public tool (awesome-electronics, CC0 list): Uses of Different Soldering Iron Tips"
+    ],
+    "id": "as-cap-orient-01",
+    "mode": "assembly",
+    "difficulty": "intermediate",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "电解电容负极朝向标记后再焊接",
+    "titleEn": "Orient the electrolytic capacitor to its minus mark, then solder",
+    "prompt": "顺序：cap 在 solder 之前。cap 朝向必须是 minus-marked（负极/色条对着板上的标记）。不要先焊再转方向。",
+    "promptEn": "Order: cap before solder. The cap orientation must be minus-marked (the minus stripe faces the mark on the board). Do not solder it before setting the orientation.",
+    "starterSteps": [],
+    "passCondition": {
+      "type": "assemblyConstraint",
+      "requiredParts": [
+        "cap",
+        "solder"
+      ],
+      "order": [
+        {
+          "before": "cap",
+          "after": "solder"
+        }
+      ],
+      "orientation": [
+        {
+          "part": "cap",
+          "must": "minus-marked"
+        }
+      ]
+    },
+    "toolLinks": [
+      {
+        "name": "Soldering is Easy",
+        "url": "https://mightyohm.com/blog/2011/04/soldering-is-easy-comic-book/"
+      },
+      {
+        "name": "Uses of Different Soldering Iron Tips",
+        "url": "https://www.instructables.com/id/Uses-of-Different-Soldering-Iron-Tips/"
+      }
+    ],
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
     "hints": [],
     "hintsEn": [],
     "id": "as-jst-01",

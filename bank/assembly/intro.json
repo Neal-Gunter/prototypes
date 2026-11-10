@@ -4,6 +4,44 @@
     "staleAfter": "2027-11-01",
     "hints": [],
     "hintsEn": [],
+    "id": "as-cover-last-01",
+    "mode": "assembly",
+    "difficulty": "intro",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "先装电路板和支撑柱，最后再盖盖子",
+    "titleEn": "Fit the board and standoffs first, and put the cover on last",
+    "prompt": "顺序：board 在 standoff 之前，standoff 在 cover 之前。需要出现 board、standoff、cover。不要先盖盖子再装板。",
+    "promptEn": "Order: board before standoff, standoff before cover. board, standoff and cover must all appear. Do not fit the cover before the board.",
+    "starterSteps": [],
+    "passCondition": {
+      "type": "assemblyConstraint",
+      "requiredParts": [
+        "board",
+        "standoff",
+        "cover"
+      ],
+      "order": [
+        {
+          "before": "board",
+          "after": "standoff"
+        },
+        {
+          "before": "standoff",
+          "after": "cover"
+        }
+      ]
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
     "id": "as-header-01",
     "mode": "assembly",
     "difficulty": "intro",
