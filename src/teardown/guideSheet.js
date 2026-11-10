@@ -65,7 +65,11 @@ export function tocPageLabel(start, span = 1, en = false) {
   return en ? `p. ${a}` : `第 ${a} 页`;
 }
 // 打印页内联脚本：按实测高度回填目录页码。A4 正文区 186×263 mm（页边 16/12/18 mm）。
-export const TOC_BACKFILL_JS = `(function(){
+export function tocBackfillScript(en = false) {
+  const lab = en
+    ? 'var b=start+Math.max(1,span)-1;return b>start?("p. "+start+"–"+b):("p. "+start);'
+    : 'var b=start+Math.max(1,span)-1;return b>start?("\\u7b2c "+start+"–"+b+" \\u9875"):("\\u7b2c "+start+" \\u9875");';
+  return `(function(){
   var PAGE_H = (297-16-18)*96/25.4;
   function q(s){ return document.querySelector(s); }
   function heightUntil(start, end){
@@ -78,11 +82,7 @@ export const TOC_BACKFILL_JS = `(function(){
   }
   function pagesFor(px){ return Math.max(1, Math.ceil((px - 2) / PAGE_H)); }
   function k(v){ return Math.max(1, Math.floor(Number(v) || 1)); }
-  function label(start, span, en){
-    var b = start + Math.max(1, span) - 1;
-    if (b > start) return en ? ("p. " + start + "–" + b) : ("第 " + start + "–" + b + " 页");
-    return en ? ("p. " + start) : ("第 " + start + " 页");
-  }
+  function label(start, span){ ${lab} }
   function backfill(){
     document.body.classList.add("toc-measure");
     void document.body.offsetHeight;
@@ -107,7 +107,6 @@ export const TOC_BACKFILL_JS = `(function(){
     map.modules = p; p += k(spans.modules);
     map.notes = p; p += k(spans.notes);
     var stepsSpan = stepN.reduce(function(a,x){ return a + k(x); }, 0) || 1;
-    var en = (document.documentElement.lang || "").indexOf("en") === 0;
     document.querySelectorAll(".toc-pg").forEach(function(el){
       var id = el.getAttribute("data-sec");
       var start = map[id];
@@ -118,7 +117,7 @@ export const TOC_BACKFILL_JS = `(function(){
       else if (id && spans[id] != null) span = k(spans[id]);
       el.setAttribute("data-page", String(start));
       el.setAttribute("data-span", String(span));
-      el.textContent = label(start, span, en);
+      el.textContent = label(start, span);
     });
     var root = document.documentElement;
     root.setAttribute("data-toc-ready", "1");
@@ -130,7 +129,9 @@ export const TOC_BACKFILL_JS = `(function(){
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", backfill);
   else backfill();
   window.addEventListener("beforeprint", backfill);
-})();`
+})();`;
+}
+export const TOC_BACKFILL_JS = tocBackfillScript(false);
 export function guideHtml(dev, lang = "zh", { now = new Date(), prog = null, base = LIVE } = {}) {
   const en = lang === "en", L = (x) => (x == null ? "" : typeof x === "string" ? x : en ? x.en : x.zh);
   const box = (on) => (on ? "☑" : "☐");
@@ -169,7 +170,7 @@ ${toc}</div>
 <h2 id="steps">${H.steps}</h2><ol>${steps}</ol>
 <h2 id="modules">${H.modules}</h2><table><thead><tr><th>${t("模块", "Module")}</th><th>${t("零件库对应", "Library match")}</th><th>id</th></tr></thead><tbody>${dev.modules.map((m) => `<tr><td>${esc(L(m.t))}</td><td>${esc(L(MATCH[m.match]))}</td><td class="mono">${esc(m.part)}</td></tr>`).join("")}</tbody></table>
 <h2 id="notes">${H.notes}</h2><p>${t("指南文字和插图都是本项目自己写、自己画的，没有复制任何外部拆解指南的文字或照片。", "All guide text and diagrams are written and drawn by this project. No text or photos were copied from any outside teardown guide.")}</p>
-</body><script>${TOC_BACKFILL_JS}</script></html>`;
+</body><script>${tocBackfillScript(en)}</script></html>`;
 }
 
 // v36：数据里的停止点文字本来就以“停止点：”开头，只在缺前缀时补上，避免重复
