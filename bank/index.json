@@ -1,0 +1,136 @@
+{
+  "generatedAt": "2026-11-10T01:52:50.425Z",
+  "modes": {
+    "firmware": {
+      "intro": {
+        "count": 4,
+        "updatedAt": "2026-11-10T01:52:50.425Z",
+        "contentHash": "9cbcf87b116f3009",
+        "staleEarliest": "2027-11-01T00:00:00.000Z",
+        "staleLatest": "2027-11-01T00:00:00.000Z",
+        "staleCount": 0
+      },
+      "intermediate": {
+        "count": 3,
+        "updatedAt": "2026-11-10T00:00:00.000Z",
+        "contentHash": "05c610a65895f738",
+        "staleEarliest": "2026-11-25T00:00:00.000Z",
+        "staleLatest": "2027-11-01T00:00:00.000Z",
+        "staleCount": 0
+      },
+      "advanced": {
+        "count": 1,
+        "updatedAt": "2026-11-10T00:00:00.000Z",
+        "contentHash": "8a8554fc45cce333",
+        "staleEarliest": "2027-11-01T00:00:00.000Z",
+        "staleLatest": "2027-11-01T00:00:00.000Z",
+        "staleCount": 0
+      }
+    },
+    "workbench": {
+      "intro": {
+        "count": 3,
+        "updatedAt": "2026-11-10T00:00:00.000Z",
+        "contentHash": "b131bc1f107e083d",
+        "staleEarliest": "2027-11-01T00:00:00.000Z",
+        "staleLatest": "2027-11-01T00:00:00.000Z",
+        "staleCount": 0
+      },
+      "intermediate": {
+        "count": 2,
+        "updatedAt": "2026-11-10T00:00:00.000Z",
+        "contentHash": "1606be626101f47c",
+        "staleEarliest": "2027-11-01T00:00:00.000Z",
+        "staleLatest": "2027-11-01T00:00:00.000Z",
+        "staleCount": 0
+      },
+      "advanced": {
+        "count": 0,
+        "updatedAt": "2026-11-10T00:00:00.000Z",
+        "contentHash": "4f53cda18c2baa0c",
+        "staleEarliest": null,
+        "staleLatest": null,
+        "staleCount": 0
+      }
+    },
+    "assembly": {
+      "intro": {
+        "count": 4,
+        "updatedAt": "2026-11-10T00:00:00.000Z",
+        "contentHash": "2f5f30f76641e65d",
+        "staleEarliest": "2027-11-01T00:00:00.000Z",
+        "staleLatest": "2027-11-01T00:00:00.000Z",
+        "staleCount": 0
+      },
+      "intermediate": {
+        "count": 1,
+        "updatedAt": "2026-11-10T00:00:00.000Z",
+        "contentHash": "bd9bbc0488362fc0",
+        "staleEarliest": "2027-11-01T00:00:00.000Z",
+        "staleLatest": "2027-11-01T00:00:00.000Z",
+        "staleCount": 0
+      },
+      "advanced": {
+        "count": 0,
+        "updatedAt": "2026-11-10T00:00:00.000Z",
+        "contentHash": "4f53cda18c2baa0c",
+        "staleEarliest": null,
+        "staleLatest": null,
+        "staleCount": 0
+      }
+    },
+    "diagnosis": {
+      "intro": {
+        "count": 2,
+        "updatedAt": "2026-11-10T00:00:00.000Z",
+        "contentHash": "d47e145fb7369346",
+        "staleEarliest": "2027-11-01T00:00:00.000Z",
+        "staleLatest": "2027-11-01T00:00:00.000Z",
+        "staleCount": 0
+      },
+      "intermediate": {
+        "count": 3,
+        "updatedAt": "2026-11-10T00:00:00.000Z",
+        "contentHash": "14338fc5a6b20ac0",
+        "staleEarliest": "2027-11-01T00:00:00.000Z",
+        "staleLatest": "2027-11-01T00:00:00.000Z",
+        "staleCount": 0
+      },
+      "advanced": {
+        "count": 3,
+        "updatedAt": "2026-11-10T00:00:00.000Z",
+        "contentHash": "de56e41d3bd3a1f1",
+        "staleEarliest": "2027-11-01T00:00:00.000Z",
+        "staleLatest": "2027-11-01T00:00:00.000Z",
+        "staleCount": 0
+      }
+    },
+    "code-check": {
+      "intro": {
+        "count": 4,
+        "updatedAt": "2026-11-10T00:00:00.000Z",
+        "contentHash": "9deb7e054cfee88f",
+        "staleEarliest": "2026-10-01T00:00:00.000Z",
+        "staleLatest": "2027-11-01T00:00:00.000Z",
+        "staleCount": 1
+      },
+      "intermediate": {
+        "count": 7,
+        "updatedAt": "2026-11-10T00:00:00.000Z",
+        "contentHash": "05ea57f919a3d7d1",
+        "staleEarliest": "2027-11-01T00:00:00.000Z",
+        "staleLatest": "2027-11-01T00:00:00.000Z",
+        "staleCount": 0
+      },
+      "advanced": {
+        "count": 1,
+        "updatedAt": "2026-11-10T00:00:00.000Z",
+        "contentHash": "03d8bebc72e0b82a",
+        "staleEarliest": "2027-11-01T00:00:00.000Z",
+        "staleLatest": "2027-11-01T00:00:00.000Z",
+        "staleCount": 0
+      }
+    }
+  },
+  "total": 38
+}

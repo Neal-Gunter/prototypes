@@ -1,0 +1,179 @@
+[
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "dx-cold-solder-01",
+    "mode": "diagnosis",
+    "difficulty": "intermediate",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "fault-seeds",
+      "seed": "fault-cold-solder-01",
+      "adaptation": "original-diagnosis-prompt",
+      "ref": "NASA / public-domain soldering notes",
+      "note": "题面自己写；不复制外部指南原文"
+    },
+    "title": "轻敲会恢复：更像什么故障？",
+    "titleEn": "It recovers when tapped: which fault is more likely?",
+    "prompt": "灯有时亮有时不亮，轻敲板边又好了。下面哪个判断更合理？可以随后在维修关卡里用万用表核实。按公开资料整理。",
+    "promptEn": "The lamp works intermittently and recovers when the board edge is tapped. Which reading is more reasonable? You can then confirm it with a meter in the repair level. Compiled from public information.",
+    "passCondition": {
+      "type": "diagnosisQuiz",
+      "faultPool": [
+        "fault-cold-solder-01"
+      ],
+      "repairUrl": "/repair?s=led-cold-joint",
+      "scenario": "led-cold-joint",
+      "questions": [
+        {
+          "id": "q1",
+          "prompt": "这种‘轻敲恢复’更常见于？",
+          "promptEn": "This ‘recovers when tapped’ symptom is more often seen with?",
+          "options": [
+            {
+              "id": "a",
+              "zh": "程序被擦掉了",
+              "en": "The firmware having been erased"
+            },
+            {
+              "id": "b",
+              "zh": "虚焊或冷焊，接触随机械扰动变化",
+              "en": "A cold solder joint whose contact changes with mechanical disturbance"
+            },
+            {
+              "id": "c",
+              "zh": "电池电压精确等于门槛值",
+              "en": "The battery voltage sitting exactly on a threshold"
+            }
+          ],
+          "answer": "b"
+        }
+      ]
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "dx-harness-01",
+    "mode": "diagnosis",
+    "difficulty": "intermediate",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "fault-seeds",
+      "seed": "fault-harness-overbend-01",
+      "adaptation": "original-diagnosis-prompt"
+    },
+    "title": "线束弯折处间歇性断电",
+    "titleEn": "Intermittent power loss at a tight bend in the harness",
+    "prompt": "设备一走动就重启，线束在铰接处弯得很紧。更应该先查什么？按公开资料整理。",
+    "promptEn": "The device reboots when it starts moving, and the harness has a tight bend at a hinge. What should you check first? Compiled from public information.",
+    "passCondition": {
+      "type": "diagnosisQuiz",
+      "faultPool": [
+        "fault-harness-overbend-01"
+      ],
+      "repairUrl": "/repair?s=octo-thin-wire",
+      "scenario": "octo-thin-wire",
+      "questions": [
+        {
+          "id": "q1",
+          "prompt": "优先检查？",
+          "promptEn": "Check first?",
+          "options": [
+            {
+              "id": "a",
+              "zh": "弯折处导线是否过细、外皮是否破裂，弯折半径是否过小",
+              "en": "Whether the wire at the bend is too thin, the jacket is cracked, or the bend radius is too tight"
+            },
+            {
+              "id": "b",
+              "zh": "只重新烧录固件",
+              "en": "Reflash the firmware only"
+            },
+            {
+              "id": "c",
+              "zh": "把电机电压再提高一档",
+              "en": "Raise the motor voltage by one step"
+            }
+          ],
+          "answer": "a"
+        }
+      ]
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [
+      "相关公开工具（awesome-electronics，CC0 名录）：Soldering is Easy",
+      "相关公开工具（awesome-electronics，CC0 名录）：Uses of Different Soldering Iron Tips"
+    ],
+    "hintsEn": [
+      "Related public tool (awesome-electronics, CC0 list): Soldering is Easy",
+      "Related public tool (awesome-electronics, CC0 list): Uses of Different Soldering Iron Tips"
+    ],
+    "id": "dx-pad-lift-01",
+    "mode": "diagnosis",
+    "difficulty": "intermediate",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "fault-seeds",
+      "seed": "fault-pad-lift-01",
+      "adaptation": "original-diagnosis-prompt"
+    },
+    "title": "焊点看着完整，走线却是开路",
+    "titleEn": "The joint looks intact but the trace is open",
+    "prompt": "焊点外观正常，量对应焊盘到下一颗零件却是开路。更可能是焊盘起翘或铜皮断裂。下一步怎么核实？按公开资料整理。",
+    "promptEn": "The joint looks fine, but the pad measures open to the next part. A lifted pad or broken copper is more likely. How would you confirm it? Compiled from public information.",
+    "passCondition": {
+      "type": "diagnosisQuiz",
+      "faultPool": [
+        "fault-pad-lift-01"
+      ],
+      "repairUrl": "/repair?s=sensor-cracked-trace",
+      "scenario": "sensor-cracked-trace",
+      "questions": [
+        {
+          "id": "q1",
+          "prompt": "更稳妥的核实方法？",
+          "promptEn": "The safer way to confirm it?",
+          "options": [
+            {
+              "id": "a",
+              "zh": "用表从焊盘沿走线逐段量通断，并用放大镜看焊盘边缘是否离开基板",
+              "en": "Measure continuity along the trace from the pad, and use a magnifier to see if the pad has lifted off the board"
+            },
+            {
+              "id": "b",
+              "zh": "直接加大烙铁温度再焊一次",
+              "en": "Turn the iron up and solder the joint again"
+            },
+            {
+              "id": "c",
+              "zh": "更换整块电源模块，不再测量",
+              "en": "Replace the whole power module without measuring"
+            }
+          ],
+          "answer": "a"
+        }
+      ]
+    },
+    "toolLinks": [
+      {
+        "name": "Soldering is Easy",
+        "url": "https://mightyohm.com/blog/2011/04/soldering-is-easy-comic-book/"
+      },
+      {
+        "name": "Uses of Different Soldering Iron Tips",
+        "url": "https://www.instructables.com/id/Uses-of-Different-Soldering-Iron-Tips/"
+      }
+    ],
+    "_stale": false
+  }
+]

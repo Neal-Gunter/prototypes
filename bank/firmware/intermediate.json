@@ -1,0 +1,146 @@
+[
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "fw-led-duty-01",
+    "mode": "firmware",
+    "difficulty": "intermediate",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "20% 占空比的 LED 闪烁（200 ms 亮、800 ms 灭）",
+    "titleEn": "Blink the LED at 20% duty (200 ms on, 800 ms off)",
+    "prompt": "让 LED_BUILTIN 亮 200 ms、灭 800 ms，重复。允许 ±100 ms。这是时序练习，不是 PWM 硬件。",
+    "promptEn": "Drive LED_BUILTIN high for 200 ms and low for 800 ms, and repeat. ±100 ms is accepted. This is a timing exercise, not hardware PWM.",
+    "firmwareTemplate": "void setup() {\n  pinMode(LED_BUILTIN, OUTPUT);\n}\nvoid loop() {\n  \n}\n",
+    "passCondition": {
+      "type": "behaviorTimeline",
+      "pins": {
+        "LED": 48
+      },
+      "expected": [
+        {
+          "t": 0,
+          "pin": "LED",
+          "state": "HIGH"
+        },
+        {
+          "t": 200,
+          "pin": "LED",
+          "state": "LOW"
+        },
+        {
+          "t": 1000,
+          "pin": "LED",
+          "state": "HIGH"
+        },
+        {
+          "t": 1200,
+          "pin": "LED",
+          "state": "LOW"
+        }
+      ],
+      "toleranceMs": 100,
+      "horizonMs": 2500
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2026-11-25",
+    "hints": [],
+    "hintsEn": [],
+    "id": "fw-serial-tick-01",
+    "mode": "firmware",
+    "difficulty": "intermediate",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "每秒从串口打出 tick",
+    "titleEn": "Print tick on serial once a second",
+    "prompt": "从 t=0 开始，每隔 1000 ms 调用一次 Serial.println(\"tick\")，至少打出三次。时间仍只在 delay() 里走。",
+    "promptEn": "Starting at t=0, call Serial.println(\"tick\") every 1000 ms, at least three times. Time still only advances inside delay().",
+    "firmwareTemplate": "void setup() {\n}\nvoid loop() {\n  \n}\n",
+    "passCondition": {
+      "type": "behaviorTimeline",
+      "expected": [
+        {
+          "t": 0,
+          "serial": "tick"
+        },
+        {
+          "t": 1000,
+          "serial": "tick"
+        },
+        {
+          "t": 2000,
+          "serial": "tick"
+        }
+      ],
+      "toleranceMs": 80,
+      "horizonMs": 2500
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "fw-two-phase-01",
+    "mode": "firmware",
+    "difficulty": "intermediate",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "先快闪两次，再停 600 ms",
+    "titleEn": "Two short flashes, then a 600 ms pause",
+    "prompt": "LED_BUILTIN：亮 100 ms、灭 100 ms、再亮 100 ms、再灭 600 ms，然后重复。检查前两个亮灭和第三次变亮。",
+    "promptEn": "On LED_BUILTIN: 100 ms on, 100 ms off, 100 ms on, 600 ms off, then repeat. The check covers the first two flashes and the start of the next cycle.",
+    "firmwareTemplate": "void setup() {\n  pinMode(LED_BUILTIN, OUTPUT);\n}\nvoid loop() {\n  \n}\n",
+    "passCondition": {
+      "type": "behaviorTimeline",
+      "pins": {
+        "LED": 48
+      },
+      "expected": [
+        {
+          "t": 0,
+          "pin": "LED",
+          "state": "HIGH"
+        },
+        {
+          "t": 100,
+          "pin": "LED",
+          "state": "LOW"
+        },
+        {
+          "t": 200,
+          "pin": "LED",
+          "state": "HIGH"
+        },
+        {
+          "t": 300,
+          "pin": "LED",
+          "state": "LOW"
+        },
+        {
+          "t": 900,
+          "pin": "LED",
+          "state": "HIGH"
+        }
+      ],
+      "toleranceMs": 80,
+      "horizonMs": 2000
+    },
+    "_stale": false
+  }
+]
