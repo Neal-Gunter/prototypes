@@ -1,0 +1,1 @@
+namespace hal { void init() {} }

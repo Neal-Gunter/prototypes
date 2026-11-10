@@ -5,6 +5,7 @@
 // v35：新设备换成红外遥控器，加打印版指南（弹出页内容放回主页面录下来）、键盘 R 旋转、致谢页 v35。
 // v36：新设备换成电子厨房计时器，打印版指南录目录 + 图例，键盘加 T / F 倾斜、N 摆正，致谢页 v36。
 // v37：新设备换成电池感应小夜灯，打印版录二维码，再打开二维码指向的那一步；键盘倾斜来回按回原样、转不开时往旁边挪；致谢页 v37。
+// v38：加题库目录、黄标、固件时序练习、模板代码检查、诊断跳转维修关卡、致谢页 v38。
 // 用法：BASE=http://localhost:4173 OUT=/workspace/proto-site/v33 node e2e/demo-record.mjs  然后用 ffmpeg 转 mp4
 import { chromium } from "playwright";
 import fs from "node:fs";
@@ -21,6 +22,31 @@ const log = [];
 const step = async (name, fn, cap) => { const t0 = Date.now(); try { await fn(); if (cap) subs.push([t0 - V0, Date.now() - V0, cap]); log.push(`✓ ${name} ${Date.now() - t0}ms`); } catch (e) { log.push(`✗ ${name}: ${String(e).slice(0, 120)}`); } };
 const scroll = async (dy, n = 6, ms = 250) => { for (let i = 0; i < n; i++) { await p.mouse.wheel(0, dy); await w(ms); } };
 await step("首页", async () => { await p.goto(BASE + "/"); await w(2500); await scroll(300, 4); }, "首页：几个模块的入口（早期原型，简化仿真）");
+
+await step("题库：目录和新鲜度", async () => {
+  await p.goto(BASE + "/bank"); await T("bank-index").waitFor({ timeout: 30000 }); await w(2500);
+  await T("bank-cell-firmware-intermediate").scrollIntoViewIfNeeded(); await w(1500);
+  await T("bank-cell-firmware-intermediate").click(); await T("bank-list").waitFor({ timeout: 15000 }); await w(2000);
+  await scroll(200, 3, 300);
+}, "v38 题库：先加载目录，再点进一组。黄底表示最早过期日距今不到 30 天；过期条目仍可练习");
+await step("题库：固件时序", async () => {
+  await p.goto(BASE + "/bank?mode=firmware&diff=intro&id=fw-led-blink-01"); await T("bank-practice").waitFor({ timeout: 20000 }); await w(1500);
+  const blink = "void setup(){pinMode(LED_BUILTIN,OUTPUT);}void loop(){digitalWrite(LED_BUILTIN,HIGH);delay(500);digitalWrite(LED_BUILTIN,LOW);delay(500);}";
+  await T("bank-editor").fill(blink); await w(800);
+  await T("bank-run").click(); await T("bank-result").waitFor({ timeout: 10000 }); await w(2500);
+}, "固件题：用已有的类 Arduino 解释器跑代码，对照 LED 闪烁时序（简化仿真）");
+await step("题库：模板代码检查", async () => {
+  await p.goto(BASE + "/bank?mode=code-check&diff=advanced&id=cc-cpp-tpl-ring-01"); await T("bank-practice").waitFor({ timeout: 20000 }); await w(1200);
+  const src = "template<typename T> class Slot {};\ntemplate<typename T, typename Buf = Slot<Slot<T>>> class RingBuffer {\npublic:\n  void push(const T&) {}\n};\n";
+  await T("bank-editor").fill(src); await w(800);
+  await T("bank-run").click(); await T("bank-result").waitFor({ timeout: 10000 }); await w(2500);
+}, "代码检查：轻量 C/C++ 解析器识别模板类，模板参数里的 >> 也能跳过；不编译，不加载 WASM");
+await step("题库：诊断连到维修关卡", async () => {
+  await p.goto(BASE + "/bank?mode=diagnosis&diff=intro&id=dx-reverse-01"); await T("bank-quiz").waitFor({ timeout: 20000 }); await w(1500);
+  await T("bank-opt-q1-b").click(); await w(800);
+  await T("bank-run").click(); await T("bank-result").waitFor({ timeout: 8000 }); await w(2000);
+  await T("bank-repair-link").scrollIntoViewIfNeeded(); await w(2000);
+}, "诊断题：自己写的判断题，做完可以跳到已有的维修关卡继续练");
 await step("拆解：设备列表 + 搜索", async () => {
   await p.goto(BASE + "/teardown/"); await T("teardown-page").waitFor({ timeout: 30000 }); await w(1500);
   await T("td-search").pressSequentially("tp4056", { delay: 120 }); await w(1500); await T("td-search").fill(""); await w(800);
@@ -81,6 +107,10 @@ await step("致谢：v37", async () => {
   await p.goto(BASE + "/credits#v37-qr"); await w(1500);
   await T("credits-v37").scrollIntoViewIfNeeded().catch(() => {}); await w(3500);
 }, "v37：二维码编码用 uqr（MIT），测试里用 jsQR（Apache-2.0）解码核对；新增 11 个页面的键盘焦点顺序检查");
+await step("致谢：v38", async () => {
+  await p.goto(BASE + "/credits#v38-bank"); await w(1500);
+  await T("credits-v38").scrollIntoViewIfNeeded().catch(() => {}); await w(4000);
+}, "v38：题面全部自己写；fromthetransistor 只取标题和 LOC；NASA 公有领域资料用自己的话；tree-sitter 只在构建期使用");
 await step("工作台：固件编辑器", async () => {
   await p.goto(BASE + "/workbench/"); await T("code").waitFor({ timeout: 30000 }); await w(2500);
   await T("code").focus(); await w(800); await p.keyboard.press("Tab"); await w(1500);

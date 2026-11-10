@@ -1,0 +1,111 @@
+[
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "dx-connector-01",
+    "mode": "diagnosis",
+    "difficulty": "intro",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "fault-seeds",
+      "seed": "fault-connector-misinsert-01",
+      "adaptation": "original-diagnosis-prompt",
+      "note": "题面自己写"
+    },
+    "title": "某一路没有输出：会不会是插头插反？",
+    "titleEn": "One channel has no output: could the connector be reversed?",
+    "prompt": "设备有一路完全没有输出，相邻一路正常。连接器带键位，但键位可能被强行插反。请选出更合理的检查顺序。按公开资料整理。",
+    "promptEn": "One channel has no output at all; a neighbour works. The connector is keyed, but the key may have been forced the wrong way. Pick the more reasonable check order. Compiled from public information.",
+    "passCondition": {
+      "type": "diagnosisQuiz",
+      "faultPool": [
+        "fault-connector-misinsert-01"
+      ],
+      "repairUrl": "/repair?s=octo-plug-out",
+      "scenario": "octo-plug-out",
+      "questions": [
+        {
+          "id": "q1",
+          "prompt": "更合理的第一步？",
+          "promptEn": "The more reasonable first step?",
+          "options": [
+            {
+              "id": "a",
+              "zh": "先看插头和插座的键位、丝印是否对上，再通电",
+              "en": "Check that the key and silkscreen on the plug and socket line up, before applying power"
+            },
+            {
+              "id": "b",
+              "zh": "先加大电源电流把那一路‘顶亮’",
+              "en": "Raise the supply current to force that channel on"
+            },
+            {
+              "id": "c",
+              "zh": "先把两路输出短接对比",
+              "en": "Short the two outputs together to compare them"
+            }
+          ],
+          "answer": "a"
+        }
+      ]
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "dx-reverse-01",
+    "mode": "diagnosis",
+    "difficulty": "intro",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "fault-seeds",
+      "seed": "fault-reverse-polarity-01",
+      "adaptation": "original-diagnosis-prompt",
+      "ref": "nasa-llis-1398",
+      "note": "题面自己写；只引用公开 NASA Lessons Learned 编号和失效模式名"
+    },
+    "title": "换了灯珠还是不亮：先查什么？",
+    "titleEn": "The new LED still does not light: what do you check first?",
+    "prompt": "客户说刚换的 LED 还是不亮，电源极性可能被接反。下面哪一项是更稳妥的第一步？做完选择题可以进入对应的维修关卡。失效模式名称来自公开资料，题面是自己写的。按公开资料整理。",
+    "promptEn": "A customer says a newly replaced LED still does not light, and the supply polarity may be reversed. Which first step is safer? After the quiz you can open the matching repair level. The failure-mode name comes from public sources; the wording is original. Compiled from public information.",
+    "passCondition": {
+      "type": "diagnosisQuiz",
+      "faultPool": [
+        "fault-reverse-polarity-01"
+      ],
+      "repairUrl": "/repair?s=led-reversed",
+      "scenario": "led-reversed",
+      "questions": [
+        {
+          "id": "q1",
+          "prompt": "上电之前更稳妥的一步是？",
+          "promptEn": "Before applying power, which step is safer?",
+          "options": [
+            {
+              "id": "a",
+              "zh": "先把电源直接加上，看灯会不会亮",
+              "en": "Apply power immediately and see if the LED lights"
+            },
+            {
+              "id": "b",
+              "zh": "先核对 LED 和电源的极性标记，再用表确认电压方向",
+              "en": "Check polarity markings on the LED and supply, then confirm voltage direction with a meter"
+            },
+            {
+              "id": "c",
+              "zh": "先换一颗更大电流的灯珠再试",
+              "en": "Fit a higher-current LED and try again"
+            }
+          ],
+          "answer": "b"
+        }
+      ]
+    },
+    "_stale": false
+  }
+]

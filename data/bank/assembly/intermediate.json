@@ -1,0 +1,41 @@
+[
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "as-jst-01",
+    "mode": "assembly",
+    "difficulty": "intermediate",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "JST 插头按键位插好后再上电",
+    "titleEn": "Seat the keyed JST connector before applying power",
+    "prompt": "顺序：jst-plug 在 power 之前。jst-plug 朝向必须是 keyed。不要先通电再插插头。",
+    "promptEn": "Order: jst-plug before power. The jst-plug orientation must be keyed. Do not apply power before the connector is seated.",
+    "starterSteps": [],
+    "passCondition": {
+      "type": "assemblyConstraint",
+      "requiredParts": [
+        "jst-plug",
+        "power"
+      ],
+      "order": [
+        {
+          "before": "jst-plug",
+          "after": "power"
+        }
+      ],
+      "orientation": [
+        {
+          "part": "jst-plug",
+          "must": "keyed"
+        }
+      ]
+    },
+    "_stale": false
+  }
+]

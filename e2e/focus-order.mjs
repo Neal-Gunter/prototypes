@@ -8,7 +8,7 @@ import { chromium } from "playwright";
 import fs from "node:fs";
 const BASE = process.env.BASE || "http://localhost:4173", OUT = process.env.OUT || "/tmp/focus";
 fs.mkdirSync(OUT, { recursive: true });
-const PAGES = [["home", "/"], ["example", "/example"], ["workbench", "/workbench"], ["assembly", "/assembly"], ["parts", "/parts"], ["guide", "/assembly/guide"], ["octo-guide", "/assembly/octopus-guide"], ["teardown", "/teardown/"], ["teardown-step", "/teardown/?d=micro-servo&s=3"], ["credits", "/credits"], ["help", "/help"]];
+const PAGES = [["home", "/"], ["example", "/example"], ["workbench", "/workbench"], ["assembly", "/assembly"], ["parts", "/parts"], ["guide", "/assembly/guide"], ["octo-guide", "/assembly/octopus-guide"], ["teardown", "/teardown/"], ["teardown-step", "/teardown/?d=micro-servo&s=3"], ["credits", "/credits"], ["help", "/help"], ["bank", "/bank"]];
 // 自测：MUTATE=1 时在 /example 里人为加一个焦点陷阱、一个正数 tabindex、一个去掉焦点样式的按钮，三类都必须报出来
 const MUT = process.env.MUTATE === "1";
 if (MUT) PAGES.splice(0, PAGES.length, ["mut-trap", "/example"], ["mut-order", "/example"], ["mut-visible", "/example"]);

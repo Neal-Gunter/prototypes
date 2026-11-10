@@ -1,0 +1,67 @@
+[
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "fw-burst-01",
+    "mode": "firmware",
+    "difficulty": "advanced",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "三次 80 ms 短脉冲后长灭",
+    "titleEn": "Three 80 ms pulses followed by a long off period",
+    "prompt": "LED_BUILTIN 连续三次：亮 80 ms、灭 80 ms；第三次灭之后再多灭 400 ms（也就是第三次亮之后一共灭 480 ms），然后重复。允许 ±50 ms。乱翻翻转碰运气会被判失败。",
+    "promptEn": "On LED_BUILTIN, three times: 80 ms on, 80 ms off; after the third off, wait an extra 400 ms (480 ms off after the third on), then repeat. ±50 ms is accepted. Extra toggles fail the check.",
+    "firmwareTemplate": "void setup() {\n  pinMode(LED_BUILTIN, OUTPUT);\n}\nvoid loop() {\n  \n}\n",
+    "passCondition": {
+      "type": "behaviorTimeline",
+      "pins": {
+        "LED": 48
+      },
+      "expected": [
+        {
+          "t": 0,
+          "pin": "LED",
+          "state": "HIGH"
+        },
+        {
+          "t": 80,
+          "pin": "LED",
+          "state": "LOW"
+        },
+        {
+          "t": 160,
+          "pin": "LED",
+          "state": "HIGH"
+        },
+        {
+          "t": 240,
+          "pin": "LED",
+          "state": "LOW"
+        },
+        {
+          "t": 320,
+          "pin": "LED",
+          "state": "HIGH"
+        },
+        {
+          "t": 400,
+          "pin": "LED",
+          "state": "LOW"
+        },
+        {
+          "t": 880,
+          "pin": "LED",
+          "state": "HIGH"
+        }
+      ],
+      "toleranceMs": 50,
+      "horizonMs": 1500
+    },
+    "_stale": false
+  }
+]

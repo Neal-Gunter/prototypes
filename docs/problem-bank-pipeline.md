@@ -932,3 +932,39 @@ jobs:
 
 1. 课程大纲页是否需要在「题目即将过期」时主动提示（例如 `staleEarliest` 距今 <30 天时显示黄色标记）？如果不需要，`index.json` 里的字段保留供外部工具使用即可。
 2. 模板题的 `requiredTemplates` 是否需要区分“模板函数”与“模板类”？当前实现合并成一个集合检查，如果教学上需要区分，spec 可拆为 `requiredTemplateFunctions` 与 `requiredTemplateClasses`。
+
+
+---
+
+## v38 实现说明（我的补充）
+
+已确认决策落地：
+
+- 课程大纲 / 题库目录在 `staleEarliest` 距今不到 30 天时用黄底提示，过期条目不阻断练习，只提示“来源可能已变更”。
+- `requiredTemplates` 保持合并检查（模板函数或模板类都算），不拆成两个字段。
+
+相对第 4.2 节示例代码修掉的问题（页面端校验器 `src/validators/c-lite.js`）：
+
+1. tokenizer：数字被 `\w+` 先吃掉成 ident → 数字模式放前面，标识符要求字母或下划线开头；预处理行先抹掉。
+2. `skipTemplateParams`：括号里的 `>` 不算（例如 `template<int N = (3>2)>`）。
+3. `findScopes`：任何 `}` 都会弹出命名空间 / 类 → 改成完整的花括号栈。
+4. `template<class T>` 的参数被重新扫描成 `class T` → 跳过模板参数后再继续。
+5. 参数列表里的 `struct S`、`enum class` 被当成类 → 只在声明位置、括号外识别。
+6. 匿名命名空间会吃掉下一个标识符 → 紧跟 `{` 时记作 `<anonymous>`。
+7. 带返回类型的模板函数原来标不成模板 → 用“待定模板”标记直到被类或函数消费。
+8. `C<T>::set` 的限定名回溯，以及 `C::~C()`（spec 里的 `~C::C()` 不是合法 C++）。
+9. `if` / `for` / `while` 等关键字被识别成函数 → 关键字表排除。
+10. 类内联成员补全限定名，使 `Gpio::set` 能对上 `class Gpio { void set() {} }`。
+11. `findCalls` 把定义当成调用、认不出 `new` / `delete` 和 `foo<int>(`。
+12. `checkBalanced` / `maxLoopDepth` 在 spec 里未给出实现，这里补上。
+
+采集层（相对第 2、6、7 节示例）：
+
+- 没有 token 时不发 Authorization 头；token 只从 `GITHUB_TOKEN` 或 `GH_TOKEN` 读，不打印。在线失败或 `BANK_OFFLINE=1` 时回退到已提交的快照。
+- `stars: Infinity` 在 JSON 里会变成 `null`，改成 `original: true`。
+- 写入元数据时，内容不变就保留上次时间戳，避免无意义提交。
+- 故障分类跑在自己写的来源概述上（LLIS 是单页应用，CI 不解析 PDF）；link-only 来源永不入库。
+- `build-bank.js` 先写临时目录，0 条或抛错不覆盖已有 `data/bank/` 和 `public/bank/`。
+- GitHub Actions 工作流只出现在本功能分支；并加了拒绝向 main/master 推送的保护。定时构建只在默认分支会跑，启用到 main 需要另一次确认。
+
+种子题库有两道故意标了较近的 `staleAfter`，只为演示 `staleCount` 和黄标，题面仍可练习。

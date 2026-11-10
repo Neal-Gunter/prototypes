@@ -1,0 +1,170 @@
+[
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "as-header-01",
+    "mode": "assembly",
+    "difficulty": "intro",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "排针先对准 1 脚再插线",
+    "titleEn": "Align header pin 1 before plugging the jumper",
+    "prompt": "顺序：header 在 jumper 之前。header 的朝向必须是 pin1。",
+    "promptEn": "Order: header before jumper. The header orientation must be pin1.",
+    "starterSteps": [
+      {
+        "part": "header",
+        "orient": ""
+      }
+    ],
+    "passCondition": {
+      "type": "assemblyConstraint",
+      "requiredParts": [
+        "header",
+        "jumper"
+      ],
+      "order": [
+        {
+          "before": "header",
+          "after": "jumper"
+        }
+      ],
+      "orientation": [
+        {
+          "part": "header",
+          "must": "pin1"
+        }
+      ]
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "as-servo-horn-01",
+    "mode": "assembly",
+    "difficulty": "intro",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "舵机臂对准花键后再锁螺丝",
+    "titleEn": "Align the servo horn on the spline, then fit the screw",
+    "prompt": "顺序：servo 在 horn 之前，horn 在 horn-screw 之前。horn 朝向必须是 spline-aligned。",
+    "promptEn": "Order: servo before horn, horn before horn-screw. The horn orientation must be spline-aligned.",
+    "starterSteps": [],
+    "passCondition": {
+      "type": "assemblyConstraint",
+      "requiredParts": [
+        "servo",
+        "horn",
+        "horn-screw"
+      ],
+      "order": [
+        {
+          "before": "servo",
+          "after": "horn"
+        },
+        {
+          "before": "horn",
+          "after": "horn-screw"
+        }
+      ],
+      "orientation": [
+        {
+          "part": "horn",
+          "must": "spline-aligned"
+        }
+      ]
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "as-standoff-01",
+    "mode": "assembly",
+    "difficulty": "intro",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "先装铜柱，再放板子，最后拧螺丝",
+    "titleEn": "Fit the standoffs, then the board, then the screws",
+    "prompt": "按安装顺序列出零件：copper-standoff、board、screw。铜柱必须在板子之前，板子必须在螺丝之前。这是顺序练习，不是力矩规范。",
+    "promptEn": "List the parts in install order: copper-standoff, board, screw. The standoff must come before the board, and the board before the screw. This is an order exercise, not a torque spec.",
+    "starterSteps": [
+      {
+        "part": ""
+      }
+    ],
+    "passCondition": {
+      "type": "assemblyConstraint",
+      "requiredParts": [
+        "copper-standoff",
+        "board",
+        "screw"
+      ],
+      "order": [
+        {
+          "before": "copper-standoff",
+          "after": "board"
+        },
+        {
+          "before": "board",
+          "after": "screw"
+        }
+      ]
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "as-washer-01",
+    "mode": "assembly",
+    "difficulty": "intro",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "螺丝下面要垫垫圈",
+    "titleEn": "Put a washer under the screw",
+    "prompt": "顺序：washer 在 screw 之前，board 在 washer 之前。需要出现 board、washer、screw。",
+    "promptEn": "Order: washer before screw, and board before washer. board, washer and screw must all appear.",
+    "starterSteps": [],
+    "passCondition": {
+      "type": "assemblyConstraint",
+      "requiredParts": [
+        "board",
+        "washer",
+        "screw"
+      ],
+      "order": [
+        {
+          "before": "board",
+          "after": "washer"
+        },
+        {
+          "before": "washer",
+          "after": "screw"
+        }
+      ]
+    },
+    "_stale": false
+  }
+]

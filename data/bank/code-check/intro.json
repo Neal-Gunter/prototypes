@@ -1,0 +1,131 @@
+[
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "cc-asm-add-01",
+    "mode": "code-check",
+    "difficulty": "intro",
+    "source": {
+      "repo": "geohot/fromthetransistor",
+      "path": "Section 5: Assembler",
+      "originalProject": "Assembler (Python, 2000?+ LOC)",
+      "adaptation": "original-asm-subset",
+      "note": "只取标题、语言和 LOC；指令集是本站教学子集，不是原项目的汇编器"
+    },
+    "title": "用 mov 和 add 把 r0 写成 2",
+    "titleEn": "Use mov and add so r0 becomes 2",
+    "prompt": "用本站的 ARM 风格教学子集：至少写一条 mov 和一条 add。操作数个数要符合表。不汇编、不执行，只做文本检查。",
+    "promptEn": "Using this site's ARM-style teaching subset, write at least one mov and one add. Operand counts must match the table. This is a text check; nothing is assembled or executed.",
+    "starter": ".text\nstart:\n  \n",
+    "passCondition": {
+      "type": "codeCheck",
+      "format": "asm",
+      "spec": {
+        "requiredInstructions": [
+          "mov",
+          "add"
+        ],
+        "requiredLabels": [
+          "start"
+        ]
+      },
+      "referenceAnswer": "data/seeds/reference/cc-asm-add-01.s"
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "cc-c-blink-fn-01",
+    "mode": "code-check",
+    "difficulty": "intro",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "写出一个名为 blink 的 C 函数",
+    "titleEn": "Write a C function named blink",
+    "prompt": "在下面写出至少两个函数：main 和 blink。blink 要有函数体（空的也行）。这是结构检查，不编译、不运行。",
+    "promptEn": "Write at least two functions: main and blink. blink must have a body (an empty body is fine). This is a structure check; nothing is compiled or run.",
+    "starter": "/* 在这里写 */\n",
+    "passCondition": {
+      "type": "codeCheck",
+      "format": "c",
+      "spec": {
+        "requiredFunctions": [
+          "main",
+          "blink"
+        ]
+      },
+      "referenceAnswer": "data/seeds/reference/cc-c-blink-fn-01.c"
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2026-10-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "cc-c-noprintf-01",
+    "mode": "code-check",
+    "difficulty": "intro",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "写 main，但不要调用 printf 或 malloc",
+    "titleEn": "Write main without calling printf or malloc",
+    "prompt": "实现 main。本题禁止调用 printf 和 malloc（教学用的静态检查，不是完整的链接器）。",
+    "promptEn": "Implement main. This task forbids calls to printf and malloc (a teaching static check, not a full linker).",
+    "starter": "int main(void) {\n  return 0;\n}\n",
+    "passCondition": {
+      "type": "codeCheck",
+      "format": "c",
+      "spec": {
+        "requiredFunctions": [
+          "main"
+        ],
+        "forbiddenCalls": [
+          "printf",
+          "malloc"
+        ]
+      },
+      "referenceAnswer": "data/seeds/reference/cc-c-noprintf-01.c"
+    },
+    "_stale": true
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "cc-hex-eof-01",
+    "mode": "code-check",
+    "difficulty": "intro",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "写一份带结束记录的 Intel HEX",
+    "titleEn": "Write an Intel HEX file that includes an end record",
+    "prompt": "提交一份合法的 Intel HEX：至少有一条数据记录，并以 :00000001FF 结束。校验和必须正确。不烧录。",
+    "promptEn": "Submit a valid Intel HEX file with at least one data record, ending with :00000001FF. Checksums must be correct. Nothing is flashed.",
+    "starter": ":0100000000FF\n:00000001FF\n",
+    "passCondition": {
+      "type": "codeCheck",
+      "format": "hex",
+      "spec": {
+        "maxBytes": 64
+      },
+      "referenceAnswer": "data/seeds/reference/cc-hex-eof-01.hex"
+    },
+    "_stale": false
+  }
+]

@@ -175,6 +175,16 @@ The script uses `window.__wb` test hooks only to find where things are on the sc
   - 电流是估算值。
   - 只做直流层面的电压、电流检查。
 
+## v38：题库管线（早期原型，简化仿真）
+
+- **题库页 `/bank`**：先加载 `public/bank/index.json`，再按模式和难度按需加载对应 JSON。固件题用已有的 JS 解释器对照时间线；代码题用页面轻量 C/C++ / 汇编 / Intel HEX 校验器（不编译、不加载 WASM，c-lite.js gzip 约 6 KB，目标 <35 KB）；诊断题连到已有维修关卡；接线题按连通性，装配题按顺序和朝向。
+- **index.json**：每个 mode × difficulty 含 `count`、`updatedAt`（内容 hash 变化才更新）、`staleEarliest`、`staleLatest`、`staleCount`。黄底表示最早过期日距今不到 30 天（我的补充，已确认）。`requiredTemplates` 仍合并检查模板函数和模板类（已确认）。
+- **种子题**：38 道，题面全部自己写，标“按公开资料整理”。fromthetransistor 只取标题 / 语言 / LOC；故障种子来自自己写的概述，NASA 公有领域资料用自己的话，iFixit / EEVblog 只保留链接和失效模式名。
+- **构建**：`scripts/build-bank.js` 先写临时目录，0 条或出错不覆盖已有产物，只写 `data/meta/build-report.json`。同步到 `public/bank/`。`.github/workflows/build-bank.yml` 只在本分支，带拒绝推送到 main 的保护；定时任务要等进默认分支才会跑（需要你点头）。
+- **构建期 tree-sitter**：开发依赖，校验 C/C++ 参考答案与 spec 一致，不进发布包。
+- **测试**：`node scripts/bank-test.mjs`；`e2e/v38-bench.mjs` 走查题库页。
+- **限制**：校验器不是编译器；固件时间只在 delay() 里走；接线不是 3D 台面；有两道题故意标成即将过期或已过期，只为演示新鲜度；题面未经实物验证。
+
 ## v37：四元数键盘倾斜 + 旁边找空位 + 打印版二维码 + 键盘焦点顺序检查 + 电池感应小夜灯拆解（早期原型，简化仿真）
 
 - **四元数倾斜（我的补充，`src/assembly/orient.js`、`SceneA11y.jsx`）**：每次按键 = 世界轴上的精确旋转 × 记住的上一次键盘姿态（偏差 4° 内才用，物理把零件碰歪了就从当前姿态开始）；90° 的键吸附到 24 个直角姿态里最近的一个；N 只保留朝向（按 90° 取整）、去掉倾斜。`node scripts/orient-test.mjs`：10 次混合 15° 旋转误差 0.0000°（v36 的欧拉角吸附是 13.3°）。

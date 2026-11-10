@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { containerClass } from "../container";
+import { useLang, tr } from "../i18n.js";
 
 const ROWS = [
   {
@@ -124,9 +125,11 @@ const PROCEDURAL = [
 ];
 
 export default function CreditsPage() {
+  const [lang] = useLang();
+  const en = lang === "en";
   useEffect(() => {
-    document.title = "素材与许可 · 硬件工作台";
-  }, []);
+    document.title = en ? "Credits & licenses · hardware workbench" : "素材与许可 · 硬件工作台";
+  }, [en]);
   return (
     <section className={`${containerClass} py-12`}>
       <h1 className="text-3xl font-medium tracking-tight">素材与许可</h1>
@@ -223,6 +226,21 @@ export default function CreditsPage() {
         <li><a className="underline" href="https://github.com/unjs/uqr">unjs/uqr</a>（MIT）：二维码编码，打包进拆解页（按需加载的那一块）。它的算法来自 <a className="underline" href="https://github.com/nayuki/QR-Code-generator">Project Nayuki 的 QR-Code-generator</a>（MIT）。</li>
         <li><a className="underline" href="https://github.com/cozmo/jsQR">cozmo/jsQR</a>（Apache-2.0）：二维码解码，只在测试脚本 e2e/qr-decode.mjs 里用，没有修改或打包进网站。</li>
       </ul>
+
+      <div data-no-mt="">
+      <h2 className="mt-8 text-xl font-medium" id="v38-bank">{en ? "v38: problem bank pipeline" : "v38：题库管线"}</h2>
+      <p className="mt-2 leading-7 text-ink-soft" data-testid="credits-v38">
+        {en
+          ? "All v38 problem-bank wording was written for this project and compiled from public information. fromthetransistor and its forks contribute only title, language and LOC as source facts; README prose is not copied. The awesome-electronics catalogue is CC0; only tool names and links are injected as hints into existing tasks. Fault seeds come from overviews written here: US-government public-domain NASA Lessons Learned / NEPP material is retold in our own words; datasheets contribute only facts such as absolute maximum ratings; CC or copyrighted sources such as iFixit and EEVblog are kept as a link plus a failure-mode name, are never copied, and never enter the bank. The on-page C/C++, assembly and Intel HEX checkers are original lightweight parsers and load no WASM. tree-sitter (MIT) is used at build time to check that reference answers satisfy each spec; it is a development dependency and is not shipped in the site bundle. The GitHub Actions workflow lives only on this feature branch and is not enabled on main by itself. When a group's earliest expiry is within 30 days the catalogue uses a yellow background (our addition, agreed); template functions and template classes stay in one requiredTemplates check (agreed). Two tasks are deliberately marked soon-to-expire or already expired, only to demonstrate freshness counts."
+          : "v38 的题库题面全部是本项目自己写的，按公开资料整理。fromthetransistor 及其 fork 只取标题、语言和 LOC 作为出处事实，不复制 README 正文。awesome-electronics 名录是 CC0，只把工具名称和链接作为提示注入已有题目。故障种子来自自己撰写的概述：NASA Lessons Learned / NEPP 等美国政府公有领域资料用自己的话转写；datasheet 只提取绝对最大额定值这类事实；iFixit、EEVblog 等 CC 或版权来源只保留链接和失效模式名称，不入库、不复制原文。页面上的 C/C++、汇编和 Intel HEX 校验器是自己写的轻量解析器，不加载 WASM。构建期用 tree-sitter（MIT）校验参考答案是否满足题目规则，只作开发依赖，不进网站发布包。GitHub Actions 的构建工作流只放在本功能分支，不会自行启用到 main。课程大纲在某一组最早过期日距今不到 30 天时用黄底提示（我的补充，已确认）；模板函数和模板类仍合并在 requiredTemplates 里检查（已确认）。有两道题被故意标成即将过期或已过期，只为演示新鲜度统计。"}
+      </p>
+      <ul className="mt-2 list-disc space-y-1 pl-6 text-sm leading-6 text-ink-soft" data-testid="credits-v38-list">
+        <li><a className="underline" href="https://github.com/geohot/fromthetransistor">geohot/fromthetransistor</a>{en ? " and its forks: only title / language / LOC are recorded; problem text is original." : " 及其 fork：只记录标题 / 语言 / LOC，题面自己写。"}</li>
+        <li><a className="underline" href="https://github.com/kitspace/awesome-electronics">kitspace/awesome-electronics</a>{en ? " (CC0-1.0): tool names and links." : "（CC0-1.0）：工具名称和链接。"}</li>
+        <li><a className="underline" href="https://llis.nasa.gov/">NASA Lessons Learned</a>、{""}<a className="underline" href="https://nepp.nasa.gov/">NASA NEPP</a>{en ? ": US-government public-domain material; the overviews are written here." : "：美国政府公有领域资料，概述自己写。"}</li>
+        <li><a className="underline" href="https://tree-sitter.github.io/tree-sitter/">tree-sitter</a>{en ? " (MIT) and the C / C++ grammars: used only at build time and in development tests, not bundled into the site." : "（MIT）以及 C / C++ 语法：只在构建期和开发测试里用，不打包进网站。"}</li>
+      </ul>
+      </div>
       <h2 className="mt-8 text-xl font-medium">代码库</h2>
       <p className="mt-2 leading-7 text-ink-soft">
         React、three.js、@dimforge/rapier3d-compat（Apache-2.0，物理碰撞）、@react-three/fiber、@react-three/drei、zustand、Tailwind CSS（除注明外均为 MIT 许可）。模型转换脚本用 glTF‑Transform 和 meshoptimizer（MIT，只在开发时运行）。“模型 + 功能图”页（v11）在浏览器里用 occt-import-js（LGPL‑2.1，读 STEP；作为单独的 JS + wasm 文件按需加载，没有改动，可替换）和 pdfjs-dist（Apache-2.0，读 PDF 功能图，按需加载）。内置示例的八爪鱼 GLB 和功能图 SVG 由本项目从 v10 预设自制；v12 的 2 自由度机械臂示例（OBJ + 功能图 + 工程）由本项目脚本自制，CC0。关节和舵机运动用同一个 Rapier 引擎。

@@ -1,0 +1,109 @@
+[
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "wb-i2c-01",
+    "mode": "workbench",
+    "difficulty": "intermediate",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "接好 I²C 的 SDA、SCL、上拉和地",
+    "titleEn": "Wire I²C SDA, SCL, pull-ups and ground",
+    "prompt": "sensor.SDA 接 pico.GP6，sensor.SCL 接 pico.GP7。两根线都要经过上拉电阻到 pico.3V3（sda.pu 的一端接 SDA 网，另一端接 3V3；scl.pu 同理）。sensor.GND 与 pico.GND 共地。不要把 SDA 和 SCL 短在一起。",
+    "promptEn": "Connect sensor.SDA to pico.GP6 and sensor.SCL to pico.GP7. Both lines need a pull-up to pico.3V3 (one end of sda.pu on the SDA net, the other on 3V3; likewise scl.pu). sensor.GND must share a ground with pico.GND. Do not short SDA to SCL.",
+    "starterWires": [],
+    "passCondition": {
+      "type": "connectionGraphConstraint",
+      "requiredNets": [
+        [
+          "sensor.SDA",
+          "pico.GP6",
+          "sda.pu.1"
+        ],
+        [
+          "sda.pu.2",
+          "pico.3V3"
+        ],
+        [
+          "sensor.SCL",
+          "pico.GP7",
+          "scl.pu.1"
+        ],
+        [
+          "scl.pu.2",
+          "pico.3V3"
+        ],
+        [
+          "sensor.GND",
+          "pico.GND"
+        ]
+      ],
+      "forbiddenEdges": [
+        {
+          "a": "sensor.SDA",
+          "b": "sensor.SCL"
+        }
+      ]
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "wb-servo-01",
+    "mode": "workbench",
+    "difficulty": "intermediate",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "舵机电源、地和信号都要接到位，并且共地",
+    "titleEn": "Wire servo power, ground and signal, with a common ground",
+    "prompt": "servo.VCC 接 psu.5V，servo.GND 接 psu.GND，servo.SIG 接 pico.GP16。pico.GND 必须和 psu.GND 共地。不要把 5V 接到信号脚。",
+    "promptEn": "Connect servo.VCC to psu.5V, servo.GND to psu.GND, and servo.SIG to pico.GP16. pico.GND must share a ground with psu.GND. Do not tie 5V to the signal pin.",
+    "starterWires": [],
+    "passCondition": {
+      "type": "connectionGraphConstraint",
+      "requiredEdges": [
+        {
+          "a": "servo.VCC",
+          "b": "psu.5V"
+        },
+        {
+          "a": "servo.GND",
+          "b": "psu.GND"
+        },
+        {
+          "a": "servo.SIG",
+          "b": "pico.GP16"
+        }
+      ],
+      "requiredNets": [
+        [
+          "pico.GND",
+          "psu.GND",
+          "servo.GND"
+        ]
+      ],
+      "forbiddenEdges": [
+        {
+          "a": "psu.5V",
+          "b": "servo.SIG"
+        },
+        {
+          "a": "psu.5V",
+          "b": "psu.GND"
+        }
+      ]
+    },
+    "_stale": false
+  }
+]

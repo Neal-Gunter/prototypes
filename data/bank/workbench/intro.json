@@ -1,0 +1,139 @@
+[
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "wb-btn-pullup-01",
+    "mode": "workbench",
+    "difficulty": "intro",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "按键接到 GP14 和地之间",
+    "titleEn": "Wire a button between GP14 and ground",
+    "prompt": "把 button.1 接到 pico.GP14，button.2 接到 pico.GND。不要把 GP14 直接短到 3V3（上拉在本题里由程序或内部上拉完成）。",
+    "promptEn": "Connect button.1 to pico.GP14 and button.2 to pico.GND. Do not short GP14 directly to 3V3 (the pull-up is provided in software or by the internal pull-up in this task).",
+    "starterWires": [],
+    "passCondition": {
+      "type": "connectionGraphConstraint",
+      "requiredEdges": [
+        {
+          "a": "button.1",
+          "b": "pico.GP14"
+        },
+        {
+          "a": "button.2",
+          "b": "pico.GND"
+        }
+      ],
+      "forbiddenEdges": [
+        {
+          "a": "pico.GP14",
+          "b": "pico.3V3"
+        }
+      ]
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "wb-led-res-01",
+    "mode": "workbench",
+    "difficulty": "intro",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "给 Pico 的 GP15 接一颗带电阻的 LED",
+    "titleEn": "Wire an LED and resistor to Pico GP15",
+    "prompt": "用连线列表把电路写出来（不是 3D 台面）。要求：GP15 与 LED 阳极连通，LED 阴极经电阻到 GND。禁止把 3V3 和 GND 短接。节点名用 pico.GP15、pico.GND、pico.3V3、led.A、led.K、r220.1、r220.2。",
+    "promptEn": "Describe the circuit as a wire list (not the 3D bench). GP15 must connect to the LED anode, and the LED cathode must reach GND through a resistor. Do not short 3V3 to GND. Use the node names pico.GP15, pico.GND, pico.3V3, led.A, led.K, r220.1, r220.2.",
+    "starterWires": [],
+    "passCondition": {
+      "type": "connectionGraphConstraint",
+      "requiredNodes": [
+        "pico.GP15",
+        "led.A",
+        "led.K",
+        "r220.1",
+        "r220.2",
+        "pico.GND"
+      ],
+      "requiredEdges": [
+        {
+          "a": "pico.GP15",
+          "b": "led.A"
+        },
+        {
+          "a": "led.K",
+          "b": "r220.1"
+        },
+        {
+          "a": "r220.2",
+          "b": "pico.GND"
+        }
+      ],
+      "forbiddenEdges": [
+        {
+          "a": "pico.3V3",
+          "b": "pico.GND"
+        }
+      ]
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "wb-no-short-01",
+    "mode": "workbench",
+    "difficulty": "intro",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "LED 必须经过电阻，电源不能短接",
+    "titleEn": "The LED must go through a resistor; do not short the supply",
+    "prompt": "3V3 经 r220 再到 led.A，led.K 接地。禁止 3V3 直接接到 GND，也禁止 3V3 不经电阻直接接到 LED 阳极。",
+    "promptEn": "3V3 must reach led.A through r220, and led.K must go to ground. Do not short 3V3 to GND, and do not tie 3V3 directly to the LED anode without the resistor.",
+    "starterWires": [],
+    "passCondition": {
+      "type": "connectionGraphConstraint",
+      "requiredEdges": [
+        {
+          "a": "pico.3V3",
+          "b": "r220.1"
+        },
+        {
+          "a": "r220.2",
+          "b": "led.A"
+        },
+        {
+          "a": "led.K",
+          "b": "pico.GND"
+        }
+      ],
+      "forbiddenEdges": [
+        {
+          "a": "pico.3V3",
+          "b": "pico.GND"
+        },
+        {
+          "a": "pico.3V3",
+          "b": "led.A"
+        }
+      ]
+    },
+    "_stale": false
+  }
+]

@@ -7,7 +7,7 @@ const PAGES = [
   ["/", "首页"], ["/example", "示例"], ["/workbench", "工作台"], ["/assembly", "装配台"], ["/assembly/model", "模型 + 功能图（上传模型）"],
   ["/assembly/guide", "装配台说明"], ["/assembly/octopus-guide", "八爪鱼装配指南"], ["/repair", "维修关卡"], ["/project", "动手做：从零做一只八爪鱼（引导项目 + 制作单）"], ["/project?step=check", "实测对比：填万用表读数，和估算对比 + 用户校准"], ["/repair?tab=editor", "维修关卡编辑器"],
   ["/teardown", "拆解模式（舵机、18650 充电宝、USB 小风扇）"], ["/teardown?d=micro-servo", "拆解：微型舵机（SG90 一类）"], ["/teardown?d=powerbank-18650", "拆解：单节 18650 充电宝"], ["/teardown?d=usb-mini-fan", "拆解：USB 桌面小风扇"],
-  ["/parts", "零件库"], ["/pinouts", "引脚表"], ["/credits", "出处与许可"], ["/help", "使用说明（快速上手、各模式、快捷键、常见问题）"],
+  ["/parts", "零件库"], ["/pinouts", "引脚表"], ["/credits", "出处与许可"], ["/help", "使用说明（快速上手、各模式、快捷键、常见问题）"], ["/bank", "题库（按模式和难度练习）"],
 ];
 const SCENES = [
   ["/assembly?scene=electrics", "电路练习：Pico + LED + 按键 + 电位器 + 舵机"], ["/assembly?scene=fault", "排错练习：1 个虚焊、1 个装反"],

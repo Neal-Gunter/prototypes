@@ -122,6 +122,9 @@ export default function LandingPage() {
               <Link to="/teardown" className={secondaryLinkClass()} data-testid="cta-teardown">
                 拆解模式：拆开舵机、充电宝、小风扇
               </Link>
+              <Link to="/bank" className={secondaryLinkClass()} data-testid="cta-bank">
+                打开题库
+              </Link>
               <Link to="/example" className={secondaryLinkClass()}>
                 看示例
               </Link>

@@ -1,0 +1,179 @@
+[
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [
+      "相关公开工具（awesome-electronics，CC0 名录）：Soldering is Easy",
+      "相关公开工具（awesome-electronics，CC0 名录）：Uses of Different Soldering Iron Tips"
+    ],
+    "hintsEn": [
+      "Related public tool (awesome-electronics, CC0 list): Soldering is Easy",
+      "Related public tool (awesome-electronics, CC0 list): Uses of Different Soldering Iron Tips"
+    ],
+    "id": "dx-imc-01",
+    "mode": "diagnosis",
+    "difficulty": "advanced",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "fault-seeds",
+      "seed": "fault-imc-thick-01",
+      "adaptation": "original-diagnosis-prompt",
+      "ref": "NASA NEPP public-domain notes on intermetallics (own words)"
+    },
+    "title": "温度变化时焊点开路：可能和金属间化合物有关",
+    "titleEn": "The joint opens when temperature changes: intermetallics may be involved",
+    "prompt": "设备在温度来回变化后出现开路，焊点发脆。教学上会提到金属间化合物层过厚。下面哪个做法更合适？本题只讨论低压板，不涉及市电。按公开资料整理。",
+    "promptEn": "After temperature cycling the device goes open and the joints look brittle. Teaching notes often mention a thick intermetallic layer. Which action is more appropriate? This task stays on a low-voltage board; no mains. Compiled from public information.",
+    "passCondition": {
+      "type": "diagnosisQuiz",
+      "faultPool": [
+        "fault-imc-thick-01"
+      ],
+      "repairUrl": "/repair?s=led-cold-joint",
+      "scenario": "led-cold-joint",
+      "questions": [
+        {
+          "id": "q1",
+          "prompt": "更合适的做法？",
+          "promptEn": "The more appropriate action?",
+          "options": [
+            {
+              "id": "a",
+              "zh": "记录失效条件，在维修关卡里观察焊点并按流程返修，不把教学描述当成金相结论",
+              "en": "Record the failure conditions, inspect the joint in the repair level and rework it by the usual process; do not treat the teaching note as a metallurgical conclusion"
+            },
+            {
+              "id": "b",
+              "zh": "用更高温度长时间焊，把金属层‘烧回去’",
+              "en": "Solder much hotter and longer to ‘burn back’ the metal layer"
+            },
+            {
+              "id": "c",
+              "zh": "不再检查，直接判定芯片报废",
+              "en": "Skip inspection and scrap the chip immediately"
+            }
+          ],
+          "answer": "a"
+        }
+      ]
+    },
+    "toolLinks": [
+      {
+        "name": "Soldering is Easy",
+        "url": "https://mightyohm.com/blog/2011/04/soldering-is-easy-comic-book/"
+      },
+      {
+        "name": "Uses of Different Soldering Iron Tips",
+        "url": "https://www.instructables.com/id/Uses-of-Different-Soldering-Iron-Tips/"
+      }
+    ],
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "dx-multi-01",
+    "mode": "diagnosis",
+    "difficulty": "advanced",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "fault-seeds",
+      "seed": "fault-intermittent-multi-01",
+      "adaptation": "original-diagnosis-prompt"
+    },
+    "title": "修一个还有一个：多故障怎么排",
+    "titleEn": "Fixing one fault leaves another: how to work a multi-fault board",
+    "prompt": "八爪鱼两条腿不动，走几步又没劲。可能不止一个故障。怎样排更稳？按公开资料整理。",
+    "promptEn": "Two octopus legs do not move, and after a few steps it also loses strength. There may be more than one fault. What is a more stable way to work? Compiled from public information.",
+    "passCondition": {
+      "type": "diagnosisQuiz",
+      "faultPool": [
+        "fault-intermittent-multi-01"
+      ],
+      "repairUrl": "/repair?s=octo-combo",
+      "scenario": "octo-combo",
+      "questions": [
+        {
+          "id": "q1",
+          "prompt": "更稳妥的策略？",
+          "promptEn": "The more stable strategy?",
+          "options": [
+            {
+              "id": "a",
+              "zh": "一次只改一个点，改完再量一遍电源和信号，不要同时换好几处",
+              "en": "Change one thing at a time, then re-measure power and signals; do not replace several parts at once"
+            },
+            {
+              "id": "b",
+              "zh": "把所有能拆的零件一次性换掉",
+              "en": "Replace every part that can be removed, all at once"
+            },
+            {
+              "id": "c",
+              "zh": "先改固件参数，硬件不再量",
+              "en": "Start by changing firmware parameters and stop measuring the hardware"
+            }
+          ],
+          "answer": "a"
+        }
+      ]
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "dx-thermal-01",
+    "mode": "diagnosis",
+    "difficulty": "advanced",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "fault-seeds",
+      "seed": "fault-thermal-failure-01",
+      "adaptation": "original-diagnosis-prompt",
+      "ref": "datasheet absolute maximum ratings (facts in own words)"
+    },
+    "title": "带载后输出下跌：热还是接错？",
+    "titleEn": "Output drops under load: heat, or a wrong part?",
+    "prompt": "空载电压看起来正常，带载后输出慢慢下降。可能是稳压器件过热或型号装错。哪种测量顺序更合理？按公开资料整理。数值不要当作某一型号的实测。",
+    "promptEn": "The voltage looks fine at no load and slowly falls under load. The regulator may be overheating or the wrong part may be fitted. Which measurement order is more reasonable? Compiled from public information. Do not treat the numbers as a measurement of one specific part.",
+    "passCondition": {
+      "type": "diagnosisQuiz",
+      "faultPool": [
+        "fault-thermal-failure-01"
+      ],
+      "repairUrl": "/repair?s=psu-wrong-ldo",
+      "scenario": "psu-wrong-ldo",
+      "questions": [
+        {
+          "id": "q1",
+          "prompt": "更合理的顺序？",
+          "promptEn": "The more reasonable order?",
+          "options": [
+            {
+              "id": "a",
+              "zh": "先量空载和带载输出，再轻轻探温度（注意烫伤），最后核对器件字标与规格书绝对最大额定值",
+              "en": "Measure no-load and loaded output, then carefully check temperature (avoid burns), then compare the part marking with the datasheet absolute maximum ratings"
+            },
+            {
+              "id": "b",
+              "zh": "先用手按住发热器件继续加负载",
+              "en": "Hold the hot part down by hand and increase the load"
+            },
+            {
+              "id": "c",
+              "zh": "先把输入电压加到绝对最大额定值以上试试",
+              "en": "Raise the input above the absolute maximum rating to see what happens"
+            }
+          ],
+          "answer": "a"
+        }
+      ]
+    },
+    "_stale": false
+  }
+]

@@ -1,0 +1,38 @@
+[
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "cc-cpp-tpl-ring-01",
+    "mode": "code-check",
+    "difficulty": "advanced",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "写出模板类 RingBuffer，参数里允许出现 >>",
+    "titleEn": "Write template class RingBuffer, including a >> in the template arguments",
+    "prompt": "定义 template<typename T, typename Buf = Slot<Slot<T>>> class RingBuffer { ... }（或等价的嵌套 <> / >>）。还要有成员函数 push。这是在检查解析器能不能跨过 >>，不是要你实现真正的容器。",
+    "promptEn": "Define template<typename T, typename Buf = Slot<Slot<T>>> class RingBuffer { ... } (or an equivalent nested <> / >>). Also provide a member function push. This checks that the parser can skip >>, not that you implement a real container.",
+    "starter": "template<typename T>\nclass Slot {};\n\n",
+    "passCondition": {
+      "type": "codeCheck",
+      "format": "cpp",
+      "spec": {
+        "requiredTemplates": [
+          "RingBuffer"
+        ],
+        "requiredClasses": [
+          "RingBuffer"
+        ],
+        "requiredFunctions": [
+          "RingBuffer::push"
+        ]
+      },
+      "referenceAnswer": "data/seeds/reference/cc-cpp-tpl-ring-01.cpp"
+    },
+    "_stale": false
+  }
+]

@@ -8,7 +8,7 @@ const require = createRequire(import.meta.url);
 const AXE = require.resolve("axe-core/axe.min.js");
 const BASE = process.env.BASE || "http://localhost:4173", OUT = process.env.OUT || "/tmp/axe", LANG = process.env.LANG_UI || "zh";
 fs.mkdirSync(OUT, { recursive: true });
-const PAGES = [["home", "/"], ["example", "/example"], ["workbench", "/workbench"], ["assembly", "/assembly"], ["parts", "/parts"], ["guide", "/assembly/guide"], ["octo-guide", "/assembly/octopus-guide"], ["model", "/assembly/model"], ["repair", "/repair"], ["project", "/project"], ["pinouts", "/pinouts"], ["credits", "/credits"], ["teardown", "/teardown"], ["teardown-car", "/teardown?d=aa-toy-car"], ["help", "/help"], ["404", "/no-such-page"]];
+const PAGES = [["home", "/"], ["example", "/example"], ["workbench", "/workbench"], ["assembly", "/assembly"], ["parts", "/parts"], ["guide", "/assembly/guide"], ["octo-guide", "/assembly/octopus-guide"], ["model", "/assembly/model"], ["repair", "/repair"], ["project", "/project"], ["pinouts", "/pinouts"], ["credits", "/credits"], ["teardown", "/teardown"], ["teardown-car", "/teardown?d=aa-toy-car"], ["help", "/help"], ["bank", "/bank"], ["404", "/no-such-page"]];
 const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(",")) : null;
 // 已知例外：rule id -> 原因（只放确实是误报或第三方组件的）
 const KNOWN = {};

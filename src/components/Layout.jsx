@@ -13,7 +13,7 @@ function navClass({ isActive }) {
 }
 
 // 这些页面是能交互的早期原型（不是纯概念图）
-const PROTO_PATHS = ["/workbench", "/assembly", "/parts", "/credits", "/repair", "/project", "/help", "/teardown"];
+const PROTO_PATHS = ["/workbench", "/assembly", "/parts", "/credits", "/repair", "/project", "/help", "/teardown", "/bank"];
 
 export default function Layout() {
   const { pathname } = useLocation();
@@ -89,6 +89,9 @@ export default function Layout() {
                 </NavLink>
                 <NavLink to="/pinouts" className={navClass}>
                   {tr("引脚表")}
+                </NavLink>
+                <NavLink to="/bank" className={navClass} data-testid="nav-bank">
+                  {tr("题库", "Problem bank")}
                 </NavLink>
                 <NavLink to="/help" className={navClass} data-testid="nav-help">
                   {tr("使用说明", "Help")}

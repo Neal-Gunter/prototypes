@@ -14,6 +14,7 @@ const PinoutsPage = lazy(() => import("./pages/PinoutsPage"));
 const ProjectPage = lazy(() => import("./pages/ProjectPage"));
 const HelpPage = lazy(() => import("./pages/HelpPage"));
 const TeardownPage = lazy(() => import("./pages/TeardownPage"));
+const BankPage = lazy(() => import("./pages/BankPage"));
 import NotFoundPage from "./pages/NotFoundPage";
 import CreditsPage from "./pages/CreditsPage";
 
@@ -88,6 +89,7 @@ export default function App() {
           <Route path="/credits" element={<CreditsPage />} />
           <Route path="/teardown" element={<Suspense fallback={<p className="p-8 text-ink-soft">正在加载…</p>}><TeardownPage /></Suspense>} />
           <Route path="/help" element={<Suspense fallback={<p className="p-8 text-ink-soft">正在加载使用说明…</p>}><HelpPage /></Suspense>} />
+          <Route path="/bank" element={<Suspense fallback={<p className="p-8 text-ink-soft">正在加载题库…</p>}><BankPage /></Suspense>} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

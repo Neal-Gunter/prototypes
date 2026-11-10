@@ -1,0 +1,55 @@
+# 题库定时 / 手动构建。只放在功能分支里，不要合并到 main。
+# 我的补充：定时任务只在默认分支上会跑；在 workbench-v38 上主要靠 push 和 workflow_dispatch。
+# 另外加了拒绝向 main/master 推送的保护。
+name: Build Problem Bank
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/**"
+      - "data/overrides/**"
+      - "data/meta/fault-sources.json"
+      - "data/seeds/bank-items.json"
+      - "data/seeds/reference/**"
+      - ".github/workflows/build-bank.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - name: Discover forks
+        run: node scripts/discover-forks.js
+        env:
+          # 只从环境读取，不打印。兼容任务里的 GITHUB_TOKEN 和文档示例里的 GH_TOKEN。
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: node scripts/fetch-sources.js
+      - run: node scripts/parse-fromthetransistor.js
+      - run: node scripts/parse-awesome-electronics.js
+      - run: node scripts/extract-fault-seeds.js
+      - run: node scripts/validate-code-specs.js
+      - run: node scripts/build-bank.js
+      - run: node scripts/validate-bank.js
+      - name: Commit bank if changed
+        run: |
+          set -euo pipefail
+          branch="${GITHUB_REF_NAME}"
+          if [ "$branch" = "main" ] || [ "$branch" = "master" ]; then
+            echo "拒绝：不会把题库构建结果推送到 $branch"
+            exit 1
+          fi
+          git config user.name "bank-bot"
+          git config user.email "bank-bot@users.noreply.github.com"
+          git add data/bank data/seeds data/meta public/bank
+          git diff --staged --quiet || git commit -m "chore: rebuild problem bank [skip ci]"
+          git push

@@ -1,0 +1,253 @@
+[
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "cc-asm-loop-01",
+    "mode": "code-check",
+    "difficulty": "intermediate",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "写一个带 loop 标签的跳转",
+    "titleEn": "Write a branch to a loop label",
+    "prompt": "定义标签 loop，并用 b 或 beq 等跳回去。跳转目标必须是已定义的标签。指令数不超过 16 条。",
+    "promptEn": "Define a label called loop and branch back to it with b or beq (or similar). The branch target must be a defined label. At most 16 instructions.",
+    "starter": ".text\nloop:\n  \n",
+    "passCondition": {
+      "type": "codeCheck",
+      "format": "asm",
+      "spec": {
+        "requiredLabels": [
+          "loop"
+        ],
+        "requiredInstructions": [
+          "b"
+        ],
+        "maxInstructions": 16
+      },
+      "referenceAnswer": "data/seeds/reference/cc-asm-loop-01.s"
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "cc-c-calls-01",
+    "mode": "code-check",
+    "difficulty": "intermediate",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "在 main 里调用 gpio_init，循环不要嵌套超过 2 层",
+    "titleEn": "Call gpio_init from main; keep loop nesting at most 2",
+    "prompt": "实现 main，并调用 gpio_init。不要调用 printf。循环嵌套超过 2 层会给警告（仍可通过）。",
+    "promptEn": "Implement main and call gpio_init. Do not call printf. Loop nesting deeper than 2 produces a warning (the check can still pass).",
+    "starter": "void gpio_init(void);\n\nint main(void) {\n  \n}\n",
+    "passCondition": {
+      "type": "codeCheck",
+      "format": "c",
+      "spec": {
+        "requiredFunctions": [
+          "main"
+        ],
+        "requiredCalls": [
+          "gpio_init"
+        ],
+        "forbiddenCalls": [
+          "printf"
+        ],
+        "maxLoopDepth": 2
+      },
+      "referenceAnswer": "data/seeds/reference/cc-c-calls-01.c"
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "cc-cpp-ctor-01",
+    "mode": "code-check",
+    "difficulty": "intermediate",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "为 Led 写出构造函数和析构函数",
+    "titleEn": "Write a constructor and destructor for Led",
+    "prompt": "定义 class Led，并写出 Led::Led() 和 Led::~Led()（类内或类外都可以）。页面能识别 C::C() 和 ~C 这两种写法。",
+    "promptEn": "Define class Led and write Led::Led() and Led::~Led() (inside or outside the class). The page recognises both C::C() and ~C forms.",
+    "starter": "class Led {\npublic:\n  \n};\n",
+    "passCondition": {
+      "type": "codeCheck",
+      "format": "cpp",
+      "spec": {
+        "requiredClasses": [
+          "Led"
+        ],
+        "requiredFunctions": [
+          "Led::Led",
+          "Led::~Led"
+        ]
+      },
+      "referenceAnswer": "data/seeds/reference/cc-cpp-ctor-01.cpp"
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "cc-cpp-gpio-01",
+    "mode": "code-check",
+    "difficulty": "intermediate",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "写出类 Gpio，并提供 Gpio::set",
+    "titleEn": "Write class Gpio with a Gpio::set method",
+    "prompt": "定义 class Gpio，并实现 void set(...)（写在类里或类外都可以）。还要有 main，并在里面调用 gpio_init。不要调用 printf。",
+    "promptEn": "Define class Gpio and implement void set(...) (inside or outside the class). Also write main and call gpio_init from it. Do not call printf.",
+    "starter": "void gpio_init();\n\n",
+    "passCondition": {
+      "type": "codeCheck",
+      "format": "cpp",
+      "spec": {
+        "requiredClasses": [
+          "Gpio"
+        ],
+        "requiredFunctions": [
+          "Gpio::set",
+          "main"
+        ],
+        "requiredCalls": [
+          "gpio_init"
+        ],
+        "forbiddenCalls": [
+          "printf"
+        ]
+      },
+      "referenceAnswer": "data/seeds/reference/cc-cpp-gpio-01.cpp"
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "cc-cpp-ns-01",
+    "mode": "code-check",
+    "difficulty": "intermediate",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "在命名空间 hal 里实现 init",
+    "titleEn": "Implement init inside namespace hal",
+    "prompt": "写出 namespace hal { ... }，并在其中定义 init()。也可以写成 hal::init()。页面检查命名空间和函数名，不做类型检查。",
+    "promptEn": "Write namespace hal { ... } and define init() inside it. hal::init() written out-of-line is also accepted. The page checks names, not types.",
+    "starter": "namespace hal {\n  \n}\n",
+    "passCondition": {
+      "type": "codeCheck",
+      "format": "cpp",
+      "spec": {
+        "requiredNamespaces": [
+          "hal"
+        ],
+        "requiredFunctions": [
+          "init",
+          "hal::init"
+        ]
+      },
+      "referenceAnswer": "data/seeds/reference/cc-cpp-ns-01.cpp"
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "cc-cpp-tpl-max-01",
+    "mode": "code-check",
+    "difficulty": "intermediate",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "写出模板函数 max",
+    "titleEn": "Write a template function max",
+    "prompt": "写出 template<typename T> T max(T a, T b) { ... }。页面检查 requiredTemplates 里的 max（模板函数和模板类合并检查，这是已确认的决定）。",
+    "promptEn": "Write template<typename T> T max(T a, T b) { ... }. The page checks max in requiredTemplates (template functions and template classes share one set; this is an agreed decision).",
+    "starter": "template<typename T>\n",
+    "passCondition": {
+      "type": "codeCheck",
+      "format": "cpp",
+      "spec": {
+        "requiredTemplates": [
+          "max"
+        ],
+        "requiredFunctions": [
+          "max"
+        ]
+      },
+      "referenceAnswer": "data/seeds/reference/cc-cpp-tpl-max-01.cpp"
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "cc-hex-entry-01",
+    "mode": "code-check",
+    "difficulty": "intermediate",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "HEX 文件要带入口地址，复位向量处写入指定字节",
+    "titleEn": "The HEX file must include an entry address and a reset vector",
+    "prompt": "提交 Intel HEX：入口地址（类型 05 记录）为 0x08000100，并且地址 0x08000100 起的两个字节是 00 01。总数据不超过 32 字节。数字是本题约定的练习值，不是某一款 MCU 的实测向量（估算/约定）。",
+    "promptEn": "Submit Intel HEX with a type-05 start address of 0x08000100, and bytes 00 01 at address 0x08000100. At most 32 data bytes. These numbers are a teaching convention, not a measured vector from a particular MCU (estimate / convention).",
+    "starter": "",
+    "passCondition": {
+      "type": "codeCheck",
+      "format": "hex",
+      "spec": {
+        "entry": 134217984,
+        "maxBytes": 32,
+        "addrMin": 134217728,
+        "addrMax": 134283263,
+        "mustContain": [
+          {
+            "address": 134217984,
+            "bytes": "0001",
+            "why": "复位向量约定值",
+            "whyEn": "agreed reset-vector bytes"
+          }
+        ]
+      },
+      "referenceAnswer": "data/seeds/reference/cc-hex-entry-01.hex"
+    },
+    "_stale": false
+  }
+]
