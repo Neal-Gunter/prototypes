@@ -284,5 +284,57 @@ ok(!/WebAssembly|wasm/.test(readFileSync(new URL("../src/validators/c-lite.js", 
   ok(bad.length === 0 && n >= 30, `参考答案 / 题面自检 ${n} 条，失败 ${bad.length}`, bad.join("; "));
 }
 
+
+// ---------- v40：学习路径 + tocPageMap 跨页回填 ----------
+{
+  const { PATHS, findPath, pathStepHref, stepIndexForItem } = await import("../src/bank/paths.js");
+  const { tocPageMap, tocPageLabel } = await import("../src/teardown/guideSheet.js");
+  const { DEVICES } = await import("../src/teardown/devices.js");
+  const doc = readJSON(join(DATA, "seeds/bank-items.json"));
+  const ids = new Set((doc.items || []).map((it) => it.id));
+  const devIds = new Set(DEVICES.map((d) => d.id));
+  ok(PATHS.length >= 3, `学习路径 ${PATHS.length} 条（≥3）`);
+  const seen = new Set();
+  let bad = [];
+  for (const pa of PATHS) {
+    if (seen.has(pa.id)) bad.push("重复 id " + pa.id);
+    seen.add(pa.id);
+    if (!pa.title || !pa.titleEn || !pa.summary || !pa.summaryEn) bad.push(pa.id + " 缺中英标题或摘要");
+    if (/[\u4e00-\u9fff]/.test(pa.titleEn + pa.summaryEn + pa.steps.map((st) => (st.titleEn || "") + (st.noteEn || "")).join(""))) bad.push(pa.id + " 英文里有汉字");
+    if (pa.steps.length < 3 || pa.steps.length > 5) bad.push(pa.id + " 步数 " + pa.steps.length + "（要 3–5）");
+    const kinds = new Set(pa.steps.map((st) => st.kind));
+    for (const st of pa.steps) {
+      if (!st.title || !st.titleEn || !st.note || !st.noteEn) bad.push(pa.id + " 某一步缺中英说明");
+      if (st.kind === "bank") {
+        if (!ids.has(st.id)) bad.push(pa.id + " 指向不存在的题 " + st.id);
+        if (!st.mode || !st.diff) bad.push(pa.id + " 缺少 mode/diff");
+      } else if (st.kind === "teardown") {
+        if (!devIds.has(st.device)) bad.push(pa.id + " 指向不存在的拆解设备 " + st.device);
+      } else if (st.kind === "repair") {
+        if (!st.scene) bad.push(pa.id + " 缺维修关卡");
+        if (!String(pathStepHref(st, pa.id)).startsWith("/repair?")) bad.push(pa.id + " 维修关卡链接不对");
+      } else bad.push(pa.id + " 未知步骤类型 " + st.kind);
+    }
+    if (!kinds.has("bank")) bad.push(pa.id + " 没有题库步骤");
+    ok(findPath(pa.id)?.id === pa.id, `findPath(${pa.id})`);
+  }
+  const night = findPath("path-night-light");
+  ok(night && night.steps[0].kind === "teardown" && night.steps.some((st) => st.kind === "repair"), "小夜灯路径：拆解 → … → 维修");
+  ok(PATHS.some((pa) => pa.steps.some((st) => st.kind === "bank" && st.mode === "workbench")) && PATHS.some((pa) => pa.steps.some((st) => st.kind === "bank" && st.mode === "assembly")), "路径里有接线题和装配题");
+  const href = pathStepHref(night.steps[1], night.id);
+  ok(/mode=diagnosis/.test(href) && /id=dx-dead-battery-01/.test(href) && /path=path-night-light/.test(href), "路径步骤链接带 path 参数", href);
+  ok(stepIndexForItem(night, "dx-dead-battery-01") === 1, "stepIndexForItem 找到诊断题");
+  ok(bad.length === 0, `路径条目完整，目标都存在（问题 ${bad.length}）`, bad.join("; "));
+
+  const dev = { steps: new Array(7).fill({}) };
+  const a = tocPageMap(dev);
+  ok(a.safety === 2 && a.mats === 3 && a.steps === 4 && a.step(0) === 4 && a.step(6) === 10 && a.modules === 11 && a.notes === 12 && a.total === 12, "tocPageMap 默认与 v39 一致");
+  const b = tocPageMap(dev, { safety: 3, front: 1 });
+  ok(b.safety === 2 && b.mats === 5 && b.steps === 6 && b.step(0) === 6 && b.modules === 13 && b.notes === 14, `安全节占 3 页时后面页码后移 mats=${b.mats}`);
+  const c = tocPageMap(dev, { front: 2, step: [1, 2, 1, 1, 1, 1, 1] });
+  ok(c.safety === 3 && c.step(1) === 6 && c.step(2) === 8 && c.modules === 13, "封面跨页且第 2 步占 2 页时页码连续");
+  ok(tocPageLabel(2, 1, false) === "第 2 页" && tocPageLabel(2, 3, false) === "第 2–4 页" && tocPageLabel(4, 2, true) === "p. 4–5", "tocPageLabel 单页和跨页");
+}
+
 console.log(`bank-test ${pass} PASS / ${fail} FAIL`);
 process.exit(fail ? 1 : 0);

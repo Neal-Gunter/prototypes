@@ -43,7 +43,7 @@ for (const lang of ["zh", "en"]) {
   ok((await stale.getAttribute("data-freshness")) === "stale", `${lang}：code-check/intro 标为已过期`);
   if (lang === "zh") await shot(p, "bank-index-zh");
   await soon.click();
-  await T("bank-list").waitFor({ timeout: 15000 });
+  await T("bank-list-ready").waitFor({ timeout: 20000 });
   await wait(300);
   ok(fetched.some((x) => /bank\/firmware\/intermediate\.json/.test(x)), `${lang}：点进一组后才加载对应 JSON`);
   await c.close();

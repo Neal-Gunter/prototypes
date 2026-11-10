@@ -1,5 +1,5 @@
 # 题库定时 / 手动构建。只放在功能分支里，不要合并到 main。
-# 我的补充：定时任务只在默认分支上会跑；在 workbench-v39 上主要靠 push 和 workflow_dispatch。
+# 我的补充：定时任务只在默认分支上会跑；在 workbench-v40 上主要靠 push 和 workflow_dispatch。
 # 另外加了拒绝向 main/master 推送的保护。
 name: Build Problem Bank
 

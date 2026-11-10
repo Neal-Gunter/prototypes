@@ -34,8 +34,8 @@ for (const lang of ["zh", "en"]) {
   ok(fetched.some((x) => /bank\/index\.json/.test(x)) && groupJson.length === 0, `${lang}：首屏只加载 index.json`, fetched.join(" | "));
   await shot(p, `bank-index-${lang}`);
   await T("bank-cell-diagnosis-intro").click();
-  await T("bank-list").waitFor({ timeout: 15000 });
-  const list = await T("bank-list").innerText();
+  await T("bank-list-ready").waitFor({ timeout: 20000 });
+  const list = await T("bank-list-ready").innerText();
   ok(/dx-dead-battery-01|小夜灯完全不亮|battery first/i.test(list), `${lang}：诊断入门列出新题 dx-dead-battery-01`, list.slice(0, 200));
   await p.goto(BASE + "/bank?mode=diagnosis&diff=intro&id=dx-dead-battery-01");
   await T("bank-quiz").waitFor({ timeout: 20000 });

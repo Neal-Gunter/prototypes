@@ -7,6 +7,7 @@
 // v37：新设备换成电池感应小夜灯，打印版录二维码，再打开二维码指向的那一步；键盘倾斜来回按回原样、转不开时往旁边挪；致谢页 v37。
 // v38：加题库目录、黄标、固件时序练习、模板代码检查、诊断跳转维修关卡、致谢页 v38。
 // v39：题库扩到 50 题，演示新诊断题、CR2032 钥匙扣灯、打印目录页码、致谢页 v39。
+// v40：演示学习路径、帮助页「本版更新」、致谢页 v40；题库列表等 bank-list-ready。
 // 用法：BASE=http://localhost:4173 OUT=/workspace/proto-site/v33 node e2e/demo-record.mjs  然后用 ffmpeg 转 mp4
 import { chromium } from "playwright";
 import fs from "node:fs";
@@ -27,7 +28,7 @@ await step("首页", async () => { await p.goto(BASE + "/"); await w(2500); awai
 await step("题库：目录和新鲜度", async () => {
   await p.goto(BASE + "/bank"); await T("bank-index").waitFor({ timeout: 30000 }); await w(2500);
   await T("bank-cell-firmware-intermediate").scrollIntoViewIfNeeded(); await w(1500);
-  await T("bank-cell-firmware-intermediate").click(); await T("bank-list").waitFor({ timeout: 15000 }); await w(2000);
+  await T("bank-cell-firmware-intermediate").click(); await T("bank-list-ready").waitFor({ timeout: 20000 }); await w(2000);
   await scroll(200, 3, 300);
 }, "v38 题库：先加载目录，再点进一组。黄底表示最早过期日距今不到 30 天；过期条目仍可练习");
 await step("题库：固件时序", async () => {
@@ -48,6 +49,17 @@ await step("题库：诊断连到维修关卡", async () => {
   await T("bank-run").click(); await T("bank-result").waitFor({ timeout: 8000 }); await w(2000);
   await T("bank-repair-link").scrollIntoViewIfNeeded(); await w(2000);
 }, "v39 诊断题：小夜灯不亮先查电池，做完跳到已有的维修关卡 led-dead-battery");
+await step("题库：学习路径", async () => {
+  await p.goto(BASE + "/bank"); await T("bank-paths").waitFor({ timeout: 20000 }); await w(1500);
+  await T("bank-path-path-night-light").scrollIntoViewIfNeeded(); await w(800);
+  await T("bank-path-path-night-light").click(); await T("bank-path-detail").waitFor({ timeout: 10000 }); await w(2000);
+  await scroll(200, 4, 300);
+  await T("bank-path-link-1").click(); await T("bank-path-nav").waitFor({ timeout: 20000 }); await w(2500);
+}, "v40：把拆解、诊断和维修关卡串成 3 到 5 步的学习路径；说明自己写，是简化仿真");
+await step("使用说明：本版更新", async () => {
+  await p.goto(BASE + "/help#whats-new"); await T("help-whats-new").waitFor({ timeout: 20000 }); await w(1500);
+  await T("help-whats-new").scrollIntoViewIfNeeded(); await w(2000); await scroll(250, 6, 350);
+}, "v40：使用说明增加「本版更新」，用中英文汇总 v32 到 v40");
 await step("拆解：设备列表 + 搜索", async () => {
   await p.goto(BASE + "/teardown/"); await T("teardown-page").waitFor({ timeout: 30000 }); await w(1500);
   await T("td-search").pressSequentially("tp4056", { delay: 120 }); await w(1500); await T("td-search").fill(""); await w(800);
@@ -114,8 +126,12 @@ await step("致谢：v38", async () => {
 }, "v38：题面全部自己写；fromthetransistor 只取标题和 LOC；NASA 公有领域资料用自己的话；tree-sitter 只在构建期使用");
 await step("致谢：v39", async () => {
   await p.goto(BASE + "/credits#v39-fresh"); await w(1500);
-  await T("credits-v39").scrollIntoViewIfNeeded().catch(() => {}); await w(4000);
+  await T("credits-v39").scrollIntoViewIfNeeded().catch(() => {}); await w(2500);
 }, "v39：内容 hash 只算题面；Actions 默认离线；找空位不推出桌边并会试叠高；焦点环对比度至少 3:1；打印目录带页码");
+await step("致谢：v40", async () => {
+  await p.goto(BASE + "/credits#v40-paths"); await w(1500);
+  await T("credits-v40").scrollIntoViewIfNeeded().catch(() => {}); await w(4000);
+}, "v40：章节跨页时回填打印目录页码；题库列表等加载完成再检查；学习路径说明和使用说明「本版更新」都是自己写的");
 await step("工作台：固件编辑器", async () => {
   await p.goto(BASE + "/workbench/"); await T("code").waitFor({ timeout: 30000 }); await w(2500);
   await T("code").focus(); await w(800); await p.keyboard.press("Tab"); await w(1500);

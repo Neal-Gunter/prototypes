@@ -1,10 +1,11 @@
-// v38–v39：题库练习页。先加载 index.json，再按 mode × difficulty 按需加载。早期原型，简化仿真。
+// v38–v40：题库练习页。先加载 index.json，再按 mode × difficulty 按需加载。v40 增加学习路径，列表在加载完成后才标 ready。早期原型，简化仿真。
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { containerClass } from "../container";
 import { useLang, tr } from "../i18n.js";
 import { loadIndex, loadBank, freshnessFlag, itemStale, MODES, DIFFICULTIES } from "../bank/load.js";
 import { practiceItem } from "../bank/practice.js";
+import { PATHS, findPath, pathStepHref, stepIndexForItem } from "../bank/paths.js";
 
 const MODE_LABEL = {
   firmware: ["固件时序", "Firmware timing"],
@@ -152,10 +153,29 @@ function StepsPractice({ item, lang }) {
   );
 }
 
-function Practice({ item, lang }) {
+function PathNav({ path, itemId, lang }) {
+  const i = stepIndexForItem(path, itemId);
+  if (!path || i < 0) return null;
+  const prev = path.steps[i - 1], next = path.steps[i + 1];
+  const title = lang === "en" ? (path.titleEn || path.title) : path.title;
+  return (
+    <nav className="mt-3 border border-line bg-paper-2 px-3 py-2 text-sm" data-testid="bank-path-nav" aria-label={lang === "en" ? "Learning path" : "学习路径"}>
+      <p>{lang === "en" ? `Path “${title}”, step ${i + 1} of ${path.steps.length}` : `学习路径「${title}」第 ${i + 1} / ${path.steps.length} 步`}</p>
+      <p className="mt-1 flex flex-wrap gap-3">
+        <Link to={"/bank?path=" + encodeURIComponent(path.id)} className="underline" data-testid="bank-path-back">{lang === "en" ? "Back to the path" : "返回路径"}</Link>
+        {prev && <Link to={pathStepHref(prev, path.id)} className="underline" data-testid="bank-path-prev">{lang === "en" ? "Previous step" : "上一步"}</Link>}
+        {next && <Link to={pathStepHref(next, path.id)} className="underline" data-testid="bank-path-next">{lang === "en" ? "Next step" : "下一步"}</Link>}
+      </p>
+    </nav>
+  );
+}
+
+function Practice({ item, lang, pathId }) {
   const t = item.passCondition?.type;
+  const path = findPath(pathId);
   return (
     <section className="mt-6 border border-line p-4" data-testid="bank-practice" data-id={item.id}>
+      <PathNav path={path} itemId={item.id} lang={lang} />
       <h2 className="text-xl font-medium">{lang === "en" ? (item.titleEn || item.title) : item.title}</h2>
       <p className="mt-2 text-sm leading-7 text-ink-soft">{lang === "en" ? (item.promptEn || item.prompt) : item.prompt}</p>
       {itemStale(item) || item._stale ? <p className="mt-2 text-sm" data-testid="bank-item-stale">{tr("来源可能已变更，仍可练习。", "The source may have changed; you can still practise.")}</p> : null}
@@ -182,6 +202,8 @@ export default function BankPage() {
   const mode = params.get("mode") || "";
   const diff = params.get("diff") || "";
   const id = params.get("id") || "";
+  const pathId = params.get("path") || "";
+  const currentPath = findPath(pathId);
   const [index, setIndex] = useState(null);
   const [err, setErr] = useState("");
   const [items, setItems] = useState(null);
@@ -194,19 +216,22 @@ export default function BankPage() {
     return () => { gone = true; };
   }, []);
   useEffect(() => {
-    if (!mode || !diff || !MODES.includes(mode) || !DIFFICULTIES.includes(diff)) { setItems(null); return; }
+    if (!mode || !diff || !MODES.includes(mode) || !DIFFICULTIES.includes(diff)) { setItems(null); setLoading(false); return; }
     let gone = false;
+    setItems(null);
     setLoading(true);
     loadBank(mode, diff).then((list) => { if (!gone) { setItems(list); setLoading(false); } }).catch((e) => { if (!gone) { setErr(String(e.message || e)); setLoading(false); } });
     return () => { gone = true; };
   }, [mode, diff]);
 
   const current = useMemo(() => (items || []).find((x) => x.id === id) || null, [items, id]);
-  const setSel = (m, d, itemId) => {
+  const setSel = (m, d, itemId, pth) => {
     const n = new URLSearchParams();
     if (m) n.set("mode", m);
     if (d) n.set("diff", d);
     if (itemId) n.set("id", itemId);
+    const path = pth === undefined ? pathId : pth;
+    if (path) n.set("path", path);
     setParams(n, { replace: false });
   };
 
@@ -255,12 +280,40 @@ export default function BankPage() {
           <p className="mt-2 text-xs text-ink-soft">{tr("黄底表示该组里最早过期日距今不到 30 天（我的补充）。过期条目仍可练习，会提示来源可能已变更。", "A yellow background means the earliest expiry in that group is within 30 days (our addition). Expired items can still be practised, with a note that the source may have changed.")}</p>
         </div>
       )}
+      <section className="mt-8" data-testid="bank-paths">
+        <h2 className="text-lg font-medium">{tr("学习路径", "Learning paths")}</h2>
+        <p className="mt-2 max-w-3xl text-sm leading-7 text-ink-soft">{tr("把拆解、诊断、接线和维修关卡串成 3 到 5 步的短路径。说明是自己写的。这是简化仿真，不是实物课。", "Short 3-to-5-step paths that chain a teardown, a diagnosis or wiring task, and a repair level. The notes are original. This is a simplified simulation, not a lesson on a real device.")}</p>
+        <ul className="mt-3 grid gap-3 sm:grid-cols-3">
+          {PATHS.map((pa) => (
+            <li key={pa.id}>
+              <button type="button" className={`flex min-h-11 w-full flex-col items-start border px-3 py-2 text-left text-sm ${pathId === pa.id ? "border-ink bg-paper-2" : "border-line"}`} onClick={() => setSel("", "", "", pa.id)} data-testid={`bank-path-${pa.id}`} aria-pressed={pathId === pa.id}>
+                <span className="font-medium">{en ? pa.titleEn : pa.title}</span>
+                <span className="mt-1 text-xs text-ink-soft">{tr(`${pa.steps.length} 步`, `${pa.steps.length} steps`)}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
+      {currentPath && (
+        <section className="mt-6 border border-line p-4" data-testid="bank-path-detail" data-path={currentPath.id} data-count={currentPath.steps.length}>
+          <h2 className="text-lg font-medium">{en ? currentPath.titleEn : currentPath.title}</h2>
+          <p className="mt-2 text-sm leading-7 text-ink-soft">{en ? currentPath.summaryEn : currentPath.summary}</p>
+          <ol className="mt-3 list-decimal space-y-3 pl-6">
+            {currentPath.steps.map((st, i) => (
+              <li key={currentPath.id + "-" + i} data-testid={`bank-path-step-${i}`} data-kind={st.kind}>
+                <Link className="underline" to={pathStepHref(st, currentPath.id)} data-testid={`bank-path-link-${i}`}>{en ? (st.titleEn || st.title) : st.title}</Link>
+                <p className="mt-1 text-sm text-ink-soft">{en ? st.noteEn : st.note}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
       {mode && diff && (
-        <section className="mt-8" data-testid="bank-list" data-mode={mode} data-diff={diff}>
+        <section className="mt-8" data-testid="bank-list" data-mode={mode} data-diff={diff} data-state={loading ? "loading" : items ? "ready" : "idle"} data-count={items ? String(items.length) : "0"}>
           <h2 className="text-lg font-medium">{L(en, MODE_LABEL[mode] || [mode, mode])} · {L(en, DIFF_LABEL[diff] || [diff, diff])}</h2>
-          {loading && <p className="mt-2 text-sm">{tr("正在加载这一组题目…", "Loading this group…")}</p>}
-          {items && (
-            <ul className="mt-3 divide-y divide-line border border-line">
+          {loading && <p className="mt-2 text-sm" data-testid="bank-list-loading">{tr("正在加载这一组题目…", "Loading this group…")}</p>}
+          {items && !loading && (
+            <ul className="mt-3 divide-y divide-line border border-line" data-testid="bank-list-ready" data-count={items.length}>
               {items.map((it) => (
                 <li key={it.id}>
                   <button type="button" className={`flex min-h-11 w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm ${id === it.id ? "bg-paper-2" : ""}`} onClick={() => setSel(mode, diff, it.id)} data-testid={`bank-item-${it.id}`} aria-pressed={id === it.id}>
@@ -273,7 +326,7 @@ export default function BankPage() {
           )}
         </section>
       )}
-      {current && <Practice item={current} lang={lang} />}
+      {current && <Practice item={current} lang={lang} pathId={pathId} />}
     </div>
   );
 }

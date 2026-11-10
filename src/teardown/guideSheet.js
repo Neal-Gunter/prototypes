@@ -42,10 +42,95 @@ export function figSvg(dev, fig, L, i) {
 
 
 // v39：按强制分页推算目录页码（与打印 CSS 同步）。step 是 0-based 数组。
-export function tocPageMap(dev) {
+// v40：若某一节实际占多页，传入 spans 把后面的页码往后推（回填）。默认每节 1 页，与 v39 相同。
+export function tocPageMap(dev, spans = {}) {
   const n = (dev.steps || []).length;
-  return { safety: 2, mats: 3, steps: 4, modules: 4 + n, notes: 5 + n, step: (i) => 4 + i };
+  const k = (v) => Math.max(1, Math.floor(Number(v) || 1));
+  const stepSpans = Array.isArray(spans.step) ? spans.step : [];
+  let p = 1;
+  const front = 1;
+  p += k(spans.front);
+  const safety = p; p += k(spans.safety);
+  const mats = p; p += k(spans.mats);
+  const steps = p;
+  const stepAt = [];
+  for (let i = 0; i < n; i++) { stepAt[i] = p; p += k(stepSpans[i]); }
+  const modules = p; p += k(spans.modules);
+  const notes = p; p += k(spans.notes);
+  return { front, safety, mats, steps, modules, notes, step: (i) => stepAt[i], stepAt, total: p - 1 };
 }
+export function tocPageLabel(start, span = 1, en = false) {
+  const a = start, b = start + Math.max(1, span) - 1;
+  if (b > a) return en ? `p. ${a}–${b}` : `第 ${a}–${b} 页`;
+  return en ? `p. ${a}` : `第 ${a} 页`;
+}
+// 打印页内联脚本：按实测高度回填目录页码。A4 正文区 186×263 mm（页边 16/12/18 mm）。
+export const TOC_BACKFILL_JS = `(function(){
+  var PAGE_H = (297-16-18)*96/25.4;
+  function q(s){ return document.querySelector(s); }
+  function heightUntil(start, end){
+    var a = typeof start === "string" ? q(start) : start;
+    if (!a) return 0;
+    var b = end ? (typeof end === "string" ? q(end) : end) : null;
+    var top = a.getBoundingClientRect().top;
+    var bottom = b ? b.getBoundingClientRect().top : document.body.getBoundingClientRect().bottom;
+    return Math.max(0, bottom - top);
+  }
+  function pagesFor(px){ return Math.max(1, Math.ceil((px - 2) / PAGE_H)); }
+  function k(v){ return Math.max(1, Math.floor(Number(v) || 1)); }
+  function label(start, span, en){
+    var b = start + Math.max(1, span) - 1;
+    if (b > start) return en ? ("p. " + start + "–" + b) : ("第 " + start + "–" + b + " 页");
+    return en ? ("p. " + start) : ("第 " + start + " 页");
+  }
+  function backfill(){
+    document.body.classList.add("toc-measure");
+    void document.body.offsetHeight;
+    var steps = document.querySelectorAll("li.step");
+    var frontN = pagesFor(heightUntil(".toc-front", "#safety"));
+    var safetyN = pagesFor(heightUntil("#safety", "#mats"));
+    var matsN = pagesFor(heightUntil("#mats", "#steps"));
+    var stepN = [];
+    for (var i = 0; i < steps.length; i++){
+      var end = steps[i+1] || q("#modules");
+      stepN[i] = pagesFor(i === 0 ? heightUntil("#steps", end) : heightUntil(steps[i], end));
+    }
+    var modulesN = pagesFor(heightUntil("#modules", "#notes"));
+    var notesN = pagesFor(heightUntil("#notes", null));
+    var spans = { front: frontN, safety: safetyN, mats: matsN, step: stepN, modules: modulesN, notes: notesN };
+    var p = 1, map = { front: 1 };
+    p += k(spans.front);
+    map.safety = p; p += k(spans.safety);
+    map.mats = p; p += k(spans.mats);
+    map.steps = p;
+    for (var i = 0; i < stepN.length; i++){ map["step-" + (i+1)] = p; p += k(stepN[i]); }
+    map.modules = p; p += k(spans.modules);
+    map.notes = p; p += k(spans.notes);
+    var stepsSpan = stepN.reduce(function(a,x){ return a + k(x); }, 0) || 1;
+    var en = (document.documentElement.lang || "").indexOf("en") === 0;
+    document.querySelectorAll(".toc-pg").forEach(function(el){
+      var id = el.getAttribute("data-sec");
+      var start = map[id];
+      if (!start) return;
+      var span = 1;
+      if (id === "steps") span = stepsSpan;
+      else if (id && id.indexOf("step-") === 0) span = k(spans.step[parseInt(id.slice(5), 10) - 1]);
+      else if (id && spans[id] != null) span = k(spans[id]);
+      el.setAttribute("data-page", String(start));
+      el.setAttribute("data-span", String(span));
+      el.textContent = label(start, span, en);
+    });
+    var root = document.documentElement;
+    root.setAttribute("data-toc-ready", "1");
+    root.setAttribute("data-toc-total", String(p - 1));
+    root.setAttribute("data-toc-spans", JSON.stringify(spans));
+    return spans;
+  }
+  window.__tocBackfill = backfill;
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", backfill);
+  else backfill();
+  window.addEventListener("beforeprint", backfill);
+})();`
 export function guideHtml(dev, lang = "zh", { now = new Date(), prog = null, base = LIVE } = {}) {
   const en = lang === "en", L = (x) => (x == null ? "" : typeof x === "string" ? x : en ? x.en : x.zh);
   const box = (on) => (on ? "☑" : "☐");
@@ -55,8 +140,8 @@ export function guideHtml(dev, lang = "zh", { now = new Date(), prog = null, bas
   const css = (x) => String(x).replace(/[\\"\n]/g, " ");
   const sec = [["safety", t("1. 安全（先读）", "1. Safety (read first)")], ["mats", t("2. 材料和工具", "2. Materials and tools")], ["steps", t("3. 拆解步骤", "3. Steps")], ["modules", t("4. 拆下来的模块", "4. Modules you get")], ["notes", t("5. 说明", "5. Notes")]];
   const pg = tocPageMap(dev);
-  const pgSpan = (n) => ` <span class="toc-pg" data-page="${n}">${t(`第 ${n} 页`, `p. ${n}`)}</span>`;
-  const toc = `<nav class="toc" aria-label="${t("目录", "Contents")}"><h2 id="toc">${t("目录", "Contents")}</h2><ol>${sec.map(([id, h]) => `<li><a href="#${id}">${esc(h)}</a>${pgSpan(pg[id])}${id === "steps" ? `<ol>${dev.steps.map((s, i) => `<li><a href="#step-${i + 1}">${i + 1}. ${esc(L(s.t))}</a>${s.stop ? ` <span class="tag">${t("停止点", "stop")}</span>` : ""}${pgSpan(pg.step(i))}</li>`).join("")}</ol>` : ""}</li>`).join("")}</ol></nav>`;
+  const pgSpan = (id, n, span = 1) => ` <span class="toc-pg" data-sec="${id}" data-page="${n}" data-span="${span}">${tocPageLabel(n, span, en)}</span>`;
+  const toc = `<nav class="toc" aria-label="${t("目录", "Contents")}"><h2 id="toc">${t("目录", "Contents")}</h2><ol>${sec.map(([id, h]) => `<li><a href="#${id}">${esc(h)}</a>${pgSpan(id, pg[id], id === "steps" ? (dev.steps || []).length : 1)}${id === "steps" ? `<ol>${dev.steps.map((s, i) => `<li><a href="#step-${i + 1}">${i + 1}. ${esc(L(s.t))}</a>${s.stop ? ` <span class="tag">${t("停止点", "stop")}</span>` : ""}${pgSpan("step-" + (i + 1), pg.step(i))}</li>`).join("")}</ol>` : ""}</li>`).join("")}</ol></nav>`;
   const H = Object.fromEntries(sec);
   return `<!doctype html><html lang="${en ? "en" : "zh-CN"}"><head><meta charset="utf-8"><title>${esc(L(dev.name))} · ${t("拆解指南", "Teardown guide")}</title>
 <style>
@@ -70,7 +155,8 @@ table{border-collapse:collapse;width:100%}th,td{border:1px solid #999;padding:3p
 @page{size:A4;margin:16mm 12mm 18mm;@top-right{content:"${css(L(dev.name))}";font-size:9px;color:#555}@bottom-center{content:${en ? '"Page " counter(page) " of " counter(pages)' : '"第 " counter(page) " 页 / 共 " counter(pages) " 页"'};font-size:9px;color:#555}}
 .cover{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.qrbox{display:flex;flex-direction:column;gap:3px;align-items:center;text-align:center;margin-top:6px;font-size:9px;color:#333;break-inside:avoid}.qrbox svg{flex:none}.qrbox span{display:block;width:34mm;max-width:100%;line-height:1.3}.qrcover{flex-direction:column;text-align:center;width:30mm;margin:0}
 .toc ol{list-style:none;padding-left:0;margin:0}.toc ol ol{padding-left:16px;columns:2}.toc a{color:#1d4ed8;text-decoration:none}.toc-pg{float:right;color:#555;font-variant-numeric:tabular-nums}.tag{font-size:10px;border:1px solid #b91c1c;color:#7f1d1d;padding:0 3px;border-radius:3px}
-@media print{.toc-front{break-after:page}#safety,#mats,#steps,#modules,#notes{break-before:page}.step+.step{break-before:page}body{margin:0;max-width:none;font-size:11px}.noprint{display:none}h2{break-after:avoid}tr{break-inside:avoid}}
+body.toc-measure{width:186mm;max-width:186mm;margin:0 auto;padding:0;font-size:11px}body.toc-measure .noprint{display:none}
+@media print{.toc-front{break-after:page}#safety,#mats,#steps,#modules,#notes{break-before:page}.step+.step{break-before:page}body{margin:0;max-width:none;padding:0;font-size:11px}.noprint{display:none}h2{break-after:avoid}tr{break-inside:avoid}}
 </style></head><body>
 <p class="noprint"><button onclick="print()">${t("打印 / 存成 PDF", "Print / save as PDF")}</button></p>
 <div class="toc-front"><div class="cover"><div><h1>${esc(L(dev.name))}</h1><p class="mono">${esc(dev.model)}</p></div><div class="qrbox qrcover">${qrSvg(stepUrl(base, dev.id, 0), { mm: 26, label: t("这份指南网页版的二维码", "QR code for this guide on the web") })}<span>${t("扫码打开网页版", "Scan to open on the web")}</span></div></div>
@@ -83,7 +169,7 @@ ${toc}</div>
 <h2 id="steps">${H.steps}</h2><ol>${steps}</ol>
 <h2 id="modules">${H.modules}</h2><table><thead><tr><th>${t("模块", "Module")}</th><th>${t("零件库对应", "Library match")}</th><th>id</th></tr></thead><tbody>${dev.modules.map((m) => `<tr><td>${esc(L(m.t))}</td><td>${esc(L(MATCH[m.match]))}</td><td class="mono">${esc(m.part)}</td></tr>`).join("")}</tbody></table>
 <h2 id="notes">${H.notes}</h2><p>${t("指南文字和插图都是本项目自己写、自己画的，没有复制任何外部拆解指南的文字或照片。", "All guide text and diagrams are written and drawn by this project. No text or photos were copied from any outside teardown guide.")}</p>
-</body></html>`;
+</body><script>${TOC_BACKFILL_JS}</script></html>`;
 }
 
 // v36：数据里的停止点文字本来就以“停止点：”开头，只在缺前缀时补上，避免重复

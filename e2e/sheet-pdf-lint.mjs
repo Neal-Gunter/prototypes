@@ -7,7 +7,7 @@ import { chromium } from "playwright";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 const { DEVICES } = await import("../src/teardown/devices.js");
-const { guideHtml, tocPageMap } = await import("../src/teardown/guideSheet.js");
+const { guideHtml, tocPageMap, tocPageLabel } = await import("../src/teardown/guideSheet.js");
 const MUT = process.env.MUTATE === "1";
 const OUT = process.env.OUT || "/tmp/sheet-lint";
 fs.mkdirSync(`${OUT}/logs`, { recursive: true });
@@ -21,6 +21,9 @@ for (const d of DEVICES) for (const lang of ["zh", "en"]) {
   let html = guideHtml(d, lang, { now: new Date("2026-11-03T00:00:00Z") });
   if (MUT) html = html.replace(/break-inside:avoid/g, "").replace(/break-before:\s*page/g, "auto").replace(/break-after:\s*page/g, "auto").replace(/@bottom-center\{[^}]*\}/, "").replace("</style>", ".step{display:block}.fig{margin-top:8px}</style>");
   await p.setContent(html, { waitUntil: "load" });
+  if (!MUT) {
+    await p.waitForFunction(() => document.documentElement.getAttribute("data-toc-ready") === "1", null, { timeout: 15000 });
+  }
   const pdf = await p.pdf({ preferCSSPageSize: true, printBackground: true });
   const f = `/tmp/sheet-${d.id}-${lang}.pdf`; fs.writeFileSync(f, pdf);
   const pages = execFileSync("pdftotext", ["-enc", "UTF-8", f, "-"]).toString().split("\f").filter((t) => t.trim());
@@ -59,6 +62,48 @@ for (const d of DEVICES) for (const lang of ["zh", "en"]) {
   });
   stat.push({ id: d.id, lang, pages: M, steps: d.steps.length, cut, kb: Math.round(pdf.length / 1024) });
 }
+
+if (!MUT) {
+  // v40：把安全节垫高到跨页，确认目录页码被回填，后文所在页与目录一致。
+  const d = DEVICES[0];
+  const lang = "zh";
+  const L = (x) => (typeof x === "string" ? x : x[lang]);
+  let html = guideHtml(d, lang, { now: new Date("2026-11-03T00:00:00Z") });
+  html = html.replace('<h2 id="mats">', '<div class="span-pad" style="height:280mm" data-span-pad="1"></div><h2 id="mats">');
+  await p.setContent(html, { waitUntil: "load" });
+  await p.waitForFunction(() => document.documentElement.getAttribute("data-toc-ready") === "1", null, { timeout: 15000 });
+  const info = await p.evaluate(() => {
+    const g = (id) => document.querySelector(`.toc-pg[data-sec="${id}"]`);
+    return {
+      ready: document.documentElement.getAttribute("data-toc-ready"),
+      spans: JSON.parse(document.documentElement.getAttribute("data-toc-spans") || "{}"),
+      safetyPage: g("safety")?.getAttribute("data-page"),
+      safetySpan: g("safety")?.getAttribute("data-span"),
+      safetyText: g("safety")?.textContent,
+      matsPage: g("mats")?.getAttribute("data-page"),
+      stepsPage: g("steps")?.getAttribute("data-page"),
+    };
+  });
+  const bad = (m) => probs.push(`span-backfill/${d.id}/${lang}: ${m}`);
+  if (info.ready !== "1") bad("打印页没有 data-toc-ready");
+  if (!((info.spans?.safety || 0) >= 2)) bad(`安全节应跨页，实际 spans.safety=${info.spans?.safety}`);
+  if (!(Number(info.safetySpan) >= 2)) bad(`目录安全节 data-span 应为 ≥2，实际 ${info.safetySpan}`);
+  if (!(Number(info.matsPage) >= 4)) bad(`材料页码应后移到 ≥4，实际 ${info.matsPage}`);
+  if (!(Number(info.stepsPage) >= Number(info.matsPage) + 1)) bad(`步骤页码应在材料之后，steps=${info.stepsPage} mats=${info.matsPage}`);
+  const wantRange = W(tocPageLabel(Number(info.safetyPage), Number(info.safetySpan), false));
+  if (!W(info.safetyText || "").includes(wantRange)) bad(`目录安全节应写出范围“${wantRange}”，实际“${info.safetyText}”`);
+  const pdf = await p.pdf({ preferCSSPageSize: true, printBackground: true });
+  const f = `/tmp/sheet-span-${d.id}-${lang}.pdf`; fs.writeFileSync(f, pdf);
+  const pages = execFileSync("pdftotext", ["-enc", "UTF-8", f, "-"]).toString().split("\f").filter((t) => t.trim());
+  const onPage = (n, re) => n >= 1 && n <= pages.length && re.test(pages[n - 1] || "");
+  const matsN = Number(info.matsPage);
+  if (!onPage(matsN, /材料|Materials|工具|tools/i)) bad(`垫高后材料清单不在目录所说的第 ${matsN} 页（共 ${pages.length} 页）`);
+  const first = W(pages[0] || "");
+  if (!first.includes(wantRange)) bad(`PDF 目录里没有安全节的跨页范围 ${wantRange}`);
+  stat.push({ id: d.id + "-span", lang, pages: pages.length, steps: d.steps.length, cut: 0, kb: Math.round(pdf.length / 1024) });
+  console.log(`span-backfill safety=${info.spans?.safety} mats=${info.matsPage} pdfPages=${pages.length}`);
+}
+
 await b.close();
 for (const s of stat) console.log(`${s.id.padEnd(16)} ${s.lang} ${s.pages} 页 ${s.steps} 步 切开 ${s.cut} ${s.kb} KB`);
 for (const x of probs) console.log("✗", x);
