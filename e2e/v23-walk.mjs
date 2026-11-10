@@ -7,7 +7,7 @@ const BASE = (process.env.BASE || "http://localhost:4173/prototypes").replace(/\
 fs.mkdirSync(OUT, { recursive: true });
 const PAGES = [["home", "/"], ["example", "/example"], ["workbench", "/workbench"], ["assembly", "/assembly"], ["electrics", "/assembly?scene=electrics"], ["fault", "/assembly?scene=fault"], ["smd", "/assembly?scene=smd"], ["octo", "/assembly?scene=octo"],
   ["model", "/assembly/model"], ["guide", "/assembly/guide"], ["octo-guide", "/assembly/octopus-guide?plan=B&variant=plus"], ["repair", "/repair"], ["project", "/project"], ["repair-editor", "/repair?tab=editor"], ["parts", "/parts"], ["part", "/parts?id=ada-1185"], ["pinouts", "/pinouts"], ["credits", "/credits"], ["404", "/nope"],
-  ["help", "/help"], ["blink", "/assembly?scene=blink"], ["button", "/assembly?scene=button"], ["potservo", "/assembly?scene=potservo"], ["fault2", "/assembly?scene=fault2"], ["teardown", "/teardown"], ["teardown-pb", "/teardown?d=powerbank-18650"]]; // v27: 使用说明 + 4 个新场景
+  ["help", "/help"], ["blink", "/assembly?scene=blink"], ["button", "/assembly?scene=button"], ["potservo", "/assembly?scene=potservo"], ["fault2", "/assembly?scene=fault2"], ["teardown", "/teardown"], ["teardown-pb", "/teardown?d=powerbank-18650"], ["bank", "/bank"], ["bank-item", "/bank?mode=firmware&diff=intro&id=fw-led-blink-01"]]; // v27: 使用说明 + 4 个新场景；v38: 题库
 const VPS = [["m", { width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }], ["w", { width: 1440, height: 900 }]];
 // v27: LANG_UI=en 用英文模式再走一遍；WIDE=1920 改宽屏宽度
 if (process.env.WIDE) VPS[1][1].width = +process.env.WIDE;
