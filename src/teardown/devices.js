@@ -710,7 +710,7 @@ export const DEVICES = [
     id: "coin-keyfob",
     name: T("纽扣电池 LED 钥匙扣灯（CR2032，3 V）", "Coin-cell LED keychain light (CR2032, 3 V)"),
     model: "Generic CR2032 LED keychain / keyfob torch, push-to-light, 3 V coin cell",
-    alias: ["keychain light", "keyfob light", "coin cell torch", "cr2032 light", "led keychain", "钥匙扣灯", "钥匙灯", "纽扣灯", "纽扣电池灯", "迷你手电", "CR2032"],
+    alias: ["keychain light", "keyfob light", "coin cell torch", "cr2032 light", "led keychain", "钥匙扣灯", "钥匙灯", "纽扣灯", "纽扣电池灯", "CR2032"],
     volts: 3,
     difficulty: 1, minutes: 15,
     summary: T("很常见的小钥匙扣灯：一节 CR2032 纽扣电池、一颗 LED，外壳本身往往就是开关——按下去电池和 LED 才接通。拆开能看懂最简单的“电池 → 开关 → LED”回路，以及纽扣电池的正负极怎么靠弹簧和壳接触。注意：这里只讲一节纽扣电池供电的款，不要拆带充电口或能插墙的灯。", "A common little keychain light: one CR2032 coin cell and one LED. The case is often the switch itself — the cell only reaches the LED while you press. Opening one shows the simplest battery → switch → LED loop, and how the coin cell's two faces contact a spring and the shell. This covers coin-cell models only; do not open a light that has a charge port or plugs into a wall."),
