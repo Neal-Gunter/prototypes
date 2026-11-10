@@ -51,9 +51,17 @@ export async function discoverForks({ fetchImpl = globalThis.fetch, maxPages = M
   return { forks: uniq, forksCount: meta.forks_count, truncated, missing };
 }
 
+function useOffline() {
+  // v39（我的补充）：默认离线，沿用已提交的 forks.json；只有 BANK_LIVE=1 时才打 GitHub API。
+  // BANK_OFFLINE=1 仍强制离线（兼容旧用法）。
+  if (process.env.BANK_OFFLINE === "1") return true;
+  if (process.env.BANK_LIVE === "1") return false;
+  return true;
+}
+
 async function main() {
   const prev = readJSON(OUT);
-  if (process.env.BANK_OFFLINE === "1") {
+  if (useOffline()) {
     if (!prev) writeJSON(OUT, { generatedAt: stamp(), mode: "offline-seed", forksCount: null, count: 1, forks: [{ repo: ORIGIN, branch: "master", stars: null, original: true }] });
     log(`discover-forks：离线，沿用 ${prev ? prev.count : 1} 个`); return;
   }

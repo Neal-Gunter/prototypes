@@ -31,10 +31,18 @@ export function keyRotate(q, axis, deg, memo) {
 export const headingOf = (q) => { const t = Math.atan2(q.y, q.w) * 2 * R2D; return ((Math.round(t) % 360) + 360) % 360; };
 export const tipOf = (q) => Math.round(Math.acos(Math.max(-1, Math.min(1, AX.Y.clone().applyQuaternion(q).y))) * R2D);
 export function squareUp(q) { const h = Math.round(headingOf(q) / 90) * 90; return rot(AX.Y, h); }
-// 找一个放得下的位置：先原地往上抬（最多 lift cm），再往旁边一圈一圈找（最多 side cm，8 个方向），每圈也试几个抬高
-export function findFit(fits, { lift = 3, side = 6, step = 0.5, dl = 0.25 } = {}) {
-  for (let y = 0; y <= lift + 1e-9; y += dl) if (fits(0, y, 0)) return { dx: 0, dy: y, dz: 0, moved: 0 };
+// 找一个放得下的位置：先原地往上抬（最多 lift cm），再往旁边一圈一圈找（最多 side cm，8 个方向）。
+// v39（我的补充）：候选点必须仍在桌面内（默认 60×40 cm，边距 2 cm，和 engine.BENCH 一致）；
+//   旁边搜索会试一组叠高（stackYs），不再只试 0 / 0.5 / 1 cm。
+export const TABLE = { w: 60, d: 40, margin: 2 };
+export function onTable(x, z, { w = TABLE.w, d = TABLE.d, margin = TABLE.margin } = {}) {
+  return Math.abs(x) <= w / 2 - margin + 1e-9 && Math.abs(z) <= d / 2 - margin + 1e-9;
+}
+export function findFit(fits, { lift = 3, side = 6, step = 0.5, dl = 0.25, stackYs, inside } = {}) {
+  const ys = stackYs || [0, 0.5, 1, 1.5, 2, 3, 4, 5];
+  const ok = (dx, dy, dz) => (!inside || inside(dx, dy, dz)) && !!fits(dx, dy, dz);
+  for (let y = 0; y <= lift + 1e-9; y += dl) if (ok(0, y, 0)) return { dx: 0, dy: y, dz: 0, moved: 0, stacked: y > 0 };
   const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]].map(([x, z]) => { const l = Math.hypot(x, z); return [x / l, z / l]; });
-  for (let r = step; r <= side + 1e-9; r += step) for (const y of [0, 0.5, 1]) for (const [x, z] of dirs) if (fits(x * r, y, z * r)) return { dx: x * r, dy: y, dz: z * r, moved: r };
+  for (let r = step; r <= side + 1e-9; r += step) for (const y of ys) for (const [x, z] of dirs) if (ok(x * r, y, z * r)) return { dx: x * r, dy: y, dz: z * r, moved: r, stacked: y > 0 };
   return null;
 }

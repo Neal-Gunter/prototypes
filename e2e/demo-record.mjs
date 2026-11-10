@@ -6,6 +6,7 @@
 // v36：新设备换成电子厨房计时器，打印版指南录目录 + 图例，键盘加 T / F 倾斜、N 摆正，致谢页 v36。
 // v37：新设备换成电池感应小夜灯，打印版录二维码，再打开二维码指向的那一步；键盘倾斜来回按回原样、转不开时往旁边挪；致谢页 v37。
 // v38：加题库目录、黄标、固件时序练习、模板代码检查、诊断跳转维修关卡、致谢页 v38。
+// v39：题库扩到 50 题，演示新诊断题、CR2032 钥匙扣灯、打印目录页码、致谢页 v39。
 // 用法：BASE=http://localhost:4173 OUT=/workspace/proto-site/v33 node e2e/demo-record.mjs  然后用 ffmpeg 转 mp4
 import { chromium } from "playwright";
 import fs from "node:fs";
@@ -42,20 +43,20 @@ await step("题库：模板代码检查", async () => {
   await T("bank-run").click(); await T("bank-result").waitFor({ timeout: 10000 }); await w(2500);
 }, "代码检查：轻量 C/C++ 解析器识别模板类，模板参数里的 >> 也能跳过；不编译，不加载 WASM");
 await step("题库：诊断连到维修关卡", async () => {
-  await p.goto(BASE + "/bank?mode=diagnosis&diff=intro&id=dx-reverse-01"); await T("bank-quiz").waitFor({ timeout: 20000 }); await w(1500);
+  await p.goto(BASE + "/bank?mode=diagnosis&diff=intro&id=dx-dead-battery-01"); await T("bank-quiz").waitFor({ timeout: 20000 }); await w(1500);
   await T("bank-opt-q1-b").click(); await w(800);
   await T("bank-run").click(); await T("bank-result").waitFor({ timeout: 8000 }); await w(2000);
   await T("bank-repair-link").scrollIntoViewIfNeeded(); await w(2000);
-}, "诊断题：自己写的判断题，做完可以跳到已有的维修关卡继续练");
+}, "v39 诊断题：小夜灯不亮先查电池，做完跳到已有的维修关卡 led-dead-battery");
 await step("拆解：设备列表 + 搜索", async () => {
   await p.goto(BASE + "/teardown/"); await T("teardown-page").waitFor({ timeout: 30000 }); await w(1500);
   await T("td-search").pressSequentially("tp4056", { delay: 120 }); await w(1500); await T("td-search").fill(""); await w(800);
 }, "拆解模式：按名称或型号搜设备");
-await step("拆解：市电提示 + 小夜灯", async () => {
+await step("拆解：市电提示 + 钥匙扣灯", async () => {
   await T("td-search").pressSequentially("充电头", { delay: 120 }); await w(2500); await T("td-search").fill(""); await w(500);
-  await T("td-search").pressSequentially("夜灯", { delay: 120 }); await w(1500); await T("td-search").fill(""); await w(400);
-  await p.goto(BASE + "/teardown/?d=night-light"); await T("td-guide").waitFor({ timeout: 20000 }); await w(1500); await scroll(350, 6, 400);
-}, "只收低压直流设备：搜“充电头”会提示不拆市电设备；v37 新加的电池感应小夜灯（三节 AAA，4.5 V，按公开资料整理，未经实物验证）");
+  await T("td-search").pressSequentially("钥匙扣", { delay: 120 }); await w(1500); await T("td-search").fill(""); await w(400);
+  await p.goto(BASE + "/teardown/?d=coin-keyfob"); await T("td-guide").waitFor({ timeout: 20000 }); await w(1500); await scroll(350, 6, 400);
+}, "只收低压直流设备：搜“充电头”会提示不拆市电设备；v39 新加的 CR2032 钥匙扣灯（3 V，按公开资料整理，未经实物验证）");
 await step("拆解：打印版指南", async () => {
   await T("td-print-bar").scrollIntoViewIfNeeded(); await w(1200);
   const [pop] = await Promise.all([c.waitForEvent("page", { timeout: 10000 }), T("td-print").click()]);
@@ -63,9 +64,9 @@ await step("拆解：打印版指南", async () => {
   await p.setContent(html); await w(2500); await scroll(400, 10, 450);
 }, "v37：打印版封面和每一步旁边都有二维码，扫码打开网页版的那一步（二维码在浏览器里生成，不上传）；v36：目录和页码");
 await step("拆解：二维码打开的那一步", async () => {
-  await p.goto(BASE + "/teardown/?d=night-light&s=3"); await T("td-guide").waitFor({ timeout: 20000 }); await w(3500);
+  await p.goto(BASE + "/teardown/?d=coin-keyfob&s=3"); await T("td-guide").waitFor({ timeout: 20000 }); await w(3500);
   await p.keyboard.press("Tab"); await w(1500);
-}, "v37：二维码网址带步号（…&s=3），打开后直接滚到第 3 步并把键盘焦点放在这一步上");
+}, "二维码网址带步号（…&s=3），打开后直接滚到第 3 步并把键盘焦点放在这一步上");
 await step("拆解：LED 手电指南 + 爆炸图", async () => {
   await p.goto(BASE + "/teardown/?d=led-flashlight"); await T("td-guide").waitFor({ timeout: 20000 }); await w(1500);
   await scroll(350, 8, 400);
@@ -109,8 +110,12 @@ await step("致谢：v37", async () => {
 }, "v37：二维码编码用 uqr（MIT），测试里用 jsQR（Apache-2.0）解码核对；新增 11 个页面的键盘焦点顺序检查");
 await step("致谢：v38", async () => {
   await p.goto(BASE + "/credits#v38-bank"); await w(1500);
-  await T("credits-v38").scrollIntoViewIfNeeded().catch(() => {}); await w(4000);
+  await T("credits-v38").scrollIntoViewIfNeeded().catch(() => {}); await w(2500);
 }, "v38：题面全部自己写；fromthetransistor 只取标题和 LOC；NASA 公有领域资料用自己的话；tree-sitter 只在构建期使用");
+await step("致谢：v39", async () => {
+  await p.goto(BASE + "/credits#v39-fresh"); await w(1500);
+  await T("credits-v39").scrollIntoViewIfNeeded().catch(() => {}); await w(4000);
+}, "v39：内容 hash 只算题面；Actions 默认离线；找空位不推出桌边并会试叠高；焦点环对比度至少 3:1；打印目录带页码");
 await step("工作台：固件编辑器", async () => {
   await p.goto(BASE + "/workbench/"); await T("code").waitFor({ timeout: 30000 }); await w(2500);
   await T("code").focus(); await w(800); await p.keyboard.press("Tab"); await w(1500);

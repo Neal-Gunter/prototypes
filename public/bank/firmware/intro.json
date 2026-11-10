@@ -531,6 +531,46 @@
     "staleAfter": "2027-11-01",
     "hints": [],
     "hintsEn": [],
+    "id": "fw-led-once-01",
+    "mode": "firmware",
+    "difficulty": "intro",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "上电亮 400 ms，然后保持熄灭",
+    "titleEn": "Light the LED for 400 ms at start, then leave it off",
+    "prompt": "LED_BUILTIN 在 t=0 拉高，400 ms 后拉低，之后保持熄灭（不要再闪；检查窗口约 1.2 s）。允许 ±50 ms。时间只在 delay() 里走。",
+    "promptEn": "Drive LED_BUILTIN high at t=0, pull it low at 400 ms, and leave it off after that (do not blink again). ±50 ms is accepted. Time only advances inside delay().",
+    "firmwareTemplate": "void setup() {\n  pinMode(LED_BUILTIN, OUTPUT);\n}\nvoid loop() {\n}\n",
+    "passCondition": {
+      "type": "behaviorTimeline",
+      "pins": {
+        "LED": 48
+      },
+      "expected": [
+        {
+          "t": 0,
+          "pin": "LED",
+          "state": "HIGH"
+        },
+        {
+          "t": 400,
+          "pin": "LED",
+          "state": "LOW"
+        }
+      ],
+      "toleranceMs": 50,
+      "horizonMs": 1200
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
     "id": "fw-serial-hello-01",
     "mode": "firmware",
     "difficulty": "intro",

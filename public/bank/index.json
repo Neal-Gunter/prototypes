@@ -1,19 +1,19 @@
 {
-  "generatedAt": "2026-11-10T01:52:50.425Z",
+  "generatedAt": "2026-11-10T00:00:00.000Z",
   "modes": {
     "firmware": {
       "intro": {
-        "count": 4,
-        "updatedAt": "2026-11-10T01:52:50.425Z",
-        "contentHash": "9cbcf87b116f3009",
+        "count": 5,
+        "updatedAt": "2026-11-10T03:04:27.036Z",
+        "contentHash": "9731c774e6898c14",
         "staleEarliest": "2027-11-01T00:00:00.000Z",
         "staleLatest": "2027-11-01T00:00:00.000Z",
         "staleCount": 0
       },
       "intermediate": {
-        "count": 3,
-        "updatedAt": "2026-11-10T00:00:00.000Z",
-        "contentHash": "05c610a65895f738",
+        "count": 4,
+        "updatedAt": "2026-11-10T03:04:27.036Z",
+        "contentHash": "2964589609698f28",
         "staleEarliest": "2026-11-25T00:00:00.000Z",
         "staleLatest": "2027-11-01T00:00:00.000Z",
         "staleCount": 0
@@ -21,7 +21,7 @@
       "advanced": {
         "count": 1,
         "updatedAt": "2026-11-10T00:00:00.000Z",
-        "contentHash": "8a8554fc45cce333",
+        "contentHash": "db0393d93315131e",
         "staleEarliest": "2027-11-01T00:00:00.000Z",
         "staleLatest": "2027-11-01T00:00:00.000Z",
         "staleCount": 0
@@ -29,17 +29,17 @@
     },
     "workbench": {
       "intro": {
-        "count": 3,
-        "updatedAt": "2026-11-10T00:00:00.000Z",
-        "contentHash": "b131bc1f107e083d",
+        "count": 4,
+        "updatedAt": "2026-11-10T03:04:03.415Z",
+        "contentHash": "f04865a5d4dcab8b",
         "staleEarliest": "2027-11-01T00:00:00.000Z",
         "staleLatest": "2027-11-01T00:00:00.000Z",
         "staleCount": 0
       },
       "intermediate": {
-        "count": 2,
-        "updatedAt": "2026-11-10T00:00:00.000Z",
-        "contentHash": "1606be626101f47c",
+        "count": 4,
+        "updatedAt": "2026-11-10T03:04:03.415Z",
+        "contentHash": "8e9f13587dfa3a4c",
         "staleEarliest": "2027-11-01T00:00:00.000Z",
         "staleLatest": "2027-11-01T00:00:00.000Z",
         "staleCount": 0
@@ -55,17 +55,17 @@
     },
     "assembly": {
       "intro": {
-        "count": 4,
-        "updatedAt": "2026-11-10T00:00:00.000Z",
-        "contentHash": "2f5f30f76641e65d",
+        "count": 5,
+        "updatedAt": "2026-11-10T03:04:03.415Z",
+        "contentHash": "74e185bd05fdd3f2",
         "staleEarliest": "2027-11-01T00:00:00.000Z",
         "staleLatest": "2027-11-01T00:00:00.000Z",
         "staleCount": 0
       },
       "intermediate": {
-        "count": 1,
-        "updatedAt": "2026-11-10T00:00:00.000Z",
-        "contentHash": "bd9bbc0488362fc0",
+        "count": 2,
+        "updatedAt": "2026-11-10T03:04:03.415Z",
+        "contentHash": "237b8723a1a1fe31",
         "staleEarliest": "2027-11-01T00:00:00.000Z",
         "staleLatest": "2027-11-01T00:00:00.000Z",
         "staleCount": 0
@@ -81,17 +81,17 @@
     },
     "diagnosis": {
       "intro": {
-        "count": 2,
-        "updatedAt": "2026-11-10T00:00:00.000Z",
-        "contentHash": "d47e145fb7369346",
+        "count": 4,
+        "updatedAt": "2026-11-10T03:04:03.415Z",
+        "contentHash": "fcf9fd2d5e2796c4",
         "staleEarliest": "2027-11-01T00:00:00.000Z",
         "staleLatest": "2027-11-01T00:00:00.000Z",
         "staleCount": 0
       },
       "intermediate": {
-        "count": 3,
-        "updatedAt": "2026-11-10T00:00:00.000Z",
-        "contentHash": "14338fc5a6b20ac0",
+        "count": 5,
+        "updatedAt": "2026-11-10T03:04:03.415Z",
+        "contentHash": "dde240f693be00a0",
         "staleEarliest": "2027-11-01T00:00:00.000Z",
         "staleLatest": "2027-11-01T00:00:00.000Z",
         "staleCount": 0
@@ -99,7 +99,7 @@
       "advanced": {
         "count": 3,
         "updatedAt": "2026-11-10T00:00:00.000Z",
-        "contentHash": "de56e41d3bd3a1f1",
+        "contentHash": "a1e1865ec4335afd",
         "staleEarliest": "2027-11-01T00:00:00.000Z",
         "staleLatest": "2027-11-01T00:00:00.000Z",
         "staleCount": 0
@@ -107,9 +107,9 @@
     },
     "code-check": {
       "intro": {
-        "count": 4,
-        "updatedAt": "2026-11-10T00:00:00.000Z",
-        "contentHash": "9deb7e054cfee88f",
+        "count": 5,
+        "updatedAt": "2026-11-10T03:04:03.415Z",
+        "contentHash": "9b1eff501e344ef8",
         "staleEarliest": "2026-10-01T00:00:00.000Z",
         "staleLatest": "2027-11-01T00:00:00.000Z",
         "staleCount": 1
@@ -117,7 +117,7 @@
       "intermediate": {
         "count": 7,
         "updatedAt": "2026-11-10T00:00:00.000Z",
-        "contentHash": "05ea57f919a3d7d1",
+        "contentHash": "eb6000129b2de2e6",
         "staleEarliest": "2027-11-01T00:00:00.000Z",
         "staleLatest": "2027-11-01T00:00:00.000Z",
         "staleCount": 0
@@ -125,12 +125,12 @@
       "advanced": {
         "count": 1,
         "updatedAt": "2026-11-10T00:00:00.000Z",
-        "contentHash": "03d8bebc72e0b82a",
+        "contentHash": "d95a84a5592b8836",
         "staleEarliest": "2027-11-01T00:00:00.000Z",
         "staleLatest": "2027-11-01T00:00:00.000Z",
         "staleCount": 0
       }
     }
   },
-  "total": 38
+  "total": 50
 }

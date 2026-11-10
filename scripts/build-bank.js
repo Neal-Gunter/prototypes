@@ -11,6 +11,24 @@ const DEST = join(DATA, "bank");
 const PUBLIC = join(ROOT, "public/bank");
 const REPORT = join(DATA, "meta/build-report.json");
 
+// v39（我的补充）：内容 hash 只算题面，不算 alsoFoundIn、toolLinks、_stale 等元数据，
+// 也不算注入的 awesome-electronics 提示。这样在线拉 fork 不会把 updatedAt 改掉。
+export function problemTextOf(item) {
+  const skip = new Set(["source", "toolLinks", "alsoFoundIn", "_stale"]);
+  const out = {};
+  for (const k of Object.keys(item).sort()) {
+    if (skip.has(k)) continue;
+    if (k === "hints") out.hints = (item.hints || []).filter((h) => !String(h).startsWith("相关公开工具"));
+    else if (k === "hintsEn") out.hintsEn = (item.hintsEn || []).filter((h) => !String(h).startsWith("Related public tool"));
+    else out[k] = item[k];
+  }
+  return out;
+}
+export function hashBankContent(entries) {
+  const payload = entries.map(problemTextOf);
+  return hash(JSON.stringify(payload)).slice(0, 16);
+}
+
 export function computeFreshness(entries, now) {
   let earliest = null, latest = null, staleCount = 0;
   for (const e of entries) {
@@ -91,18 +109,18 @@ export function groupBank(items, now) {
   return { bank, stale };
 }
 
-export function buildIndex(bank, prevIndex, now) {
+export function buildIndex(bank, prevIndex, now, prevBank = null) {
   const generatedAt = new Date(now).toISOString();
   const next = { generatedAt, modes: {}, total: 0 };
   for (const mode of MODES) {
     next.modes[mode] = {};
     for (const diff of DIFFICULTIES) {
       const entries = bank[mode][diff];
-      const newContent = JSON.stringify(entries, null, 2);
       const prevUpdatedAt = prevIndex?.modes?.[mode]?.[diff]?.updatedAt;
-      const prevHash = prevIndex?.modes?.[mode]?.[diff]?.contentHash;
-      const contentHash = hash(newContent).slice(0, 16);
-      const changed = contentHash !== prevHash;
+      const contentHash = hashBankContent(entries);
+      const prevEntries = prevBank?.[mode]?.[diff];
+      const baseline = Array.isArray(prevEntries) ? hashBankContent(prevEntries) : prevIndex?.modes?.[mode]?.[diff]?.contentHash;
+      const changed = contentHash !== baseline;
       const freshness = computeFreshness(entries, now);
       next.modes[mode][diff] = {
         count: entries.length,
@@ -154,7 +172,14 @@ export function build({ now = Date.now(), dataDir = DATA, dest = join(dataDir, "
     const total = MODES.reduce((n, m) => n + DIFFICULTIES.reduce((k, d) => k + bank[m][d].length, 0), 0);
     if (total === 0) throw new Error("分组后 0 条，不覆盖已有产物");
     const prevIndex = readJSON(join(dest, "index.json"));
-    const index = buildIndex(bank, prevIndex, now);
+    const prevBank = {};
+    if (prevIndex) {
+      for (const mode of MODES) {
+        prevBank[mode] = {};
+        for (const diff of DIFFICULTIES) prevBank[mode][diff] = readJSON(join(dest, mode, `${diff}.json`)) || [];
+      }
+    }
+    const index = buildIndex(bank, prevIndex, now, prevIndex ? prevBank : null);
     const work = mkdtempSync(join(tmpdir(), "bank-"));
     try {
       writeBankTree(work, bank, index);

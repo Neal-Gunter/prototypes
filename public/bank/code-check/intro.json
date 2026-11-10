@@ -105,6 +105,37 @@
     "staleAfter": "2027-11-01",
     "hints": [],
     "hintsEn": [],
+    "id": "cc-c-wait-ms-01",
+    "mode": "code-check",
+    "difficulty": "intro",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "写出 wait_ms 和 main 两个 C 函数",
+    "titleEn": "Write two C functions named wait_ms and main",
+    "prompt": "写出至少两个函数：main 和 wait_ms。wait_ms 要有函数体（空的也行）。这是结构检查，不编译、不运行。",
+    "promptEn": "Write at least two functions: main and wait_ms. wait_ms must have a body (an empty body is fine). This is a structure check; nothing is compiled or run.",
+    "starter": "/* 在这里写 */\\n",
+    "passCondition": {
+      "type": "codeCheck",
+      "format": "c",
+      "spec": {
+        "requiredFunctions": [
+          "main",
+          "wait_ms"
+        ]
+      },
+      "referenceAnswer": "data/seeds/reference/cc-c-wait-ms-01.c"
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
     "id": "cc-hex-eof-01",
     "mode": "code-check",
     "difficulty": "intro",

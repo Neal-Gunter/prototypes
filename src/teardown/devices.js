@@ -705,6 +705,54 @@ export const DEVICES = [
     ],
     explode: true,
   },
+  // v39（我的补充）：CR2032 纽扣电池 LED 钥匙扣灯（3 V）。只收纽扣电池款，不收充电或插电款。
+  {
+    id: "coin-keyfob",
+    name: T("纽扣电池 LED 钥匙扣灯（CR2032，3 V）", "Coin-cell LED keychain light (CR2032, 3 V)"),
+    model: "Generic CR2032 LED keychain / keyfob torch, push-to-light, 3 V coin cell",
+    alias: ["keychain light", "keyfob light", "coin cell torch", "cr2032 light", "led keychain", "钥匙扣灯", "钥匙灯", "纽扣灯", "纽扣电池灯", "迷你手电", "CR2032"],
+    volts: 3,
+    difficulty: 1, minutes: 15,
+    summary: T("很常见的小钥匙扣灯：一节 CR2032 纽扣电池、一颗 LED，外壳本身往往就是开关——按下去电池和 LED 才接通。拆开能看懂最简单的“电池 → 开关 → LED”回路，以及纽扣电池的正负极怎么靠弹簧和壳接触。注意：这里只讲一节纽扣电池供电的款，不要拆带充电口或能插墙的灯。", "A common little keychain light: one CR2032 coin cell and one LED. The case is often the switch itself — the cell only reaches the LED while you press. Opening one shows the simplest battery → switch → LED loop, and how the coin cell's two faces contact a spring and the shell. This covers coin-cell models only; do not open a light that has a charge port or plugs into a wall."),
+    battery: true,
+    materials: [
+      T("塑料撬片（多数款不用螺丝，靠卡扣）", "Plastic spudger (most models use clips, not screws)"),
+      T("小号十字螺丝刀（少数款有一颗小螺丝）", "Small Phillips screwdriver (a few models have one small screw)"),
+      T("万用表", "Multimeter"),
+      T("绝缘胶带（取下电池后包住，避免和钥匙串或硬币短路）", "Insulating tape (wrap the cell once it is out so keys or coins cannot short it)"),
+      T("分格的小盒子（放弹簧、电池和螺丝）", "A small tray with compartments (for the spring, the cell and any screw)"),
+    ],
+    safety: [
+      T("电池先处理：先取出 CR2032，再用绝缘胶带包住两面，然后才撬壳。纽扣电池被小孩吞下会很危险，拆的时候放在小孩够不到的地方，用完放回原包装或绝缘后再收藏。", "Battery first: take the CR2032 out and tape both faces before you pry the case. A swallowed coin cell is dangerous. Keep it out of children's reach while you work, and put it back in its pack or tape it before you store it."),
+      T("只拆一节纽扣电池供电的灯。外壳上印着 220 V / 110 V、带充电口、或者能直接插墙的灯，不要拆。", "Only open a light powered by a single coin cell. If the case says 220 V / 110 V, has a charge port, or plugs into a wall, do not open it."),
+      T("金属钥匙圈和电池正负极如果同时碰到会短路发烫，取下电池后不要把它和钥匙串放在一起。", "A metal key ring can short the two faces of the cell and make it hot. Once the cell is out, do not leave it on the same key ring."),
+    ],
+    fig: [
+      { id: "ring", x: 8, y: 50, w: 22, h: 22, c: "#b8bcc2", round: true, t: T("钥匙圈", "Key ring") },
+      { id: "top", x: 36, y: 18, w: 90, h: 36, c: "#f1efe9", t: T("上盖", "Top cover") },
+      { id: "led", x: 70, y: 26, w: 22, h: 16, c: "#fff4b8", t: T("LED", "LED") },
+      { id: "cell", x: 54, y: 58, w: 54, h: 28, c: "#d9792b", t: T("CR2032", "CR2032") },
+      { id: "spring", x: 116, y: 62, w: 28, h: 20, c: "#8a9096", t: T("弹簧", "Spring") },
+      { id: "bot", x: 36, y: 90, w: 90, h: 24, c: "#5b6168", t: T("下盖", "Bottom") },
+    ],
+    steps: [
+      { t: T("先试一遍：按下是否亮", "Test first: does it light when pressed"), d: T("装好电池，对着桌面按下去：应该亮；松开应该灭（多数款是按住才亮，少数是按一下亮、再按一下灭）。如果完全不亮，先不要用力撬，下一步先取出电池量电压。", "With the cell in, press it against the table: it should light, and go off when you release (most models are momentary; a few toggle). If it does not light at all, do not force the case open; take the cell out and measure it in the next step."), fig: { hi: ["led", "top"] } },
+      { t: T("取出纽扣电池，量电压并收好", "Take out the coin cell, measure it and store it safely"), d: T("多数款沿着缝用撬片打开一圈就能取出电池；有螺丝的先拧下来。万用表直流电压档量：新的 CR2032 约 3.0–3.2 V，低于约 2.5 V 时灯会明显变暗或不亮（估算）。量完用绝缘胶带包住两面，放进盒子，不要放回钥匙串上。", "Most models open with a spudger around the seam so you can lift the cell out; undo the screw first if there is one. Measure on DC volts: a fresh CR2032 reads about 3.0–3.2 V, and the lamp gets clearly dim or stays off below about 2.5 V (estimate). Then tape both faces and put the cell in the tray — not back on the key ring."), stop: T("停止点：电池鼓包、漏液或壳体发烫，不要再使用这一节，按当地规则回收，不要拆电芯。", "Stop point: if the cell is swollen, leaking or the can is hot, do not use it. Recycle it according to local rules; do not open the cell."), fig: { hi: ["cell"] } },
+      { t: T("打开两半外壳，看清卡扣", "Open the two halves and note the clips"), d: T("上盖和下盖通常是一圈细卡扣。用撬片从有缝或靠近钥匙圈孔的一边慢慢走一圈。钥匙圈可以先取下来，少一个会晃的零件。螺丝和卡扣碎片分格放。", "The top and bottom are usually held by a ring of small clips. Work a spudger slowly around from the gap or the side near the key-ring hole. You can take the ring off first so it does not flap. Keep any screw and broken clip bits sorted."), warn: T("壳是薄塑料，卡扣容易断。撬不动就换个位置，不要用刀片朝手的方向撬。", "The case is thin plastic and the clips break easily. If it will not move, try another spot. Never pry with a blade towards your hand."), fig: { hi: ["top", "bot"], off: { top: [0, -8], bot: [0, 8] } } },
+      { t: T("看懂回路：电池一面、弹簧、LED 两脚", "See the loop: one cell face, the spring, and the two LED legs"), d: T("CR2032 带字的一面一般是正极，光面是负极（常见标法，以电池上的印刷为准）。很多钥匙扣灯用金属下盖或一块弹片当一个电极，另一面靠弹簧或小铜片。LED 有长短脚：长脚通常是正极（阳极），经开关接到电池正极；短脚接到负极。按下去其实就是把中间断开的那一处按到一起。", "The marked face of a CR2032 is usually the positive side and the smooth face is negative (a common convention; trust the printing on the cell). Many keychain lights use the metal bottom or a leaf spring as one electrode, and a coil spring or a small copper pad as the other. The LED has a long leg and a short leg: the long leg is usually the anode and goes to the cell positive through the switch; the short leg goes to the negative. Pressing the case simply closes the one gap in that loop."), fig: { hi: ["cell", "spring", "led"] } },
+      { t: T("（可选）量一下 LED 的导通方向", "(Optional) Check the LED polarity with a meter"), d: T("电池已取出。万用表二极管档接 LED 两脚：正向大约会显示一个导通压降（常见估算约 1.8–3.0 V，和颜色有关），反向不导通。具体数值各颗不同，只要分清正反向即可，不必和某一型号的规格书对照。", "With the cell already out, use the diode range across the LED legs: one way should show a forward drop (a common estimate is about 1.8–3.0 V, depending on colour) and the other way should not conduct. Values differ, so just tell the two directions apart; no need to match a datasheet."), fig: { hi: ["led"] } },
+      { t: T("检查接触片和弹簧有没有锈或变形", "Check the contacts and spring for rust or a bent shape"), d: T("灯时亮时不亮，多半是接触不好：看看弹簧有没有歪、铜片有没有氧化发暗。可以用干净的橡皮或酒精棉轻轻擦接触面（先确认电池已拿走）。不要用砂纸把镀层打穿。", "If the lamp works only sometimes, the contact is often at fault: look for a bent spring or a darkened, oxidised pad. A clean eraser or an alcohol wipe can gently clean the faces (only after the cell is out). Do not sand through the plating."), fig: { hi: ["spring", "bot"] } },
+      { t: T("整理模块，存进零件库", "Sort the modules and save them to the parts library"), d: T("一般能得到：两半外壳、钥匙圈、CR2032、接触弹簧或弹片、一颗 LED。LED 和电池座思路可以拿到 3 V 的小实验里用；电池要绝缘存放。点下面“存进零件库”，这些模块会出现在零件库的“拆解所得”里。", "You usually get: two case halves, the key ring, the CR2032, a contact spring or leaf, and one LED. The LED and the contact idea can go into a small 3 V experiment; store the cell insulated. Press 'Save modules to parts library' below and they appear under 'From teardowns' in the parts browser."), fig: { hi: ["top", "led", "cell", "spring", "bot"], off: { top: [0, -8], bot: [0, 8], cell: [40, 0], led: [-36, 0] } } },
+    ],
+    modules: [
+      { key: "shell", part: "td-keyfob-shell", match: "approx", t: T("钥匙扣外壳（两半，近似件）", "Keyfob shell (two halves, approximate)"), ex: { p: [0, -0.2, 0], d: [0, -1.2, 0] } },
+      { key: "led", part: "kc-led_d5.0mm", match: "similar", t: T("LED（示意为 5 mm 直插 LED；有的款是贴片 LED）", "LED (shown as a 5 mm through-hole LED; some models use SMD)"), ex: { p: [0, 0.8, 0.6], d: [0, 1.4, 0.8] } },
+      { key: "cell", part: "p-coin-cr2032", match: "similar", t: T("CR2032 纽扣电池（零件库同类尺寸）", "CR2032 coin cell (library part, same size class)"), ex: { p: [0, 0.4, 0], d: [1.6, 0.6, 0] } },
+      { key: "spring", part: "td-keyfob-spring", match: "approx", t: T("电池接触弹簧（近似件）", "Cell contact spring (approximate)"), ex: { p: [0.8, 0.3, -0.6], d: [1.0, 0.8, -0.8] } },
+      { key: "ring", part: "td-keyfob-ring", match: "approx", t: T("钥匙圈（近似件）", "Key ring (approximate)"), ex: { p: [-2.2, 0.2, 0], d: [-1.4, 0.4, 0] } },
+    ],
+    explode: true,
+  },
 ];
 // v32（我的补充）：安全规则——只收低压直流设备（≤ 24 V），市电设备不收。搜到市电类关键词时页面给出提示
 export const MAX_VOLTS = 24;

@@ -31,9 +31,11 @@ body {
   color: #1b1814;
 }
 
+/* v39：双色焦点环。浅色描边在深色按钮上对比度够，深色外环在纸色底上对比度够（都不低于 3:1）。 */
 :focus-visible {
-  outline: 2px solid var(--color-copper-deep);
+  outline: 2px solid var(--color-paper-2);
   outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--color-copper-deep);
 }
 
 .skip-link {

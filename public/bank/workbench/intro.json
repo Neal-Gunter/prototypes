@@ -135,5 +135,48 @@
       ]
     },
     "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "wb-pot-adc-01",
+    "mode": "workbench",
+    "difficulty": "intro",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "电位器接到 Pico 的 ADC 脚，两端接 3V3 和地",
+    "titleEn": "Wire a potentiometer to a Pico ADC pin, with the ends on 3V3 and ground",
+    "prompt": "把 pot.wiper 接到 pico.GP26，pot.1 接到 pico.3V3，pot.2 接到 pico.GND。不要把 3V3 和 GND 直接短接。节点名就用这些。",
+    "promptEn": "Connect pot.wiper to pico.GP26, pot.1 to pico.3V3, and pot.2 to pico.GND. Do not short 3V3 directly to GND. Use these node names.",
+    "starterWires": [],
+    "passCondition": {
+      "type": "connectionGraphConstraint",
+      "requiredEdges": [
+        {
+          "a": "pot.wiper",
+          "b": "pico.GP26"
+        },
+        {
+          "a": "pot.1",
+          "b": "pico.3V3"
+        },
+        {
+          "a": "pot.2",
+          "b": "pico.GND"
+        }
+      ],
+      "forbiddenEdges": [
+        {
+          "a": "pico.3V3",
+          "b": "pico.GND"
+        }
+      ]
+    },
+    "_stale": false
   }
 ]

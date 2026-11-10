@@ -4,6 +4,44 @@
     "staleAfter": "2027-11-01",
     "hints": [],
     "hintsEn": [],
+    "id": "fw-btn-delay-01",
+    "mode": "firmware",
+    "difficulty": "intermediate",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "读到按键为高以后，再等 300 ms 才点亮 LED",
+    "titleEn": "After the button reads high, wait 300 ms before lighting the LED",
+    "prompt": "引脚 2 从一开始就是高电平（模拟已按下）。请在确认它为高之后再 delay(300)，然后把 LED_BUILTIN 拉高。不要一上电就亮。允许 ±50 ms。",
+    "promptEn": "Pin 2 is high from the start (already pressed). After you confirm it is high, delay(300) and then drive LED_BUILTIN high. Do not light it immediately at power-up. ±50 ms is accepted.",
+    "firmwareTemplate": "void setup() {\n  pinMode(2, INPUT);\n  pinMode(LED_BUILTIN, OUTPUT);\n}\nvoid loop() {\n  \n}\n",
+    "passCondition": {
+      "type": "behaviorTimeline",
+      "pins": {
+        "LED": 48
+      },
+      "inputs": {
+        "d2": 1
+      },
+      "expected": [
+        {
+          "t": 300,
+          "pin": "LED",
+          "state": "HIGH"
+        }
+      ],
+      "toleranceMs": 50,
+      "horizonMs": 800
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
     "id": "fw-led-duty-01",
     "mode": "firmware",
     "difficulty": "intermediate",

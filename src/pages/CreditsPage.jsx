@@ -241,6 +241,15 @@ export default function CreditsPage() {
         <li><a className="underline" href="https://tree-sitter.github.io/tree-sitter/">tree-sitter</a>{en ? " (MIT) and the C / C++ grammars: used only at build time and in development tests, not bundled into the site." : "（MIT）以及 C / C++ 语法：只在构建期和开发测试里用，不打包进网站。"}</li>
       </ul>
       </div>
+      <h2 className="mt-8 text-xl font-medium" id="v39-fresh">{en ? "v39: stable freshness, table bounds, print TOC pages, more tasks" : "v39：新鲜度稳定、桌面边界、目录页码和更多题目"}</h2>
+      <p className="mt-2 leading-7 text-ink-soft" data-testid="credits-v39">
+        {en
+          ? "v39 keeps the same licence line as v38: all new problem text and the CR2032 keychain-light teardown guide were written for this project and compiled from public information, not verified on a real device. The content hash ignores provenance metadata. The Actions workflow defaults to the committed offline snapshots. Focus-ring contrast uses relative luminance (3:1). Print TOC page numbers are written into the sheet because CSS target-counter is not reliable in Chrome. Approximate keyfob parts are estimated."
+          : "v39 沿用 v38 的许可规则：新增题面和 CR2032 钥匙扣灯拆解指南都是本项目自己写的，按公开资料整理，未经实物验证。内容 hash 不算出处元数据。Actions 默认用已提交的离线快照。焦点环对比度按相对亮度计算（3:1）。打印目录页码写进指南里，因为 Chrome 对 CSS target-counter 支持不稳。钥匙扣灯的近似件尺寸是估算。"}
+      </p>
+      <ul className="mt-2 list-disc space-y-1 pl-6 text-sm leading-6 text-ink-soft" data-testid="credits-v39-list">
+        <li>{en ? "No new third-party licences in this release. tree-sitter remains a development dependency only, as in v38." : "本版没有新增第三方许可。tree-sitter 仍只作开发依赖，和 v38 一样。"}</li>
+      </ul>
       <h2 className="mt-8 text-xl font-medium">代码库</h2>
       <p className="mt-2 leading-7 text-ink-soft">
         React、three.js、@dimforge/rapier3d-compat（Apache-2.0，物理碰撞）、@react-three/fiber、@react-three/drei、zustand、Tailwind CSS（除注明外均为 MIT 许可）。模型转换脚本用 glTF‑Transform 和 meshoptimizer（MIT，只在开发时运行）。“模型 + 功能图”页（v11）在浏览器里用 occt-import-js（LGPL‑2.1，读 STEP；作为单独的 JS + wasm 文件按需加载，没有改动，可替换）和 pdfjs-dist（Apache-2.0，读 PDF 功能图，按需加载）。内置示例的八爪鱼 GLB 和功能图 SVG 由本项目从 v10 预设自制；v12 的 2 自由度机械臂示例（OBJ + 功能图 + 工程）由本项目脚本自制，CC0。关节和舵机运动用同一个 Rapier 引擎。

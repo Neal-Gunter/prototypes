@@ -19,7 +19,9 @@ async function getReadme(repo, branch) {
 async function main() {
   const forks = (readJSON(join(DATA, "meta/forks.json"))?.forks || []).slice(0, LIMIT);
   const out = { generatedAt: stamp(), mode: "live", fromthetransistor: {}, awesomeElectronics: null };
-  if (process.env.BANK_OFFLINE === "1") { log("fetch-sources：离线，跳过"); writeJSON(join(DATA, "meta/sources.json"), { ...(readJSON(join(DATA, "meta/sources.json")) || {}) }); return; }
+  // v39：默认离线；BANK_LIVE=1 才抓 README。BANK_OFFLINE=1 仍强制离线。
+  const offline = process.env.BANK_OFFLINE === "1" || process.env.BANK_LIVE !== "1";
+  if (offline) { log("fetch-sources：离线，跳过"); writeJSON(join(DATA, "meta/sources.json"), { ...(readJSON(join(DATA, "meta/sources.json")) || {}) }); return; }
   mkdirSync(join(CACHE, "ftt"), { recursive: true });
   let ok = 0, miss = 0, i = 0;
   await Promise.all(Array.from({ length: CONC }, async () => {

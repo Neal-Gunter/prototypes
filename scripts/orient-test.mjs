@@ -39,5 +39,14 @@ const f = O.findFit((dx, dy, dz) => wall(dx, dy, dz));
 ok(f && f.moved === 3 && f.dx === 3 && f.dy === 0, `往上抬不够时往旁边找：右移 ${f?.dx} cm`);
 ok(O.findFit((dx, dy) => dy >= 1)?.dy === 1, "能抬高就先抬高，不挪");
 ok(O.findFit(() => false) === null, "到处都放不下 → null");
+ok(O.onTable(0, 0) && O.onTable(28, 18) && !O.onTable(29, 0) && !O.onTable(0, 19), "桌面边界是 ±(边/2 − 2) cm");
+// 零件靠近 +x 边，只有往右才“放得下”，但往右会出界 → 不能选越界点
+const edge = O.findFit((dx) => dx > 0, { inside: (dx, _dy, dz) => O.onTable(28.1 + dx, dz), step: 0.5, side: 6 });
+ok(edge === null, `靠近桌边时不把零件推出桌外（得到 ${JSON.stringify(edge)}）`);
+// 原地抬 3 cm 仍不够，旁边贴地也放不下，只有叠到 ≥ 4 cm 才行
+const stack = O.findFit((dx, dy) => dy >= 4, { lift: 3, side: 6 });
+ok(stack && stack.dy >= 4 && stack.moved > 0, `旁边搜索会试叠高：dy=${stack?.dy} moved=${stack?.moved}`);
+const stay = O.findFit(() => true, { inside: (dx, _dy, dz) => O.onTable(dx, dz) });
+ok(stay && stay.dx === 0 && stay.dy === 0, "在桌面内原地就行时不挪");
 console.log(`orient-test ${pass} PASS / ${fail} FAIL`);
 process.exit(fail ? 1 : 0);

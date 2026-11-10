@@ -175,6 +175,18 @@ The script uses `window.__wb` test hooks only to find where things are on the sc
   - 电流是估算值。
   - 只做直流层面的电压、电流检查。
 
+## v39：题面 hash、Actions 默认离线、桌面内找空位、焦点对比度、目录页码、更多原题和钥匙扣灯拆解（早期原型，简化仿真）
+
+- **内容 hash（我的补充）**：`contentHash` 只覆盖题面（标题、题干、通过条件等），不含 `alsoFoundIn` / `toolLinks` / `source` / `_stale`，也不含注入的公开工具提示。重建时用同一算法重算上一份已发布题面，题面没变就不改 `updatedAt`。
+- **Actions**：`.github/workflows/build-bank.yml` 默认离线沿用已提交的 `data/meta/forks.json`；`workflow_dispatch` 增加 `live`（默认 false），勾选后才设 `BANK_LIVE=1`。脚本里 `BANK_OFFLINE=1` 仍强制离线。仍拒绝推送到 main / master。
+- **找空位**：`findFit` 候选点必须在桌面内（60×40 cm，边距 2 cm，与 `engine.BENCH` 一致），旁边搜索会试一组叠高。
+- **焦点环**：浅色描边 + 深色外环；`e2e/focus-order.mjs` 检查对比度 ≥ 3:1，自测增加低对比度用例。
+- **打印目录页码**：强制分页后把页码写进目录（封面+目录第 1 页，安全第 2 页，材料第 3 页，每一步独占一页，然后是模块表和说明）。`e2e/sheet-pdf-lint.mjs` 核对目录页码和正文所在页一致。
+- **题库**：在 38 道基础上新增 12 道原题（诊断 4、工作台接线 3、固件 2、装配 2、代码检查 1），诊断题连到已有维修关卡。共 50 道。题面自己写，按公开资料整理。
+- **拆解**：新增 CR2032 钥匙扣灯（3 V，低压直流），文字和示意图自己写、自己画；近似件尺寸估算，未经实物验证。
+- **测试**：`node scripts/bank-test.mjs`、`node scripts/orient-test.mjs`；`e2e/v39-bench.mjs` 走查题库、新设备和目录页码。
+- **限制**：校验器仍不是编译器；接线题不是 3D 台面；目录页码依赖强制分页，若某一节超出一页，起始页仍按规则计算；钥匙扣灯指南未经实物验证。
+
 ## v38：题库管线（早期原型，简化仿真）
 
 - **题库页 `/bank`**：先加载 `public/bank/index.json`，再按模式和难度按需加载对应 JSON。固件题用已有的 JS 解释器对照时间线；代码题用页面轻量 C/C++ / 汇编 / Intel HEX 校验器（不编译、不加载 WASM，c-lite.js gzip 约 6 KB，目标 <35 KB）；诊断题连到已有维修关卡；接线题按连通性，装配题按顺序和朝向。

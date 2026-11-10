@@ -4,6 +4,55 @@
     "staleAfter": "2027-11-01",
     "hints": [],
     "hintsEn": [],
+    "id": "wb-fuse-vsys-01",
+    "mode": "workbench",
+    "difficulty": "intermediate",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "5 V 要经过保险丝再进 Pico 的 VSYS，并且共地",
+    "titleEn": "5 V must reach Pico VSYS through a fuse, with a common ground",
+    "prompt": "psu.5V 接到 fuse.1，fuse.2 接到 pico.VSYS，pico.GND 与 psu.GND 共地。禁止 5 V 不经保险丝直接接到 VSYS，也禁止 5 V 接到 GND。",
+    "promptEn": "Connect psu.5V to fuse.1, fuse.2 to pico.VSYS, and share a ground between pico.GND and psu.GND. Do not tie 5 V directly to VSYS without the fuse, and do not short 5 V to GND.",
+    "starterWires": [],
+    "passCondition": {
+      "type": "connectionGraphConstraint",
+      "requiredEdges": [
+        {
+          "a": "psu.5V",
+          "b": "fuse.1"
+        },
+        {
+          "a": "fuse.2",
+          "b": "pico.VSYS"
+        }
+      ],
+      "requiredNets": [
+        [
+          "pico.GND",
+          "psu.GND"
+        ]
+      ],
+      "forbiddenEdges": [
+        {
+          "a": "psu.5V",
+          "b": "pico.VSYS"
+        },
+        {
+          "a": "psu.5V",
+          "b": "psu.GND"
+        }
+      ]
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
     "id": "wb-i2c-01",
     "mode": "workbench",
     "difficulty": "intermediate",
@@ -101,6 +150,59 @@
         {
           "a": "psu.5V",
           "b": "psu.GND"
+        }
+      ]
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "wb-uart-gnd-01",
+    "mode": "workbench",
+    "difficulty": "intermediate",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original"
+    },
+    "title": "UART 交叉相接，并且两板必须共地",
+    "titleEn": "Cross-wire UART and share a common ground",
+    "prompt": "uart.TXD 接到 pico.GP1（接收），uart.RXD 接到 pico.GP0（发送），uart.VCC 接到 pico.3V3。uart.GND 必须和 pico.GND 共地。不要把 TXD 和 RXD 短在一起，也不要把 3V3 接到地。",
+    "promptEn": "Connect uart.TXD to pico.GP1 (RX), uart.RXD to pico.GP0 (TX), and uart.VCC to pico.3V3. uart.GND must share a ground with pico.GND. Do not short TXD to RXD, and do not tie 3V3 to ground.",
+    "starterWires": [],
+    "passCondition": {
+      "type": "connectionGraphConstraint",
+      "requiredEdges": [
+        {
+          "a": "uart.TXD",
+          "b": "pico.GP1"
+        },
+        {
+          "a": "uart.RXD",
+          "b": "pico.GP0"
+        },
+        {
+          "a": "uart.VCC",
+          "b": "pico.3V3"
+        }
+      ],
+      "requiredNets": [
+        [
+          "uart.GND",
+          "pico.GND"
+        ]
+      ],
+      "forbiddenEdges": [
+        {
+          "a": "uart.TXD",
+          "b": "uart.RXD"
+        },
+        {
+          "a": "pico.3V3",
+          "b": "pico.GND"
         }
       ]
     },

@@ -1,4 +1,4 @@
-// v38：题库练习页。先加载 index.json，再按 mode × difficulty 按需加载。早期原型，简化仿真。
+// v38–v39：题库练习页。先加载 index.json，再按 mode × difficulty 按需加载。早期原型，简化仿真。
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { containerClass } from "../container";

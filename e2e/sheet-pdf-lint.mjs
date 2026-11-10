@@ -7,7 +7,7 @@ import { chromium } from "playwright";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 const { DEVICES } = await import("../src/teardown/devices.js");
-const { guideHtml } = await import("../src/teardown/guideSheet.js");
+const { guideHtml, tocPageMap } = await import("../src/teardown/guideSheet.js");
 const MUT = process.env.MUTATE === "1";
 const OUT = process.env.OUT || "/tmp/sheet-lint";
 fs.mkdirSync(`${OUT}/logs`, { recursive: true });
@@ -19,7 +19,7 @@ const probs = [], stat = [];
 for (const d of DEVICES) for (const lang of ["zh", "en"]) {
   const L = (x) => (typeof x === "string" ? x : x[lang]);
   let html = guideHtml(d, lang, { now: new Date("2026-11-03T00:00:00Z") });
-  if (MUT) html = html.replace(/break-inside:avoid/g, "").replace(/@bottom-center\{[^}]*\}/, "").replace("</style>", ".step{display:block}.fig{margin-top:8px}</style>");
+  if (MUT) html = html.replace(/break-inside:avoid/g, "").replace(/break-before:\s*page/g, "auto").replace(/break-after:\s*page/g, "auto").replace(/@bottom-center\{[^}]*\}/, "").replace("</style>", ".step{display:block}.fig{margin-top:8px}</style>");
   await p.setContent(html, { waitUntil: "load" });
   const pdf = await p.pdf({ preferCSSPageSize: true, printBackground: true });
   const f = `/tmp/sheet-${d.id}-${lang}.pdf`; fs.writeFileSync(f, pdf);
@@ -28,6 +28,25 @@ for (const d of DEVICES) for (const lang of ["zh", "en"]) {
   const M = pages.length;
   pages.forEach((t, k) => { const want = lang === "en" ? `Page ${k + 1} of ${M}` : `第${k + 1}页/共${M}页`; if (!W(t).includes(W(want))) bad(`第 ${k + 1} 页没有页码“${want}”`); });
   if (!/目录|Contents/.test(pages[0] || "")) bad("第 1 页没有目录");
+  if (!MUT) {
+    const pg = tocPageMap(d);
+    const wantToc = (n) => lang === "en" ? `p.${n}` : `第${n}页`;
+    const first = W(pages[0] || "");
+    for (const [id, label] of [["safety", "安全|Safety"], ["mats", "材料|Materials"], ["steps", "拆解步骤|Steps"], ["modules", "模块|Modules"], ["notes", "说明|Notes"]]) {
+      if (!first.includes(W(wantToc(pg[id])))) bad(`目录里没有“${id}”的页码 ${wantToc(pg[id])}`);
+    }
+    d.steps.forEach((s, i) => { if (!first.includes(W(wantToc(pg.step(i))))) bad(`目录里没有第 ${i + 1} 步的页码 ${wantToc(pg.step(i))}`); });
+    const onPage = (n, re) => n >= 1 && n <= pages.length && re.test(pages[n - 1] || "");
+    if (!onPage(pg.safety, /安全|Safety/)) bad(`安全须知不在目录所说的第 ${pg.safety} 页`);
+    if (!onPage(pg.mats, /材料|Materials|工具|tools/i)) bad(`材料清单不在目录所说的第 ${pg.mats} 页`);
+    if (!onPage(pg.modules, /模块|Modules/)) bad(`模块表不在目录所说的第 ${pg.modules} 页`);
+    if (!onPage(pg.notes, /说明|Notes/)) bad(`说明不在目录所说的第 ${pg.notes} 页`);
+    d.steps.forEach((s, i) => {
+      const head = W(L(s.t)).slice(0, 14);
+      const k = pg.step(i);
+      if (!W(pages[k - 1] || "").includes(head)) bad(`第 ${i + 1} 步标题不在目录所说的第 ${k} 页`);
+    });
+  }
   let cut = 0;
   d.steps.forEach((s, i) => {
     const head = W(L(s.t)).slice(0, 14), tail = W(L(s.d)).slice(-10);

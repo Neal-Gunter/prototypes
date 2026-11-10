@@ -8,11 +8,12 @@
 //   转动会穿模时先试着往上抬（最多 3 cm）再转，还不行就拒绝并读出原因。
 // v37（我的补充）：旋转改成四元数（orient.js），不再经过欧拉角吸附，前后倾 90° 时左右倾也精确；
 //   原地抬 3 cm 还放不下时，往旁边一圈一圈找空位（最多 6 cm），挪了多少读出来。读出“倾斜 N°”（上方向和竖直夹角）。
+// v39（我的补充）：找空位必须仍在桌面内（边距 2 cm），旁边还会试叠高；挪了或叠了都会读出来。
 // 选中和位置变化写进一个 aria-live 区域；另有一份隐藏的零件清单，读屏用户可以逐个点选。早期原型，简化仿真。
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import { engine } from "../engine.js";
-import { keyRotate, squareUp, findFit, tipOf } from "../orient.js";
+import { engine, BENCH } from "../engine.js";
+import { keyRotate, squareUp, findFit, tipOf, onTable } from "../orient.js";
 import { useLang, tr } from "../../i18n.js";
 
 const nameOf = (u, lang) => { const d = engine.parts.get(u)?.def; return d ? (lang === "en" ? d.name || d.name_zh : d.name_zh || d.name) : u; };
@@ -67,11 +68,15 @@ export default function SceneA11y({ uids, sel, onSelect }) {
     const r = tq.clone().multiply(w.q.clone().invert());
     const nq = r.clone().multiply(bp.q), off = bp.p.clone().sub(w.p).applyQuaternion(r);
     const mine = new Set(b.parts);
-    const fit = findFit((dx, dy, dz) => !engine.overlapAt(bid, w.p.clone().add(off).add(new THREE.Vector3(dx, dy, dz)), nq, mine));
-    if (!fit) { setSay(tr("这里转不开（会和别的零件穿模，旁边 6 厘米内也没有空位），先挪开一点再转", "Can't turn here (it would overlap another part and there is no free spot within 6 cm); move it a little first")); return; }
+    const fit = findFit(
+      (dx, dy, dz) => !engine.overlapAt(bid, w.p.clone().add(off).add(new THREE.Vector3(dx, dy, dz)), nq, mine),
+      { inside: (dx, dy, dz) => { const p = w.p.clone().add(off).add(new THREE.Vector3(dx, dy, dz)); return onTable(p.x, p.z, { w: BENCH.w, d: BENCH.d, margin: 2 }); } },
+    );
+    if (!fit) { setSay(tr("这里转不开（会和别的零件穿模，旁边 6 厘米内桌面上也没有空位），先挪开一点再转", "Can't turn here (it would overlap another part and there is no free spot on the table within 6 cm); move it a little first")); return; }
     memo.current.set(sel, tq.clone());
     engine.teleport(sel, w.p.clone().add(new THREE.Vector3(fit.dx, fit.dy, fit.dz)), tq, true);
-    const moved = fit.moved ? tr(`（原地放不下，往旁边挪了 ${cm(fit.moved)} 厘米）`, ` (no room in place; moved ${cm(fit.moved)} cm to the side)`) : "";
+    const stack = fit.dy ? tr(`，叠高 ${cm(fit.dy)} 厘米`, `, stacked ${cm(fit.dy)} cm up`) : "";
+    const moved = fit.moved ? tr(`（原地放不下，往旁边挪了 ${cm(fit.moved)} 厘米${stack}）`, ` (no room in place; moved ${cm(fit.moved)} cm to the side${stack})`) : (fit.dy ? tr(`（往上叠了 ${cm(fit.dy)} 厘米）`, ` (stacked ${cm(fit.dy)} cm up)`) : "");
     setSay(describe(sel, lang, list) + moved);
   };
   const key = (e) => {

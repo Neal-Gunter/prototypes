@@ -3,6 +3,7 @@
 //   order   焦点顺序和 DOM 顺序一致（不用正数 tabindex 打乱）
 //   visible 每个落点都有看得见的焦点样式（outline 或 box-shadow），而且在可视区里
 //   trap    没有焦点陷阱：能把页面上所有可 Tab 元素走完，再回到开头；Shift+Tab 能退回上一个
+//   contrast v39：焦点环相对相邻背景的对比度至少 3:1（相对亮度，WCAG 2.2 焦点外观的下限）
 // 用法：BASE=http://localhost:4173 OUT=/tmp/focus node e2e/focus-order.mjs
 import { chromium } from "playwright";
 import fs from "node:fs";
@@ -11,7 +12,7 @@ fs.mkdirSync(OUT, { recursive: true });
 const PAGES = [["home", "/"], ["example", "/example"], ["workbench", "/workbench"], ["assembly", "/assembly"], ["parts", "/parts"], ["guide", "/assembly/guide"], ["octo-guide", "/assembly/octopus-guide"], ["teardown", "/teardown/"], ["teardown-step", "/teardown/?d=micro-servo&s=3"], ["credits", "/credits"], ["help", "/help"], ["bank", "/bank"]];
 // 自测：MUTATE=1 时在 /example 里人为加一个焦点陷阱、一个正数 tabindex、一个去掉焦点样式的按钮，三类都必须报出来
 const MUT = process.env.MUTATE === "1";
-if (MUT) PAGES.splice(0, PAGES.length, ["mut-trap", "/example"], ["mut-order", "/example"], ["mut-visible", "/example"]);
+if (MUT) PAGES.splice(0, PAGES.length, ["mut-trap", "/example"], ["mut-order", "/example"], ["mut-visible", "/example"], ["mut-contrast", "/example"]);
 const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(",")) : null;
 const b = await chromium.launch({ executablePath: process.env.CHROME || "/usr/bin/google-chrome", args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
 const rows = []; let fail = 0;
@@ -20,7 +21,30 @@ const READ = () => {
   const s = getComputedStyle(e), r = e.getBoundingClientRect();
   const ring = (s.outlineStyle !== "none" && parseFloat(s.outlineWidth) > 0) || (s.boxShadow && s.boxShadow !== "none");
   const inView = r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth;
-  return { idx: window.__fo.get(e) ?? -1, ti: e.tabIndex, ring, inView, name: (e.getAttribute("data-testid") || e.id || e.tagName.toLowerCase()) + (e.textContent ? ":" + e.textContent.trim().slice(0, 18) : "") };
+  const parse = (c) => {
+    const m = String(c).match(/rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*[,/]\s*([\d.]+))?\s*\)/);
+    if (!m) return null;
+    return { r: +m[1], g: +m[2], b: +m[3], a: m[4] == null ? 1 : +m[4] };
+  };
+  const lin = (c) => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+  const lum = (c) => 0.2126 * lin(c.r) + 0.7152 * lin(c.g) + 0.0722 * lin(c.b);
+  const ratio = (a, b) => { const hi = Math.max(lum(a), lum(b)), lo = Math.min(lum(a), lum(b)); return (hi + 0.05) / (lo + 0.05); };
+  const solid = (n) => {
+    while (n) {
+      const c = parse(getComputedStyle(n).backgroundColor);
+      if (c && c.a > 0.05) return c;
+      n = n.parentElement;
+    }
+    return { r: 231, g: 223, b: 208, a: 1 };
+  };
+  const cols = [];
+  if (s.outlineStyle !== "none" && parseFloat(s.outlineWidth) > 0) { const c = parse(s.outlineColor); if (c && c.a > 0.05) cols.push(c); }
+  if (s.boxShadow && s.boxShadow !== "none") for (const m of s.boxShadow.matchAll(/rgba?\([^)]+\)/g)) { const c = parse(m[0]); if (c && c.a > 0.05) cols.push(c); }
+  const bg = solid(e.parentElement || e);
+  const fill = (() => { const c = parse(s.backgroundColor); return c && c.a > 0.05 ? c : bg; })();
+  let contrast = 0;
+  for (const c of cols) contrast = Math.max(contrast, ratio(c, bg), ratio(c, fill));
+  return { idx: window.__fo.get(e) ?? -1, ti: e.tabIndex, ring, inView, contrast, name: (e.getAttribute("data-testid") || e.id || e.tagName.toLowerCase()) + (e.textContent ? ":" + e.textContent.trim().slice(0, 18) : "") };
 };
 for (const [k, u] of PAGES) {
   if (ONLY && !ONLY.has(k)) continue;
@@ -37,6 +61,7 @@ for (const [k, u] of PAGES) {
       if (k === "mut-trap") x.addEventListener("keydown", (e) => { if (e.key === "Tab") e.preventDefault(); });
       if (k === "mut-order") { m.append(x); x.tabIndex = 1; }
       if (k === "mut-visible") { x.style.outline = "none"; x.style.boxShadow = "none"; }
+      if (k === "mut-contrast") { x.style.outline = "2px solid #e8e4dc"; x.style.outlineOffset = "2px"; x.style.boxShadow = "none"; }
     }, k);
     const at0 = await p.evaluate(() => document.activeElement?.id || "");
     await p.evaluate(() => { window.__fo = new WeakMap(); let i = 0; for (const e of document.querySelectorAll("*")) window.__fo.set(e, i++); document.activeElement?.blur?.(); window.scrollTo(0, 0); });
@@ -76,6 +101,8 @@ for (const [k, u] of PAGES) {
     const noRing = seq.filter((s) => !s.ring), off = seq.filter((s) => !s.inView);
     if (noRing.length) probs.push(["visible", `${noRing.length} 个落点没有焦点样式：${noRing.slice(0, 3).map((s) => s.name).join(" | ")}`]);
     if (off.length) probs.push(["visible", `${off.length} 个落点不在可视区：${off.slice(0, 3).map((s) => s.name).join(" | ")}`]);
+    const lowC = seq.filter((s) => s.ring && (s.contrast || 0) < 3);
+    if (lowC.length) probs.push(["contrast", `${lowC.length} 个落点焦点环对比度不到 3:1（最低 ${Math.min(...lowC.map((s) => s.contrast)).toFixed(2)}）：${lowC.slice(0, 3).map((s) => s.name).join(" | ")}`]);
     // Shift+Tab 退一步
     if (seq.length >= 3) {
       await p.evaluate(() => document.activeElement?.blur?.());
@@ -93,6 +120,6 @@ for (const [k, u] of PAGES) {
 }
 await b.close();
 fs.writeFileSync(`${OUT}/focus-order.json`, JSON.stringify(rows, null, 1));
-if (MUT) { const want = { "mut-trap": "trap", "mut-order": "order", "mut-visible": "visible" }; const hit = rows.filter((r) => r.probs?.some((x) => x[0] === want[r.page])).length; console.log(`focus-order 自测：${hit}/3`); process.exit(hit === 3 ? 0 : 1); }
+if (MUT) { const want = { "mut-trap": "trap", "mut-order": "order", "mut-visible": "visible", "mut-contrast": "contrast" }; const hit = rows.filter((r) => r.probs?.some((x) => x[0] === want[r.page])).length; console.log(`focus-order 自测：${hit}/4`); process.exit(hit === 4 ? 0 : 1); }
 console.log(`focus-order：${rows.length} 页，${rows.length - fail} 页通过，${fail} 页有问题`);
 process.exit(fail ? 1 : 0);

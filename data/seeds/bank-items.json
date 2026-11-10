@@ -1795,6 +1795,603 @@
           }
         ]
       }
+    },
+    {
+      "attribution": "按公开资料整理",
+      "staleAfter": "2027-11-01",
+      "hints": [],
+      "hintsEn": [],
+      "id": "dx-dead-battery-01",
+      "mode": "diagnosis",
+      "difficulty": "intro",
+      "source": {
+        "repo": "prototypes/original",
+        "path": "data/seeds/bank-items.json",
+        "adaptation": "original-diagnosis-prompt",
+        "note": "题面自己写；连到已有维修关卡 led-dead-battery"
+      },
+      "title": "小夜灯完全不亮：先查电池还是先换灯珠？",
+      "titleEn": "The night light is completely dark: battery first, or a new LED?",
+      "prompt": "一盏用电池的小夜灯完全不亮，开关感觉正常。更稳妥的第一步是什么？做完选择题可以进入对应的维修关卡。题面自己写。按公开资料整理。",
+      "promptEn": "A battery night light is completely dark; the switch still feels normal. What is the safer first step? After the quiz you can open the matching repair level. Original wording. Compiled from public information.",
+      "passCondition": {
+        "type": "diagnosisQuiz",
+        "repairUrl": "/repair?s=led-dead-battery",
+        "scenario": "led-dead-battery",
+        "questions": [
+          {
+            "id": "q1",
+            "prompt": "更稳妥的第一步？",
+            "promptEn": "The safer first step?",
+            "options": [
+              {
+                "id": "a",
+                "zh": "先换一颗新灯珠再通电",
+                "en": "Fit a new LED and apply power"
+              },
+              {
+                "id": "b",
+                "zh": "先取出电池，用表量电池电压，并看极性和接触是否干净",
+                "en": "Take the battery out, measure its voltage, and check polarity and clean contact"
+              },
+              {
+                "id": "c",
+                "zh": "先把两节电池叠起来提高电压再试",
+                "en": "Stack an extra cell to raise the voltage and try again"
+              }
+            ],
+            "answer": "b"
+          }
+        ]
+      }
+    },
+    {
+      "attribution": "按公开资料整理",
+      "staleAfter": "2027-11-01",
+      "hints": [],
+      "hintsEn": [],
+      "id": "dx-wrong-resistor-01",
+      "mode": "diagnosis",
+      "difficulty": "intro",
+      "source": {
+        "repo": "prototypes/original",
+        "path": "data/seeds/bank-items.json",
+        "adaptation": "original-diagnosis-prompt",
+        "note": "题面自己写；连到 led-wrong-resistor"
+      },
+      "title": "灯很暗，几乎看不见：电阻是不是装错了？",
+      "titleEn": "The lamp is almost too dim to see: is the resistor wrong?",
+      "prompt": "灯能亮，但暗得几乎看不见。电源电压看起来正常。更合理的检查是什么？按公开资料整理。",
+      "promptEn": "The lamp lights, but it is almost too dim to see. The supply voltage looks normal. What is the more reasonable check? Compiled from public information.",
+      "passCondition": {
+        "type": "diagnosisQuiz",
+        "repairUrl": "/repair?s=led-wrong-resistor",
+        "scenario": "led-wrong-resistor",
+        "questions": [
+          {
+            "id": "q1",
+            "prompt": "更合理的检查？",
+            "promptEn": "The more reasonable check?",
+            "options": [
+              {
+                "id": "a",
+                "zh": "先读限流电阻的色环或字标，并量它的阻值，再和电路需要的估算值对照",
+                "en": "Read the current-limiting resistor's colour bands or marking, measure it, and compare with the value the circuit needs (an estimate)"
+              },
+              {
+                "id": "b",
+                "zh": "先把电阻拆掉，让灯珠直接接电源",
+                "en": "Remove the resistor and wire the LED straight to the supply"
+              },
+              {
+                "id": "c",
+                "zh": "先换成更大的电池把灯‘顶亮’",
+                "en": "Fit a bigger battery to force the lamp brighter"
+              }
+            ],
+            "answer": "a"
+          }
+        ]
+      }
+    },
+    {
+      "attribution": "按公开资料整理",
+      "staleAfter": "2027-11-01",
+      "hints": [],
+      "hintsEn": [],
+      "id": "dx-psu-bridge-01",
+      "mode": "diagnosis",
+      "difficulty": "intermediate",
+      "source": {
+        "repo": "prototypes/original",
+        "path": "data/seeds/bank-items.json",
+        "adaptation": "original-diagnosis-prompt",
+        "note": "题面自己写；连到 psu-output-bridge"
+      },
+      "title": "稳压模块一插上就烫手：会不会是输出被焊锡桥短接？",
+      "titleEn": "The regulator gets hot as soon as it is plugged in: is the output bridged?",
+      "prompt": "一块低压稳压模块刚插上（输入仍是直流低压）就很快发烫。输出端两焊盘看起来很近。更稳妥的做法？本题不涉及市电。按公开资料整理。",
+      "promptEn": "A low-voltage regulator module gets hot almost as soon as it is plugged in (the input is still low-voltage DC). The two output pads look very close. What is the safer action? This task does not involve mains. Compiled from public information.",
+      "passCondition": {
+        "type": "diagnosisQuiz",
+        "repairUrl": "/repair?s=psu-output-bridge",
+        "scenario": "psu-output-bridge",
+        "questions": [
+          {
+            "id": "q1",
+            "prompt": "更稳妥的做法？",
+            "promptEn": "The safer action?",
+            "options": [
+              {
+                "id": "a",
+                "zh": "先断电，用放大镜看出端有没有焊锡桥，再用表量输出正负是否短路，确认后再考虑通电",
+                "en": "Power down first, inspect the output pads for a solder bridge, and measure whether the output is shorted, before considering applying power again"
+              },
+              {
+                "id": "b",
+                "zh": "先加大输入电压看它还烫不烫",
+                "en": "Raise the input voltage to see if it still gets hot"
+              },
+              {
+                "id": "c",
+                "zh": "先用手按住发热的芯片继续通电",
+                "en": "Hold the hot chip down by hand and leave the power on"
+              }
+            ],
+            "answer": "a"
+          }
+        ]
+      }
+    },
+    {
+      "attribution": "按公开资料整理",
+      "staleAfter": "2027-11-01",
+      "hints": [],
+      "hintsEn": [],
+      "id": "dx-octo-batt-01",
+      "mode": "diagnosis",
+      "difficulty": "intermediate",
+      "source": {
+        "repo": "prototypes/original",
+        "path": "data/seeds/bank-items.json",
+        "adaptation": "original-diagnosis-prompt",
+        "note": "题面自己写；连到 octo-low-battery"
+      },
+      "title": "八爪鱼能开机但不走路：先查电池电压",
+      "titleEn": "The octopus powers on but will not walk: check the battery voltage first",
+      "prompt": "八爪鱼指示灯能亮，舵机却没劲、不迈步。更合理的第一步是什么？做完可进入对应维修关卡。按公开资料整理。",
+      "promptEn": "The octopus indicator lights, but the servos have no strength and it will not take a step. What is the more reasonable first step? You can then open the matching repair level. Compiled from public information.",
+      "passCondition": {
+        "type": "diagnosisQuiz",
+        "repairUrl": "/repair?s=octo-low-battery",
+        "scenario": "octo-low-battery",
+        "questions": [
+          {
+            "id": "q1",
+            "prompt": "更合理的第一步？",
+            "promptEn": "The more reasonable first step?",
+            "options": [
+              {
+                "id": "a",
+                "zh": "先量电池或电源在空载和带舵机负载时的电压，电压过低就先充电或更换，再查别的",
+                "en": "Measure the battery or supply voltage with no load and with the servos connected; if it is too low, charge or replace it before looking for other faults"
+              },
+              {
+                "id": "b",
+                "zh": "先改固件把步态幅度加到最大",
+                "en": "Change the firmware to the largest gait first"
+              },
+              {
+                "id": "c",
+                "zh": "先把所有舵机同时拆下来换新",
+                "en": "Replace every servo at once"
+              }
+            ],
+            "answer": "a"
+          }
+        ]
+      }
+    },
+    {
+      "attribution": "按公开资料整理",
+      "staleAfter": "2027-11-01",
+      "hints": [],
+      "hintsEn": [],
+      "id": "wb-pot-adc-01",
+      "mode": "workbench",
+      "difficulty": "intro",
+      "source": {
+        "repo": "prototypes/original",
+        "path": "data/seeds/bank-items.json",
+        "adaptation": "original"
+      },
+      "title": "电位器接到 Pico 的 ADC 脚，两端接 3V3 和地",
+      "titleEn": "Wire a potentiometer to a Pico ADC pin, with the ends on 3V3 and ground",
+      "prompt": "把 pot.wiper 接到 pico.GP26，pot.1 接到 pico.3V3，pot.2 接到 pico.GND。不要把 3V3 和 GND 直接短接。节点名就用这些。",
+      "promptEn": "Connect pot.wiper to pico.GP26, pot.1 to pico.3V3, and pot.2 to pico.GND. Do not short 3V3 directly to GND. Use these node names.",
+      "starterWires": [],
+      "passCondition": {
+        "type": "connectionGraphConstraint",
+        "requiredEdges": [
+          {
+            "a": "pot.wiper",
+            "b": "pico.GP26"
+          },
+          {
+            "a": "pot.1",
+            "b": "pico.3V3"
+          },
+          {
+            "a": "pot.2",
+            "b": "pico.GND"
+          }
+        ],
+        "forbiddenEdges": [
+          {
+            "a": "pico.3V3",
+            "b": "pico.GND"
+          }
+        ]
+      },
+      "referenceAnswer": {
+        "wires": [
+          {
+            "a": "pot.wiper",
+            "b": "pico.GP26"
+          },
+          {
+            "a": "pot.1",
+            "b": "pico.3V3"
+          },
+          {
+            "a": "pot.2",
+            "b": "pico.GND"
+          }
+        ]
+      }
+    },
+    {
+      "attribution": "按公开资料整理",
+      "staleAfter": "2027-11-01",
+      "hints": [],
+      "hintsEn": [],
+      "id": "wb-uart-gnd-01",
+      "mode": "workbench",
+      "difficulty": "intermediate",
+      "source": {
+        "repo": "prototypes/original",
+        "path": "data/seeds/bank-items.json",
+        "adaptation": "original"
+      },
+      "title": "UART 交叉相接，并且两板必须共地",
+      "titleEn": "Cross-wire UART and share a common ground",
+      "prompt": "uart.TXD 接到 pico.GP1（接收），uart.RXD 接到 pico.GP0（发送），uart.VCC 接到 pico.3V3。uart.GND 必须和 pico.GND 共地。不要把 TXD 和 RXD 短在一起，也不要把 3V3 接到地。",
+      "promptEn": "Connect uart.TXD to pico.GP1 (RX), uart.RXD to pico.GP0 (TX), and uart.VCC to pico.3V3. uart.GND must share a ground with pico.GND. Do not short TXD to RXD, and do not tie 3V3 to ground.",
+      "starterWires": [],
+      "passCondition": {
+        "type": "connectionGraphConstraint",
+        "requiredEdges": [
+          {
+            "a": "uart.TXD",
+            "b": "pico.GP1"
+          },
+          {
+            "a": "uart.RXD",
+            "b": "pico.GP0"
+          },
+          {
+            "a": "uart.VCC",
+            "b": "pico.3V3"
+          }
+        ],
+        "requiredNets": [
+          [
+            "uart.GND",
+            "pico.GND"
+          ]
+        ],
+        "forbiddenEdges": [
+          {
+            "a": "uart.TXD",
+            "b": "uart.RXD"
+          },
+          {
+            "a": "pico.3V3",
+            "b": "pico.GND"
+          }
+        ]
+      },
+      "referenceAnswer": {
+        "wires": [
+          {
+            "a": "uart.TXD",
+            "b": "pico.GP1"
+          },
+          {
+            "a": "uart.RXD",
+            "b": "pico.GP0"
+          },
+          {
+            "a": "uart.VCC",
+            "b": "pico.3V3"
+          },
+          {
+            "a": "uart.GND",
+            "b": "pico.GND"
+          }
+        ]
+      }
+    },
+    {
+      "attribution": "按公开资料整理",
+      "staleAfter": "2027-11-01",
+      "hints": [],
+      "hintsEn": [],
+      "id": "wb-fuse-vsys-01",
+      "mode": "workbench",
+      "difficulty": "intermediate",
+      "source": {
+        "repo": "prototypes/original",
+        "path": "data/seeds/bank-items.json",
+        "adaptation": "original"
+      },
+      "title": "5 V 要经过保险丝再进 Pico 的 VSYS，并且共地",
+      "titleEn": "5 V must reach Pico VSYS through a fuse, with a common ground",
+      "prompt": "psu.5V 接到 fuse.1，fuse.2 接到 pico.VSYS，pico.GND 与 psu.GND 共地。禁止 5 V 不经保险丝直接接到 VSYS，也禁止 5 V 接到 GND。",
+      "promptEn": "Connect psu.5V to fuse.1, fuse.2 to pico.VSYS, and share a ground between pico.GND and psu.GND. Do not tie 5 V directly to VSYS without the fuse, and do not short 5 V to GND.",
+      "starterWires": [],
+      "passCondition": {
+        "type": "connectionGraphConstraint",
+        "requiredEdges": [
+          {
+            "a": "psu.5V",
+            "b": "fuse.1"
+          },
+          {
+            "a": "fuse.2",
+            "b": "pico.VSYS"
+          }
+        ],
+        "requiredNets": [
+          [
+            "pico.GND",
+            "psu.GND"
+          ]
+        ],
+        "forbiddenEdges": [
+          {
+            "a": "psu.5V",
+            "b": "pico.VSYS"
+          },
+          {
+            "a": "psu.5V",
+            "b": "psu.GND"
+          }
+        ]
+      },
+      "referenceAnswer": {
+        "wires": [
+          {
+            "a": "psu.5V",
+            "b": "fuse.1"
+          },
+          {
+            "a": "fuse.2",
+            "b": "pico.VSYS"
+          },
+          {
+            "a": "pico.GND",
+            "b": "psu.GND"
+          }
+        ]
+      }
+    },
+    {
+      "attribution": "按公开资料整理",
+      "staleAfter": "2027-11-01",
+      "hints": [],
+      "hintsEn": [],
+      "id": "fw-led-once-01",
+      "mode": "firmware",
+      "difficulty": "intro",
+      "source": {
+        "repo": "prototypes/original",
+        "path": "data/seeds/bank-items.json",
+        "adaptation": "original"
+      },
+      "title": "上电亮 400 ms，然后保持熄灭",
+      "titleEn": "Light the LED for 400 ms at start, then leave it off",
+      "prompt": "LED_BUILTIN 在 t=0 拉高，400 ms 后拉低，之后保持熄灭（不要再闪；检查窗口约 1.2 s）。允许 ±50 ms。时间只在 delay() 里走。",
+      "promptEn": "Drive LED_BUILTIN high at t=0, pull it low at 400 ms, and leave it off after that (do not blink again). ±50 ms is accepted. Time only advances inside delay().",
+      "firmwareTemplate": "void setup() {\n  pinMode(LED_BUILTIN, OUTPUT);\n}\nvoid loop() {\n}\n",
+      "passCondition": {
+        "type": "behaviorTimeline",
+        "pins": {
+          "LED": 48
+        },
+        "expected": [
+          {
+            "t": 0,
+            "pin": "LED",
+            "state": "HIGH"
+          },
+          {
+            "t": 400,
+            "pin": "LED",
+            "state": "LOW"
+          }
+        ],
+        "toleranceMs": 50,
+        "horizonMs": 1200
+      },
+      "referenceFirmware": "void setup(){pinMode(LED_BUILTIN,OUTPUT);digitalWrite(LED_BUILTIN,HIGH);delay(400);digitalWrite(LED_BUILTIN,LOW);}void loop(){}"
+    },
+    {
+      "attribution": "按公开资料整理",
+      "staleAfter": "2027-11-01",
+      "hints": [],
+      "hintsEn": [],
+      "id": "fw-btn-delay-01",
+      "mode": "firmware",
+      "difficulty": "intermediate",
+      "source": {
+        "repo": "prototypes/original",
+        "path": "data/seeds/bank-items.json",
+        "adaptation": "original"
+      },
+      "title": "读到按键为高以后，再等 300 ms 才点亮 LED",
+      "titleEn": "After the button reads high, wait 300 ms before lighting the LED",
+      "prompt": "引脚 2 从一开始就是高电平（模拟已按下）。请在确认它为高之后再 delay(300)，然后把 LED_BUILTIN 拉高。不要一上电就亮。允许 ±50 ms。",
+      "promptEn": "Pin 2 is high from the start (already pressed). After you confirm it is high, delay(300) and then drive LED_BUILTIN high. Do not light it immediately at power-up. ±50 ms is accepted.",
+      "firmwareTemplate": "void setup() {\n  pinMode(2, INPUT);\n  pinMode(LED_BUILTIN, OUTPUT);\n}\nvoid loop() {\n  \n}\n",
+      "passCondition": {
+        "type": "behaviorTimeline",
+        "pins": {
+          "LED": 48
+        },
+        "inputs": {
+          "d2": 1
+        },
+        "expected": [
+          {
+            "t": 300,
+            "pin": "LED",
+            "state": "HIGH"
+          }
+        ],
+        "toleranceMs": 50,
+        "horizonMs": 800
+      },
+      "referenceFirmware": "void setup(){pinMode(2,INPUT);pinMode(LED_BUILTIN,OUTPUT);}void loop(){if(digitalRead(2)==HIGH){delay(300);digitalWrite(LED_BUILTIN,HIGH);}}"
+    },
+    {
+      "attribution": "按公开资料整理",
+      "staleAfter": "2027-11-01",
+      "hints": [],
+      "hintsEn": [],
+      "id": "as-cover-last-01",
+      "mode": "assembly",
+      "difficulty": "intro",
+      "source": {
+        "repo": "prototypes/original",
+        "path": "data/seeds/bank-items.json",
+        "adaptation": "original"
+      },
+      "title": "先装电路板和支撑柱，最后再盖盖子",
+      "titleEn": "Fit the board and standoffs first, and put the cover on last",
+      "prompt": "顺序：board 在 standoff 之前，standoff 在 cover 之前。需要出现 board、standoff、cover。不要先盖盖子再装板。",
+      "promptEn": "Order: board before standoff, standoff before cover. board, standoff and cover must all appear. Do not fit the cover before the board.",
+      "starterSteps": [],
+      "passCondition": {
+        "type": "assemblyConstraint",
+        "requiredParts": [
+          "board",
+          "standoff",
+          "cover"
+        ],
+        "order": [
+          {
+            "before": "board",
+            "after": "standoff"
+          },
+          {
+            "before": "standoff",
+            "after": "cover"
+          }
+        ]
+      },
+      "referenceAnswer": {
+        "steps": [
+          {
+            "part": "board"
+          },
+          {
+            "part": "standoff"
+          },
+          {
+            "part": "cover"
+          }
+        ]
+      }
+    },
+    {
+      "attribution": "按公开资料整理",
+      "staleAfter": "2027-11-01",
+      "hints": [],
+      "hintsEn": [],
+      "id": "as-cap-orient-01",
+      "mode": "assembly",
+      "difficulty": "intermediate",
+      "source": {
+        "repo": "prototypes/original",
+        "path": "data/seeds/bank-items.json",
+        "adaptation": "original"
+      },
+      "title": "电解电容负极朝向标记后再焊接",
+      "titleEn": "Orient the electrolytic capacitor to its minus mark, then solder",
+      "prompt": "顺序：cap 在 solder 之前。cap 朝向必须是 minus-marked（负极/色条对着板上的标记）。不要先焊再转方向。",
+      "promptEn": "Order: cap before solder. The cap orientation must be minus-marked (the minus stripe faces the mark on the board). Do not solder it before setting the orientation.",
+      "starterSteps": [],
+      "passCondition": {
+        "type": "assemblyConstraint",
+        "requiredParts": [
+          "cap",
+          "solder"
+        ],
+        "order": [
+          {
+            "before": "cap",
+            "after": "solder"
+          }
+        ],
+        "orientation": [
+          {
+            "part": "cap",
+            "must": "minus-marked"
+          }
+        ]
+      },
+      "referenceAnswer": {
+        "steps": [
+          {
+            "part": "cap",
+            "orient": "minus-marked"
+          },
+          {
+            "part": "solder"
+          }
+        ]
+      }
+    },
+    {
+      "attribution": "按公开资料整理",
+      "staleAfter": "2027-11-01",
+      "hints": [],
+      "hintsEn": [],
+      "id": "cc-c-wait-ms-01",
+      "mode": "code-check",
+      "difficulty": "intro",
+      "source": {
+        "repo": "prototypes/original",
+        "path": "data/seeds/bank-items.json",
+        "adaptation": "original"
+      },
+      "title": "写出 wait_ms 和 main 两个 C 函数",
+      "titleEn": "Write two C functions named wait_ms and main",
+      "prompt": "写出至少两个函数：main 和 wait_ms。wait_ms 要有函数体（空的也行）。这是结构检查，不编译、不运行。",
+      "promptEn": "Write at least two functions: main and wait_ms. wait_ms must have a body (an empty body is fine). This is a structure check; nothing is compiled or run.",
+      "starter": "/* 在这里写 */\\n",
+      "passCondition": {
+        "type": "codeCheck",
+        "format": "c",
+        "spec": {
+          "requiredFunctions": [
+            "main",
+            "wait_ms"
+          ]
+        },
+        "referenceAnswer": "data/seeds/reference/cc-c-wait-ms-01.c"
+      }
     }
   ]
 }

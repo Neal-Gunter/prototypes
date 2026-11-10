@@ -58,6 +58,56 @@
     "staleAfter": "2027-11-01",
     "hints": [],
     "hintsEn": [],
+    "id": "dx-dead-battery-01",
+    "mode": "diagnosis",
+    "difficulty": "intro",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original-diagnosis-prompt",
+      "note": "题面自己写；连到已有维修关卡 led-dead-battery"
+    },
+    "title": "小夜灯完全不亮：先查电池还是先换灯珠？",
+    "titleEn": "The night light is completely dark: battery first, or a new LED?",
+    "prompt": "一盏用电池的小夜灯完全不亮，开关感觉正常。更稳妥的第一步是什么？做完选择题可以进入对应的维修关卡。题面自己写。按公开资料整理。",
+    "promptEn": "A battery night light is completely dark; the switch still feels normal. What is the safer first step? After the quiz you can open the matching repair level. Original wording. Compiled from public information.",
+    "passCondition": {
+      "type": "diagnosisQuiz",
+      "repairUrl": "/repair?s=led-dead-battery",
+      "scenario": "led-dead-battery",
+      "questions": [
+        {
+          "id": "q1",
+          "prompt": "更稳妥的第一步？",
+          "promptEn": "The safer first step?",
+          "options": [
+            {
+              "id": "a",
+              "zh": "先换一颗新灯珠再通电",
+              "en": "Fit a new LED and apply power"
+            },
+            {
+              "id": "b",
+              "zh": "先取出电池，用表量电池电压，并看极性和接触是否干净",
+              "en": "Take the battery out, measure its voltage, and check polarity and clean contact"
+            },
+            {
+              "id": "c",
+              "zh": "先把两节电池叠起来提高电压再试",
+              "en": "Stack an extra cell to raise the voltage and try again"
+            }
+          ],
+          "answer": "b"
+        }
+      ]
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
     "id": "dx-reverse-01",
     "mode": "diagnosis",
     "difficulty": "intro",
@@ -103,6 +153,56 @@
             }
           ],
           "answer": "b"
+        }
+      ]
+    },
+    "_stale": false
+  },
+  {
+    "attribution": "按公开资料整理",
+    "staleAfter": "2027-11-01",
+    "hints": [],
+    "hintsEn": [],
+    "id": "dx-wrong-resistor-01",
+    "mode": "diagnosis",
+    "difficulty": "intro",
+    "source": {
+      "repo": "prototypes/original",
+      "path": "data/seeds/bank-items.json",
+      "adaptation": "original-diagnosis-prompt",
+      "note": "题面自己写；连到 led-wrong-resistor"
+    },
+    "title": "灯很暗，几乎看不见：电阻是不是装错了？",
+    "titleEn": "The lamp is almost too dim to see: is the resistor wrong?",
+    "prompt": "灯能亮，但暗得几乎看不见。电源电压看起来正常。更合理的检查是什么？按公开资料整理。",
+    "promptEn": "The lamp lights, but it is almost too dim to see. The supply voltage looks normal. What is the more reasonable check? Compiled from public information.",
+    "passCondition": {
+      "type": "diagnosisQuiz",
+      "repairUrl": "/repair?s=led-wrong-resistor",
+      "scenario": "led-wrong-resistor",
+      "questions": [
+        {
+          "id": "q1",
+          "prompt": "更合理的检查？",
+          "promptEn": "The more reasonable check?",
+          "options": [
+            {
+              "id": "a",
+              "zh": "先读限流电阻的色环或字标，并量它的阻值，再和电路需要的估算值对照",
+              "en": "Read the current-limiting resistor's colour bands or marking, measure it, and compare with the value the circuit needs (an estimate)"
+            },
+            {
+              "id": "b",
+              "zh": "先把电阻拆掉，让灯珠直接接电源",
+              "en": "Remove the resistor and wire the LED straight to the supply"
+            },
+            {
+              "id": "c",
+              "zh": "先换成更大的电池把灯‘顶亮’",
+              "en": "Fit a bigger battery to force the lamp brighter"
+            }
+          ],
+          "answer": "a"
         }
       ]
     },

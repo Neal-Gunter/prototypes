@@ -12,7 +12,7 @@ import { validateCode } from "../src/validators/index.js";
 import { runTimeline, checkTimeline } from "../src/bank/timeline.js";
 import { checkConnectionGraph, checkAssembly, netsOf } from "../src/bank/graph.js";
 import { freshnessFlag, itemStale, SOON_MS } from "../src/bank/load.js";
-import { computeFreshness, buildIndex, groupBank, build, assembleItems } from "./build-bank.js";
+import { computeFreshness, buildIndex, groupBank, build, assembleItems, hashBankContent, problemTextOf } from "./build-bank.js";
 import { validateBank } from "./validate-bank.js";
 import { DATA, ROOT, hash, writeJSON, readJSON, MODES, DIFFICULTIES } from "./bank/lib.js";
 import { classify, scoreSeed, tier, extract, FAILURE_PATTERNS } from "./extract-fault-seeds.js";
@@ -170,6 +170,34 @@ ok(!/WebAssembly|wasm/.test(readFileSync(new URL("../src/validators/c-lite.js", 
   ok(i3.modes.firmware.intro.updatedAt === i3.generatedAt, "内容变了才更新 updatedAt");
 }
 
+// ---------- v39：alsoFoundIn / toolLinks 不算内容 hash ----------
+{
+  const now = Date.parse("2026-11-10T00:00:00Z");
+  const later = now + 86400000;
+  const base = { id: "a", mode: "firmware", difficulty: "intro", source: { repo: "x" }, staleAfter: "2027-01-01", title: "t", prompt: "p", passCondition: { type: "behaviorTimeline", expected: [] } };
+  const { bank } = groupBank([base], now);
+  const i1 = buildIndex(bank, null, now);
+  const withMeta = { ...bank.firmware.intro[0], alsoFoundIn: ["someone/fromthetransistor"], toolLinks: [{ name: "Soldering is Easy" }], source: { repo: "x", lastSeen: "2099-01-01" }, _stale: true };
+  bank.firmware.intro[0] = withMeta;
+  const i2 = buildIndex(bank, i1, later);
+  ok(i2.modes.firmware.intro.contentHash === i1.modes.firmware.intro.contentHash, "改 alsoFoundIn/toolLinks/source/_stale 不改 contentHash");
+  ok(i2.modes.firmware.intro.updatedAt === i1.modes.firmware.intro.updatedAt, "元数据变了也不改 updatedAt");
+  // 首次用新算法对照旧 hash：即使 prevIndex 里的旧 hash 对不上，只要题面一样就不刷新
+  const oldIndex = {
+    generatedAt: "2026-01-01T00:00:00.000Z",
+    modes: { firmware: { intro: { updatedAt: "2026-01-01T00:00:00.000Z", contentHash: "aaaaaaaaaaaaaaaa", count: 1 } } },
+  };
+  const prevBank = { firmware: { intro: [{ ...base, alsoFoundIn: ["old/fork"], toolLinks: [{ name: "old" }] }] } };
+  const cur = groupBank([{ ...base, alsoFoundIn: ["new/fork"] }], now).bank;
+  const i3 = buildIndex(cur, oldIndex, later, prevBank);
+  ok(i3.modes.firmware.intro.updatedAt === "2026-01-01T00:00:00.000Z", "迁移时用新算法重算旧条目，题面没变就不改 updatedAt");
+  const cur2 = groupBank([{ ...base, title: "new title" }], now).bank;
+  const i4 = buildIndex(cur2, oldIndex, later, prevBank);
+  ok(i4.modes.firmware.intro.updatedAt === i4.generatedAt, "题面改了（标题）仍会更新 updatedAt");
+  ok(problemTextOf(withMeta).alsoFoundIn === undefined && problemTextOf(withMeta).toolLinks === undefined, "problemTextOf 去掉元数据字段");
+  ok(hashBankContent([base]) === hashBankContent([{ ...base, alsoFoundIn: ["z"] }]), "hashBankContent 忽略 alsoFoundIn");
+}
+
 // ---------- fork parsers still work ----------
 {
   const md1 = "## Sec\n- [ ] **Blinking an LED (Verilog, 10 LOC)**\n";
@@ -199,7 +227,7 @@ ok(!/WebAssembly|wasm/.test(readFileSync(new URL("../src/validators/c-lite.js", 
 // ---------- build + validate + failure protection ----------
 {
   const r = build({ now: Date.parse("2026-11-10T00:00:00Z") });
-  ok(r.ok && r.total >= 30, `build-bank 写出 ${r.total} 条（≥30）`);
+  ok(r.ok && r.total >= 50, `build-bank 写出 ${r.total} 条（≥50）`);
   const v = validateBank({ now: Date.parse("2026-11-10T00:00:00Z") });
   ok(v.ok, "validate-bank 通过", v.errors?.join(";"));
   const idx = readJSON(join(DATA, "bank/index.json"));
