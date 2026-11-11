@@ -14,7 +14,11 @@ const page = async (lang, w = 1440, h = 900) => {
     try {
       localStorage.setItem("asm-tour-v22-done", "1");
       localStorage.setItem("ui-lang", l);
-      localStorage.removeItem("wb-path-progress-v1");
+      // 只在这个 context 的第一次导航清空进度，避免后续 goto 把刚记下的完成状态清掉
+      if (!sessionStorage.getItem("wb-v42-progress-cleared")) {
+        localStorage.removeItem("wb-path-progress-v1");
+        sessionStorage.setItem("wb-v42-progress-cleared", "1");
+      }
     } catch { /* */ }
   }, lang);
   const p = await c.newPage();
@@ -62,8 +66,9 @@ for (const lang of ["zh", "en"]) {
   await p.goto(BASE + "/bank?mode=diagnosis&diff=intermediate&id=dx-psu-bridge-01", { waitUntil: "load", timeout: 60000 });
   await T("bank-list-ready").waitFor({ timeout: 20000 });
   await T("bank-practice").waitFor({ timeout: 20000 });
-  await T("bank-item-paths-dx-psu-bridge-01").waitFor({ timeout: 10000 });
-  const link = T("bank-item-path-path-powerbank-hot").first();
+  const pathsInPractice = T("bank-practice").locator('[data-testid="bank-item-paths-dx-psu-bridge-01"]');
+  await pathsInPractice.waitFor({ timeout: 10000 });
+  const link = T("bank-practice").locator('[data-testid="bank-item-path-path-powerbank-hot"]').first();
   ok(await link.count(), "有映射的题目链到充电宝路径步骤");
   const href = await link.getAttribute("href");
   ok(/path=path-powerbank-hot/.test(href || "") && /dx-psu-bridge-01/.test(href || ""), "题目上的路径链接带 path 和题号", href);
@@ -72,7 +77,7 @@ for (const lang of ["zh", "en"]) {
   await p.goto(BASE + "/bank?mode=firmware&diff=intro&id=fw-btn-led-01", { waitUntil: "load", timeout: 60000 });
   await T("bank-list-ready").waitFor({ timeout: 20000 });
   await T("bank-practice").waitFor({ timeout: 20000 });
-  ok((await T("bank-item-paths-fw-btn-led-01").count()) === 0, "对不上的题目不显示路径链接");
+  ok((await T("bank-practice").locator('[data-testid="bank-item-paths-fw-btn-led-01"]').count()) === 0, "对不上的题目不显示路径链接");
   ok((await T("bank-item-path-flag-fw-btn-led-01").count()) === 0, "对不上的题目列表里也没有路径标记");
   await c.close();
 }
