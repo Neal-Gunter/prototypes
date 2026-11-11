@@ -277,6 +277,17 @@ export default function CreditsPage() {
       <ul className="mt-2 list-disc space-y-1 pl-6 text-sm leading-6 text-ink-soft" data-testid="credits-v42-list">
         <li>{en ? "No new third-party licences in this release. tree-sitter remains a development dependency only, as in v38–v41." : "本版没有新增第三方许可。tree-sitter 仍只作开发依赖，和 v38–v41 一样。"}</li>
       </ul>
+
+      <h2 className="mt-8 text-xl font-medium" id="v43-measure">{en ? "v43: part highlight and scope measurement cursors" : "v43：零件高亮和示波器测量光标"}</h2>
+      <p className="mt-2 leading-7 text-ink-soft" data-testid="credits-v43">
+        {en
+          ? "v43 adds no new third-party material. The part outline, tooltip and oscilloscope cursor interactions were written for this project and reuse three.js / R3F / drei already in the assembly bench. Highlights use their own materials so shared part materials are not tinted, and they do not move bodies or change joints. Cursor math is a simplified screen-scale readout, not a calibrated instrument."
+          : "v43 没有增加新的第三方材料。零件描边、提示和示波器光标的交互都是本项目自己写的，复用装配台里已有的 three.js / R3F / drei。高亮用自己的材质，不会把共享零件材质染色，也不会移动刚体或改关节。光标读数是按屏幕刻度换算的简化结果，不是校准过的仪器。"}
+      </p>
+      <ul className="mt-2 list-disc space-y-1 pl-6 text-sm leading-6 text-ink-soft" data-testid="credits-v43-list">
+        <li>{en ? "No new third-party licences in this release. tree-sitter remains a development dependency only, as in v38–v42." : "本版没有新增第三方许可。tree-sitter 仍只作开发依赖，和 v38–v42 一样。"}</li>
+      </ul>
+
       <h2 className="mt-8 text-xl font-medium">代码库</h2>
       <p className="mt-2 leading-7 text-ink-soft">
         React、three.js、@dimforge/rapier3d-compat（Apache-2.0，物理碰撞）、@react-three/fiber、@react-three/drei、zustand、Tailwind CSS（除注明外均为 MIT 许可）。模型转换脚本用 glTF‑Transform 和 meshoptimizer（MIT，只在开发时运行）。“模型 + 功能图”页（v11）在浏览器里用 occt-import-js（LGPL‑2.1，读 STEP；作为单独的 JS + wasm 文件按需加载，没有改动，可替换）和 pdfjs-dist（Apache-2.0，读 PDF 功能图，按需加载）。内置示例的八爪鱼 GLB 和功能图 SVG 由本项目从 v10 预设自制；v12 的 2 自由度机械臂示例（OBJ + 功能图 + 工程）由本项目脚本自制，CC0。关节和舵机运动用同一个 Rapier 引擎。

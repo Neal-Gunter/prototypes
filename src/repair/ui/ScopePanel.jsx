@@ -1,7 +1,9 @@
 // v18 示波器面板（维修台 / 工作台共用）。2–4 通道、t/div、V/div、DC/AC 耦合、触发（上升 / 下降沿、电平、自动 / 单次）、
 // 光标读数、数学 A−B、欠压复位阈值线、事件标记。波形来自 src/repair/tboard.js 的时域仿真。早期原型，简化仿真。
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { CH_COLOR as CH_PHOS, CH_INK, scopeBg } from "../../ui/palette.js";
+import { useT } from "../../i18n.js";
+import { pairOr, voltAtFrac, deltaV, timeAtFrac, deltaT, invDeltaT, CUR_DEFAULT, VCUR_DEFAULT } from "../scopeCursors.js";
 
 const btn = "min-h-11 border border-line bg-paper-2 px-2.5 text-sm hover:border-copper disabled:opacity-40";
 const btnOn = "min-h-11 border border-copper bg-copper px-2.5 text-sm text-white";
@@ -17,7 +19,7 @@ const EXP = { steady: "一直开着（连续）", power: "抓开机那一下", r
 export const defaultScope = (nodes = []) => ({
   exp: "steady", tdiv: 1e-3, pre: 0.1,
   chans: [0, 1, 2, 3].map((i) => ({ on: i < 2 && !!nodes[i], node: nodes[i] || "", vdiv: 1, off: i === 0 ? -2 : -3, ac: false })),
-  trig: { src: 0, slope: "rise", level: 2.5, mode: "auto" }, math: false, cur: [0.3, 0.7], active: 0, cap: null, busy: false,
+  trig: { src: 0, slope: "rise", level: 2.5, mode: "auto" }, math: false, cur: [0.3, 0.7], vcur: [0.3, 0.7], active: 0, cap: null, busy: false,
 });
 
 // 把面板设置变成 capture 参数
@@ -27,9 +29,16 @@ export function captureOpts(s) {
 }
 
 export default function ScopePanel({ s, set, nodes, onCapture, running, testid = "scope", extra = null, ghost = null }) {
+  const tr = useT();
+  const drag = useRef(null);
   const upd = (p) => set({ ...s, ...p });
   const updCh = (i, p) => set({ ...s, chans: s.chans.map((c, j) => (j === i ? { ...c, ...p } : c)) });
   const cap = s.cap;
+  const cur = pairOr(s.cur, CUR_DEFAULT);
+  const vcur = pairOr(s.vcur, VCUR_DEFAULT);
+  const chActive = s.chans[s.active] || s.chans[0] || { vdiv: 1, off: 0 };
+  const v1 = voltAtFrac(vcur[0], chActive), v2 = voltAtFrac(vcur[1], chActive), dV = deltaV(vcur[0], vcur[1], chActive);
+  const t1 = timeAtFrac(cur[0], cap, s.tdiv), t2 = timeAtFrac(cur[1], cap, s.tdiv), dT = deltaT(cur[0], cur[1], cap, s.tdiv), invT = invDeltaT(dT);
   const GW = 500, GH = 320, DX = GW / 10, DY = GH / 8;
   const traces = useMemo(() => {
     if (!cap?.t?.length) return [];
@@ -51,7 +60,7 @@ export default function ScopePanel({ s, set, nodes, onCapture, running, testid =
     return out;
   }, [cap, s.chans, s.math, ghost]);
   const at = (f) => { if (!cap?.t?.length) return null; const i = Math.min(cap.t.length - 1, Math.max(0, Math.round(f * (cap.t.length - 1)))); return { t: cap.t[i], v: s.chans.map((c, k) => (c.on && cap.ch?.[k] ? cap.ch[k][i] : null)), m: cap.math ? cap.math[i] : null }; };
-  const c1 = at(s.cur[0]), c2 = at(s.cur[1]);
+  const c1 = at(cur[0]), c2 = at(cur[1]);
   const trigCh = s.chans[s.trig.src];
   const trigY = trigCh && s.trig.src !== "none" ? GH / 2 - ((s.trig.level + trigCh.off) / trigCh.vdiv) * DY : null;
   const evs = (cap?.events || []).filter((e) => ["reset", "boot", "boost-hiccup", "lowStop"].includes(e.kind));
@@ -63,8 +72,42 @@ export default function ScopePanel({ s, set, nodes, onCapture, running, testid =
       </div>
       <div className="grid gap-2 xl:grid-cols-[1fr_250px]">
         <div>
-          <svg viewBox={`-2 -2 ${GW + 4} ${GH + 4}`} className="max-h-[400px] w-full" style={{ background: scopeBg }} data-testid={`${testid}-screen`}
-            onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); const f = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); const k = Math.abs(f - s.cur[0]) < Math.abs(f - s.cur[1]) ? 0 : 1; const cur = s.cur.slice(); cur[k] = f; upd({ cur }); }}>
+          <svg viewBox={`-2 -2 ${GW + 4} ${GH + 4}`} className="max-h-[400px] w-full touch-none" style={{ background: scopeBg, touchAction: "none" }} data-testid={`${testid}-screen`}
+            onPointerDown={(e) => {
+              const svg = e.currentTarget, r = svg.getBoundingClientRect();
+              const fx = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+              const fy = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height));
+              const slop = 16;
+              const hits = [
+                { kind: "t", k: 0, d: Math.abs(fx - cur[0]) * r.width },
+                { kind: "t", k: 1, d: Math.abs(fx - cur[1]) * r.width },
+                { kind: "v", k: 0, d: Math.abs(fy - vcur[0]) * r.height },
+                { kind: "v", k: 1, d: Math.abs(fy - vcur[1]) * r.height },
+              ].filter((h) => h.d <= slop).sort((a, b) => a.d - b.d);
+              const hit = hits[0];
+              if (hit) {
+                drag.current = { kind: hit.kind, k: hit.k, moved: false };
+                try { svg.setPointerCapture(e.pointerId); } catch { /* */ }
+                e.preventDefault();
+              } else {
+                // 点空白处：仍按就近移动时间光标（兼容 v18）
+                const k = Math.abs(fx - cur[0]) < Math.abs(fx - cur[1]) ? 0 : 1;
+                const next = cur.slice(); next[k] = fx; upd({ cur: next });
+                drag.current = { kind: "t", k, moved: false, placed: true };
+                try { svg.setPointerCapture(e.pointerId); } catch { /* */ }
+              }
+            }}
+            onPointerMove={(e) => {
+              const d = drag.current; if (!d || d.placed && !d.moved && !(e.buttons & 1)) return;
+              if (!(e.buttons & 1) && !d.moved) return;
+              const r = e.currentTarget.getBoundingClientRect();
+              const fx = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+              const fy = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height));
+              if (d.kind === "t") { const next = (s.cur && s.cur.length >= 2 ? s.cur.slice() : cur.slice()); if (Math.abs(next[d.k] - fx) > 0.002) d.moved = true; next[d.k] = fx; upd({ cur: next }); }
+              else { const next = (s.vcur && s.vcur.length >= 2 ? s.vcur.slice() : vcur.slice()); if (Math.abs(next[d.k] - fy) > 0.002) d.moved = true; next[d.k] = fy; upd({ vcur: next }); }
+            }}
+            onPointerUp={() => { drag.current = null; }}
+            onPointerCancel={() => { drag.current = null; }}>
             <defs>
               <filter id={`${testid}-glow`} x="-8%" y="-8%" width="116%" height="116%">
                 <feGaussianBlur stdDeviation="1.15" result="b" />
@@ -80,7 +123,20 @@ export default function ScopePanel({ s, set, nodes, onCapture, running, testid =
             {(cap?.thresholds || []).map((th) => { const c = s.chans[th.ch]; if (!c?.on || c.ac) return null; const y = GH / 2 - ((th.v + c.off) / c.vdiv) * DY; return y > 0 && y < GH && <g key={"th" + th.ch} data-testid={`${testid}-bo`}><line x1={0} y1={y} x2={GW} y2={y} stroke="#ff4040" strokeDasharray="6 3" strokeWidth={0.8} /><text x={3} y={y - 3} fontSize={9} fill="#ff7070">{th.zh}</text></g>; })}
             {traces.map((tr) => <path key={tr.key} d={tr.p} stroke={tr.color} strokeWidth={tr.ghost ? 1.1 : 1.65} strokeOpacity={tr.ghost ? 0.45 : 1} strokeDasharray={tr.ghost ? "3 2" : undefined} fill="none" strokeLinecap="round" strokeLinejoin="round" filter={tr.ghost ? undefined : `url(#${testid}-glow)`} data-testid={`${testid}-trace-${tr.key}`} />)}
             {cap?.t?.length > 0 && evs.map((e, i) => { const x = ((e.t - cap.t[0]) / cap.W) * GW; return x >= 0 && x <= GW && <g key={i}><line x1={x} y1={0} x2={x} y2={14} stroke={e.kind === "boot" ? "#7f7" : "#f55"} strokeWidth={1.5} /><text x={x + 2} y={10} fontSize={8} fill={e.kind === "boot" ? "#7f7" : "#f88"}>{{ reset: "复位", boot: "启动", "boost-hiccup": "打嗝", lowStop: "低压停" }[e.kind]}</text></g>; })}
-            {[c1, c2].map((c, k) => c && <line key={"c" + k} x1={s.cur[k] * GW} y1={0} x2={s.cur[k] * GW} y2={GH} stroke="#ddd" strokeWidth={0.7} strokeDasharray={k ? "4 2" : undefined} />)}
+            {cur.map((f, k) => (
+              <g key={"t" + k} data-testid={`${testid}-cur-t${k + 1}-line`}>
+                <line x1={f * GW} y1={0} x2={f * GW} y2={GH} stroke="transparent" strokeWidth={14} pointerEvents="stroke" />
+                <line x1={f * GW} y1={0} x2={f * GW} y2={GH} stroke="#ddd" strokeWidth={0.8} strokeDasharray={k ? "4 2" : undefined} pointerEvents="none" />
+                <text x={f * GW + 3} y={12} fontSize={9} fill="#ddd" pointerEvents="none">T{k + 1}</text>
+              </g>
+            ))}
+            {vcur.map((f, k) => (
+              <g key={"v" + k} data-testid={`${testid}-cur-v${k + 1}-line`}>
+                <line x1={0} y1={f * GH} x2={GW} y2={f * GH} stroke="transparent" strokeWidth={14} pointerEvents="stroke" />
+                <line x1={0} y1={f * GH} x2={GW} y2={f * GH} stroke="#d4a574" strokeWidth={0.8} strokeDasharray={k ? "4 2" : undefined} pointerEvents="none" />
+                <text x={3} y={f * GH - 3} fontSize={9} fill="#d4a574" pointerEvents="none">V{k + 1}</text>
+              </g>
+            ))}
             {!cap && <text x={GW / 2} y={GH / 2} fontSize={13} fill="#7a9" textAnchor="middle">选通道和节点，按“抓一次”</text>}
             {cap?.waiting && <text x={GW / 2} y={GH / 2} fontSize={13} fill="#fc6" textAnchor="middle">等待触发……（没有满足条件的边沿）</text>}
           </svg>
@@ -90,7 +146,24 @@ export default function ScopePanel({ s, set, nodes, onCapture, running, testid =
             {s.chans.map((c, i) => c.on && <span key={i} style={{ color: CH_INK[i] }}>CH{i + 1} {c.node} {fV(c.vdiv)}/div{c.ac ? " AC" : ""}{cap?.meas?.[i] ? ` 峰峰 ${fV(cap.meas[i].pp)} 均值 ${fV(cap.meas[i].mean)} 最低 ${fV(cap.meas[i].min)}` : ""}</span>)}
             {s.math && cap?.mathMeas && <span style={{ color: MATH_COLOR }}>A−B 最大 {fV(cap.mathMeas.max)} 峰峰 {fV(cap.mathMeas.pp)}</span>}
           </div>
-          {c1 && c2 && <div className="font-mono text-xs" data-testid={`${testid}-cursors`}>光标 t1 {fT(c1.t)} · t2 {fT(c2.t)} · Δt {fT(c2.t - c1.t)}{c2.t !== c1.t ? ` · 1/Δt ${(1 / Math.abs(c2.t - c1.t)).toPrecision(3)} Hz` : ""}{s.chans.map((c, i) => c.on && c1.v[i] != null ? ` · CH${i + 1} ${fV(c1.v[i])}→${fV(c2.v[i])}（Δ ${fV(c2.v[i] - c1.v[i])}）` : "").join("")}</div>}
+          <div className="font-mono text-xs leading-5" data-testid={`${testid}-cursors`}>
+            {tr("光标", "Cursors")} t1 {fT(c1 ? c1.t : t1)} · t2 {fT(c2 ? c2.t : t2)} · Δt {fT(c1 && c2 ? c2.t - c1.t : dT)}{((c1 && c2 && c2.t !== c1.t) || invT) ? ` · 1/Δt ${(c1 && c2 && c2.t !== c1.t ? 1 / Math.abs(c2.t - c1.t) : invT).toPrecision(3)} Hz` : ""}
+            {` · V1 ${fV(v1)} · V2 ${fV(v2)} · ΔV ${fV(dV)}`}
+            {c1 && c2 ? s.chans.map((c, i) => c.on && c1.v[i] != null ? ` · CH${i + 1} ${fV(c1.v[i])}→${fV(c2.v[i])}（Δ ${fV(c2.v[i] - c1.v[i])}）` : "").join("") : ""}
+          </div>
+          <div className="mt-1 grid grid-cols-2 gap-1 sm:grid-cols-4" data-testid={`${testid}-cur-sliders`}>
+            {[["t", 0, tr("时间光标 1", "Time cursor 1"), "horizontal"], ["t", 1, tr("时间光标 2", "Time cursor 2"), "horizontal"], ["v", 0, tr("电压光标 1", "Voltage cursor 1"), "vertical"], ["v", 1, tr("电压光标 2", "Voltage cursor 2"), "vertical"]].map(([kind, k, label, ori]) => {
+              const val = kind === "t" ? cur[k] : vcur[k];
+              const now = Math.round(val * 100);
+              return (
+                <label key={kind + k} className="flex min-h-11 min-w-0 flex-col justify-center gap-0.5 border border-line bg-paper px-1.5 py-1 text-[11px] text-ink">
+                  <span className="truncate">{label} {now}%</span>
+                  <input type="range" min="0" max="100" step="1" value={now} aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={now} aria-orientation={ori} className="h-6 w-full accent-[#9e461d]" data-testid={`${testid}-cur-${kind}${k + 1}`}
+                    onChange={(e) => { const f = +e.target.value / 100; if (kind === "t") { const n = cur.slice(); n[k] = f; upd({ cur: n }); } else { const n = vcur.slice(); n[k] = f; upd({ vcur: n }); } }} />
+                </label>
+              );
+            })}
+          </div>
           {cap && <div className="text-xs text-ink-soft" data-testid={`${testid}-stats`}>仿真：{cap.stats?.steps ?? "?"} 步，步长 {fT(cap.dt || 0)}，用时 {Math.round(cap.ms || 0)} ms{cap.dev ? " · " + Object.entries(cap.dev).filter(([, d]) => d.kind === "mcu" || d.kind === "boost").map(([k, d]) => (d.kind === "mcu" ? `${k} 复位 ${d.resets} 次` : `${k} 打嗝 ${d.hiccups} 次`)).join("，") : ""}</div>}
           {(cap?.notes || []).map((n) => <p key={n} className="text-xs text-copper-deep">{n}</p>)}
         </div>
@@ -119,7 +192,7 @@ export default function ScopePanel({ s, set, nodes, onCapture, running, testid =
             <button type="button" className={btnOn} disabled={s.busy} onClick={onCapture} data-testid={`${testid}-capture`}>{s.busy ? "仿真中……" : s.exp === "steady" ? "抓一次" : "通电并抓一次"}</button>
           </div>
           {extra}
-          <p className="text-ink-soft">点屏幕放光标（离哪条近就移哪条）。{running === false && s.exp === "steady" ? "现在没在运行：舵机不动、无线不发射。" : ""}</p>
+          <p className="text-ink-soft">{tr("拖竖线调时间光标，拖横线调电压光标；点空白处会按就近移动时间光标。下面的滑块可以用键盘的方向键调节。", "Drag the vertical lines for time cursors and the horizontal lines for voltage cursors. A click on empty screen still moves the nearer time cursor. The sliders below can be adjusted from the keyboard with the arrow keys.")}{running === false && s.exp === "steady" ? tr("现在没在运行：舵机不动、无线不发射。", " Not running now: servos stay still and radios do not transmit.") : ""}</p>
           <p className="text-ink-soft" data-testid={`${testid}-ground-note`}>探头地夹提醒：示波器每个探头的地夹在仪器里是连在一起的、并且通过电源线接大地。地夹只能夹在板子的地上；夹到别的节点（或者另一块板的“地”）等于用导线把它短到地——真实测量会短路、冒烟或掩盖问题。看两块板之间的地压差请用两个通道 + 数学差值（这里也是这么算的）。高频小信号要用地弹簧代替长地线，否则会多出振铃（这里不模拟）。</p>
         </div>
       </div>

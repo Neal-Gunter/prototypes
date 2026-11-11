@@ -83,6 +83,7 @@ const LIMITS = [
 ];
 
 const WHATS_NEW = [
+  T("v43：装配台零件在指针悬停和键盘选中时画出描边或外发光轮廓，并弹出中英文名称和主要规格的提示；尊重系统的减少动效设置，高亮只改画面、不改物理。示波器增加两条可拖的电压光标，时间光标也可拖，读出 Δt、1/Δt、ΔV，光标可用键盘调节并带 aria 标签，在 390 宽布局下也能用。界面仍沿用 v41 的纸、墨、铜语言。", "v43: assembly-bench parts get an outline or emissive rim on pointer hover and keyboard focus, with a tooltip for the part name and a key spec in Chinese or English. The highlight respects reduced-motion settings and changes only the picture, not the physics. The oscilloscope adds two draggable voltage cursors, time cursors can be dragged as well, and the readout shows Δt, 1/Δt and ΔV. Cursors are keyboard-adjustable with aria labels and work at a 390-wide layout. The visual language stays the paper, ink and copper of v41."),
   T("v42：学习路径会记下每一步是否完成（存在本机 localStorage，键带版本号，坏数据就当成空白），每条路径有进度条和继续按钮，重置前会确认。题库条目链到对应的路径步骤（构建题库时写好映射，对不上的题目不显示）；路径步骤也可以链回相关题目。新增一条单节 18650 充电宝路径（拆开 → 诊断输出短路 → 在稳压模块关卡里练习），说明自己写，按公开资料整理，未经实物验证。界面仍沿用 v41 的纸、墨、铜语言。", "v42: learning paths remember which steps you have finished (in this browser’s localStorage, with a versioned key; bad data is treated as empty). Each path has a progress bar and a resume button, and reset asks for confirmation. Bank items link to the matching path step (the mapping is written when the bank is built; items with no match show nothing), and path steps can link back to related bank items. A new path covers a single-cell 18650 power bank (open it, diagnose an output short, then practise in a regulator-module level). The notes are original, compiled from public information and not verified on hardware. The visual language stays the paper, ink and copper of v41."),
   T("v41：按开源 frontend-design skill（Apache-2.0）整理出的规则，润色 3D 台面（材质、灯光、阴影、导线和切割垫网格）、示波器波形和拆解示意图，以及题库 / 使用说明的字号和间距。原有纸、墨、铜的颜色名称没换；正文对比度仍至少 4.5:1，焦点环至少 3:1。没有加新的网页字体。", "v41: following rules taken from the open-source frontend-design skill (Apache-2.0), the 3D bench (materials, lighting, shadows, wires and a cutting-mat grid), scope traces and teardown diagrams, and the typography and spacing on the problem bank and help pages were polished. Existing paper, ink and copper token names were kept. Body text stays at least 4.5:1 and the focus ring at least 3:1. No webfont files were added."),
   T("v40：某一节超出一页时，打印目录会回填后面的页码，并写出跨页范围；题库列表等加载完成后再标 ready；把拆解、诊断、接线和维修关卡串成 3 到 5 步的学习路径。", "v40: when a printed chapter runs over a page, the contents list backfills later page numbers and writes a page range; the problem-bank list is marked ready only after it has loaded; short 3-to-5-step learning paths chain a teardown, a diagnosis or wiring task, and a repair level."),
@@ -109,8 +110,8 @@ export default function HelpPage() {
       </nav>
       <H2 id="quick">{L(T("快速上手", "Quick start"))}</H2>
       <ol className="mt-3 list-decimal space-y-2 pl-6 text-sm" data-testid="help-quick">{QUICK.map((q, i) => <li key={i}>{L(q)}</li>)}</ol>
-      <H2 id="whats-new">{L(T("本版更新（v32–v42）", "What's new (v32–v42)"))}</H2>
-      <ol className="mt-3 list-decimal space-y-2 pl-6 text-sm leading-7" data-testid="help-whats-new" reversed start={42}>{WHATS_NEW.map((q, i) => <li key={i}>{L(q)}</li>)}</ol>
+      <H2 id="whats-new">{L(T("本版更新（v32–v43）", "What's new (v32–v43)"))}</H2>
+      <ol className="mt-3 list-decimal space-y-2 pl-6 text-sm leading-7" data-testid="help-whats-new" reversed start={43}>{WHATS_NEW.map((q, i) => <li key={i}>{L(q)}</li>)}</ol>
       <H2 id="modes">{L(T("各个模式", "Modes"))}</H2>
       <div className="mt-3 grid gap-4 sm:grid-cols-2">
         {MODES.map((m) => (

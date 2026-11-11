@@ -10,6 +10,7 @@
 // v40：演示学习路径、帮助页「本版更新」、致谢页 v40；题库列表等 bank-list-ready。
 // v41：演示装配台新台面、示波器波形、题库/说明页字号，以及致谢页 v41 许可说明。
 // v42：演示学习路径进度、题目与路径互链、新的充电宝路径，以及致谢页 v42。
+// v43：演示零件悬停/焦点高亮和提示、示波器可拖测量光标，以及致谢页 v43。
 // 用法：BASE=http://localhost:4173 OUT=/workspace/proto-site/v33 node e2e/demo-record.mjs  然后用 ffmpeg 转 mp4
 import { chromium } from "playwright";
 import fs from "node:fs";
@@ -62,7 +63,7 @@ await step("题库：学习路径", async () => {
 await step("使用说明：本版更新", async () => {
   await p.goto(BASE + "/help#whats-new"); await T("help-whats-new").waitFor({ timeout: 20000 }); await w(1500);
   await T("help-whats-new").scrollIntoViewIfNeeded(); await w(2000); await scroll(250, 6, 350);
-}, "v42：使用说明「本版更新」汇总到 v42，说明路径能记下进度，题目和路径步骤可以互相反跳");
+}, "v43：使用说明「本版更新」汇总到 v43，说明零件高亮、规格提示和示波器测量光标");
 await step("拆解：设备列表 + 搜索", async () => {
   await p.goto(BASE + "/teardown/"); await T("teardown-page").waitFor({ timeout: 30000 }); await w(1500);
   await T("td-search").pressSequentially("tp4056", { delay: 120 }); await w(1500); await T("td-search").fill(""); await w(800);
@@ -107,7 +108,13 @@ await step("装配台：3D 场景", async () => {
   await p.goto(BASE + "/assembly/?scene=electrics"); await w(9000);
   const cv = p.locator("canvas").first();
   if (await cv.count()) { const bb = await cv.boundingBox(); if (bb) { const cx = bb.x + bb.width / 2, cy = bb.y + bb.height / 2; await p.mouse.move(cx, cy); await p.mouse.down({ button: "left" }); for (let i = 0; i < 30; i++) { await p.mouse.move(cx + i * 8, cy + Math.sin(i / 5) * 20); await w(60); } await p.mouse.up(); await w(1500); await p.mouse.wheel(0, -400); await w(2000); } }
-}, "v41：装配台台面换成带切割垫细格的木纹，灯光和阴影更软，导线颜色更接近 PVC");
+}, "v43：装配台零件在悬停或键盘选中时画出描边，并弹出名称和主要规格（简化仿真，不改物理）");
+await step("装配台：零件高亮", async () => {
+  await T("asm-a11y").focus(); await w(600);
+  for (let i = 0; i < 3; i++) { await p.keyboard.press("ArrowRight"); await w(700); }
+  await p.evaluate(() => { const u = window.__asm?.engine ? [...window.__asm.engine.parts.keys()][0] : null; if (u) { window.__asm.select(u); window.__asm.hover?.(u); } });
+  await w(2500);
+}, "v43：键盘选中零件后可以看到描边和带规格的提示");
 await step("装配台：示波器", async () => {
   await T("tab-elec").click().catch(() => {});
   const details = T("bench-scope-panel");
@@ -119,8 +126,18 @@ await step("装配台：示波器", async () => {
   await T("bench-scope").waitFor({ timeout: 20000 });
   await T("mscope").waitFor({ timeout: 20000 });
   if (await T("mscope-capture").count()) await T("mscope-capture").click();
-  await w(4500);
-}, "v41：示波器改成更深的磷光屏、更细的刻度和略粗带一点辉光的波形；读数在纸色底上用过对比度的颜色");
+  await w(2500);
+  const scr = T("mscope-screen");
+  const box = await scr.boundingBox();
+  if (box) {
+    await p.mouse.move(box.x + box.width * 0.3, box.y + box.height * 0.5); await p.mouse.down();
+    await p.mouse.move(box.x + box.width * 0.18, box.y + box.height * 0.5, { steps: 10 }); await p.mouse.up(); await w(600);
+    await p.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.3); await p.mouse.down();
+    await p.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.18, { steps: 10 }); await p.mouse.up(); await w(800);
+  }
+  if (await T("mscope-cur-t2").count()) { await T("mscope-cur-t2").scrollIntoViewIfNeeded(); await T("mscope-cur-t2").focus(); await p.keyboard.press("ArrowRight"); await p.keyboard.press("ArrowRight"); await w(800); }
+  await w(1500);
+}, "v43：示波器可拖两条时间光标和两条电压光标，读出 Δt、1/Δt 和 ΔV；也可以用键盘调滑块");
 await step("装配台：键盘操作", async () => {
   await T("asm-a11y").focus(); await w(800);
   for (let i = 0; i < 3; i++) { await p.keyboard.press("ArrowRight"); await w(700); }
@@ -156,6 +173,10 @@ await step("致谢：v42", async () => {
   await p.goto(BASE + "/credits#v42-paths"); await w(1500);
   await T("credits-v42").scrollIntoViewIfNeeded().catch(() => {}); await w(4000);
 }, "v42：路径进度只存在这台浏览器；新路径说明是自己写的，没有新增第三方材料");
+await step("致谢：v43", async () => {
+  await p.goto(BASE + "/credits#v43-measure"); await w(1500);
+  await T("credits-v43").scrollIntoViewIfNeeded().catch(() => {}); await w(4000);
+}, "v43：零件描边和示波器光标是自己写的，没有新增第三方材料；高亮不改物理");
 await step("工作台：固件编辑器", async () => {
   await p.goto(BASE + "/workbench/"); await T("code").waitFor({ timeout: 30000 }); await w(2500);
   await T("code").focus(); await w(800); await p.keyboard.press("Tab"); await w(1500);

@@ -1,5 +1,5 @@
 // 装配台 3D 场景：每帧从 Rapier 读出位姿；拖拽 / 拧 / 焊都交给 engine
-import { Suspense, useEffect, useMemo, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows, OrbitControls, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
@@ -12,6 +12,10 @@ import { pinLabel } from "../physpins.js";
 import { WIRE, WIRE_COLORS, bench, benchSide, paper, remapWire } from "../../ui/palette.js";
 
 import { MAT, PROC_MAT, Boxes, ProcMesh, Glb } from "./partMeshes.jsx";
+import PartHighlight from "./PartHighlight.jsx";
+import { partTipText } from "./partTip.js";
+import { useReducedMotion } from "../../ui/reducedMotion.js";
+import { getLang } from "../../i18n.js";
 export { ProcMesh, Glb };
 // v11：用户上传的模型模块（几何体在浏览器内存里，见 modellab/registry.js）
 function CustomMesh({ def }) {
@@ -90,7 +94,7 @@ function PinHook() {
   }, [camera, gl, scene]);
   return null;
 }
-function Part({ uid, onDown }) {
+function Part({ uid, onDown, hl, onHover, reduced }) {
   const ref = useRef();
   const glow = useRef();
   const p = engine.parts.get(uid);
@@ -125,8 +129,12 @@ function Part({ uid, onDown }) {
   if (!p) return null;
   const def = p.def;
   const H = (def.dims_mm?.y || 8) / 10;
+  const leave = () => {
+    if (def.physPins) { pinState.key = null; pinState.set?.(null); if (pinState.marker) pinState.marker.visible = false; }
+    onHover?.(null, uid);
+  };
   return (
-    <group ref={ref} onPointerDown={(e) => onDown(e, uid)} onPointerMove={def.physPins ? (e) => hoverPin(e, uid) : undefined} onPointerOut={def.physPins ? () => { pinState.key = null; pinState.set?.(null); if (pinState.marker) pinState.marker.visible = false; } : undefined} name={uid}>
+    <group ref={ref} onPointerDown={(e) => onDown(e, uid)} onPointerOver={(e) => { e.stopPropagation(); onHover?.(uid); }} onPointerMove={def.physPins ? (e) => hoverPin(e, uid) : undefined} onPointerOut={leave} name={uid}>
       {def.kind === "glb" ? (
         <Suspense fallback={<Boxes cols={def.colliders} mat="white" />}><Glb def={def} /></Suspense>
       ) : def.kind === "custom" ? (
@@ -149,6 +157,7 @@ function Part({ uid, onDown }) {
           <meshBasicMaterial transparent opacity={0.5} color="#ff3b2f" depthWrite={false} />
         </mesh>
       )}
+      {hl ? <PartHighlight def={def} mode={hl} reduced={reduced} /> : null}
     </group>
   );
 }
@@ -361,8 +370,69 @@ function Interact({ toolRef, vis, flux, controls, onHover, onProbe }) {
   };
   return null;
 }
+function perfStats(a) {
+  if (!a?.length) return { n: 0, mean: 0, median: 0, p95: 0 };
+  const s = [...a].sort((x, y) => x - y), n = s.length;
+  const mean = s.reduce((p, c) => p + c, 0) / n;
+  return { n, mean: +mean.toFixed(3), median: +s[Math.floor(n / 2)].toFixed(3), p95: +s[Math.min(n - 1, Math.floor(n * 0.95))].toFixed(3) };
+}
+function ensurePerf() {
+  if (typeof window === "undefined") return null;
+  if (window.__asmPerf) return window.__asmPerf;
+  const pf = { on: false, step: [], raf: [], lastRaf: null };
+  pf.start = () => { pf.on = true; pf.step = []; pf.raf = []; pf.lastRaf = null; };
+  pf.stop = () => { pf.on = false; return { step: perfStats(pf.step), raf: perfStats(pf.raf) }; };
+  window.__asmPerf = pf;
+  return pf;
+}
 function Loop({ onTick }) {
-  useFrame((_, dt) => { if (!engine.extDrive) engine.update(Math.min(dt, 1 / 30)); onTick?.(); });
+  useFrame((_, dt) => {
+    const t0 = performance.now();
+    if (!engine.extDrive) engine.update(Math.min(dt, 1 / 30));
+    onTick?.();
+    const step = performance.now() - t0;
+    const pf = typeof window !== "undefined" ? window.__asmPerf : null;
+    if (pf?.on) {
+      const now = performance.now();
+      pf.step.push(step);
+      if (pf.lastRaf != null) pf.raf.push(now - pf.lastRaf);
+      pf.lastRaf = now;
+      if (pf.step.length > 240) { pf.step.shift(); if (pf.raf.length) pf.raf.shift(); }
+    }
+  });
+  return null;
+}
+function TipHook({ hover, sel, box }) {
+  const { camera, gl } = useThree();
+  useFrame(() => {
+    const el = box.current;
+    if (!el) return;
+    const uid = hover || sel;
+    if (!uid || !engine.parts.has(uid)) {
+      el.hidden = true;
+      el.setAttribute("data-on", "0");
+      el.removeAttribute("data-uid");
+      return;
+    }
+    const P = engine.parts.get(uid);
+    const w = engine.worldPose(uid);
+    const y = (P.def.dims_mm?.y || 8) / 10;
+    const v = new THREE.Vector3(w.p.x, w.p.y + y, w.p.z).project(camera);
+    const r = gl.domElement.getBoundingClientRect();
+    const x = r.left + (v.x + 1) / 2 * r.width;
+    const sy = r.top + (1 - v.y) / 2 * r.height;
+    const tip = partTipText(P.def, getLang());
+    el.hidden = false;
+    el.setAttribute("data-on", "1");
+    el.setAttribute("data-uid", uid);
+    el.setAttribute("data-mode", hover === uid ? "hover" : "focus");
+    el.style.left = `${Math.round(x + 12)}px`;
+    el.style.top = `${Math.round(sy - 8)}px`;
+    const n = el.querySelector("[data-tip-name]");
+    const sp = el.querySelector("[data-tip-spec]");
+    if (n) n.textContent = tip.name;
+    if (sp) { sp.textContent = tip.spec; sp.hidden = !tip.spec; }
+  });
   return null;
 }
 // 调试 / 导出用：把 three 场景挂到 window（只读引用，v11 用它导出内置示例的 GLB）
@@ -371,33 +441,57 @@ function SceneHook() {
   useEffect(() => { window.__asmScene = scene; return () => { if (window.__asmScene === scene) window.__asmScene = null; }; }, [scene]);
   return null;
 }
-export default function AsmScene({ uids, tool, debug, flux, vis, onTick, onSelect, probes, onProbe, onPin }) {
+export default function AsmScene({ uids, tool, debug, flux, vis, onTick, onSelect, probes, onProbe, onPin, sel }) {
   pinState.set = onPin;
   const toolRef = useRef(tool);
   toolRef.current = tool;
   const fluxRef = useRef(flux);
   fluxRef.current = flux;
   const controls = useRef();
+  const tipBox = useRef(null);
+  const [hover, setHover] = useState(null);
+  const reduced = useReducedMotion();
+  const onHover = (u, from) => setHover((h) => (u == null && from && h !== from ? h : u));
+  useEffect(() => {
+    ensurePerf();
+    const apply = () => {
+      const a = window.__asm || (window.__asm = {});
+      a.hover = (u) => setHover(u || null);
+      a.getHighlight = () => ({ hover, sel: sel || null, reduced: !!reduced, parts: engine.parts.size });
+    };
+    apply();
+    return () => {
+      if (window.__asm?.hover) window.__asm.hover = null;
+      if (window.__asm?.getHighlight) window.__asm.getHighlight = null;
+    };
+  }, [hover, sel, reduced]);
   return (
-    <Canvas shadows camera={{ position: [0, 30, 33], fov: 40, near: 0.1, far: 400 }} gl={{ preserveDrawingBuffer: true }} data-testid="asm-canvas">
-      <SceneHook />
-      <color attach="background" args={[paper]} />
-      <hemisphereLight args={["#f4efe6", "#6e5a45", 0.72]} />
-      <directionalLight position={[20, 40, 15]} intensity={1.35} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004} shadow-normalBias={0.03} shadow-camera-left={-35} shadow-camera-right={35} shadow-camera-top={25} shadow-camera-bottom={-25} />
-      <directionalLight position={[-16, 18, -12]} intensity={0.28} />
-      <Bench />
-      <ContactShadows position={[0, 0.02, 0]} opacity={0.28} scale={80} blur={2.2} far={10} color="#1b1814" />
-      {uids.map((u) => <Part key={u} uid={u} onDown={(e, id) => { Interact.down(e, id); onSelect?.(id); }} />)}
-      <Cables />
-      <ToolMesh vis={vis} />
-      <DebugColliders on={debug} />
-      <Probes probes={probes} />
-      <PinMarker />
-      <PinHook />
-      <Interact toolRef={toolRef} vis={vis} flux={fluxRef} controls={controls} onProbe={onProbe} />
-      <Loop onTick={onTick} />
-      <CamHook controls={controls} />
-      <OrbitControls ref={controls} makeDefault target={[0, 0, 0]} maxPolarAngle={Math.PI / 2.1} minDistance={8} maxDistance={110} />
-    </Canvas>
+    <div className="relative h-full min-h-[60vh] w-full" data-testid="asm-canvas-wrap">
+      <Canvas shadows camera={{ position: [0, 30, 33], fov: 40, near: 0.1, far: 400 }} gl={{ preserveDrawingBuffer: true }} data-testid="asm-canvas">
+        <SceneHook />
+        <color attach="background" args={[paper]} />
+        <hemisphereLight args={["#f4efe6", "#6e5a45", 0.72]} />
+        <directionalLight position={[20, 40, 15]} intensity={1.35} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004} shadow-normalBias={0.03} shadow-camera-left={-35} shadow-camera-right={35} shadow-camera-top={25} shadow-camera-bottom={-25} />
+        <directionalLight position={[-16, 18, -12]} intensity={0.28} />
+        <Bench />
+        <ContactShadows position={[0, 0.02, 0]} opacity={0.28} scale={80} blur={2.2} far={10} color="#1b1814" />
+        {uids.map((u) => <Part key={u} uid={u} hl={u === hover ? "hover" : u === sel ? "focus" : null} onHover={onHover} reduced={reduced} onDown={(e, id) => { Interact.down(e, id); onSelect?.(id); }} />)}
+        <Cables />
+        <ToolMesh vis={vis} />
+        <DebugColliders on={debug} />
+        <Probes probes={probes} />
+        <PinMarker />
+        <PinHook />
+        <Interact toolRef={toolRef} vis={vis} flux={fluxRef} controls={controls} onProbe={onProbe} />
+        <Loop onTick={onTick} />
+        <TipHook hover={hover} sel={sel} box={tipBox} />
+        <CamHook controls={controls} />
+        <OrbitControls ref={controls} makeDefault target={[0, 0, 0]} maxPolarAngle={Math.PI / 2.1} minDistance={8} maxDistance={110} />
+      </Canvas>
+      <div ref={tipBox} hidden data-on="0" data-testid="asm-part-tip" data-reduced={reduced ? "1" : "0"} className="pointer-events-none fixed z-50 max-w-xs border border-copper bg-paper-2/95 px-2 py-1 text-xs text-ink shadow" role="status">
+        <div data-tip-name className="font-semibold text-ink" />
+        <div data-tip-spec className="text-ink-soft" />
+      </div>
+    </div>
   );
 }
