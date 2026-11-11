@@ -197,7 +197,7 @@ export default function ScopePanel({ s, set, nodes, onCapture, running, testid =
               return (
                 <label key={kind + k} className="flex min-h-11 min-w-0 flex-col justify-center gap-0.5 border border-line bg-paper px-1.5 py-1 text-[11px] text-ink">
                   <span className="truncate">{label} {now}%</span>
-                  <input type="range" min="0" max="100" step="1" value={now} aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={now} aria-orientation={ori} className="h-6 w-full accent-[#9e461d]" data-testid={`${testid}-cur-${kind}${k + 1}`}
+                  <input type="range" min="0" max="100" step="1" value={now} aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={now} aria-orientation={ori} className="h-6 w-full accent-[#1868B0]" data-testid={`${testid}-cur-${kind}${k + 1}`}
                     onChange={(e) => { const f = +e.target.value / 100; if (kind === "t") { const n = cur.slice(); n[k] = f; upd({ cur: n }); } else { const n = vcur.slice(); n[k] = f; upd({ vcur: n }); } }} />
                 </label>
               );

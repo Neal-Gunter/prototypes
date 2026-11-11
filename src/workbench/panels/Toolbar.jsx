@@ -84,7 +84,7 @@ export function Toolbar() {
               value={ironTemp}
               data-iron-temp
               onChange={(e) => st().setIronTemp(Number(e.target.value))}
-              className="w-32 accent-[#b5522b]"
+              className="w-32 accent-[#1868B0]"
             />
             <span className="w-12 tabular-nums">{ironTemp} °C</span>
           </label>

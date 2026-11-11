@@ -3,7 +3,7 @@ import * as THREE from "three";
 const cache = new Map();
 
 // 用 Canvas 画文字贴图（不从网络加载字体）
-export function textTexture(text, { color = "#f7f3ea", bg = null, size = 64, weight = 600, width } = {}) {
+export function textTexture(text, { color = "#0B2545", bg = null, size = 64, weight = 600, width } = {}) {
   const key = `${text}|${color}|${bg}|${size}|${weight}|${width}`;
   if (cache.has(key)) return cache.get(key);
   const c = document.createElement("canvas");

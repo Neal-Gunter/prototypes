@@ -2,42 +2,47 @@
 // 与 src/index.css 里的 @theme 扩展 token 保持同一组十六进制值。
 // 这些数值是本项目自己定的，不是从某个 skill 原文抄来的。
 
-// v44：浅色是工作台默认；line 从 #d2c7b4 加深到 #7a6e5c，让描边在纸色底上达到 3:1（原先只有 1.26）。
-// 深色值见 DARK。themeVars() 按当前 data-theme 取一组，3D / 读数用。具名导出仍是浅色，给印刷和旧调用。
+// v46：浅色是深蓝+白；copper 只作浅蓝点缀。深色值见 DARK。themeVars() 按当前 data-theme 取一组，3D / 读数用。具名导出仍是浅色，给印刷和旧调用。
 export const LIGHT = {
-  paper: "#e7dfd0",
-  paper2: "#f7f3ea",
-  ink: "#1b1814",
-  inkSoft: "#4a433a",
-  copper: "#9e461d",
-  copperDeep: "#7c3a12",
+  paper: "#F4F7FB",
+  paper2: "#FFFFFF",
+  ink: "#0B2545",
+  inkSoft: "#2F4E70",
+  copper: "#1868B0",
+  copperDeep: "#1D4E89",
   mask: "#16352c",
-  line: "#7a6e5c",
-  mark: "#8e2f2a",
+  line: "#5C6F86",
+  mark: "#A11D14",
+  brand: "#0B2545",
+  brand2: "#13315C",
+  onBrand: "#FFFFFF",
   bench: "#8a6844",
   benchSide: "#6f5538",
   pcb: "#2a4a34",
-  scopeBg: "#0a120e",
-  scopeGrid: "#1c3328",
-  scopeMinor: "#14241d",
+  scopeBg: "#0B2545",
+  scopeGrid: "#1E4A73",
+  scopeMinor: "#123152",
   caseBlue: "#3d5a72",
 };
 export const DARK = {
-  paper: "#1c1915",
-  paper2: "#2c2722",
-  ink: "#f0e8da",
-  inkSoft: "#c9bfb0",
-  copper: "#e09868",
-  copperDeep: "#f0b48a",
+  paper: "#0B2545",
+  paper2: "#13315C",
+  ink: "#FFFFFF",
+  inkSoft: "#C5D4E8",
+  copper: "#7EB6FF",
+  copperDeep: "#9EC9FF",
   mask: "#7eb8a4",
-  line: "#a3988c",
-  mark: "#e88880",
+  line: "#7A93AA",
+  mark: "#F0A098",
+  brand: "#0B2545",
+  brand2: "#13315C",
+  onBrand: "#FFFFFF",
   bench: "#8a6844",
   benchSide: "#5a4530",
   pcb: "#3a5a44",
-  scopeBg: "#0a120e",
-  scopeGrid: "#1c3328",
-  scopeMinor: "#14241d",
+  scopeBg: "#071326",
+  scopeGrid: "#1E4A73",
+  scopeMinor: "#0F2744",
   caseBlue: "#8aa8b8",
 };
 export const paper = LIGHT.paper;
@@ -81,7 +86,7 @@ export const WIRE = {
 export const WIRE_COLORS = [WIRE.red, WIRE.black, WIRE.yellow, WIRE.green, WIRE.blue, WIRE.orange, WIRE.purple, WIRE.white];
 
 // 示波器屏幕上的磷光色（深色底）；CH_INK 用在纸色底上的读数，对比度 ≥ 4.5:1。
-export const CH_COLOR = ["#e6c84a", "#4ec8d6", "#d46bb8", "#5ad07a"];
+export const CH_COLOR = ["#e6c84a", "#4ec8d6", "#e090c8", "#5ad07a"];
 export const CH_INK = ["#6b5a00", "#0a6270", "#9a2468", "#1b6b32"];
 // 深色纸底上用磷光色做读数（已在深色屏上用过，对纸色深底同样 ≥ 4.5:1）。
 export function channelInk(theme = resolvedThemeName()) {

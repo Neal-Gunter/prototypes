@@ -6,10 +6,10 @@ import { useLang, tr } from "../i18n.js";
 import { useTheme } from "../theme.js";
 
 function navClass({ isActive }) {
-  return `inline-flex min-h-11 shrink-0 items-center whitespace-nowrap px-3 text-base ${
+  return `inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full px-3 text-sm font-medium ${
     isActive
-      ? "text-ink underline decoration-copper decoration-2 underline-offset-8"
-      : "text-ink-soft hover:text-ink"
+      ? "bg-brand text-on-brand"
+      : "text-ink-soft hover:bg-paper hover:text-ink"
   }`;
 }
 
@@ -31,7 +31,7 @@ export default function Layout() {
       <a className="skip-link" href="#main">
         {tr("跳到内容")}
       </a>
-      <div className="no-print sticky top-0 z-40 bg-[#1b1814] px-4 py-2 text-center text-sm leading-6 text-[#f7f3ea]">
+      <div className="no-print sticky top-0 z-40 bg-[#0B2545] px-4 py-2 text-center text-sm leading-6 text-white">
         {PROTO_PATHS.some((p) => pathname.startsWith(p)) ? (
           <p data-testid="banner">
             {en ? <>Early prototype, simplified simulation<span className="hidden sm:inline"> · <span lang="zh-Hans">早期原型，简化仿真</span></span></> : <>早期原型，简化仿真<span className="hidden sm:inline"> · <span lang="en">Early prototype, simplified simulation</span></span></>}
@@ -39,25 +39,21 @@ export default function Layout() {
         ) : (
           <p data-testid="banner">{en ? <>Concept demo, not a finished product<span className="hidden sm:inline"> · <span lang="zh-Hans">概念演示，不是成品</span></span></> : <>概念演示，不是成品<span className="hidden sm:inline"> · <span lang="en">Concept demo, not a finished product</span></span></>}</p>
         )}
-        {en ? <p className="text-xs text-[#f7f3ea]/80" data-testid="mt-banner">Some text on this site is machine-translated (offline, Argos Translate) and may be wrong or read oddly; for safety steps (batteries, soldering, power) the Chinese text is authoritative — switch to 中文 to check. <a href={import.meta.env.BASE_URL + "help#faq"} className="underline">Why?</a></p> : null}
+        {en ? <p className="text-xs text-white/80" data-testid="mt-banner">Some text on this site is machine-translated (offline, Argos Translate) and may be wrong or read oddly; for safety steps (batteries, soldering, power) the Chinese text is authoritative — switch to 中文 to check. <a href={import.meta.env.BASE_URL + "help#faq"} className="underline">Why?</a></p> : null}
       </div>
       <div className="relative flex flex-1 flex-col">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 left-0 hidden w-8 border-r border-mark md:block print:hidden"
-        />
-        <div className="flex flex-1 flex-col md:pl-8 print:pl-0">
-          <header className="border-b border-line">
+        <div className="flex flex-1 flex-col">
+          <header className="bg-paper-2 shadow-[0_1px_0_rgba(11,37,69,0.06),0_8px_24px_rgba(11,37,69,0.06)]">
             <div
               className={`${containerClass} flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-3`}
             >
               <NavLink to="/" end className="inline-flex min-h-11 shrink-0 items-center gap-2">
                 <span
                   aria-hidden="true"
-                  className="inline-block size-2.5 rounded-full bg-copper"
+                  className="inline-block size-2.5 rounded-full bg-brand"
                 />
                 <span className="text-lg font-medium tracking-tight">{tr("硬件验证")}</span>
-                <span className="border border-line px-1.5 py-0.5 text-xs text-ink-soft">
+                <span className="rounded-full bg-paper px-2 py-0.5 text-xs font-medium text-ink-soft">
                   {tr("概念")}
                 </span>
               </NavLink>
@@ -102,7 +98,7 @@ export default function Layout() {
                   {tr("素材与许可")}
                 </NavLink>
               </nav>
-              <button type="button" onClick={() => window.dispatchEvent(new Event("open-palette"))} className="inline-flex min-h-9 shrink-0 items-center gap-1 whitespace-nowrap border border-line px-2 text-xs text-ink-soft hover:text-ink" title={tr("命令面板：跳到页面、零件、场景")} data-testid="palette-btn">
+              <button type="button" onClick={() => window.dispatchEvent(new Event("open-palette"))} className="inline-flex min-h-9 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-ink bg-paper-2 px-3 text-xs text-ink hover:bg-paper" title={tr("命令面板：跳到页面、零件、场景")} data-testid="palette-btn">
                 {tr("搜索跳转")} <kbd className="hidden font-mono sm:inline">Ctrl/⌘ K</kbd>
               </button>
               <label className="inline-flex min-h-9 shrink-0 items-center gap-1 text-xs text-ink-soft">
@@ -115,14 +111,14 @@ export default function Layout() {
                   title={tr("配色", "Colour theme")}
                   value={themePref}
                   onChange={(e) => setThemePref(e.target.value)}
-                  className="min-h-9 border border-line bg-paper-2 px-1 text-xs text-ink"
+                  className="min-h-9 rounded-full border border-ink bg-paper-2 px-2 text-xs text-ink"
                 >
                   <option value="system">{tr("系统", "System")}</option>
                   <option value="light">{tr("浅色", "Light")}</option>
                   <option value="dark">{tr("深色", "Dark")}</option>
                 </select>
               </label>
-              <button type="button" onClick={() => setLang(en ? "zh" : "en")} className="inline-flex min-h-9 shrink-0 items-center whitespace-nowrap border border-line px-2 text-xs text-ink-soft hover:text-ink" aria-label={en ? "中文：切换到中文界面" : "EN: Switch the UI to English"} title={tr("切换界面语言")} data-testid="lang-toggle" data-lang={lang}>
+              <button type="button" onClick={() => setLang(en ? "zh" : "en")} className="inline-flex min-h-9 shrink-0 items-center whitespace-nowrap rounded-full border border-ink bg-paper-2 px-3 text-xs text-ink hover:bg-paper" aria-label={en ? "中文：切换到中文界面" : "EN: Switch the UI to English"} title={tr("切换界面语言")} data-testid="lang-toggle" data-lang={lang}>
                 {en ? "中文" : "EN"}
               </button>
             </div>
@@ -131,8 +127,8 @@ export default function Layout() {
             <Outlet />
           </main>
           <CommandPalette />
-          <footer className="border-t border-line">
-            <div className={`${containerClass} py-8 text-sm leading-6 text-ink-soft`}>
+          <footer className="mt-auto bg-paper-2">
+            <div className={`${containerClass} py-10 text-sm leading-6 text-ink-soft`}>
               <p>{tr("硬件验证 · 概念演示")}</p>
               <p className="mt-1" data-testid="lang-note"><span lang="zh">界面以中文为主（我的补充）：零件名、数据手册术语和代码保留英文原文。</span><span lang="en"> The UI is Chinese-first; part names, datasheet terms and code stay in English. The EN button in the header (remembered on this device) switches the UI to English: navigation, palette, tour, workbench labels and the Help page are hand-written; since v27 the remaining page text (guides, part descriptions, check hints, simulation messages) is machine-assisted translation from an offline dictionary, so some of it reads oddly. Text drawn inside 3D canvases and the firmware source in the octopus guide is still Chinese only.</span></p>
               <p className="mt-1 max-w-2xl">

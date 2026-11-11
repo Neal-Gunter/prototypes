@@ -40,20 +40,20 @@ export default function TentacleFigure({ angle, caption }) {
             <path
               d={tentacle.d}
               fill="none"
-              stroke="#1b1814"
+              stroke="#0B2545"
               strokeWidth="5"
               strokeLinecap="round"
             />
             <circle cx={tentacle.tipX} cy={tentacle.tipY} r="3.5" fill="#b45324" />
           </g>
         ))}
-        <circle cx="120" cy="120" r="22" fill="#1b1814" />
+        <circle cx="120" cy="120" r="22" fill="#0B2545" />
         <line
           x1="120"
           y1="120"
           x2={needleX}
           y2={needleY}
-          stroke="#f7f3ea"
+          stroke="#FFFFFF"
           strokeWidth="3"
           strokeLinecap="round"
         />

@@ -116,7 +116,7 @@ export default function LabScene({ meshes, M, project, modOf, visible, hl, selMe
   return (
     <Canvas shadows={false} camera={{ fov: 40, position: [20, 20, 20] }} gl={{ preserveDrawingBuffer: true, antialias: true }} onPointerMissed={(e) => e.button === 0 && onPick(null, null, e)}>
       <color attach="background" args={[C.paper]} />
-      <hemisphereLight args={["#ffffff", "#8a8577", 1.4]} />
+      <hemisphereLight args={["#ffffff", "#5C6F86", 1.4]} />
       <directionalLight position={[30, 50, 20]} intensity={dark ? 0.9 : 1.6} />
       <gridHelper args={[grid, grid, C.inkSoft, C.line]} position={[0, -0.002, 0]} />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}><planeGeometry args={[grid, grid]} /><meshStandardMaterial color={C.paper2} /></mesh>

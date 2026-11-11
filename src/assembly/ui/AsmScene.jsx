@@ -477,11 +477,11 @@ export default function AsmScene({ uids, tool, debug, flux, vis, onTick, onSelec
       <Canvas shadows camera={{ position: [0, 30, 33], fov: 40, near: 0.1, far: 400 }} gl={{ preserveDrawingBuffer: true }} data-testid="asm-canvas">
         <SceneHook />
         <color attach="background" args={[C.paper]} />
-        <hemisphereLight args={dark ? ["#c8bfb0", "#3a3228", 0.42] : ["#f4efe6", "#6e5a45", 0.72]} />
+        <hemisphereLight args={dark ? ["#d5e0ee", "#0B2545", 0.42] : ["#f4f7fb", "#5C6F86", 0.72]} />
         <directionalLight position={[20, 40, 15]} intensity={dark ? 0.9 : 1.35} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004} shadow-normalBias={0.03} shadow-camera-left={-35} shadow-camera-right={35} shadow-camera-top={25} shadow-camera-bottom={-25} />
         <directionalLight position={[-16, 18, -12]} intensity={dark ? 0.18 : 0.28} />
         <Bench />
-        <ContactShadows position={[0, 0.02, 0]} opacity={dark ? 0.5 : 0.28} scale={80} blur={2.2} far={10} color={dark ? "#000000" : "#1b1814"} />
+        <ContactShadows position={[0, 0.02, 0]} opacity={dark ? 0.5 : 0.28} scale={80} blur={2.2} far={10} color={dark ? "#000000" : "#0B2545"} />
         {uids.map((u) => <Part key={u} uid={u} hl={u === hover ? "hover" : u === sel ? "focus" : null} onHover={onHover} reduced={reduced} onDown={(e, id) => { Interact.down(e, id); onSelect?.(id); }} />)}
         <Cables />
         <ToolMesh vis={vis} />

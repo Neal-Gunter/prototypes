@@ -54,7 +54,7 @@ export default function CommandPalette() {
   const go = (it) => { setOpen(false); if (it) nav(it[1]); };
   return (
     <div className="fixed inset-0 z-[60] flex items-start justify-center bg-ink/30 pt-[12vh]" onMouseDown={() => setOpen(false)} data-testid="palette">
-      <div ref={dlg} className="w-[min(92vw,36rem)] border border-ink bg-paper shadow-lg" onMouseDown={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={tr("命令面板")}
+      <div ref={dlg} className="w-[min(92vw,36rem)] overflow-hidden rounded-2xl border border-line/50 bg-paper-2 shadow-[0_1px_2px_rgba(11,37,69,0.05),0_16px_40px_rgba(11,37,69,0.16)]" onMouseDown={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={tr("命令面板")}
         onKeyDown={(e) => { // v23：焦点困在面板里（Tab / Shift+Tab 循环），Esc 关
           if (e.key === "Escape") { e.preventDefault(); setOpen(false); return; }
           if (e.key !== "Tab") return;

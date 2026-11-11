@@ -15,6 +15,8 @@ import { DeskTools } from "./Tools";
 import Desk from "./Desk";
 import Smoke from "./Smoke";
 import { pinWorld } from "./geom";
+import { themeVars } from "../../ui/palette.js";
+import { useTheme } from "../../theme.js";
 
 export { sceneApi, screenToPlate, worldToScreen } from "./api";
 
@@ -201,10 +203,12 @@ function Scene() {
 
 export default function BenchScene() {
   const controlsRef = useRef();
+  const [, , theme] = useTheme();
+  const C = themeVars(theme);
   useEffect(() => {
     sceneApi.controls = controlsRef.current;
     const a = window.__bench || (window.__bench = {});
-    a.sceneBg = "#1d1b19";
+    a.sceneBg = C.paper;
   });
   return (
     <Canvas
@@ -214,8 +218,8 @@ export default function BenchScene() {
       gl={{ preserveDrawingBuffer: true, antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.0 }}
       onPointerMissed={() => useBench.getState().selectPart(null)}
     >
-      <color attach="background" args={["#1d1b19"]} />
-      <fog attach="fog" args={["#1d1b19", 60, 120]} />
+      <color attach="background" args={[C.paper]} />
+      <fog attach="fog" args={[C.paper, 60, 120]} />
       <Bridge />
       <SimTicker />
       <CameraRig />

@@ -25,30 +25,30 @@ export function recordTitle(path, lang) {
 }
 
 /** Light workshop palette (same names as the on-screen tokens, values fixed to the light set). */
-export const RECORD_INK = "#1b1814";
-export const RECORD_PAPER = "#f7f3ea";
-export const RECORD_PAPER2 = "#efe6d6";
-export const RECORD_LINE = "#7a6e5c";
-export const RECORD_SOFT = "#4a4338";
+export const RECORD_INK = "#0B2545";
+export const RECORD_PAPER = "#FFFFFF";
+export const RECORD_PAPER2 = "#F4F7FB";
+export const RECORD_LINE = "#5C6F86";
+export const RECORD_SOFT = "#2F4E70";
 
 // Usable area after 16/12/18 mm margins:
 // A4 width 210-24=186 mm; Letter height 279.4-34=245.4 mm. Stay inside both.
 const SHEET_CSS = (en, title, paper) => `
 html,body{background:${RECORD_PAPER};color:${RECORD_INK};color-scheme:light;}
 *{box-sizing:border-box;}
-body{margin:0;font:11pt/1.45 "Source Han Serif SC","Noto Serif CJK SC","Songti SC","SimSun",serif;}
+body{margin:0;font:11pt/1.45 "PingFang SC","Hiragino Sans GB","Noto Sans SC","Noto Sans CJK SC",sans-serif;}
 .noprint{margin:0 0 12px;padding:8px 12px;border:1px solid ${RECORD_LINE};background:${RECORD_PAPER2};font:10pt/1.4 sans-serif;}
 .noprint button{min-height:44px;padding:0 12px;margin-right:8px;border:1px solid ${RECORD_INK};background:${RECORD_PAPER};color:${RECORD_INK};font:inherit;cursor:pointer;}
-.sheet{max-width:180mm;margin:0 auto;padding:6mm 5mm 8mm;border:1px solid ${RECORD_INK};background:${RECORD_PAPER};color:${RECORD_INK};break-inside:avoid;page-break-inside:avoid;}
+.sheet{max-width:180mm;margin:0 auto;padding:6mm 5mm 8mm;border:1px solid ${RECORD_LINE};border-radius:8px;background:${RECORD_PAPER};color:${RECORD_INK};break-inside:avoid;page-break-inside:avoid;}
 .kicker{margin:0;font:9pt/1.3 sans-serif;letter-spacing:.08em;text-transform:uppercase;color:${RECORD_SOFT};}
-h1{margin:6px 0 0;font:16pt/1.3 serif;font-weight:600;}
+h1{margin:6px 0 0;font:16pt/1.3 sans-serif;font-weight:650;color:${RECORD_INK};}
 .disclaimer{margin:8px 0 0;padding:6px 8px;border:1px solid ${RECORD_LINE};background:${RECORD_PAPER2};font:9.5pt/1.4 sans-serif;}
 .meta{margin:10px 0 0;width:100%;border-collapse:collapse;font:10.5pt/1.4 sans-serif;}
 .meta th,.meta td{border:1px solid ${RECORD_LINE};padding:5px 8px;text-align:left;vertical-align:top;}
 .meta th{width:32%;font-weight:600;background:${RECORD_PAPER2};}
-.steps{margin:10px 0 0;padding:0 0 0 1.2em;font:10.5pt/1.4 serif;}
+.steps{margin:10px 0 0;padding:0 0 0 1.2em;font:10.5pt/1.4 sans-serif;}
 .steps li{margin:0 0 3px;break-inside:avoid;}
-h2{margin:12px 0 0;font:12pt/1.3 serif;font-weight:600;}
+h2{margin:12px 0 0;font:12pt/1.3 sans-serif;font-weight:650;color:${RECORD_INK};}
 .foot{margin:12px 0 0;font:8.5pt/1.4 sans-serif;color:${RECORD_SOFT};}
 @page{${paper && RECORD_PAPERS.includes(paper) ? `size:${paper};` : ""}margin:16mm 12mm 18mm;@top-right{content:"${css(title)}";font-size:9px;color:#555;}@bottom-center{content:${en ? '"Page " counter(page) " of " counter(pages)' : '"第 " counter(page) " 页 / 共 " counter(pages) " 页"'};font-size:9px;color:#555;}}
 @media print{

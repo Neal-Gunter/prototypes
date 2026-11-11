@@ -3,30 +3,44 @@
 @theme {
   --font-sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
     "WenQuanYi Micro Hei", "Noto Sans SC", "Droid Sans Fallback", sans-serif;
-  --color-paper: #e7dfd0;
-  --color-paper-2: #f7f3ea;
-  --color-ink: #1b1814;
-  --color-ink-soft: #4a433a;
-  --color-copper: #9e461d; /* v23：原 #b45324 在纸色底上对比度 3.77，不到 WCAG AA 4.5 */
-  --color-copper-deep: #7c3a12;
+  /* v46：同一组 token 名，值改成深蓝 + 白；copper 只保留为一种浅蓝点缀。 */
+  --color-paper: #F4F7FB;
+  --color-paper-2: #FFFFFF;
+  --color-ink: #0B2545;
+  --color-ink-soft: #2F4E70;
+  --color-copper: #1868B0;
+  --color-copper-deep: #1D4E89;
   --color-mask: #16352c;
-  --color-line: #7a6e5c; /* v44：原 #d2c7b4 在纸色底上只有 1.26:1，描边要 ≥ 3:1 */
-  --color-mark: #8e2f2a;
-  /* v41：在原有纸/墨/铜语言上补充工作台用色和字号，不改已有 token 的色值 */
+  --color-line: #5C6F86;
+  --color-mark: #A11D14;
+  --color-brand: #0B2545;
+  --color-brand-2: #13315C;
+  --color-on-brand: #FFFFFF;
   --color-bench: #8a6844;
   --color-bench-side: #6f5538;
   --color-pcb: #2a4a34;
-  --color-scope-bg: #0a120e;
-  --color-scope-grid: #1c3328;
-  --color-scope-minor: #14241d;
+  --color-scope-bg: #0B2545;
+  --color-scope-grid: #1E4A73;
+  --color-scope-minor: #123152;
   --color-case: #3d5a72;
   --text-display: 2.5rem;
   --text-display--line-height: 1.12;
   --text-display--letter-spacing: -0.025em;
   --text-lead: 1.125rem;
   --text-lead--line-height: 1.7;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+  --radius: 0.625rem;
 }
 
+:root {
+  --shadow-soft: 0 1px 2px rgba(11, 37, 69, 0.05), 0 10px 28px rgba(11, 37, 69, 0.08);
+  --radius-card: 14px;
+  --radius-control: 8px;
+}
 
 html {
   scroll-behavior: smooth;
@@ -41,15 +55,15 @@ body {
 }
 
 ::selection {
-  background: #f0c2ae;
-  color: #1b1814;
+  background: #C5D4E8;
+  color: #0B2545;
 }
 
-/* v39：双色焦点环。浅色描边在深色按钮上对比度够，深色外环在纸色底上对比度够（都不低于 3:1）。 */
+/* v46：双色焦点环。浅色时内环白、外环深蓝；深色时内环改用纸色（深蓝），外环用墨色（白）。均 ≥ 3:1。 */
 :focus-visible {
   outline: 2px solid var(--color-paper-2);
   outline-offset: 2px;
-  box-shadow: 0 0 0 4px var(--color-copper-deep);
+  box-shadow: 0 0 0 4px var(--color-ink);
 }
 
 .skip-link {
@@ -61,6 +75,8 @@ body {
   background: var(--color-paper-2);
   color: var(--color-ink);
   padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-soft);
 }
 
 .skip-link:focus {
@@ -72,8 +88,8 @@ body {
     -45deg,
     transparent,
     transparent 7px,
-    rgba(27, 24, 20, 0.06) 7px,
-    rgba(27, 24, 20, 0.06) 8px
+    rgba(11, 37, 69, 0.05) 7px,
+    rgba(11, 37, 69, 0.05) 8px
   );
 }
 
@@ -90,51 +106,93 @@ input[type="range"] {
   }
 }
 
+/* v46：控件和卡片默认圆角；已有 rounded-full / rounded-none 的保持原样。 */
+button:not([class*="rounded-full"]):not([class*="rounded-none"]),
+a.inline-flex:not([class*="rounded-full"]):not([class*="rounded-none"]),
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([class*="rounded-full"]):not([class*="rounded-none"]),
+select,
+textarea,
+kbd {
+  border-radius: var(--radius-control);
+}
+
+[role="dialog"],
+[role="tooltip"],
+[data-testid="bench-scope"] {
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+/* 主按钮（墨底纸字）在深色里不随 token 反相，始终保持深蓝底白字。 */
+.bg-ink.text-paper,
+.bg-ink.text-paper-2,
+.border-ink.bg-ink {
+  background-color: var(--color-brand);
+  color: var(--color-on-brand);
+  border-color: var(--color-brand);
+}
+.hover\:bg-ink:hover {
+  background-color: var(--color-brand);
+  color: var(--color-on-brand);
+}
+.bg-ink\/30 { background-color: rgb(11 37 69 / 0.35); }
+.bg-ink\/75 { background-color: rgb(11 37 69 / 0.75); }
+.bg-ink\/85 { background-color: rgb(11 37 69 / 0.85); }
+pre.bg-ink {
+  background-color: #0B2545;
+  color: #F4F7FB;
+}
 
 /* v44：同一组 token 名，只换深色值。不另起一套变量。预渲染脚本会写 data-theme；媒体查询是脚本没跑时的兜底。 */
 html[data-theme="dark"] {
-  --color-paper: #1c1915;
-  --color-paper-2: #2c2722;
-  --color-ink: #f0e8da;
-  --color-ink-soft: #c9bfb0;
-  --color-copper: #e09868;
-  --color-copper-deep: #f0b48a;
+  --color-paper: #0B2545;
+  --color-paper-2: #13315C;
+  --color-ink: #FFFFFF;
+  --color-ink-soft: #C5D4E8;
+  --color-copper: #7EB6FF;
+  --color-copper-deep: #9EC9FF;
   --color-mask: #7eb8a4;
-  --color-line: #a3988c;
-  --color-mark: #e88880;
+  --color-line: #7A93AA;
+  --color-mark: #F0A098;
+  --color-brand: #0B2545;
+  --color-brand-2: #13315C;
+  --color-on-brand: #FFFFFF;
   --color-bench: #8a6844;
   --color-bench-side: #5a4530;
   --color-pcb: #3a5a44;
-  --color-scope-bg: #0a120e;
-  --color-scope-grid: #1c3328;
-  --color-scope-minor: #14241d;
+  --color-scope-bg: #071326;
+  --color-scope-grid: #1E4A73;
+  --color-scope-minor: #0F2744;
   --color-case: #8aa8b8;
   color-scheme: dark;
 }
 @media (prefers-color-scheme: dark) {
   html:not([data-theme="light"]) {
-  --color-paper: #1c1915;
-  --color-paper-2: #2c2722;
-  --color-ink: #f0e8da;
-  --color-ink-soft: #c9bfb0;
-  --color-copper: #e09868;
-  --color-copper-deep: #f0b48a;
+  --color-paper: #0B2545;
+  --color-paper-2: #13315C;
+  --color-ink: #FFFFFF;
+  --color-ink-soft: #C5D4E8;
+  --color-copper: #7EB6FF;
+  --color-copper-deep: #9EC9FF;
   --color-mask: #7eb8a4;
-  --color-line: #a3988c;
-  --color-mark: #e88880;
+  --color-line: #7A93AA;
+  --color-mark: #F0A098;
+  --color-brand: #0B2545;
+  --color-brand-2: #13315C;
+  --color-on-brand: #FFFFFF;
   --color-bench: #8a6844;
   --color-bench-side: #5a4530;
   --color-pcb: #3a5a44;
-  --color-scope-bg: #0a120e;
-  --color-scope-grid: #1c3328;
-  --color-scope-minor: #14241d;
+  --color-scope-bg: #071326;
+  --color-scope-grid: #1E4A73;
+  --color-scope-minor: #0F2744;
   --color-case: #8aa8b8;
   color-scheme: dark;
   }
 }
 
 html[data-theme="dark"] :focus-visible {
-  /* 内环改用深纸色：在浅铜按钮上 ≥ 3:1；外环铜深是浅杏色，在深纸底上 ≥ 3:1。 */
+  /* 内环改用深纸色：在浅色按钮上 ≥ 3:1；外环墨色是白，在深蓝底上 ≥ 3:1。 */
   outline-color: var(--color-paper);
 }
 @media (prefers-color-scheme: dark) {
@@ -144,13 +202,13 @@ html[data-theme="dark"] :focus-visible {
 }
 
 html[data-theme="dark"] ::selection {
-  background: #8a4a28;
-  color: #f0e8da;
+  background: #1D4E89;
+  color: #FFFFFF;
 }
 @media (prefers-color-scheme: dark) {
   html:not([data-theme="light"]) ::selection {
-    background: #8a4a28;
-    color: #f0e8da;
+    background: #1D4E89;
+    color: #FFFFFF;
   }
 }
 
@@ -159,8 +217,8 @@ html[data-theme="dark"] .hatch {
     -45deg,
     transparent,
     transparent 7px,
-    rgba(240, 232, 218, 0.08) 7px,
-    rgba(240, 232, 218, 0.08) 8px
+    rgba(255, 255, 255, 0.08) 7px,
+    rgba(255, 255, 255, 0.08) 8px
   );
 }
 @media (prefers-color-scheme: dark) {
@@ -169,8 +227,8 @@ html[data-theme="dark"] .hatch {
       -45deg,
       transparent,
       transparent 7px,
-      rgba(240, 232, 218, 0.08) 7px,
-      rgba(240, 232, 218, 0.08) 8px
+      rgba(255, 255, 255, 0.08) 7px,
+      rgba(255, 255, 255, 0.08) 8px
     );
   }
 }
@@ -182,12 +240,13 @@ html[data-theme="dark"] .bg-red-50,
 html[data-theme="dark"] .bg-rose-100 { background-color: #3a201c; }
 html[data-theme="dark"] .bg-green-50,
 html[data-theme="dark"] .bg-emerald-50 { background-color: #1c3224; }
-html[data-theme="dark"] .bg-blue-50 { background-color: #1c2a3a; }
+html[data-theme="dark"] .bg-blue-50 { background-color: #13315C; }
 html[data-theme="dark"] .bg-orange-200 { background-color: #5a3a18; }
 html[data-theme="dark"] .bg-red-200 { background-color: #5a2420; }
 html[data-theme="dark"] .bg-violet-100 { background-color: #3a2a4a; }
 html[data-theme="dark"] .bg-amber-200 { background-color: #4a3a1c; }
-html[data-theme="dark"] .bg-slate-100 { background-color: #2c2722; }
+html[data-theme="dark"] .bg-slate-100 { background-color: #13315C; }
+html[data-theme="dark"] .bg-white { background-color: var(--color-paper-2); }
 html[data-theme="dark"] .text-amber-800,
 html[data-theme="dark"] .text-amber-700 { color: #f0d08a; }
 html[data-theme="dark"] .text-red-800,
@@ -202,12 +261,13 @@ html[data-theme="dark"] .text-blue-800 { color: #9bbcde; }
   html:not([data-theme="light"]) .bg-rose-100 { background-color: #3a201c; }
   html:not([data-theme="light"]) .bg-green-50,
   html:not([data-theme="light"]) .bg-emerald-50 { background-color: #1c3224; }
-  html:not([data-theme="light"]) .bg-blue-50 { background-color: #1c2a3a; }
+  html:not([data-theme="light"]) .bg-blue-50 { background-color: #13315C; }
   html:not([data-theme="light"]) .bg-orange-200 { background-color: #5a3a18; }
   html:not([data-theme="light"]) .bg-red-200 { background-color: #5a2420; }
   html:not([data-theme="light"]) .bg-violet-100 { background-color: #3a2a4a; }
   html:not([data-theme="light"]) .bg-amber-200 { background-color: #4a3a1c; }
-  html:not([data-theme="light"]) .bg-slate-100 { background-color: #2c2722; }
+  html:not([data-theme="light"]) .bg-slate-100 { background-color: #13315C; }
+  html:not([data-theme="light"]) .bg-white { background-color: var(--color-paper-2); }
   html:not([data-theme="light"]) .text-amber-800,
   html:not([data-theme="light"]) .text-amber-700 { color: #f0d08a; }
   html:not([data-theme="light"]) .text-red-800,
@@ -217,24 +277,27 @@ html[data-theme="dark"] .text-blue-800 { color: #9bbcde; }
   html:not([data-theme="light"]) .text-blue-800 { color: #9bbcde; }
 }
 
-/* 装配指南打印：只留正文 */
+/* 装配指南打印：只留正文；白底深蓝字。 */
 @media print {
   html, html[data-theme="dark"] {
-  --color-paper: #e7dfd0;
-  --color-paper-2: #f7f3ea;
-  --color-ink: #1b1814;
-  --color-ink-soft: #4a433a;
-  --color-copper: #9e461d;
-  --color-copper-deep: #7c3a12;
+  --color-paper: #F4F7FB;
+  --color-paper-2: #FFFFFF;
+  --color-ink: #0B2545;
+  --color-ink-soft: #2F4E70;
+  --color-copper: #1868B0;
+  --color-copper-deep: #1D4E89;
   --color-mask: #16352c;
-  --color-line: #7a6e5c;
-  --color-mark: #8e2f2a;
+  --color-line: #5C6F86;
+  --color-mark: #A11D14;
+  --color-brand: #0B2545;
+  --color-brand-2: #13315C;
+  --color-on-brand: #FFFFFF;
   --color-bench: #8a6844;
   --color-bench-side: #6f5538;
   --color-pcb: #2a4a34;
-  --color-scope-bg: #0a120e;
-  --color-scope-grid: #1c3328;
-  --color-scope-minor: #14241d;
+  --color-scope-bg: #0B2545;
+  --color-scope-grid: #1E4A73;
+  --color-scope-minor: #123152;
   --color-case: #3d5a72;
   color-scheme: light;
   }
@@ -242,7 +305,7 @@ html[data-theme="dark"] .text-blue-800 { color: #9bbcde; }
     outline-color: var(--color-paper-2);
   }
   body > div header:not(.guide header), footer, .no-print, .skip-link { display: none !important; }
-  body { background: #fff !important; color: #1b1814 !important; }
+  body { background: #fff !important; color: #0B2545 !important; }
   .guide { max-width: none !important; padding: 0 !important; font-size: 11px; }
   .guide a { color: inherit; }
   .guide section { break-inside: auto; }

@@ -28,7 +28,7 @@ function useCloned(url, patch) {
   }, [scene]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
-export function FlatLabel({ text, position, rotation = [-Math.PI / 2, 0, 0], height = 0.22, color = "#f7f3ea", bg = null, opacity = 1 }) {
+export function FlatLabel({ text, position, rotation = [-Math.PI / 2, 0, 0], height = 0.22, color = "#0B2545", bg = null, opacity = 1 }) {
   const lv = useCanvasLang();
   const { tex, aspect } = useMemo(() => textTexture(ct(text), { color, bg }), [text, color, bg, lv]);
   return (

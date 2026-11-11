@@ -310,6 +310,17 @@ export default function CreditsPage() {
         <li>{en ? "No new third-party licences in this release." : "本版没有新增第三方许可。"}</li>
       </ul>
 
+
+      <h2 className="mt-8 text-xl font-medium" id="v46-ui">{en ? "v46: navy and white restyle" : "v46：深蓝与白色改版"}</h2>
+      <p className="mt-2 leading-7 text-ink-soft" data-testid="credits-v46">
+        {en
+          ? "v46 adds no new third-party material. The navy-and-white restyle, the rounded chrome, and the What’s new text on the help page were written for this project. Existing token names were kept; only their values, and a small number of hardcoded colours and radii, were changed."
+          : "v46 没有增加新的第三方材料。深蓝加白色的改版、圆角外壳，以及使用说明里的「本版更新」，都是本项目自己写的。原有 token 名称保留，只改了色值和少量写死的颜色与圆角。"}
+      </p>
+      <ul className="mt-2 list-disc space-y-1 pl-6 text-sm leading-6 text-ink-soft" data-testid="credits-v46-list">
+        <li>{en ? "No new third-party licences in this release." : "本版没有新增第三方许可。"}</li>
+      </ul>
+
       <h2 className="mt-8 text-xl font-medium">代码库</h2>
       <p className="mt-2 leading-7 text-ink-soft">
         React、three.js、@dimforge/rapier3d-compat（Apache-2.0，物理碰撞）、@react-three/fiber、@react-three/drei、zustand、Tailwind CSS（除注明外均为 MIT 许可）。模型转换脚本用 glTF‑Transform 和 meshoptimizer（MIT，只在开发时运行）。“模型 + 功能图”页（v11）在浏览器里用 occt-import-js（LGPL‑2.1，读 STEP；作为单独的 JS + wasm 文件按需加载，没有改动，可替换）和 pdfjs-dist（Apache-2.0，读 PDF 功能图，按需加载）。内置示例的八爪鱼 GLB 和功能图 SVG 由本项目从 v10 预设自制；v12 的 2 自由度机械臂示例（OBJ + 功能图 + 工程）由本项目脚本自制，CC0。关节和舵机运动用同一个 Rapier 引擎。

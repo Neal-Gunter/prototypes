@@ -63,7 +63,7 @@ function ReworkTools({ sel }) {
   const all = () => { const r = engine.desolderAll(sel); setMsg(`拆焊模式：吸掉 ${r.n} 个焊点${r.lifted ? `，其中 ${r.lifted} 个焊盘翘起（返修次数到上限）` : ""}。现在可以拿下来复用。`); bump((x) => x + 1); };
   const lift = () => { const r = engine.liftOff(sel); setMsg(r.ok ? `已拿下（${r.group.length} 个零件一起），拖到新位置或贴到另一块转接板上再焊。累计受热 ${(r.heat || 0).toFixed(0)} s（估算）。` : r.why); bump((x) => x + 1); };
   return (
-    <div className="border border-line bg-paper-2 p-2 text-xs leading-5" data-testid="rework-tools">
+    <div className="rounded-2xl border border-line/60 bg-paper-2 p-3 text-xs leading-5 shadow-[0_1px_2px_rgba(11,37,69,0.05),0_8px_24px_rgba(11,37,69,0.06)]" data-testid="rework-tools">
       <p className="font-medium">{trS("拆焊返修")} <span className="font-normal text-ink-soft">{trS("（我的补充 · 简化规则，阈值为估算）")}</span></p>
       <p className="text-ink-soft">同一个焊盘拆到第 3 次、或一次吸锡超过 4 s，焊盘会翘起（开路，需要飞线）。{P.state.heat ? ` 这个零件累计受热 ${P.state.heat.toFixed(0)} s（估算上限 30 s）。` : ""}</p>
       <div className="mt-1 flex flex-wrap gap-1">
@@ -261,13 +261,13 @@ export default function AssemblyPage() {
         <h1 className="text-xl font-medium">{tr("装配台")} <span className="ml-1 border border-copper px-1.5 py-0.5 align-middle text-xs text-copper">{tr("早期原型，简化仿真")}</span></h1>
         <p className="text-xs leading-5 text-ink-soft">{tr("零件有真实尺寸（毫米），由 Rapier 刚体引擎做碰撞：零件不会互相穿过去，拖着的零件会被挡住或推开别的零件。")}</p>
         <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={flip} onChange={(e) => setFlip(e.target.checked)} />{tr("排针翻面放（长针朝下，用来插面包板）")}</label>
-        <div className="shrink-0 border border-line bg-paper-2 p-2 text-xs leading-5">
+        <div className="shrink-0 rounded-2xl border border-line/60 bg-paper-2 p-3 text-xs leading-5 shadow-[0_1px_2px_rgba(11,37,69,0.05),0_8px_24px_rgba(11,37,69,0.06)]">
           <Link to="/assembly/model" className="font-medium underline">{tr("上传自己的 3D 模型 + 功能图 →")}</Link>
           <span className="text-ink-soft">{tr("（拆模块、绑定功能，再放到这里做碰撞）")}</span>
           {customMsg && <p data-testid="custom-msg" className={customMsg.ok ? "mt-1" : "mt-1 text-mark"}>{customMsg.text}{customMsg.id && <> · <Link className="underline" to={customMsg.id.startsWith("demo") ? `/assembly/model?demo${customMsg.id === "demo" ? "" : "=" + customMsg.id.slice(5)}` : `/assembly/model?p=${encodeURIComponent(customMsg.id)}`}>回去编辑</Link></>}</p>}
         </div>
         {artic && (
-          <div className="max-h-[38vh] shrink-0 overflow-auto border border-line bg-paper-2 p-2" data-testid="bench-joints">
+          <div className="max-h-[38vh] shrink-0 overflow-auto rounded-2xl border border-line/60 bg-paper-2 p-2 shadow-[0_1px_2px_rgba(11,37,69,0.05),0_8px_24px_rgba(11,37,69,0.06)]" data-testid="bench-joints">
             <div className="mb-1 text-xs font-medium">上传模型的关节：{artic.project.name}</div>
             <JointControls core={artic.core} project={artic.project} compact />
             <button className="mt-1 text-xs underline" onClick={() => setArtic(null)}>收起</button>
@@ -276,11 +276,11 @@ export default function AssemblyPage() {
         <PartsBrowser compact onAdd={add} onPick={setSel} />
         <Link to="/parts" className="inline-flex min-h-6 shrink-0 items-center text-xs underline">{tr("打开完整零件库（看尺寸、孔位、许可）")}</Link>
       </aside>
-      <div className="relative min-h-[60vh] flex-1 border border-line bg-paper-2">
+      <div className="relative min-h-[60vh] flex-1 overflow-hidden rounded-2xl border border-line/60 bg-paper-2 shadow-[0_1px_2px_rgba(11,37,69,0.05),0_8px_24px_rgba(11,37,69,0.06)]">
         {ready ? <AsmScene uids={uids} tool={tool} debug={debug} flux={flux} vis={vis} onTick={onTick} sel={sel} onSelect={setSel} probes={probes} onProbe={(k, t) => setProbes((p) => ({ ...p, [k]: t }))} onPin={setPin} /> : <p className="p-6 text-ink-soft">{tr("正在加载物理引擎…")}</p>}
         {ready ? <SceneA11y uids={uids} sel={sel} onSelect={setSel} /> : null}
         {pin && (
-          <div className="pointer-events-none fixed z-50 max-w-xs border border-ink/30 bg-paper-2/95 px-2 py-1 text-xs shadow" style={{ left: pin.x + 14, top: pin.y + 10 }} data-testid="pin-hover">
+          <div className="pointer-events-none fixed z-50 max-w-xs rounded-lg border border-ink/30 bg-paper-2/95 px-2 py-1 text-xs shadow" style={{ left: pin.x + 14, top: pin.y + 10 }} data-testid="pin-hover">
             <div className="font-semibold text-ink">{pin.ref ? pin.ref + " · " : ""}{pin.title}</div>
             <div className="text-ink-soft">{pin.sub}</div>
             {pin.pitch && <div className="text-ink-soft" data-testid="pin-pitch">{pin.pitch}</div>}

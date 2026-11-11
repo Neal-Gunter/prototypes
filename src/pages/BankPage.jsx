@@ -88,7 +88,7 @@ function QuizPractice({ item, lang }) {
   return (
     <form onSubmit={(e) => { e.preventDefault(); setR(practiceItem(item, { answers }, lang)); }} className="mt-3 space-y-4" data-testid="bank-quiz">
       {qs.map((q) => (
-        <fieldset key={q.id} className="border border-line p-3">
+        <fieldset key={q.id} className="rounded-xl border border-line/60 p-3">
           <legend className="px-1 text-sm font-medium">{lang === "en" ? q.promptEn : q.prompt}</legend>
           <div className="mt-2 space-y-2">
             {(q.options || []).map((o) => (
@@ -170,7 +170,7 @@ function PathNav({ path, itemId, lang }) {
   const prev = path.steps[i - 1], next = path.steps[i + 1];
   const title = lang === "en" ? (path.titleEn || path.title) : path.title;
   return (
-    <nav className="mt-3 border border-line bg-paper-2 px-3 py-2 text-sm" data-testid="bank-path-nav" aria-label={lang === "en" ? "Learning path" : "学习路径"}>
+    <nav className="mt-3 rounded-2xl border border-line/60 bg-paper-2 px-3 py-2 text-sm shadow-[0_1px_2px_rgba(11,37,69,0.05),0_8px_24px_rgba(11,37,69,0.06)]" data-testid="bank-path-nav" aria-label={lang === "en" ? "Learning path" : "学习路径"}>
       <p>{lang === "en" ? `Path “${title}”, step ${i + 1} of ${path.steps.length}` : `学习路径「${title}」第 ${i + 1} / ${path.steps.length} 步`}</p>
       <p className="mt-1 flex flex-wrap gap-3">
         <Link to={"/bank?path=" + encodeURIComponent(path.id)} className="underline" data-testid="bank-path-back">{lang === "en" ? "Back to the path" : "返回路径"}</Link>
@@ -185,7 +185,7 @@ function Practice({ item, lang, pathId, pathLinks }) {
   const t = item.passCondition?.type;
   const path = findPath(pathId);
   return (
-    <section className="mt-6 border border-line bg-paper-2 p-5" data-testid="bank-practice" data-id={item.id}>
+    <section className="mt-6 rounded-2xl border border-line/60 bg-paper-2 p-5 shadow-[0_1px_2px_rgba(11,37,69,0.05),0_8px_24px_rgba(11,37,69,0.06)]" data-testid="bank-practice" data-id={item.id}>
       <PathNav path={path} itemId={item.id} lang={lang} />
       <h2 className="text-xl font-medium">{lang === "en" ? (item.titleEn || item.title) : item.title}</h2>
       <ItemPathLinks itemId={item.id} pathLinks={pathLinks} lang={lang} currentPathId={pathId} />
@@ -311,7 +311,7 @@ export default function BankPage() {
         </ul>
       </section>
       {currentPath && (
-        <section className="mt-6 border border-line bg-paper-2 p-5" data-testid="bank-path-detail" data-path={currentPath.id} data-count={currentPath.steps.length}>
+        <section className="mt-6 rounded-2xl border border-line/60 bg-paper-2 p-5 shadow-[0_1px_2px_rgba(11,37,69,0.05),0_8px_24px_rgba(11,37,69,0.06)]" data-testid="bank-path-detail" data-path={currentPath.id} data-count={currentPath.steps.length}>
           <h2 className="text-lg font-medium">{en ? currentPath.titleEn : currentPath.title}</h2>
           <p className="mt-2 text-sm leading-7 text-ink-soft">{en ? currentPath.summaryEn : currentPath.summary}</p>
           <PathProgressBar done={pathStatsSafe(currentPath, prog).done} total={currentPath.steps.length} testid="bank-path-detail-progress" label={pathProgressLabel(pathStatsSafe(currentPath, prog).done, currentPath.steps.length, en)} />
@@ -338,7 +338,7 @@ export default function BankPage() {
           <h2 className="text-lg font-medium">{L(en, MODE_LABEL[mode] || [mode, mode])} · {L(en, DIFF_LABEL[diff] || [diff, diff])}</h2>
           {loading && <p className="mt-2 text-sm" data-testid="bank-list-loading">{tr("正在加载这一组题目…", "Loading this group…")}</p>}
           {items && !loading && (
-            <ul className="mt-3 divide-y divide-line border border-line" data-testid="bank-list-ready" data-count={items.length}>
+            <ul className="mt-3 divide-y divide-line overflow-hidden rounded-2xl border border-line/60 bg-paper-2 shadow-[0_1px_2px_rgba(11,37,69,0.05),0_8px_24px_rgba(11,37,69,0.06)]" data-testid="bank-list-ready" data-count={items.length}>
               {items.map((it) => (
                 <li key={it.id} className="px-0">
                   <button type="button" className={`flex min-h-11 w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm ${id === it.id ? "bg-paper-2" : ""}`} onClick={() => setSel(mode, diff, it.id)} data-testid={`bank-item-${it.id}`} aria-pressed={id === it.id}>

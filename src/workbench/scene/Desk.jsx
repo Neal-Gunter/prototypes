@@ -1,4 +1,6 @@
 import { useMemo } from "react";
+import { themeVars } from "../../ui/palette.js";
+import { useTheme } from "../../theme.js";
 import { Environment, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { PLATE } from "../parts";
@@ -9,6 +11,9 @@ import { MAT_Y } from "./Tools";
 // 维修桌：木桌面（CC0 贴图）+ 蓝灰硅胶垫 + 胶合板底板；HDRI 环境光（CC0）+ 主光阴影 + 接触阴影
 const DESK_Y = MAT_Y - 0.25;
 export default function Desk() {
+  const [, , theme] = useTheme();
+  const C = themeVars(theme);
+  const dark = theme === "dark";
   const [diff, nor, rough] = useTexture([
     "/textures/wood_table_001_diff_1k.jpg",
     "/textures/wood_table_001_nor_gl_1k.jpg",
@@ -36,11 +41,11 @@ export default function Desk() {
   return (
     <group>
       <Environment files="/env/studio_small_09_1k.hdr" environmentIntensity={0.55} />
-      <hemisphereLight args={["#fff6e8", "#3b3328", 0.35]} />
+      <hemisphereLight args={dark ? ["#d5e0ee", "#0B2545", 0.5] : ["#f4f7fb", "#5C6F86", 0.55]} />
       <directionalLight
         position={[9, 26, 12]}
-        intensity={2.1}
-        color="#fff3e2"
+        intensity={dark ? 1.6 : 2.0}
+        color={dark ? "#e8eef6" : "#f8fafc"}
         castShadow
         shadow-mapSize={[2048, 2048]}
         shadow-camera-left={-24}
@@ -72,9 +77,9 @@ export default function Desk() {
         <boxGeometry args={[PLATE.w, -MAT_Y, PLATE.d]} />
         <meshStandardMaterial roughnessMap={desk.plyRough} normalMap={desk.plyNor} normalScale={[0.35, 0.35]} color="#d8bf98" roughness={0.85} />
       </mesh>
-      <FlatLabel text="底板 24 × 16 cm（铅笔线：1 cm 网格）" position={[-7.2, 0.004, 7.4]} height={0.5} color="#4b4339" opacity={0.65} />
-      <gridHelper args={[PLATE.w, PLATE.w, "#8f7d66", "#8f7d66"]} position={[0, 0.002, 0]} scale={[1, 1, PLATE.d / PLATE.w]}>
-        <lineBasicMaterial attach="material" color="#7b6a55" transparent opacity={0.22} />
+      <FlatLabel text="底板 24 × 16 cm（铅笔线：1 cm 网格）" position={[-7.2, 0.004, 7.4]} height={0.5} color={C.inkSoft} opacity={0.7} />
+      <gridHelper args={[PLATE.w, PLATE.w, C.inkSoft, C.line]} position={[0, 0.002, 0]} scale={[1, 1, PLATE.d / PLATE.w]}>
+        <lineBasicMaterial attach="material" color={C.line} transparent opacity={0.35} />
       </gridHelper>
     </group>
   );

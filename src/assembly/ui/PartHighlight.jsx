@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { highlightBox } from "./partTip.js";
 
 const noRay = () => {};
-const COL = { hover: "#4a433a", focus: "#9e461d" };
+const COL = { hover: "#2F4E70", focus: "#1868B0" };
 
 export default function PartHighlight({ def, mode, reduced }) {
   const box = useMemo(() => highlightBox(def), [def]);

@@ -27,7 +27,7 @@ for (const [name, C] of [["light", LIGHT], ["dark", DARK]]) {
     add(name, "text", 4.5, C.mask, bg[1], `mask on ${bg[0]}`);
     add(name, "text", 4.5, C.mark, bg[1], `mark on ${bg[0]}`);
     add(name, "border", 3, C.line, bg[1], `line on ${bg[0]}`);
-    add(name, "border", 3, C.copperDeep, bg[1], `focus outer (copper-deep) on ${bg[0]}`);
+    add(name, "border", 3, C.ink, bg[1], `focus outer (ink) on ${bg[0]}`);
   }
   add(name, "text", 4.5, C.paper, C.copper, "paper on copper (button label)");
   add(name, "text", 4.5, C.paper2, C.mask, "paper-2 on mask");
@@ -39,8 +39,8 @@ add("light", "border", 3, LIGHT.paper2, LIGHT.ink, "focus inner (paper-2) on ink
 add("light", "border", 3, LIGHT.paper2, LIGHT.copper, "focus inner (paper-2) on copper");
 // 深色焦点：内环 paper（深）对外环铜深（浅），至少一边对当前底 ≥ 3:1
 add("dark", "border", 3, DARK.paper, DARK.copper, "focus inner (paper) on copper");
-add("dark", "border", 3, DARK.copperDeep, DARK.paper, "focus outer (copper-deep) on paper");
-add("dark", "border", 3, DARK.copperDeep, DARK.paper2, "focus outer (copper-deep) on paper-2");
+add("dark", "border", 3, DARK.ink, DARK.paper, "focus outer (ink) on paper");
+add("dark", "border", 3, DARK.ink, DARK.paper2, "focus outer (ink) on paper-2");
 
 for (const [i, c] of CH_INK.entries()) add("light", "text", 4.5, c, LIGHT.paper2, `CH_INK[${i}] on paper-2`);
 for (const [i, c] of CH_COLOR.entries()) add("dark", "text", 4.5, c, DARK.paper2, `CH_COLOR[${i}] on paper-2`);

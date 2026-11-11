@@ -131,8 +131,8 @@ for (const lang of ["zh", "en"]) {
   }));
   ok(rec.theme === "light" && rec.scheme === "1", `${lang}：打印页标记为浅色自学记录`, rec.theme);
   const bg = rec.bg;
-  const lightish = /rgb\(\s*(247|239|231)/.test(bg) || /#f7f3ea|#efe6d6|#e7dfd0/i.test(bg);
-  ok(lightish || /247|239|231/.test(bg), `${lang}：打印页背景为浅色`, bg);
+  const lightish = /rgb\(\s*(255|244|247|239|231)/.test(bg) || /#ffffff|#f4f7fb|#f7f3ea|#efe6d6|#e7dfd0/i.test(bg);
+  ok(lightish || /255|244|247|239|231/.test(bg), `${lang}：打印页背景为浅色`, bg);
   const tx = rec.text;
   ok(/自学记录|Self-study record/.test(tx) && /不是正式证书|not an official certificate/i.test(tx), `${lang}：打印页标明非正式证书`);
   ok(tx.includes(lang === "en" ? "Alex Lee" : "李七"), `${lang}：打印页有姓名`);
@@ -182,7 +182,7 @@ if (SHOT) {
   const pop = await popP;
   await pop.waitForLoadState("domcontentloaded");
   const paper = await hexOf(pop, "body");
-  ok(/^#f7f3ea$/i.test(paper) || /^#efe6d6$/i.test(paper), "深色应用下打印页仍为浅纸色", paper);
+  ok(/^#ffffff$/i.test(paper) || /^#f4f7fb$/i.test(paper), "深色应用下打印页仍为浅纸色", paper);
   await pop.screenshot({ path: `${OUT}/screenshots/record-print-from-dark.png`, fullPage: true });
   await pop.close();
   await c.close();

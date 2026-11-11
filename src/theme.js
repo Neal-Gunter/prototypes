@@ -34,7 +34,7 @@ export function applyTheme(pref = readThemePref()) {
   root.setAttribute("data-theme-pref", pref);
   root.style.colorScheme = resolved;
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute("content", resolved === "dark" ? "#1c1915" : "#1b1814");
+  if (meta) meta.setAttribute("content", resolved === "dark" ? "#0B2545" : "#0B2545");
   return resolved;
 }
 

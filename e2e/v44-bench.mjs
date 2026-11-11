@@ -69,7 +69,7 @@ for (const lang of ["zh", "en"]) {
   ok(pref0 === "system", "默认选项是系统", pref0);
   ok(resolved0 === "light", "系统+浅色 OS → 浅色", resolved0);
   const paperL = await hexOf(p, "body");
-  ok(/^#e7dfd0$/i.test(paperL), "浅色纸色", paperL);
+  ok(/^#f4f7fb$/i.test(paperL), "浅色纸色", paperL);
 
   await T("theme-toggle").selectOption("dark");
   await wait(200);
@@ -78,7 +78,7 @@ for (const lang of ["zh", "en"]) {
   const paperD = await hexOf(p, "body");
   ok(resolvedD === "dark", "切换到深色后 data-theme=dark", resolvedD);
   ok(stored === "dark", "选择写入 wb-theme-v1", stored);
-  ok(/^#1c1915$/i.test(paperD), "深色纸色", paperD);
+  ok(/^#0b2545$/i.test(paperD), "深色纸色", paperD);
   await c.close();
 }
 
@@ -134,21 +134,21 @@ for (const lang of ["zh", "en"]) {
       scheme: root.colorScheme || document.documentElement.style.colorScheme,
     };
   });
-  ok(/^#e7dfd0$/i.test(printed.paper) && /^#1b1814$/i.test(printed.ink), "打印时 token 回到浅色", JSON.stringify(printed));
+  ok(/^#f4f7fb$/i.test(printed.paper) && /^#0b2545$/i.test(printed.ink), "打印时 token 回到浅色", JSON.stringify(printed));
   await c.close();
 }
 
-// —— 3D 背景随配色；工作台夜景保持深色 ——
+// —— 3D 背景随配色；工作台改为浅色干净背景（v46） ——
 {
   const { c, p, T } = await page({ theme: "light" });
   await p.goto(BASE + "/assembly?scene=electrics", { waitUntil: "load", timeout: 60000 });
   await waitAsm(p);
   const bgL = await p.evaluate(() => window.__asm?.themeBg);
-  ok(/^#e7dfd0$/i.test(bgL || ""), "装配台浅色背景", bgL);
+  ok(/^#f4f7fb$/i.test(bgL || ""), "装配台浅色背景", bgL);
   await T("theme-toggle").selectOption("dark");
   await wait(800);
   const bgD = await p.evaluate(() => window.__asm?.themeBg);
-  ok(/^#1c1915$/i.test(bgD || ""), "装配台深色背景", bgD);
+  ok(/^#0b2545$/i.test(bgD || ""), "装配台深色背景", bgD);
   await c.close();
 }
 
@@ -158,12 +158,12 @@ for (const lang of ["zh", "en"]) {
   await p.waitForSelector("canvas", { timeout: 30000 });
   await p.waitForFunction(() => window.__bench?.sceneBg, { timeout: 30000 });
   const nightL = await p.evaluate(() => window.__bench.sceneBg);
-  ok(/^#1d1b19$/i.test(nightL || ""), "工作台浅色外壳下 3D 仍是夜景", nightL);
+  ok(/^#f4f7fb$/i.test(nightL || ""), "工作台浅色外壳下 3D 为浅色背景", nightL);
   const T = (t) => p.locator(`[data-testid="${t}"]`);
   await T("theme-toggle").selectOption("dark");
   await wait(500);
   const nightD = await p.evaluate(() => window.__bench.sceneBg);
-  ok(/^#1d1b19$/i.test(nightD || ""), "切到深色后工作台 3D 仍是夜景", nightD);
+  ok(/^#0b2545$/i.test(nightD || ""), "切到深色后工作台 3D 为深蓝背景", nightD);
   await c.close();
 }
 

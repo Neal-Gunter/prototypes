@@ -56,7 +56,7 @@ export function figSvg(dev, fig, L, i) {
     return `<g opacity="${hi.size && !on ? 0.45 : 1}"><rect x="${x}" y="${y}" width="${s.w}" height="${s.h}" rx="${s.round ? s.w / 2 : 2}" fill="${s.c}" stroke="${on ? "#d9792b" : "#26272a"}" stroke-width="${on ? 2 : 0.6}"/>${txt}</g>`;
   }).join("");
   const lg = figLegend(dev, fig, L);
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 124" role="img" aria-label="${esc(L({ zh: `第 ${i + 1} 步示意图（本项目自绘）`, en: `Step ${i + 1} diagram (drawn by this project)` }))}"><rect width="200" height="124" fill="#f7f3ea"/>${g}</svg>${lg.length ? `<p class="legend">${lg.map(([n, t]) => `<span>${n} = ${esc(t)}</span>`).join(" · ")}</p>` : ""}`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 124" role="img" aria-label="${esc(L({ zh: `第 ${i + 1} 步示意图（本项目自绘）`, en: `Step ${i + 1} diagram (drawn by this project)` }))}"><rect width="200" height="124" fill="#ffffff"/>${g}</svg>${lg.length ? `<p class="legend">${lg.map(([n, t]) => `<span>${n} = ${esc(t)}</span>`).join(" · ")}</p>` : ""}`;
 }
 
 
@@ -165,13 +165,13 @@ export function guideHtml(dev, lang = "zh", { now = new Date(), prog = null, bas
   const H = Object.fromEntries(sec);
   return `<!doctype html><html lang="${en ? "en" : "zh-CN"}"><head><meta charset="utf-8"><title>${esc(L(dev.name))} · ${t("拆解指南", "Teardown guide")}</title>
 <style>
-body{font:13px/1.5 system-ui,"PingFang SC","Noto Sans CJK SC",sans-serif;max-width:900px;margin:24px auto;padding:0 16px;color:#111}
-h1{font-size:22px;margin:0 0 4px}h2{font-size:16px;border-bottom:2px solid #333;margin:18px 0 6px}h3{font-size:14px;margin:0 0 2px}
+body{font:13px/1.5 system-ui,"PingFang SC","Noto Sans CJK SC",sans-serif;max-width:900px;margin:24px auto;padding:0 16px;color:#0B2545;background:#fff}
+h1{font-size:22px;margin:0 0 4px;color:#0B2545}h2{font-size:16px;border-bottom:2px solid #0B2545;margin:18px 0 6px;color:#0B2545}h3{font-size:14px;margin:0 0 2px;color:#0B2545}
 .note{background:#fff7e0;border:1px solid #b45309;padding:6px 10px}.safety{border:2px solid #b91c1c;background:#fef2f2;padding:6px 12px}
 .step{display:grid;grid-template-columns:1fr 200px;gap:12px;border:1px solid #999;padding:8px;margin:8px 0;break-inside:avoid}
 .warn{border-left:4px solid #d97706;padding-left:6px;color:#78350f}.stop{border-left:4px solid #b91c1c;padding-left:6px;color:#7f1d1d;font-weight:600}
-.legend{font-size:10px;margin:2px 0 0;color:#333}.fig svg{width:200px;height:auto;border:1px solid #ccc;background:#fff}ol{padding-left:0;list-style:none}ul.mats{list-style:none;padding-left:0}
-table{border-collapse:collapse;width:100%}th,td{border:1px solid #999;padding:3px 6px;text-align:left}th{background:#eee}.mono{font-family:ui-monospace,monospace;font-size:11px}
+.legend{font-size:10px;margin:2px 0 0;color:#2F4E70}.fig svg{width:200px;height:auto;border:1px solid #ccc;background:#fff}ol{padding-left:0;list-style:none}ul.mats{list-style:none;padding-left:0}
+table{border-collapse:collapse;width:100%}th,td{border:1px solid #999;padding:3px 6px;text-align:left}th{background:#F4F7FB;color:#0B2545}.mono{font-family:ui-monospace,monospace;font-size:11px}
 @page{size:A4;margin:16mm 12mm 18mm;@top-right{content:"${css(L(dev.name))}";font-size:9px;color:#555}@bottom-center{content:${en ? '"Page " counter(page) " of " counter(pages)' : '"第 " counter(page) " 页 / 共 " counter(pages) " 页"'};font-size:9px;color:#555}}
 .cover{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.qrbox{display:flex;flex-direction:column;gap:3px;align-items:center;text-align:center;margin-top:6px;font-size:9px;color:#333;break-inside:avoid}.qrbox svg{flex:none}.qrbox span{display:block;width:34mm;max-width:100%;line-height:1.3}.qrcover{flex-direction:column;text-align:center;width:30mm;margin:0}
 .toc ol{list-style:none;padding-left:0;margin:0}.toc ol ol{padding-left:16px;columns:2}.toc a{color:#1d4ed8;text-decoration:none}.toc-pg{float:right;color:#555;font-variant-numeric:tabular-nums}.tag{font-size:10px;border:1px solid #b91c1c;color:#7f1d1d;padding:0 3px;border-radius:3px}

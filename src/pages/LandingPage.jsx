@@ -64,11 +64,11 @@ const sheet = [
 ];
 
 function primaryLinkClass() {
-  return "inline-flex min-h-11 items-center bg-ink px-4 text-paper-2 hover:bg-copper-deep";
+  return "inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-paper-2 hover:bg-copper-deep";
 }
 
 function secondaryLinkClass() {
-  return "inline-flex min-h-11 items-center border border-ink px-4 hover:bg-ink hover:text-paper-2";
+  return "inline-flex min-h-11 items-center rounded-full border border-ink bg-paper-2 px-5 text-ink hover:bg-ink hover:text-paper-2";
 }
 
 export default function LandingPage() {
@@ -98,7 +98,7 @@ export default function LandingPage() {
     <>
       <section>
         <div
-          className={`${containerClass} grid items-start gap-10 py-14 md:py-20 lg:grid-cols-[minmax(0,1.15fr)_minmax(16rem,0.85fr)] lg:gap-16`}
+          className={`${containerClass} grid items-start gap-10 py-16 md:py-24 lg:grid-cols-[minmax(0,1.15fr)_minmax(16rem,0.85fr)] lg:gap-16`}
         >
           <div>
             <p className="text-sm font-medium text-copper-deep">给硬件想法用的浏览器概念</p>
@@ -152,7 +152,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="border-t border-line" aria-labelledby="flow-heading">
+      <section className="border-t border-line/40" aria-labelledby="flow-heading">
         <div className={`${containerClass} py-14 md:py-20`}>
           <h2 id="flow-heading" className="text-3xl font-medium tracking-tight">
             想法，仿真，装配
@@ -165,7 +165,7 @@ export default function LandingPage() {
               <li key={item.title}>
                 <Link
                   to={item.to}
-                  className="flex h-full flex-col border border-line bg-paper-2 p-5 hover:border-ink"
+                  className="flex h-full flex-col rounded-2xl border border-line/60 bg-paper-2 p-6 shadow-[0_1px_2px_rgba(11,37,69,0.05),0_10px_28px_rgba(11,37,69,0.08)] hover:border-ink"
                 >
                   <span className="text-sm font-medium text-copper-deep">{item.step}</span>
                   <h3 className="mt-3 text-2xl font-medium">{item.title}</h3>
@@ -178,7 +178,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="border-t border-line" aria-labelledby="feature-heading">
+      <section className="border-t border-line/40" aria-labelledby="feature-heading">
         <div className={`${containerClass} py-14 md:py-20`}>
           <h2 id="feature-heading" className="text-3xl font-medium tracking-tight">
             放在一起的三块
@@ -191,7 +191,7 @@ export default function LandingPage() {
               <li key={feature.title}>
                 <Link
                   to={feature.to}
-                  className="flex h-full flex-col border border-ink bg-paper-2 p-5 hover:bg-ink hover:text-paper-2"
+                  className="flex h-full flex-col rounded-2xl border border-ink bg-paper-2 p-6 shadow-[0_1px_2px_rgba(11,37,69,0.05),0_10px_28px_rgba(11,37,69,0.08)] hover:bg-ink hover:text-paper-2"
                 >
                   <h3 className="text-xl font-medium">{feature.title}</h3>
                   <p className="mt-3 flex-1 leading-7 opacity-80">{feature.body}</p>
@@ -203,7 +203,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="bg-mask text-paper-2" aria-labelledby="audience-heading">
+      <section className="bg-brand text-on-brand" aria-labelledby="audience-heading">
         <div className={`${containerClass} py-14 md:py-16`}>
           <h2 id="audience-heading" className="text-3xl font-medium tracking-tight">
             适合谁
@@ -212,10 +212,10 @@ export default function LandingPage() {
             {audience.map((item) => (
               <li
                 key={item.title}
-                className="md:border-l md:border-paper-2/25 md:px-6 md:first:border-l-0 md:first:pl-0 md:last:pr-0"
+                className="md:border-l md:border-on-brand/25 md:px-6 md:first:border-l-0 md:first:pl-0 md:last:pr-0"
               >
                 <h3 className="text-xl font-medium">{item.title}</h3>
-                <p className="mt-3 leading-7 text-paper-2/85">{item.body}</p>
+                <p className="mt-3 leading-7 text-on-brand/85">{item.body}</p>
               </li>
             ))}
           </ul>
@@ -232,7 +232,7 @@ export default function LandingPage() {
               留下邮箱，表示想在它能用的时候得到消息。也可以回答下面的可选问题。提交后的内容只出现在这个页面上，不会发送，也不会保存。
             </p>
             {submitted ? (
-              <div role="status" className="mt-6 border border-ink bg-paper-2 p-5">
+              <div role="status" className="mt-6 rounded-2xl border border-ink bg-paper-2 p-6">
                 <p className="text-lg font-medium">已留在这个页面上</p>
                 <p className="mt-2 break-all leading-7">邮箱：{submitted.email}</p>
                 {submitted.building ? (
@@ -262,7 +262,7 @@ export default function LandingPage() {
                     setEmail(event.target.value);
                     if (error) setError("");
                   }}
-                  className="mt-2 w-full min-h-11 border border-ink bg-paper-2 px-3 text-base"
+                  className="mt-2 w-full min-h-11 rounded-lg border border-ink bg-paper-2 px-3 text-base"
                 />
                 {error ? (
                   <p role="alert" className="mt-2 text-sm text-mark">
@@ -284,11 +284,11 @@ export default function LandingPage() {
                   rows={4}
                   value={building}
                   onChange={(event) => setBuilding(event.target.value)}
-                  className="mt-2 w-full resize-y border border-ink bg-paper-2 px-3 py-2 text-base"
+                  className="mt-2 w-full resize-y rounded-lg border border-ink bg-paper-2 px-3 py-2 text-base"
                 />
                 <button
                   type="submit"
-                  className="mt-4 inline-flex min-h-11 items-center bg-ink px-4 text-paper-2 hover:bg-copper-deep"
+                  className="mt-4 inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-paper-2 hover:bg-copper-deep"
                 >
                   提交
                 </button>
