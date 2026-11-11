@@ -174,7 +174,7 @@ function Practice({ item, lang, pathId }) {
   const t = item.passCondition?.type;
   const path = findPath(pathId);
   return (
-    <section className="mt-6 border border-line p-4" data-testid="bank-practice" data-id={item.id}>
+    <section className="mt-6 border border-line bg-paper-2 p-5" data-testid="bank-practice" data-id={item.id}>
       <PathNav path={path} itemId={item.id} lang={lang} />
       <h2 className="text-xl font-medium">{lang === "en" ? (item.titleEn || item.title) : item.title}</h2>
       <p className="mt-2 text-sm leading-7 text-ink-soft">{lang === "en" ? (item.promptEn || item.prompt) : item.prompt}</p>
@@ -236,10 +236,10 @@ export default function BankPage() {
   };
 
   return (
-    <div className={containerClass + " py-8"} data-testid="bank-page" data-lang={lang}>
+    <div className={containerClass + " py-10"} data-testid="bank-page" data-lang={lang}>
       <p className="text-xs text-ink-soft">{tr("早期原型，简化仿真", "Early prototype, simplified simulation")}</p>
-      <h1 className="mt-1 text-2xl font-semibold">{tr("题库", "Problem bank")}</h1>
-      <p className="mt-3 max-w-3xl text-sm leading-7 text-ink-soft">
+      <h1 className="mt-2 text-3xl font-medium tracking-tight">{tr("题库", "Problem bank")}</h1>
+      <p className="mt-3 max-w-2xl text-base leading-7 text-ink-soft">
         {tr("先看各组题目的数量和新鲜度，再点进某一组练习。固件题用已有的解释器对照时序，代码题只做结构检查，诊断题连到已有的维修关卡。全部题面是自己写的，按公开资料整理。不加载 WASM。", "First look at the counts and freshness of each group, then open a group to practise. Firmware tasks use the existing interpreter against a timeline, code tasks are structure checks only, and diagnosis tasks link to the existing repair levels. All problem text is original, compiled from public information. No WASM is loaded.")}
       </p>
       {err && <p className="mt-3 text-sm text-copper" data-testid="bank-error">{tr("题库索引加载失败：", "Could not load the bank index: ")}{err}</p>}
@@ -281,12 +281,12 @@ export default function BankPage() {
         </div>
       )}
       <section className="mt-8" data-testid="bank-paths">
-        <h2 className="text-lg font-medium">{tr("学习路径", "Learning paths")}</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-7 text-ink-soft">{tr("把拆解、诊断、接线和维修关卡串成 3 到 5 步的短路径。说明是自己写的。这是简化仿真，不是实物课。", "Short 3-to-5-step paths that chain a teardown, a diagnosis or wiring task, and a repair level. The notes are original. This is a simplified simulation, not a lesson on a real device.")}</p>
+        <h2 className="text-xl font-medium tracking-tight">{tr("学习路径", "Learning paths")}</h2>
+        <p className="mt-2 max-w-2xl text-base leading-7 text-ink-soft">{tr("把拆解、诊断、接线和维修关卡串成 3 到 5 步的短路径。说明是自己写的。这是简化仿真，不是实物课。", "Short 3-to-5-step paths that chain a teardown, a diagnosis or wiring task, and a repair level. The notes are original. This is a simplified simulation, not a lesson on a real device.")}</p>
         <ul className="mt-3 grid gap-3 sm:grid-cols-3">
           {PATHS.map((pa) => (
             <li key={pa.id}>
-              <button type="button" className={`flex min-h-11 w-full flex-col items-start border px-3 py-2 text-left text-sm ${pathId === pa.id ? "border-ink bg-paper-2" : "border-line"}`} onClick={() => setSel("", "", "", pa.id)} data-testid={`bank-path-${pa.id}`} aria-pressed={pathId === pa.id}>
+              <button type="button" className={`flex min-h-11 w-full flex-col items-start border px-4 py-3 text-left text-sm ${pathId === pa.id ? "border-ink bg-paper-2" : "border-line bg-paper-2/60"}`} onClick={() => setSel("", "", "", pa.id)} data-testid={`bank-path-${pa.id}`} aria-pressed={pathId === pa.id}>
                 <span className="font-medium">{en ? pa.titleEn : pa.title}</span>
                 <span className="mt-1 text-xs text-ink-soft">{tr(`${pa.steps.length} 步`, `${pa.steps.length} steps`)}</span>
               </button>
@@ -295,7 +295,7 @@ export default function BankPage() {
         </ul>
       </section>
       {currentPath && (
-        <section className="mt-6 border border-line p-4" data-testid="bank-path-detail" data-path={currentPath.id} data-count={currentPath.steps.length}>
+        <section className="mt-6 border border-line bg-paper-2 p-5" data-testid="bank-path-detail" data-path={currentPath.id} data-count={currentPath.steps.length}>
           <h2 className="text-lg font-medium">{en ? currentPath.titleEn : currentPath.title}</h2>
           <p className="mt-2 text-sm leading-7 text-ink-soft">{en ? currentPath.summaryEn : currentPath.summary}</p>
           <ol className="mt-3 list-decimal space-y-3 pl-6">

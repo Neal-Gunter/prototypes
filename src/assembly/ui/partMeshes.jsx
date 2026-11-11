@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { ConvexGeometry } from "three/examples/jsm/geometries/ConvexGeometry.js";
+import { pcb, WIRE } from "../../ui/palette.js";
 // v23：凸包碰撞体（c.hull = 相对 c.c 的顶点，cm）→ 凸多面体几何；缓存在条目对象上
 const _hg = new WeakMap();
 export function hullGeom(c) {
@@ -12,23 +13,23 @@ export function hullGeom(c) {
   _hg.set(c, g); return g;
 }
 export const MAT = {
-  steel: new THREE.MeshStandardMaterial({ color: "#b8bcc2", metalness: 0.85, roughness: 0.32 }),
-  brass: new THREE.MeshStandardMaterial({ color: "#c9a24a", metalness: 0.8, roughness: 0.3 }),
+  steel: new THREE.MeshStandardMaterial({ color: "#b4b6b2", metalness: 0.82, roughness: 0.36 }),
+  brass: new THREE.MeshStandardMaterial({ color: "#c4a056", metalness: 0.78, roughness: 0.34 }),
   acrylic: new THREE.MeshStandardMaterial({ color: "#dfe9ee", roughness: 0.1, metalness: 0.05, transparent: true, opacity: 0.72 }),
   white: new THREE.MeshStandardMaterial({ color: "#f1efe9", roughness: 0.7 }),
   black: new THREE.MeshStandardMaterial({ color: "#26272a", roughness: 0.55 }),
-  orange: new THREE.MeshStandardMaterial({ color: "#d9792b", roughness: 0.5 }),
-  blue: new THREE.MeshStandardMaterial({ color: "#2f6fd6", roughness: 0.45 }),
+  orange: new THREE.MeshStandardMaterial({ color: WIRE.orange, roughness: 0.55 }),
+  blue: new THREE.MeshStandardMaterial({ color: WIRE.blue, roughness: 0.5 }),
   solder: new THREE.MeshStandardMaterial({ color: "#d8dde2", metalness: 1, roughness: 0.15 }),
   cold: new THREE.MeshStandardMaterial({ color: "#8d8f8c", metalness: 0.3, roughness: 0.9 }),
   bridge: new THREE.MeshStandardMaterial({ color: "#e8ecef", metalness: 1, roughness: 0.1, emissive: "#552200", emissiveIntensity: 0.4 }),
   burnt: new THREE.MeshStandardMaterial({ color: "#4a2f1d", roughness: 0.9 }),
   alum: new THREE.MeshStandardMaterial({ color: "#c4c8cc", metalness: 0.7, roughness: 0.45 }),
-  red: new THREE.MeshStandardMaterial({ color: "#c0392b", roughness: 0.6 }),
-  yellow: new THREE.MeshStandardMaterial({ color: "#e2b524", roughness: 0.6 }),
+  red: new THREE.MeshStandardMaterial({ color: WIRE.red, roughness: 0.62 }),
+  yellow: new THREE.MeshStandardMaterial({ color: WIRE.yellow, roughness: 0.62 }),
   grey: new THREE.MeshStandardMaterial({ color: "#5b6168", roughness: 0.3 }),
-  green: new THREE.MeshStandardMaterial({ color: "#2f8f4e", roughness: 0.5 }),
-  brown: new THREE.MeshStandardMaterial({ color: "#8a5a32", roughness: 0.6 }),
+  green: new THREE.MeshStandardMaterial({ color: pcb, roughness: 0.62 }),
+  brown: new THREE.MeshStandardMaterial({ color: WIRE.brown, roughness: 0.65 }),
   sel: new THREE.MeshBasicMaterial({ color: "#d9792b", wireframe: true }),
 };
 export const PROC_MAT = { screw: "steel", nut: "steel", standoff: "brass", plate: "acrylic", breadboard: "white", bracket: "black", horn: "white", tentacle: "orange", dupont: "black", plug: "black", tool: "blue" };

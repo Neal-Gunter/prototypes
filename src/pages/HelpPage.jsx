@@ -23,7 +23,7 @@ const MODES = [
   { id: "solder", to: "/workbench", t: T("焊接和返修（工作台）", "Soldering and rework (workbench)"), d: T("剥线、上助焊剂、加热焊盘、送锡、用吸锡带 / 吸锡器返修，并用万用表检查。装配台还有贴片转接板练习（TSSOP / SOIC / SOT-23 / 0805）。", "Strip wire, apply flux, heat a pad, feed solder, rework with braid or a solder pump, then check with the multimeter. The assembly bench also has an SMD breakout practice scene (TSSOP / SOIC / SOT-23 / 0805).") },
   { id: "parts", to: "/parts", t: T("零件库", "Parts browser"), d: T("2500 多个零件，每个都有尺寸来源、许可和碰撞体信息。可以按名称、类别、接口搜索，点开看 3D 模型和引脚。", "Over 2,500 parts, each with its dimension source, licence and collider details. Search by name, category or interface, then open a part to see its 3D model and pins.") },
   { id: "teardown", to: "/teardown", t: T("拆解模式（v29–v33）", "Teardown mode (v29–v33)"), d: T("一步一步拆开微型舵机、单节 18650 充电宝、USB 小风扇，v30 新增的有线鼠标、小型蓝牙音箱、电子厨房秤，v31 新增的小型 LED 手电和 TP4056 锂电充电板，v32 新增的 9V 电池扣 LED 测试器和小型 USB OTG 集线器，以及 v33 新增的 AA 电池玩具小车：先读安全提示（有电池先处理电池、防静电、停止点），勾选材料和完成的步骤（存在本机），看本项目自绘的插图和交互爆炸图，最后把拆下的模块存进本机的零件库（零件库里选“拆解所得”），拿到装配台上用。只收低压直流设备（电池或 USB 供电，≤ 24 V），插市电的设备不收，搜到“充电头”“适配器”这类词时页面会提示。指南按公开资料整理，未经实物验证；零件库里没有的模块用标明“近似件”的程序生成件代替。", "Take apart a micro servo, a one-cell 18650 power bank, a USB desk fan (new in v30) a wired mouse, a small Bluetooth speaker and a digital kitchen scale, (new in v31) a small LED flashlight and a TP4056 Li-ion charger board, (new in v32) a 9 V battery-clip LED tester and a small USB OTG hub, and (new in v33) an AA battery toy car, step by step. Read the safety notes first (battery first, ESD, stop points), tick off materials and finished steps (saved in this browser), look at the diagrams and the interactive exploded view drawn by this project, then save the removed modules to the parts library in this browser (choose 'From teardowns' in the parts list) and use them on the assembly bench. Only low-voltage DC devices are included (battery or USB powered, 24 V or less); mains devices are not, and searching for words like charger or adapter shows a notice. The guides are compiled from public information and not verified on real devices. Modules the library does not have are stood in for by procedural parts marked 'approximate'.") },
-  { id: "bank", to: "/bank", t: T("题库（v38–v40）", "Problem bank (v38–v40)"), d: T("按模式和难度练习：固件时序（用已有的解释器对照时间线）、代码结构检查（C/C++ / 汇编 / Intel HEX，不编译、不加载 WASM）、接线约束、装配顺序，以及连到已有维修关卡的诊断题。先加载目录 index.json，再按需加载某一组。黄底表示该组最早过期日距今不到 30 天；过期条目仍可练习，会提示来源可能已变更。v39 起目录的 contentHash 只算题面，不含 alsoFoundIn 等元数据。全部题面自己写，按公开资料整理。v40 起题库列表在题目加载完成后再标 ready；可以把拆解、诊断、接线和维修关卡串成 3 到 5 步的学习路径。", "Practise by mode and difficulty: firmware timing (the existing interpreter against a timeline), code structure checks (C/C++ / assembly / Intel HEX, not compiled, no WASM), wiring constraints, assembly order, and diagnosis tasks that link to existing repair levels. The page loads index.json first, then one group on demand. A yellow background means the earliest expiry in that group is within 30 days; expired items can still be practised, with a note that the source may have changed. From v39 the catalogue contentHash covers problem text only, not metadata such as alsoFoundIn. All problem text is original, compiled from public information. From v40 the problem list is marked ready only after the group has loaded, and short 3-to-5-step learning paths chain a teardown, a diagnosis or wiring task, and a repair level.") },
+  { id: "bank", to: "/bank", t: T("题库（v38–v41）", "Problem bank (v38–v41)"), d: T("按模式和难度练习：固件时序（用已有的解释器对照时间线）、代码结构检查（C/C++ / 汇编 / Intel HEX，不编译、不加载 WASM）、接线约束、装配顺序，以及连到已有维修关卡的诊断题。先加载目录 index.json，再按需加载某一组。黄底表示该组最早过期日距今不到 30 天；过期条目仍可练习，会提示来源可能已变更。v39 起目录的 contentHash 只算题面，不含 alsoFoundIn 等元数据。全部题面自己写，按公开资料整理。v40 起题库列表在题目加载完成后再标 ready；可以把拆解、诊断、接线和维修关卡串成 3 到 5 步的学习路径。", "Practise by mode and difficulty: firmware timing (the existing interpreter against a timeline), code structure checks (C/C++ / assembly / Intel HEX, not compiled, no WASM), wiring constraints, assembly order, and diagnosis tasks that link to existing repair levels. The page loads index.json first, then one group on demand. A yellow background means the earliest expiry in that group is within 30 days; expired items can still be practised, with a note that the source may have changed. From v39 the catalogue contentHash covers problem text only, not metadata such as alsoFoundIn. All problem text is original, compiled from public information. From v40 the problem list is marked ready only after the group has loaded, and short 3-to-5-step learning paths chain a teardown, a diagnosis or wiring task, and a repair level.") },
   { id: "project", to: "/project", t: T("动手做 + 实测对比", "Build project + measurement check"), d: T("引导项目一步一步做出八爪鱼：选方案、生成 BOM 和制作单；做好后在“实测对比”里填万用表读数，和估算值对比，并可以按你的实测校准。", "The guided project builds the octopus step by step: choose a plan, then generate a BOM and a build sheet. Once it is built, enter your multimeter readings in the measurement check to compare them with the estimates and calibrate to your own measurements.") },
 ];
 const SCENES = [
@@ -83,6 +83,7 @@ const LIMITS = [
 ];
 
 const WHATS_NEW = [
+  T("v41：按开源 frontend-design skill（Apache-2.0）整理出的规则，润色 3D 台面（材质、灯光、阴影、导线和切割垫网格）、示波器波形和拆解示意图，以及题库 / 使用说明的字号和间距。原有纸、墨、铜的颜色名称没换；正文对比度仍至少 4.5:1，焦点环至少 3:1。没有加新的网页字体。", "v41: following rules taken from the open-source frontend-design skill (Apache-2.0), the 3D bench (materials, lighting, shadows, wires and a cutting-mat grid), scope traces and teardown diagrams, and the typography and spacing on the problem bank and help pages were polished. Existing paper, ink and copper token names were kept. Body text stays at least 4.5:1 and the focus ring at least 3:1. No webfont files were added."),
   T("v40：某一节超出一页时，打印目录会回填后面的页码，并写出跨页范围；题库列表等加载完成后再标 ready；把拆解、诊断、接线和维修关卡串成 3 到 5 步的学习路径。", "v40: when a printed chapter runs over a page, the contents list backfills later page numbers and writes a page range; the problem-bank list is marked ready only after it has loaded; short 3-to-5-step learning paths chain a teardown, a diagnosis or wiring task, and a repair level."),
   T("v39：题库 contentHash 只算题面，更新时间更稳；Actions 默认离线；找空位不推出桌边并会试叠高；焦点环对比度至少 3:1；打印目录写出页码；新增 12 道原题和 CR2032 钥匙扣灯拆解。", "v39: the catalogue contentHash covers problem text only, so updatedAt stays stable; Actions stay offline by default; free-space search stays on the table and can stack; the focus ring is at least 3:1 contrast; the printed contents list includes page numbers; 12 original tasks and a CR2032 keychain-light teardown were added."),
   T("v38：题库按模式和难度练习。目录先加载，再按需加载某一组。固件题对照时序，代码题只做结构检查，诊断题可以跳到对应维修关卡。", "v38: a problem bank organised by mode and difficulty. The catalogue loads first, then one group on demand. Firmware tasks check a timeline, code tasks are structure checks, and diagnosis tasks can jump to a matching repair level."),
@@ -97,24 +98,24 @@ const WHATS_NEW = [
 export default function HelpPage() {
   const [lang] = useLang(); const en = lang === "en"; const L = (x) => (en ? x.en : x.zh);
   useEffect(() => { document.title = en ? "Help · prototype" : "使用说明 · 原型"; }, [en]);
-  const H2 = ({ id, children }) => <h2 id={id} className="mt-10 border-b border-line pb-1 text-lg font-semibold">{children}</h2>;
+  const H2 = ({ id, children }) => <h2 id={id} className="mt-10 border-b border-line pb-1 text-xl font-medium tracking-tight">{children}</h2>;
   return (
-    <div className={containerClass + " py-8"} data-testid="help-page" data-lang={lang} data-no-mt="">
+    <div className={containerClass + " py-10"} data-testid="help-page" data-lang={lang} data-no-mt="">
       <p className="text-xs text-ink-soft">{en ? "Early prototype, simplified simulation" : "早期原型，简化仿真"}</p>
-      <h1 className="mt-1 text-2xl font-semibold">{en ? "Help" : "使用说明"}</h1>
+      <h1 className="mt-2 text-3xl font-medium tracking-tight">{en ? "Help" : "使用说明"}</h1>
       <nav className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-sm" aria-label={en ? "Contents" : "目录"} data-testid="help-toc">
         {[["quick", T("快速上手", "Quick start")], ["whats-new", T("本版更新", "What's new")], ["modes", T("各个模式", "Modes")], ["scenes", T("示例场景", "Example scenes")], ["keys", T("快捷键", "Keyboard shortcuts")], ["faq", T("常见问题", "FAQ")], ["limits", T("老实说：限制", "Honest limits")]].map(([id, t]) => <a key={id} href={"#" + id} className="inline-flex min-h-6 items-center underline">{L(t)}</a>)}
       </nav>
       <H2 id="quick">{L(T("快速上手", "Quick start"))}</H2>
       <ol className="mt-3 list-decimal space-y-2 pl-6 text-sm" data-testid="help-quick">{QUICK.map((q, i) => <li key={i}>{L(q)}</li>)}</ol>
-      <H2 id="whats-new">{L(T("本版更新（v32–v40）", "What's new (v32–v40)"))}</H2>
-      <ol className="mt-3 list-decimal space-y-2 pl-6 text-sm" data-testid="help-whats-new" reversed start={40}>{WHATS_NEW.map((q, i) => <li key={i}>{L(q)}</li>)}</ol>
+      <H2 id="whats-new">{L(T("本版更新（v32–v41）", "What's new (v32–v41)"))}</H2>
+      <ol className="mt-3 list-decimal space-y-2 pl-6 text-sm leading-7" data-testid="help-whats-new" reversed start={41}>{WHATS_NEW.map((q, i) => <li key={i}>{L(q)}</li>)}</ol>
       <H2 id="modes">{L(T("各个模式", "Modes"))}</H2>
       <div className="mt-3 grid gap-4 sm:grid-cols-2">
         {MODES.map((m) => (
-          <section key={m.id} className="border border-line p-3" data-testid={"help-mode-" + m.id}>
-            <h3 className="font-semibold"><Link to={m.to} className="underline">{L(m.t)}</Link></h3>
-            <p className="mt-1 text-sm text-ink-soft">{L(m.d)}</p>
+          <section key={m.id} className="border border-line bg-paper-2 p-4" data-testid={"help-mode-" + m.id}>
+            <h3 className="font-medium"><Link to={m.to} className="underline">{L(m.t)}</Link></h3>
+            <p className="mt-2 text-sm leading-7 text-ink-soft">{L(m.d)}</p>
           </section>
         ))}
       </div>

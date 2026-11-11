@@ -12,7 +12,21 @@
   --color-mask: #16352c;
   --color-line: #d2c7b4;
   --color-mark: #8e2f2a;
+  /* v41：在原有纸/墨/铜语言上补充工作台用色和字号，不改已有 token 的色值 */
+  --color-bench: #8a6844;
+  --color-bench-side: #6f5538;
+  --color-pcb: #2a4a34;
+  --color-scope-bg: #0a120e;
+  --color-scope-grid: #1c3328;
+  --color-scope-minor: #14241d;
+  --color-case: #3d5a72;
+  --text-display: 2.5rem;
+  --text-display--line-height: 1.12;
+  --text-display--letter-spacing: -0.025em;
+  --text-lead: 1.125rem;
+  --text-lead--line-height: 1.7;
 }
+
 
 html {
   scroll-behavior: smooth;

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { OBJECTIVES, RATE_CAP, SERVO_RATE_MAX } from "./search.js";
 import { curvePath, gaitPeriod } from "./gait.js";
+import { CHART, CHART_INK, line as lineCol } from "../ui/palette.js";
 
 const B = ({ children, on, dis, t, cls = "" }) => <button type="button" disabled={dis} onClick={on} data-testid={t} className={`min-h-7 border border-line bg-white px-2 text-xs disabled:opacity-40 ${cls}`}>{children}</button>;
 const f = (v, d = 2) => (v == null || !Number.isFinite(v) ? "—" : (+v).toFixed(d));
@@ -10,25 +11,25 @@ const CAPS = [{ n: 40, zh: "40 次（约 1 分钟）" }, { n: 120, zh: "120 次"
 
 function Chart({ hist, tid }) {
   const W = 300, H = 80;
-  if (!hist?.length) return <svg viewBox={`0 0 ${W} ${H}`} className="w-full border border-line bg-white" data-testid={`${tid}-chart`} />;
+  if (!hist?.length) return <svg viewBox={`0 0 ${W} ${H}`} className="w-full border border-line bg-paper-2" data-testid={`${tid}-chart`} />;
   const xs = hist.map((h) => h.evals), ys = hist.flatMap((h) => [h.best, h.mean]).filter(Number.isFinite);
   const x0 = 0, x1 = Math.max(...xs, 1), y0 = Math.min(...ys), y1 = Math.max(...ys, y0 + 1e-3);
   const X = (v) => ((v - x0) / (x1 - x0)) * (W - 30) + 26, Y = (v) => H - 12 - ((v - y0) / (y1 - y0)) * (H - 20);
   const path = (k) => hist.map((h, i) => `${i ? "L" : "M"}${X(h.evals).toFixed(1)},${Y(h[k]).toFixed(1)}`).join("");
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full border border-line bg-white" data-testid={`${tid}-chart`}>
-      <path d={path("mean")} fill="none" stroke="#bbb" strokeWidth="1" />
-      <path d={path("best")} fill="none" stroke="#2f6fd6" strokeWidth="1.6" />
-      <text x="2" y="10" fontSize="7" fill="#666">{f(y1)}</text><text x="2" y={H - 12} fontSize="7" fill="#666">{f(y0)}</text>
-      <text x={W - 2} y={H - 2} fontSize="7" fill="#666" textAnchor="end">评估次数 {x1}</text>
-      <text x="30" y="10" fontSize="7" fill="#2f6fd6">— 至今最好分数</text><text x="110" y="10" fontSize="7" fill="#999">— 每代平均</text>
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full border border-line bg-paper-2" data-testid={`${tid}-chart`}>
+      <path d={path("mean")} fill="none" stroke={lineCol} strokeWidth="1" />
+      <path d={path("best")} fill="none" stroke={CHART[0]} strokeWidth="1.6" />
+      <text x="2" y="10" fontSize="7" fill="#4a433a">{f(y1)}</text><text x="2" y={H - 12} fontSize="7" fill="#4a433a">{f(y0)}</text>
+      <text x={W - 2} y={H - 2} fontSize="7" fill="#4a433a" textAnchor="end">评估次数 {x1}</text>
+      <text x="30" y="10" fontSize="7" fill={CHART_INK[0]}>— 至今最好分数</text><text x="110" y="10" fontSize="7" fill="#4a433a">— 每代平均</text>
     </svg>
   );
 }
 function Preview({ g, tid }) {
   const W = 300, H = 56, T = Math.min(6, 2 * gaitPeriod(g)), range = Math.max(10, ...g.joints.map((J) => Math.abs(J.offset || 0) + Math.abs(J.amp || 0)));
-  const cols = ["#2f6fd6", "#d23a2f", "#1f9d55", "#e0b322", "#7b4bd6", "#e07a22", "#2aa6a6", "#a0506e"];
-  return <svg viewBox={`0 0 ${W} ${H}`} className="w-full border border-line bg-white" data-testid={`${tid}-preview`}><line x1="0" x2={W} y1={H / 2} y2={H / 2} stroke="#eee" />{g.joints.map((J, i) => <path key={i} d={curvePath(J, W, H, T, range)} fill="none" stroke={cols[i % 8]} strokeWidth="1.1" />)}<text x="3" y="9" fontSize="7" fill="#666">至今最好：{g.joints.length} 个关节 · ±{range.toFixed(0)} · {T.toFixed(1)} s</text></svg>;
+  const cols = CHART;
+  return <svg viewBox={`0 0 ${W} ${H}`} className="w-full border border-line bg-paper-2" data-testid={`${tid}-preview`}><line x1="0" x2={W} y1={H / 2} y2={H / 2} stroke={lineCol} />{g.joints.map((J, i) => <path key={i} d={curvePath(J, W, H, T, range)} fill="none" stroke={cols[i % 8]} strokeWidth="1.1" />)}<text x="3" y="9" fontSize="7" fill="#4a433a">至今最好：{g.joints.length} 个关节 · ±{range.toFixed(0)} · {T.toFixed(1)} s</text></svg>;
 }
 
 // props: kind ("octo" | "artic"), makeJob() → job 的模型部分（gait0、project…），onApply(g), onPreview(g), exports [{k, zh, make(g)}], note, tid

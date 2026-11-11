@@ -21,6 +21,25 @@ export function labelFit(t, w) {
 }
 // 一台设备里要放图例的图层按出现顺序编号（每一步都用同一个编号）
 export function legendNo(dev, L) { const m = new Map(); for (const s of dev.fig || []) if (s.w >= 14 && labelFit(L(s.t), s.w).legend) m.set(s.id, m.size + 1); return m; }
+
+function hexLum(hex) {
+  const h = String(hex || "").replace(/^#/, "");
+  if (h.length !== 6) return 1;
+  const ch = (i) => {
+    const c = parseInt(h.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * ch(0) + 0.7152 * ch(2) + 0.0722 * ch(4);
+}
+function contrast(a, b) {
+  const L1 = hexLum(a), L2 = hexLum(b), hi = Math.max(L1, L2), lo = Math.min(L1, L2);
+  return (hi + 0.05) / (lo + 0.05);
+}
+/** 示意图色块上的字：选白或深墨，取对比度更高的一方（至少尽量 ≥ 4.5）。 */
+export function figLabelFill(c) {
+  return contrast(c, "#ffffff") >= contrast(c, "#26272a") ? "#fff" : "#26272a";
+}
+
 export function figLegend(dev, fig, L) {
   const no = legendNo(dev, L), hi = new Set(fig?.hi || []);
   return (dev.fig || []).filter((s) => no.has(s.id) && (!hi.size || hi.has(s.id))).map((s) => [no.get(s.id), L(s.t)]);
@@ -33,11 +52,11 @@ export function figSvg(dev, fig, L, i) {
     const [dx, dy] = off[s.id] || [0, 0], on = hi.has(s.id);
     const x = Math.max(1, Math.min(199 - s.w, s.x + dx)), y = Math.max(1, Math.min(123 - s.h, s.y + dy));
     const f = labelFit(L(s.t), s.w), label = f.legend ? String(no.get(s.id)) : L(s.t), fs = f.legend ? 6 : f.fs;
-    const txt = (on || !hi.size) && s.w >= 14 ? `<text x="${x + s.w / 2}" y="${y + s.h / 2 + fs * 0.4}" text-anchor="middle" font-size="${fs}" fill="${/#(2f6fd6|26272a|2f8f4e|5b6168)/.test(s.c) ? "#fff" : "#26272a"}">${esc(label)}</text>` : "";
+    const txt = (on || !hi.size) && s.w >= 14 ? `<text x="${x + s.w / 2}" y="${y + s.h / 2 + fs * 0.4}" text-anchor="middle" font-size="${fs}" fill="${figLabelFill(s.c)}">${esc(label)}</text>` : "";
     return `<g opacity="${hi.size && !on ? 0.45 : 1}"><rect x="${x}" y="${y}" width="${s.w}" height="${s.h}" rx="${s.round ? s.w / 2 : 2}" fill="${s.c}" stroke="${on ? "#d9792b" : "#26272a"}" stroke-width="${on ? 2 : 0.6}"/>${txt}</g>`;
   }).join("");
   const lg = figLegend(dev, fig, L);
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 124" role="img" aria-label="${esc(L({ zh: `第 ${i + 1} 步示意图（本项目自绘）`, en: `Step ${i + 1} diagram (drawn by this project)` }))}">${g}</svg>${lg.length ? `<p class="legend">${lg.map(([n, t]) => `<span>${n} = ${esc(t)}</span>`).join(" · ")}</p>` : ""}`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 124" role="img" aria-label="${esc(L({ zh: `第 ${i + 1} 步示意图（本项目自绘）`, en: `Step ${i + 1} diagram (drawn by this project)` }))}"><rect width="200" height="124" fill="#f7f3ea"/>${g}</svg>${lg.length ? `<p class="legend">${lg.map(([n, t]) => `<span>${n} = ${esc(t)}</span>`).join(" · ")}</p>` : ""}`;
 }
 
 

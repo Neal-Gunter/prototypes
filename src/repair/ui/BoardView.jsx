@@ -31,13 +31,13 @@ export default function BoardView({ board, obs, side, rot, zoom, setZoom, pan, s
     <g transform={`rotate(${rot} ${W / 2} ${H / 2})`}>
       {board.zones ? <>
         <rect x={0} y={0} width={W} height={H} rx={2} fill="#2a2d30" stroke="#111" strokeWidth={0.4} data-testid="bench-mat" />
-        {board.zones.map((z) => { const zx = side === "back" ? W - z.x - z.w : z.x; return <g key={z.id} data-testid={`zone-${z.id}`}><rect x={zx} y={z.y} width={z.w} height={z.h} rx={1.5} fill={side === "back" ? "#1f5b3a" : "#2b6e47"} stroke="#173d28" strokeWidth={0.6} /><text x={zx + 1.5} y={z.y + z.h - 1.5} fontSize={2.4} fill="#cfe8d6">{z.zh}</text></g>; })}
-      </> : <rect x={0} y={0} width={W} height={H} rx={2} fill={side === "back" ? "#1f5b3a" : "#2b6e47"} stroke="#173d28" strokeWidth={0.6} />}
+        {board.zones.map((z) => { const zx = side === "back" ? W - z.x - z.w : z.x; return <g key={z.id} data-testid={`zone-${z.id}`}><rect x={zx} y={z.y} width={z.w} height={z.h} rx={1.5} fill={side === "back" ? "#1a3f2c" : "#2a4a34"} stroke="#16352c" strokeWidth={0.6} /><text x={zx + 1.5} y={z.y + z.h - 1.5} fontSize={2.4} fill="#cfe8d6">{z.zh}</text></g>; })}
+      </> : <rect x={0} y={0} width={W} height={H} rx={2} fill={side === "back" ? "#1a3f2c" : "#2a4a34"} stroke="#16352c" strokeWidth={0.6} />}
       <text x={side === "back" ? W - 2 : 2} y={H - 1.5} fontSize={2.4} fill="#cfe8d6" textAnchor={side === "back" ? "end" : "start"}>{board.name} · {side === "back" ? "背面（焊点 / 走线）" : "正面（零件）"}</text>
       {/* 走线（两面都画，背面更清楚） */}
       {board.traces.map((t) => { const pts = t.pts || [netXY(t.a), netXY(t.b)]; const d = pts.map((p, i) => `${i ? "L" : "M"}${mx(p[0])},${p[1]}`).join(" "); return (
         <g key={t.id} onClick={click({ type: "trace", id: t.id })} style={{ cursor: "pointer" }} data-testid={`trace-${t.id}`}>
-          <path d={d} stroke={isSel({ type: "trace", id: t.id }) ? "#f6c945" : "#c98d4a"} strokeOpacity={side === "back" ? 1 : 0.55} strokeWidth={1.2} fill="none" />
+          <path d={d} stroke={isSel({ type: "trace", id: t.id }) ? "#e6c84a" : "#c08a48"} strokeOpacity={side === "back" ? 1 : 0.55} strokeWidth={1.2} fill="none" />
           <path d={d} stroke="transparent" strokeWidth={4} fill="none" />
           {t.state.cracked && side === "back" && zoom >= 2.5 && <circle cx={mx(pts[1][0])} cy={pts[1][1]} r={0.5} fill="#111" />}
         </g>); })}
@@ -85,7 +85,7 @@ export default function BoardView({ board, obs, side, rot, zoom, setZoom, pan, s
       {/* 线（两面都能看到） */}
       {board.wires.map((w) => { const a = netXY(w.a), b = netXY(w.b, a); const mid = [(mx(a[0]) + mx(b[0])) / 2, (a[1] + b[1]) / 2 - 4]; return (
         <g key={w.id} onClick={click({ type: "wire", id: w.id })} style={{ cursor: "pointer" }} data-testid={`wire-${w.id}`}>
-          <path d={`M${mx(a[0])},${a[1]} Q${mid[0]},${mid[1]} ${mx(b[0])},${b[1]}`} stroke={w.color || (/BAT-|-$/.test(w.a) ? "#222" : w.id.startsWith("JW") ? "#e0e050" : "#d42")} strokeWidth={w.cable ? (w.state.awg >= 28 ? 0.7 : 1.4) : w.state.awg >= 28 ? 0.45 : 1.1} fill="none" strokeDasharray={w.state.cut ? "2 1.5" : undefined} />
+          <path d={`M${mx(a[0])},${a[1]} Q${mid[0]},${mid[1]} ${mx(b[0])},${b[1]}`} stroke={w.color || (/BAT-|-$/.test(w.a) ? "#2a2927" : w.id.startsWith("JW") ? "#c9a227" : "#b43c32")} strokeWidth={w.cable ? (w.state.awg >= 28 ? 0.7 : 1.4) : w.state.awg >= 28 ? 0.45 : 1.1} fill="none" strokeDasharray={w.state.cut ? "2 1.5" : undefined} />
           <path d={`M${mx(a[0])},${a[1]} Q${mid[0]},${mid[1]} ${mx(b[0])},${b[1]}`} stroke={isSel({ type: "wire", id: w.id }) ? "#f6c945" : "transparent"} strokeWidth={w.cable ? 1.8 : 3} fill="none" strokeOpacity={0.5} />
         </g>); })}
       {/* 空焊盘位置画在线的上面，免得被线缆挡住点不到 */}
@@ -113,7 +113,7 @@ export default function BoardView({ board, obs, side, rot, zoom, setZoom, pan, s
       {/* 示波器探头（钩子 + 通道颜色；地夹都在板子的地上） */}
       {scopeProbes.map((sp, i) => { const xy = netXY(sp.net); return xy && <g key={sp.label} pointerEvents="none" data-testid={`scope-probe-${i + 1}`}><line x1={mx(xy[0])} y1={xy[1]} x2={mx(xy[0]) + 3 + i} y2={xy[1] - 6 - i} stroke={sp.color} strokeWidth={0.9} /><circle cx={mx(xy[0])} cy={xy[1]} r={1.1} fill="none" stroke={sp.color} strokeWidth={0.5} /><text x={mx(xy[0]) + 3 + i} y={xy[1] - 6.5 - i} fontSize={2} fill={sp.color}>{sp.label}</text></g>; })}
       {/* 表笔 */}
-      {[["red", "#e11"], ["black", "#111"]].map(([k, col]) => { const xy = probeAt(probes?.[k]); return xy && <g key={k} pointerEvents="none"><line x1={mx(xy[0])} y1={xy[1]} x2={mx(xy[0]) + (k === "red" ? 4 : -4)} y2={xy[1] - 7} stroke={col} strokeWidth={1} /><circle cx={mx(xy[0])} cy={xy[1]} r={0.9} fill={col} stroke="#fff" strokeWidth={0.25} /></g>; })}
+      {[["red", "#b43c32"], ["black", "#2a2927"]].map(([k, col]) => { const xy = probeAt(probes?.[k]); return xy && <g key={k} pointerEvents="none"><line x1={mx(xy[0])} y1={xy[1]} x2={mx(xy[0]) + (k === "red" ? 4 : -4)} y2={xy[1] - 7} stroke={col} strokeWidth={1} /><circle cx={mx(xy[0])} cy={xy[1]} r={0.9} fill={col} stroke="#fff" strokeWidth={0.25} /></g>; })}
     </g>
   );
 

@@ -2,6 +2,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Html, Line } from "@react-three/drei";
+import { paper, line as lineCol, inkSoft } from "../../ui/palette.js";
 import { getEntry, toDef } from "../catalog.js";
 import * as THREE from "three";
 import { ProcMesh, Glb, hullGeom } from "./partMeshes.jsx";
@@ -68,16 +69,18 @@ export default function PartViewer({ id }) {
   if (!def) return <div className="flex aspect-square w-full items-center justify-center border border-line bg-paper-2 text-xs text-ink-soft">加载模型…</div>;
   return (
     <div className="relative" data-testid="part-viewer">
-      <div className="aspect-square w-full border border-line bg-white">
+      <div className="aspect-square w-full border border-line bg-paper-2">
         <Canvas key={id} camera={{ position: cam, fov: 35, near: 0.01, far: 500 }} dpr={[1, 1.5]} frameloop="demand">
-          <ambientLight intensity={0.8} />
-          <directionalLight position={[5, 8, 6]} intensity={1.4} />
+          <color attach="background" args={[paper]} />
+          <hemisphereLight args={["#f4efe6", "#6e5a45", 0.7]} />
+          <directionalLight position={[5, 8, 6]} intensity={1.15} />
+          <directionalLight position={[-4, 3, -2]} intensity={0.25} />
           <Suspense fallback={null}>
             {def.kind === "glb" ? <Glb def={def} /> : <ProcMesh def={def} />}
           </Suspense>
           {ruler && <Ruler d={d} />}
           {coll && <ColliderOverlay cols={def.colliders} />}
-          <gridHelper args={[Math.ceil(Math.max(d.x, d.z) / 10) * 2 + 2, (Math.ceil(Math.max(d.x, d.z) / 10) * 2 + 2), "#cbd5e1", "#e2e8f0"]} />
+          <gridHelper args={[Math.ceil(Math.max(d.x, d.z) / 10) * 2 + 2, (Math.ceil(Math.max(d.x, d.z) / 10) * 2 + 2), inkSoft, lineCol]} />
           <OrbitControls makeDefault target={[0, d.y / 20, 0]} />
         </Canvas>
       </div>

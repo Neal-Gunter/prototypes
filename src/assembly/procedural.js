@@ -6,6 +6,7 @@
 import { STD_PROCEDURAL } from "./procedural2.js";
 import { FP_PROCEDURAL } from "./fpBoards.js";
 import { BREAKOUT_PROCEDURAL } from "./breakout.js";
+import { JUMPER_COLOR, WIRE } from "../ui/palette.js";
 export const LIC_SELF = "本项目自制（程序生成，CC0）";
 
 // ISO 7045 盘头十字螺钉：dk 头径、k 头高；ISO 261 粗牙螺距；ISO 273 中等过孔
@@ -368,7 +369,6 @@ function plug(kind) {
 }
 
 // ---------- 面包板跳线（预先折好的 U 形单芯线）：两腿间距 = N × 2.54 mm ----------
-const JUMPER_COLOR = { 1: "#c0392b", 2: "#c0392b", 3: "#e67e22", 4: "#f1c40f", 5: "#27ae60", 6: "#2f6fd6", 7: "#8e44ad", 8: "#7f8c8d", 10: "#ecf0f1", 12: "#a0522d", 15: "#222222" };
 function jumper(N) {
   const span = 2.54 * N, legLen = 6, wd = 0.6, h = 1.2; // 估算：22 AWG 实心线芯 ≈0.64 mm，绝缘层外径 ≈1.2 mm，腿长 6 mm
   const x = mm(span) / 2;
@@ -382,7 +382,7 @@ function jumper(N) {
     name_zh: `面包板跳线 ${N} 格（${span.toFixed(2)} mm）`,
     name: `Breadboard jumper wire ${N}×2.54 mm`,
     cat: "wire",
-    proc: { type: "jumper", N, color: JUMPER_COLOR[N] || "#2f6fd6", wd },
+    proc: { type: "jumper", N, color: JUMPER_COLOR[N] || WIRE.blue, wd },
     colliders: cols,
     legs: [{ p: [-x, 0, 0], top: mm(legLen), w: mm(wd), i: 0 }, { p: [x, 0, 0], top: mm(legLen), w: mm(wd), i: 1 }],
     dims_mm: dimsOf(cols),

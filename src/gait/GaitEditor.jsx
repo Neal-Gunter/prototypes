@@ -2,6 +2,7 @@
 // 只负责编辑和显示；“在台面上跑”“测量”“导出”由调用方传进来（八爪鱼 = 固件孪生，模型实验室 = ArticCore）。
 import { useMemo, useRef, useState } from "react";
 import { WAVES, curvePath, maxRate, jointValue, gaitPeriod } from "./gait.js";
+import { CHART, line as lineCol } from "../ui/palette.js";
 
 const B = ({ children, on, dis, t, cls = "" }) => <button type="button" disabled={dis} onClick={on} data-testid={t} className={`min-h-7 border border-line bg-white px-2 text-xs disabled:opacity-40 ${cls}`}>{children}</button>;
 const Num = ({ v, set, step = 1, min, max, t, w = "w-14" }) => <input type="number" step={step} min={min} max={max} value={v} data-testid={t} onChange={(e) => set(+e.target.value)} className={`${w} border border-line px-0.5 text-right font-mono text-[11px]`} />;
@@ -10,13 +11,13 @@ const f = (v, d = 2) => (v == null || !Number.isFinite(v) ? "—" : v.toFixed(d)
 // 全部关节叠在一张图里（2 个周期），竖线 = 当前时刻
 function Overview({ g, range, t }) {
   const W = 300, H = 70, T = Math.min(6, 2 * gaitPeriod(g));
-  const cols = ["#2f6fd6", "#d23a2f", "#1f9d55", "#e0b322", "#7b4bd6", "#e07a22", "#2aa6a6", "#a0506e"];
+  const cols = CHART;
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full border border-line bg-white" data-testid="gait-overview">
-      <line x1="0" x2={W} y1={H / 2} y2={H / 2} stroke="#ddd" />
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full border border-line bg-paper-2" data-testid="gait-overview">
+      <line x1="0" x2={W} y1={H / 2} y2={H / 2} stroke={lineCol} />
       {g.joints.map((J, i) => <path key={i} d={curvePath(J, W, H, T, range)} fill="none" stroke={cols[i % cols.length]} strokeWidth="1.2" />)}
       {t != null && <line x1={((t % T) / T) * W} x2={((t % T) / T) * W} y1="0" y2={H} stroke="#333" strokeDasharray="2 2" />}
-      <text x="3" y="10" fontSize="8" fill="#666">±{+(+range).toFixed(1)}{g.joints[0]?.unit || "°"} · {T.toFixed(1)} s</text>
+      <text x="3" y="10" fontSize="8" fill="#4a433a">±{+(+range).toFixed(1)}{g.joints[0]?.unit || "°"} · {T.toFixed(1)} s</text>
     </svg>
   );
 }
@@ -72,7 +73,7 @@ export default function GaitEditor({ gait, setGait, presets = [], rateLimit = 30
                 <td><Num v={J.freq} set={(v) => upd(i, "freq", v)} step={0.1} min={0.05} max={3} t={`${tid}-freq-${i}`} w="w-12" /></td>
                 <td><Num v={J.duty} set={(v) => upd(i, "duty", v)} step={0.05} min={0.05} max={0.95} t={`${tid}-duty-${i}`} w="w-12" /></td>
                 <td title={fast ? `最大角速度 ${Number.isFinite(r) ? r.toFixed(0) : "∞（突变）"} ${J.unit === "mm" ? "mm" : "°"}/s，超过 ${rateLimit}：舵机跟不上，会被限速` : `最大 ${r.toFixed(0)} /s`}>
-                  <svg width="96" height="22" className="border border-line bg-white" data-testid={`${tid}-curve-${i}`}><line x1="0" x2="96" y1="11" y2="11" stroke="#eee" /><path d={curvePath(J, 96, 22, 2, range, 60)} fill="none" stroke={fast ? "#b45309" : "#2f6fd6"} strokeWidth="1.2" />{time != null && <circle cx={((time % 2) / 2) * 96} cy={11 - (jointValue(J, time) / range) * 11} r="2" fill="#d23a2f" />}</svg>
+                  <svg width="96" height="22" className="border border-line bg-paper-2" data-testid={`${tid}-curve-${i}`}><line x1="0" x2="96" y1="11" y2="11" stroke={lineCol} /><path d={curvePath(J, 96, 22, 2, range, 60)} fill="none" stroke={fast ? "#8a4a14" : CHART[0]} strokeWidth="1.2" />{time != null && <circle cx={((time % 2) / 2) * 96} cy={11 - (jointValue(J, time) / range) * 11} r="2" fill={CHART[1]} />}</svg>
                   {fast && <span className="ml-0.5 text-amber-700" data-testid={`${tid}-fast-${i}`}>快</span>}
                 </td>
               </tr>

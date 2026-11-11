@@ -102,12 +102,12 @@ export default function LandingPage() {
         >
           <div>
             <p className="text-sm font-medium text-copper-deep">给硬件想法用的浏览器概念</p>
-            <h1 className="mt-3 max-w-xl text-4xl font-medium leading-tight tracking-tight text-balance sm:text-5xl">
+            <h1 className="mt-3 max-w-xl text-4xl font-medium tracking-tight text-balance sm:text-display">
               把一个硬件想法
               <br />
               一次看完
             </h1>
-            <p className="mt-5 max-w-xl text-lg leading-8 text-ink-soft">
+            <p className="mt-5 max-w-xl text-lead text-ink-soft">
               新增：硬件工作台早期原型，可以在网页里摆放零件的 3D 简化模型、连线、焊接、写固件并看触手动起来；还有装配台（有碰撞、不穿模，用铜柱螺丝把板子装上底板）和 564 个真实尺寸的开源零件模型（全部是简化仿真）。
               这是一个可点击的概念页面。路径是想法、仿真、装配：先写下想法，再看机械与物理（MuJoCo
               WASM）和 ESP32‑S3 怎样驱动舵机，然后按装配和焊接清单动手。

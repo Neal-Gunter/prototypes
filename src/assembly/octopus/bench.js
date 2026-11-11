@@ -1,7 +1,8 @@
 // 台面接线表（纯数据，不依赖 3D）：同一份数据既用来摆 3D、拉线，也用来做电路检查和导出指南。
 // 每根线：{ a: [角色, 引脚], b: [角色, 引脚], kind, color, why, md }。“md” 写出处；文档没写的标“文档未写”。
 import { SERVO_PINS } from "./v10.js";
-export const COLORS = { red: "#d23a2f", black: "#1e1f22", orange: "#e07a2b", yellow: "#e0b322", blue: "#2f6fd6", green: "#2f8f4e", white: "#f1efe9", purple: "#8a4fbf", brown: "#7a4a2a" };
+import { WIRE } from "../../ui/palette.js";
+export const COLORS = { red: WIRE.red, black: WIRE.black, orange: WIRE.orange, yellow: WIRE.yellow, blue: WIRE.blue, green: WIRE.green, white: WIRE.white, purple: WIRE.purple, brown: WIRE.brown };
 export const FAULTS = [
   { k: "none", zh: "正常（按 md 接好）" },
   { k: "nognd", zh: "没有共地：ESP32 插电脑 USB 供电，没接 GND 到 PCA9685", md: "采购清单 · 故障表“舵机完全不动 / 抖动 → 没有共地”" },

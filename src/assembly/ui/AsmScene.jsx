@@ -1,7 +1,7 @@
 // 装配台 3D 场景：每帧从 Rapier 读出位姿；拖拽 / 拧 / 焊都交给 engine
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, useGLTF } from "@react-three/drei";
+import { ContactShadows, OrbitControls, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { getModuleGeom } from "../../modellab/registry.js";
 import { engine, BENCH } from "../engine.js";
@@ -9,6 +9,7 @@ import { PROC_BY_ID } from "../procedural.js";
 import { elec } from "../elecStore.js";
 import { elemKind, jointOf, terminalAt } from "../netlist.js";
 import { pinLabel } from "../physpins.js";
+import { WIRE, WIRE_COLORS, bench, benchSide, paper, remapWire } from "../../ui/palette.js";
 
 import { MAT, PROC_MAT, Boxes, ProcMesh, Glb } from "./partMeshes.jsx";
 export { ProcMesh, Glb };
@@ -151,11 +152,10 @@ function Part({ uid, onDown }) {
     </group>
   );
 }
-const WIRE_COLORS = ["#d23a2f", "#1e1f22", "#e0b322", "#2f8f4e", "#2f6fd6", "#e07a2b", "#8a4fbf", "#f1efe9"];
 function Cables() {
   const group = useRef();
   const mats = useMemo(() => new Map(), []);
-  const matFor = (col) => { if (!mats.has(col)) mats.set(col, new THREE.MeshStandardMaterial({ color: col, roughness: 0.6 })); return mats.get(col); };
+  const matFor = (col) => { if (!mats.has(col)) mats.set(col, new THREE.MeshStandardMaterial({ color: col, roughness: 0.78, metalness: 0.02 })); return mats.get(col); };
   useFrame(() => {
     const g = group.current;
     if (!g) return;
@@ -166,8 +166,8 @@ function Cables() {
       // 粗细 = 物理绳子的半径（不会出现“线看着穿过去了、其实是画粗了”）
       const geo = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), pts.length * 3, engine.cableRadius(c), 8, false);
       const n = +String(c.id).replace(/\D/g, "") || i;
-      const col = c.color || (c.kind === "servo-lead" ? "#7a4a2a" : /usb/.test(c.kind) ? "#2a2b2e" : WIRE_COLORS[n % WIRE_COLORS.length]);
-      if (!g.children[i]) g.add(new THREE.Mesh(geo, matFor(col)));
+      const col = remapWire(c.color) || (c.kind === "servo-lead" ? WIRE.brown : /usb/.test(c.kind) ? WIRE.black : WIRE_COLORS[n % WIRE_COLORS.length]);
+      if (!g.children[i]) { const m = new THREE.Mesh(geo, matFor(col)); m.castShadow = true; m.receiveShadow = true; g.add(m); }
       else { g.children[i].geometry.dispose(); g.children[i].geometry = geo; g.children[i].material = matFor(col); }
     });
   });
@@ -178,7 +178,7 @@ function Probes({ probes }) {
   return ["red", "black"].map((k) => probes?.[k]?.wp ? (
     <mesh key={k} position={[probes[k].wp.x, probes[k].wp.y + 0.6, probes[k].wp.z]} rotation={[Math.PI, 0, 0]}>
       <coneGeometry args={[0.12, 1.2, 12]} />
-      <meshStandardMaterial color={k === "red" ? "#d23a2f" : "#1e1f22"} />
+      <meshStandardMaterial color={k === "red" ? WIRE.red : WIRE.black} roughness={0.55} />
     </mesh>
   ) : null);
 }
@@ -216,12 +216,63 @@ function ToolMesh({ vis }) {
     </group>
   );
 }
+function mulberry32(a) {
+  return () => {
+    let t = a += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function makeBenchMaps() {
+  const size = 512, rnd = mulberry32(0xb41c41);
+  const c = document.createElement("canvas");
+  c.width = c.height = size;
+  const g = c.getContext("2d");
+  g.fillStyle = bench;
+  g.fillRect(0, 0, size, size);
+  for (let y = 0; y < size; y++) {
+    const a = 0.03 + rnd() * 0.05;
+    g.fillStyle = `rgba(40,24,10,${a})`;
+    g.fillRect(0, y, size, 1);
+    if (y % 7 === 0) {
+      g.fillStyle = `rgba(210,180,140,${0.02 + rnd() * 0.04})`;
+      g.fillRect(0, y, size, 1);
+    }
+  }
+  // 切割垫细格，颜色压暗，不抢零件
+  g.strokeStyle = "rgba(27,24,20,0.16)";
+  g.lineWidth = 1;
+  const step = size / 8;
+  for (let i = 0; i <= 8; i++) {
+    g.beginPath(); g.moveTo(i * step, 0); g.lineTo(i * step, size); g.stroke();
+    g.beginPath(); g.moveTo(0, i * step); g.lineTo(size, i * step); g.stroke();
+  }
+  g.strokeStyle = "rgba(27,24,20,0.28)";
+  g.lineWidth = 1.25;
+  const major = size / 2;
+  for (let i = 0; i <= 2; i++) {
+    g.beginPath(); g.moveTo(i * major, 0); g.lineTo(i * major, size); g.stroke();
+    g.beginPath(); g.moveTo(0, i * major); g.lineTo(size, i * major); g.stroke();
+  }
+  const map = new THREE.CanvasTexture(c);
+  map.colorSpace = THREE.SRGBColorSpace;
+  map.anisotropy = 8;
+  map.wrapS = map.wrapT = THREE.RepeatWrapping;
+  map.repeat.set(6, 4);
+  return map;
+}
 function Bench() {
+  const map = useMemo(() => makeBenchMaps(), []);
   return (
     <group>
       <mesh position={[0, -1.6, 0]} receiveShadow>
         <boxGeometry args={[BENCH.w + 0.4, 3.2, BENCH.d + 0.4]} />
-        <meshStandardMaterial color="#9a7652" roughness={0.85} />
+        <meshStandardMaterial color={benchSide} roughness={0.9} />
+      </mesh>
+      <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[BENCH.w + 0.4, BENCH.d + 0.4]} />
+        <meshStandardMaterial map={map} roughness={0.86} metalness={0} />
       </mesh>
     </group>
   );
@@ -330,10 +381,12 @@ export default function AsmScene({ uids, tool, debug, flux, vis, onTick, onSelec
   return (
     <Canvas shadows camera={{ position: [0, 30, 33], fov: 40, near: 0.1, far: 400 }} gl={{ preserveDrawingBuffer: true }} data-testid="asm-canvas">
       <SceneHook />
-      <color attach="background" args={["#e9e4da"]} />
-      <hemisphereLight args={["#ffffff", "#8a7a66", 0.9]} />
-      <directionalLight position={[20, 40, 15]} intensity={1.6} castShadow shadow-mapSize={[1024, 1024]} shadow-bias={-0.0004} shadow-normalBias={0.03} shadow-camera-left={-35} shadow-camera-right={35} shadow-camera-top={25} shadow-camera-bottom={-25} />
+      <color attach="background" args={[paper]} />
+      <hemisphereLight args={["#f4efe6", "#6e5a45", 0.72]} />
+      <directionalLight position={[20, 40, 15]} intensity={1.35} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004} shadow-normalBias={0.03} shadow-camera-left={-35} shadow-camera-right={35} shadow-camera-top={25} shadow-camera-bottom={-25} />
+      <directionalLight position={[-16, 18, -12]} intensity={0.28} />
       <Bench />
+      <ContactShadows position={[0, 0.02, 0]} opacity={0.28} scale={80} blur={2.2} far={10} color="#1b1814" />
       {uids.map((u) => <Part key={u} uid={u} onDown={(e, id) => { Interact.down(e, id); onSelect?.(id); }} />)}
       <Cables />
       <ToolMesh vis={vis} />
