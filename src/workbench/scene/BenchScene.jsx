@@ -203,6 +203,8 @@ export default function BenchScene() {
   const controlsRef = useRef();
   useEffect(() => {
     sceneApi.controls = controlsRef.current;
+    const a = window.__bench || (window.__bench = {});
+    a.sceneBg = "#1d1b19";
   });
   return (
     <Canvas

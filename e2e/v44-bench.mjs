@@ -10,18 +10,17 @@ const b = await chromium.launch({ executablePath: process.env.CHROME || "/usr/bi
 const errs = [];
 const page = async ({ lang = "zh", w = 1440, h = 900, theme, colorScheme, rawTheme } = {}) => {
   const c = await b.newContext({ viewport: { width: w, height: h }, colorScheme: colorScheme || "light" });
-  await c.addInitScript(([l, theme, raw]) => {
+  // Playwright 会把 undefined 序列化成 null，不能靠 rawTheme === undefined 判断。
+  const mode = rawTheme === undefined ? (theme || "") : (rawTheme === null ? "__clear__" : "__raw__:" + rawTheme);
+  await c.addInitScript(([l, mode]) => {
     try {
       localStorage.setItem("asm-tour-v22-done", "1");
       localStorage.setItem("ui-lang", l);
-      if (raw !== undefined) {
-        if (raw === null) localStorage.removeItem("wb-theme-v1");
-        else localStorage.setItem("wb-theme-v1", raw);
-      } else if (theme === "light" || theme === "dark" || theme === "system") {
-        localStorage.setItem("wb-theme-v1", theme);
-      }
+      if (mode === "__clear__") localStorage.removeItem("wb-theme-v1");
+      else if (mode.startsWith("__raw__:")) localStorage.setItem("wb-theme-v1", mode.slice(8));
+      else if (mode === "light" || mode === "dark" || mode === "system") localStorage.setItem("wb-theme-v1", mode);
     } catch { /* */ }
-  }, [lang, theme, rawTheme]);
+  }, [lang, mode]);
   const p = await c.newPage();
   p.on("pageerror", (e) => errs.push(String(e).slice(0, 160)));
   return { c, p, T: (t) => p.locator(`[data-testid="${t}"]`) };
@@ -156,24 +155,15 @@ for (const lang of ["zh", "en"]) {
 {
   const { c, p } = await page({ theme: "light" });
   await p.goto(BASE + "/workbench", { waitUntil: "load", timeout: 60000 });
-  await p.waitForSelector("canvas", { timeout: 30000 }).catch(() => {});
-  await wait(2000);
-  // 工作台 BenchScene 背景是固定夜景 #1d1b19，不随浅色外壳改成纸色
-  const night = await p.evaluate(() => {
-    const cv = document.querySelector("canvas");
-    if (!cv) return null;
-    const st = cv.__r3f || cv[Object.keys(cv).find((k) => k.startsWith("__reactFiber") || k === "__r3f")];
-    // 读 WebGL 清屏色比较稳
-    const gl = cv.getContext("webgl2") || cv.getContext("webgl");
-    if (!gl) return "no-gl";
-    const out = new Uint8Array(4);
-    // 中上天空一点
-    const x = Math.floor(cv.width * 0.5), y = Math.floor(cv.height * 0.12);
-    gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, out);
-    return [out[0], out[1], out[2], out[3]];
-  });
-  const darkish = Array.isArray(night) && night[0] < 80 && night[1] < 80 && night[2] < 80;
-  ok(darkish || night === "no-gl", "工作台 3D 背景保持夜景色", JSON.stringify(night));
+  await p.waitForSelector("canvas", { timeout: 30000 });
+  await p.waitForFunction(() => window.__bench?.sceneBg, { timeout: 30000 });
+  const nightL = await p.evaluate(() => window.__bench.sceneBg);
+  ok(/^#1d1b19$/i.test(nightL || ""), "工作台浅色外壳下 3D 仍是夜景", nightL);
+  const T = (t) => p.locator(`[data-testid="${t}"]`);
+  await T("theme-toggle").selectOption("dark");
+  await wait(500);
+  const nightD = await p.evaluate(() => window.__bench.sceneBg);
+  ok(/^#1d1b19$/i.test(nightD || ""), "切到深色后工作台 3D 仍是夜景", nightD);
   await c.close();
 }
 
