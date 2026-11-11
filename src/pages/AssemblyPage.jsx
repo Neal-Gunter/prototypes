@@ -288,7 +288,7 @@ export default function AssemblyPage() {
           </div>
         )}
         <div className="pointer-events-none absolute left-2 top-2 flex max-w-md flex-col gap-1" aria-live="polite" data-testid="toasts">
-          {demo && <div className="bg-ink/85 px-2 py-1 text-sm text-paper-2" data-testid="demo-step">{demo.text}</div>}
+          {demo && <div className="bg-ink/85 px-2 py-1 text-sm text-on-brand" data-testid="demo-step">{demo.text}</div>}
           {toasts.map((t) => (
             <div key={t.id} className={`px-2 py-1 text-sm ${t.kind === "error" ? "bg-red-700 text-white" : t.kind === "warn" ? "bg-amber-200 text-ink" : t.kind === "ok" ? "bg-emerald-700 text-white" : "bg-paper-2/90 text-ink"}`}>{t.text}</div>
           ))}

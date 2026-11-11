@@ -120,8 +120,8 @@ export default function TeardownPage() {
                 <li key={d.id}>
                   <button type="button" onClick={() => { const n = new URLSearchParams(); n.set("d", d.id); const path = params.get("path"); if (path) n.set("path", path); setParams(n); }} className={`w-full border px-3 py-2 text-left text-sm ${d.id === dev.id ? "border-ink bg-ink text-paper" : "border-line bg-paper-2 hover:border-ink"}`} data-testid={`td-device-${d.id}`} aria-current={d.id === dev.id ? "true" : undefined}>
                     <span className="block font-medium">{L(d.name)}</span>
-                    <span className={`block font-mono text-[11px] ${d.id === dev.id ? "text-paper-2" : "text-ink-soft"}`}>{d.model}</span>
-                    <span className={`block text-[11px] ${d.id === dev.id ? "text-paper-2" : "text-ink-soft"}`}>{L({ zh: `${d.steps.length} 步 · 约 ${d.minutes} 分钟 · ${d.battery ? "含电池" : "无电池"} · ${d.volts} V 直流 · 已完成 ${p}`, en: `${d.steps.length} steps · about ${d.minutes} min · ${d.battery ? "has a battery" : "no battery"} · ${d.volts} V DC · ${p} done` })}</span>
+                    <span className={`block font-mono text-[11px] ${d.id === dev.id ? "text-on-brand/90" : "text-ink-soft"}`}>{d.model}</span>
+                    <span className={`block text-[11px] ${d.id === dev.id ? "text-on-brand/90" : "text-ink-soft"}`}>{L({ zh: `${d.steps.length} 步 · 约 ${d.minutes} 分钟 · ${d.battery ? "含电池" : "无电池"} · ${d.volts} V 直流 · 已完成 ${p}`, en: `${d.steps.length} steps · about ${d.minutes} min · ${d.battery ? "has a battery" : "no battery"} · ${d.volts} V DC · ${p} done` })}</span>
                   </button>
                 </li>
               );

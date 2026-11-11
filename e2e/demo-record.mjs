@@ -13,6 +13,7 @@
 // v43：演示零件悬停/焦点高亮和提示、示波器可拖测量光标，以及致谢页 v43。
 // v44：演示配色开关、深色外壳和装配台、打印仍为浅色，以及致谢页 v44。
 // v45：演示路径末尾的短测验和自学记录打印页，以及致谢页 v45。
+// v46：演示深蓝+白色改版、圆角外壳、浅色 3D 场景，以及致谢页 v46。
 // 用法：BASE=http://localhost:4173 OUT=/workspace/proto-site/v33 node e2e/demo-record.mjs  然后用 ffmpeg 转 mp4
 import { chromium } from "playwright";
 import fs from "node:fs";
@@ -218,6 +219,17 @@ await step("致谢：v45", async () => {
   await p.goto(BASE + "/credits#v45-quiz"); await w(1500);
   await T("credits-v45").scrollIntoViewIfNeeded().catch(() => {}); await w(4000);
 }, "v45：路径测验和自学记录是自己写的，没有新增第三方材料；姓名和成绩只留在本机");
+await step("改版：深蓝与白色", async () => {
+  await p.goto(BASE + "/"); await w(2000); await scroll(250, 3, 300);
+  await p.goto(BASE + "/assembly/?scene=electrics"); await w(7000);
+  await p.goto(BASE + "/bank"); await T("bank-paths").waitFor({ timeout: 20000 }).catch(() => {}); await w(2000);
+  await p.goto(BASE + "/help#whats-new"); await T("help-whats-new").waitFor({ timeout: 20000 }); await w(2000);
+  await T("help-whats-new").scrollIntoViewIfNeeded(); await w(2000);
+}, "v46：界面改成简约的深蓝加白色，圆角卡片和按钮，3D 场景是浅色干净背景；示波器屏幕仍是深蓝");
+await step("致谢：v46", async () => {
+  await p.goto(BASE + "/credits#v46-ui"); await w(1500);
+  await T("credits-v46").scrollIntoViewIfNeeded().catch(() => {}); await w(4000);
+}, "v46：深蓝加白色的改版是自己写的，没有新增第三方材料；仍用原来的 token 名，只换色值");
 await step("工作台：固件编辑器", async () => {
   await p.goto(BASE + "/workbench/"); await T("code").waitFor({ timeout: 30000 }); await w(2500);
   await T("code").focus(); await w(800); await p.keyboard.press("Tab"); await w(1500);

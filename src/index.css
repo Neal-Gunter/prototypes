@@ -136,6 +136,10 @@ kbd {
   color: var(--color-on-brand);
 }
 .bg-ink\/30 { background-color: rgb(11 37 69 / 0.35); }
+.bg-ink\/75, .bg-ink\/85 {
+  background-color: rgb(11 37 69 / 0.8);
+  color: var(--color-on-brand);
+}
 .bg-ink\/75 { background-color: rgb(11 37 69 / 0.75); }
 .bg-ink\/85 { background-color: rgb(11 37 69 / 0.85); }
 pre.bg-ink {

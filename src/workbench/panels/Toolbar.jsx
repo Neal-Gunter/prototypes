@@ -264,7 +264,7 @@ export function MeterHud() {
   const text = m.mode === "off" ? "OFF" : !r || r.kind === "none" ? (m.mode === "cont" ? "OL" : "0.00") : r.floating ? "乱跳" : `${r.text} ${r.unit}`;
   void parts;
   return (
-    <div className="absolute right-3 top-3 w-56 border border-ink bg-[#262a2e]/95 p-2.5 text-xs text-paper-2 shadow" data-testid="meter-hud">
+    <div className="absolute right-3 top-3 w-56 border border-ink bg-[#262a2e]/95 p-2.5 text-xs text-white shadow" data-testid="meter-hud">
       <div className="flex items-baseline justify-between">
         <span className="opacity-75">{m.mode === "cont" ? "通断档" : m.mode === "dcv" ? "直流电压档" : "关"}</span>
         {beep && <span className="text-[#ffd75a]">•)) 嘀——</span>}

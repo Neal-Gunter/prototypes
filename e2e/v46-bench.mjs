@@ -80,7 +80,7 @@ const cr = (a, b) => {
       brand: pick("--color-brand"),
     };
   });
-  ok(/^#f4f7fb$/i.test(tokens.paper) && /^#ffffff$/i.test(tokens.paper2) && /^#0b2545$/i.test(tokens.ink), "浅色 token 为深蓝+白", JSON.stringify(tokens));
+  ok(/^#f4f7fb$/i.test(tokens.paper) && /^#fff(fff)?$/i.test(tokens.paper2) && /^#0b2545$/i.test(tokens.ink), "浅色 token 为深蓝+白", JSON.stringify(tokens));
   ok(/^#1868b0$/i.test(tokens.copper), "点缀是浅蓝而不是铜", tokens.copper);
   ok(/^#0b2545$/i.test(tokens.brand), "brand token 为深蓝", tokens.brand);
   const navRadius = await T("main-nav").locator("a").first().evaluate((el) => getComputedStyle(el).borderRadius);
@@ -160,7 +160,7 @@ const cr = (a, b) => {
 if (SHOT) {
   const screens = [
     ["home", "/"],
-    ["assembly", "/assembly"],
+    ["assembly", "/assembly?scene=electrics"],
     ["bank", "/bank"],
     ["help", "/help"],
   ];
@@ -178,14 +178,24 @@ if (SHOT) {
         await p.screenshot({ path: `${OUT}/screenshots/${name}-${theme}-${tag}.png`, fullPage: false });
       }
       // scope
-      await p.goto(BASE + "/assembly", { waitUntil: "load", timeout: 60000 });
+      await p.goto(BASE + "/assembly?scene=electrics", { waitUntil: "load", timeout: 60000 });
       await p.waitForSelector("canvas", { timeout: 60000 }).catch(() => {});
       await wait(4000);
-      if (await T("tab-elec").count()) { await T("tab-elec").click(); await wait(800); }
+      if (await T("tab-elec").count()) { await T("tab-elec").click().catch(() => {}); await wait(800); }
+      const details = T("bench-scope-panel");
+      if (await details.count()) {
+        await details.first().scrollIntoViewIfNeeded().catch(() => {});
+        if ((await details.first().getAttribute("open")) == null) {
+          await details.locator("summary").first().click().catch(() => {});
+          await wait(400);
+        }
+      }
       if (await T("bench-scope-open").count()) {
-        await T("bench-scope-open").click();
+        await T("bench-scope-open").first().scrollIntoViewIfNeeded().catch(() => {});
+        await T("bench-scope-open").first().click({ force: true }).catch(() => {});
         await T("bench-scope").waitFor({ timeout: 15000 }).catch(() => {});
-        await wait(1500);
+        if (await T("mscope-capture").count()) { await T("mscope-capture").first().click().catch(() => {}); await wait(2500); }
+        else await wait(1500);
       }
       await p.screenshot({ path: `${OUT}/screenshots/scope-${theme}-${tag}.png`, fullPage: false });
       await c.close();
