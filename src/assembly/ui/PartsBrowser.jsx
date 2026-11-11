@@ -44,8 +44,8 @@ export function useLibrary() {
 }
 function Thumb({ id, real }) {
   const [bad, setBad] = useState(false);
-  if (bad || !real) return <div aria-hidden="true" className="flex size-12 shrink-0 items-center justify-center border border-line bg-paper-2 text-[10px] text-ink-soft">{real ? "CAD" : "程序"}</div>;
-  return <img src={pub(`/lib/thumbs/${id}.webp`)} alt="" loading="lazy" width="48" height="48" className="size-12 shrink-0 border border-line bg-paper-2 object-contain" onError={() => setBad(true)} />;
+  if (bad || !real) return <div aria-hidden="true" className="flex size-12 shrink-0 items-center justify-center rounded-lg border border-line bg-paper-2 text-[10px] text-ink-soft">{real ? "CAD" : "程序"}</div>;
+  return <img src={pub(`/lib/thumbs/${id}.webp`)} alt="" loading="lazy" width="48" height="48" className="size-12 shrink-0 rounded-lg border border-line bg-paper-2 object-contain" onError={() => setBad(true)} />;
 }
 const VOLTS = ["1.5", "3", "3.3", "3.7", "5", "6", "9", "12", "24", "48", "250"];
 const SEL = "border border-line bg-paper-2 px-1 py-1";
@@ -123,7 +123,7 @@ export default function PartsBrowser({ onAdd, compact = false, onPick, favs: fav
         </select>
       </div>
       <p className="text-xs text-ink-soft" data-testid="parts-found">找到 {list.length} 个{list.length > limit ? `，显示前 ${limit} 个` : ""}。尺寸为 长 × 宽 × 高。接口 / 电压标签多数从名称推断（我的补充），以数据手册为准。</p>
-      <ul className={`min-h-0 flex-1 divide-y divide-line overflow-y-auto border border-line bg-paper-2 ${compact ? "max-h-[46vh] min-h-[9rem]" : ""}`} data-testid="parts-list">
+      <ul className={`min-h-0 flex-1 divide-y divide-line overflow-y-auto rounded-2xl border border-line/60 bg-paper-2 shadow-[0_1px_2px_rgba(11,37,69,0.05),0_8px_24px_rgba(11,37,69,0.06)] ${compact ? "max-h-[46vh] min-h-[9rem]" : ""}`} data-testid="parts-list">
         {list.slice(0, limit).map((r) => (
           <li key={r.id} className="flex items-center gap-2 px-2 py-1.5" data-testid={`row-${r.id}`}>
             <Thumb id={r.id} real={r.real} />

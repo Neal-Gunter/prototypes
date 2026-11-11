@@ -59,7 +59,7 @@ export default function CheckPanel({ analysis }) {
         </h2>
         <span
           data-testid="check-badge"
-          className={`px-2 py-0.5 text-xs ${ok ? "bg-mask text-paper-2" : errors.length ? "bg-mark text-paper-2" : "border border-line bg-paper-2 text-ink"}`}
+          className={`rounded-full px-2 py-0.5 text-xs ${ok ? "bg-brand text-on-brand" : errors.length ? "bg-[#A11D14] text-white" : "border border-line bg-paper-2 text-ink"}`}
         >
           {ok ? "检查通过" : hide ? "有故障" : errors.length ? `${errors.length} 个错误` : "未完成"}
         </span>
@@ -71,7 +71,7 @@ export default function CheckPanel({ analysis }) {
         <ul className="flex flex-col gap-1">
           {Object.entries(servoStatus).map(([id, s]) => (
             <li key={id} className="flex items-start gap-2" data-servo-status={id}>
-              <span className={`mt-1 inline-block size-2 shrink-0 rounded-full ${s.ok ? "bg-mask" : "bg-mark"}`} />
+              <span className={`mt-1 inline-block size-2 shrink-0 rounded-full ${s.ok ? "bg-brand" : "bg-[#A11D14]"}`} />
               <span>
                 {s.label}：{s.ok ? `能动（信号 GPIO${s.gpio}，${s.source === "battery" ? "电池供电" : "USB 5V 供电"}）` : hide ? "不动" : s.reasons[0]}
               </span>

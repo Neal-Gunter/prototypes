@@ -67,7 +67,7 @@ export function Toolbar() {
         <button
           data-usb
           onClick={() => st().toggleUsb()}
-          className={`min-h-8 border px-2 text-xs ${usb ? "border-mask bg-mask text-paper-2" : "border-line bg-paper hover:border-ink"}`}
+          className={`min-h-8 rounded-lg border px-2 text-xs ${usb ? "border-brand bg-brand text-on-brand" : "border-line bg-paper hover:border-ink"}`}
         >
           {usb ? "USB‑C 已插（点击拔掉）" : "插 USB‑C"}
         </button>
@@ -310,9 +310,9 @@ export function Toast() {
     return () => clearTimeout(t);
   }, [toast]);
   if (!toast) return null;
-  const color = toast.level === "error" ? "bg-mark" : toast.level === "ok" ? "bg-mask" : toast.level === "warn" ? "bg-copper-deep" : "bg-ink";
+  const color = toast.level === "error" ? "bg-[#A11D14] text-white" : toast.level === "ok" ? "bg-brand text-on-brand" : toast.level === "warn" ? "bg-[#F3E6C8] text-[#5A3B00]" : "bg-ink text-paper-2";
   return (
-    <div role="status" data-testid="toast" className={`pointer-events-none absolute bottom-4 left-1/2 max-w-[80%] -translate-x-1/2 px-4 py-2 text-center text-sm text-paper-2 shadow ${color}`}>
+    <div role="status" data-testid="toast" className={`pointer-events-none absolute bottom-4 left-1/2 max-w-[80%] -translate-x-1/2 rounded-lg px-4 py-2 text-center text-sm shadow-[0_1px_2px_rgba(11,37,69,0.08)] ${color}`}>
       {toast.msg}
     </div>
   );

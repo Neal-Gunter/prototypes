@@ -9,7 +9,7 @@ import { PROC_BY_ID } from "../procedural.js";
 import { elec } from "../elecStore.js";
 import { elemKind, jointOf, terminalAt } from "../netlist.js";
 import { pinLabel } from "../physpins.js";
-import { WIRE, WIRE_COLORS, bench, benchSide, themeVars, remapWire } from "../../ui/palette.js";
+import { WIRE, WIRE_COLORS, themeVars, remapWire } from "../../ui/palette.js";
 import { useTheme } from "../../theme.js";
 
 import { MAT, PROC_MAT, Boxes, ProcMesh, Glb } from "./partMeshes.jsx";
@@ -226,39 +226,22 @@ function ToolMesh({ vis }) {
     </group>
   );
 }
-function mulberry32(a) {
-  return () => {
-    let t = a += 0x6D2B79F5;
-    t = Math.imul(t ^ t >>> 15, t | 1);
-    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
-  };
-}
-function makeBenchMaps() {
-  const size = 512, rnd = mulberry32(0xb41c41);
+function makeBenchMaps(dark) {
+  const size = 512;
   const c = document.createElement("canvas");
   c.width = c.height = size;
   const g = c.getContext("2d");
-  g.fillStyle = bench;
+  g.fillStyle = dark ? "#13315C" : "#F4F7FB";
   g.fillRect(0, 0, size, size);
-  for (let y = 0; y < size; y++) {
-    const a = 0.03 + rnd() * 0.05;
-    g.fillStyle = `rgba(40,24,10,${a})`;
-    g.fillRect(0, y, size, 1);
-    if (y % 7 === 0) {
-      g.fillStyle = `rgba(210,180,140,${0.02 + rnd() * 0.04})`;
-      g.fillRect(0, y, size, 1);
-    }
-  }
-  // 切割垫细格，颜色压暗，不抢零件
-  g.strokeStyle = "rgba(27,24,20,0.16)";
+  // 深蓝细格，不抢零件
+  g.strokeStyle = dark ? "rgba(197,212,232,0.28)" : "rgba(11,37,69,0.14)";
   g.lineWidth = 1;
   const step = size / 8;
   for (let i = 0; i <= 8; i++) {
     g.beginPath(); g.moveTo(i * step, 0); g.lineTo(i * step, size); g.stroke();
     g.beginPath(); g.moveTo(0, i * step); g.lineTo(size, i * step); g.stroke();
   }
-  g.strokeStyle = "rgba(27,24,20,0.28)";
+  g.strokeStyle = dark ? "rgba(197,212,232,0.45)" : "rgba(11,37,69,0.26)";
   g.lineWidth = 1.25;
   const major = size / 2;
   for (let i = 0; i <= 2; i++) {
@@ -273,16 +256,19 @@ function makeBenchMaps() {
   return map;
 }
 function Bench() {
-  const map = useMemo(() => makeBenchMaps(), []);
+  const [, , theme] = useTheme();
+  const dark = theme === "dark";
+  const C = themeVars(theme);
+  const map = useMemo(() => makeBenchMaps(dark), [dark]);
   return (
     <group>
       <mesh position={[0, -1.6, 0]} receiveShadow>
         <boxGeometry args={[BENCH.w + 0.4, 3.2, BENCH.d + 0.4]} />
-        <meshStandardMaterial color={benchSide} roughness={0.9} />
+        <meshStandardMaterial color={dark ? C.paper : "#E8EEF5"} roughness={0.92} />
       </mesh>
       <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[BENCH.w + 0.4, BENCH.d + 0.4]} />
-        <meshStandardMaterial map={map} roughness={0.86} metalness={0} />
+        <meshStandardMaterial map={map} roughness={0.9} metalness={0} />
       </mesh>
     </group>
   );

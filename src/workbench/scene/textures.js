@@ -167,7 +167,7 @@ function drawMat(c, w, d) {
   c.width = w * k;
   c.height = d * k;
   const g = c.getContext("2d");
-  g.fillStyle = "#3d6470";
+  g.fillStyle = "#2F4E70";
   g.fillRect(0, 0, c.width, c.height);
   // 细微颗粒
   const rnd = mulberry(3);

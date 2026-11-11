@@ -167,7 +167,7 @@ export default function TeardownPage() {
             </div>
             <ol className="mt-2 space-y-4" data-testid="td-steps">
               {dev.steps.map((s, i) => (
-                <li key={i} id={`td-step-${i + 1}`} tabIndex={-1} aria-current={sN === i + 1 ? "step" : undefined} className={`grid gap-3 border p-3 sm:grid-cols-[1fr_14rem] ${prog.steps.includes(i) ? "border-green-700 bg-green-50" : "border-line bg-paper-2"} ${sN === i + 1 ? "outline outline-4 outline-blue-700" : ""}`} data-testid="td-step">
+                <li key={i} id={`td-step-${i + 1}`} tabIndex={-1} aria-current={sN === i + 1 ? "step" : undefined} className={`grid gap-3 rounded-2xl border p-3 sm:grid-cols-[1fr_14rem] ${prog.steps.includes(i) ? "border-brand bg-[#E8F1FB]" : "border-line/60 bg-paper-2"} ${sN === i + 1 ? "outline outline-4 outline-brand" : ""}`} data-testid="td-step">
                   <div>
                     <label className="flex items-start gap-2 font-medium">
                       <input type="checkbox" checked={prog.steps.includes(i)} onChange={() => toggle("steps", i)} data-testid={`td-step-check-${i}`} className="mt-1" />

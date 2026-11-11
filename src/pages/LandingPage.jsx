@@ -133,7 +133,7 @@ export default function LandingPage() {
               </a>
             </div>
           </div>
-          <aside className="border border-ink bg-paper-2" aria-label="概念说明">
+          <aside className="overflow-hidden rounded-2xl border border-ink/70 bg-paper-2 shadow-[0_1px_2px_rgba(11,37,69,0.05),0_10px_28px_rgba(11,37,69,0.08)]" aria-label="概念说明">
             <p className="border-b border-ink px-4 py-2 text-sm font-medium">概念说明</p>
             <dl>
               {sheet.map(([label, value]) => (

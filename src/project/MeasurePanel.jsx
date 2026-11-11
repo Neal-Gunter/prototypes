@@ -5,7 +5,7 @@ import * as Mz from "./measure.js";
 import { tr } from "../i18n.js";
 
 const btn = "min-h-9 border border-line bg-paper-2 px-2.5 text-sm hover:border-copper disabled:opacity-40";
-export const ST_CLS = { est: "border-line bg-paper text-ink-soft", ok: "border-green-600 bg-green-50 text-green-800", dev: "border-red-600 bg-red-50 text-red-800", cal: "border-blue-600 bg-blue-50 text-blue-800" };
+export const ST_CLS = { est: "rounded-lg border-line bg-paper text-ink-soft", ok: "rounded-lg border-brand bg-[#E8F1FB] text-brand", dev: "rounded-lg border-red-600 bg-red-50 text-red-800", cal: "rounded-lg border-blue-600 bg-blue-50 text-blue-800" };
 const ST_EN = { est: "Estimate only", ok: "Verified on real hardware", dev: "Deviates", cal: "Calibrated from this reading" };
 const EX_EN = { est: "Estimate only", ok: "Example data: matches (not measured)", dev: "Example data: deviates (not measured)", cal: "Example data: calibrated (not measured)" };
 export const Badge = ({ s, ex, testid }) => <span className={`inline-block border px-1 text-[11px] ${ST_CLS[s]}`} data-testid={testid} data-status={s} data-example={ex ? "1" : "0"}>{ex ? tr(Mz.EXAMPLE_ZH[s], EX_EN[s]) : tr(Mz.STATUS_ZH[s], ST_EN[s])}</span>;

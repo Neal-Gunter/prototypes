@@ -53,7 +53,7 @@ export default function RepairPanel() {
     <section className="flex flex-col gap-2 border-b border-line pb-3 text-sm" data-testid="repair-panel">
       <div className="flex items-center justify-between">
         <h2 className="font-medium">维修任务：这个机器人不动，找出故障</h2>
-        <span className={`px-2 py-0.5 text-xs ${rp.done ? "bg-mask text-paper-2" : "border border-line bg-paper-2 text-ink"}`} data-testid="repair-score">
+        <span className={`rounded-full px-2 py-0.5 text-xs ${rp.done ? "bg-brand text-on-brand" : "border border-line bg-paper-2 text-ink"}`} data-testid="repair-score">
           {rp.done ? `完成 · ${rp.done.score} 分` : `当前 ${Math.max(0, live)} 分`}
         </span>
       </div>
@@ -102,7 +102,7 @@ export default function RepairPanel() {
         ))}
       </div>
       {rp.done && (
-        <p className="bg-mask/10 p-2 text-xs text-mask" data-testid="repair-done">
+        <p className="rounded-lg bg-[#E8F1FB] p-2 text-xs text-brand" data-testid="repair-done">
           完成：用时 {rp.done.secs} 秒，先诊断后修复的故障 {rp.done.found} / 3，得分 {rp.done.score}。评分规则是这个原型自己定的，只用来练习。
         </p>
       )}

@@ -8,7 +8,7 @@ import { Link } from "react-router-dom";
 import { benchToDesc, BENCH_KEY } from "../../repair/benchImport.js";
 import BenchScope from "./BenchScope.jsx";
 
-const LV = { error: "border-red-700 bg-red-50", warn: "border-amber-500 bg-amber-50", info: "border-line bg-paper-2", ok: "border-emerald-700 bg-emerald-50" };
+const LV = { error: "rounded-lg border border-[#A11D14] bg-[#FDECEC] text-[#A11D14]", warn: "rounded-lg border border-[#C4A35A] bg-[#F3E6C8] text-[#5A3B00]", info: "rounded-lg border border-line/60 bg-paper-2 text-ink", ok: "rounded-lg border border-brand bg-[#E8F1FB] text-brand" };
 
 export default function ElecPanel({ probes, setProbes, tool, setTool }) {
   const [, force] = useState(0);
@@ -85,7 +85,7 @@ export default function ElecPanel({ probes, setProbes, tool, setTool }) {
               : st?.done ? "程序结束" : <span className="text-ink-soft">还没上传</span>}
             {st?.warn && <span className="ml-1 text-amber-700">{st.warn}</span>}
           </p>
-          <pre className="mt-1 h-24 overflow-y-auto border border-line bg-ink p-1 font-mono text-[11px] leading-4 text-paper-2" role="region" tabIndex={0} aria-label="串口监视器（可滚动）" data-testid="serial">{(st?.serial || "").slice(-1500) || "（串口监视器）"}</pre>
+          <pre className="mt-1 h-24 overflow-y-auto rounded-lg border border-line bg-ink p-2 font-mono text-[11px] leading-4 text-paper-2" role="region" tabIndex={0} aria-label="串口监视器（可滚动）" data-testid="serial">{(st?.serial || "").slice(-1500) || "（串口监视器）"}</pre>
         </section>
       )}
 
@@ -118,11 +118,11 @@ export default function ElecPanel({ probes, setProbes, tool, setTool }) {
         <p className="mt-1 text-xs text-ink-soft">选“表笔”后：左键点 = 红表笔，右键（或 Shift+左键）点 = 黑表笔。点针脚、焊盘或面包板孔。</p>
         <p className="text-xs">红：{probes.red ? termLabel(engine, probes.red.term) : "—"} · 黑：{probes.black ? termLabel(engine, probes.black.term) : "—"}
           {(probes.red || probes.black) && <button type="button" className="ml-1 underline" onClick={() => setProbes({})}>收起</button>}</p>
-        <p className="mt-1 border border-line bg-paper-2 px-2 py-1 font-mono text-base" data-testid="meter-reading">{reading ? reading.text : "—"}</p>
+        <p className="mt-1 rounded-lg border border-line bg-paper-2 px-2 py-1 font-mono text-base" data-testid="meter-reading">{reading ? reading.text : "—"}</p>
         {reading?.warn && <p className="text-xs text-amber-700">{reading.warn}</p>}
       </section>
 
-      <details open={realOpen} onToggle={(e) => setRealOpen(e.currentTarget.open)} className="border border-copper bg-paper-2 p-2" data-testid="real-panel">
+      <details open={realOpen} onToggle={(e) => setRealOpen(e.currentTarget.open)} className="rounded-xl border border-copper bg-paper-2 p-3" data-testid="real-panel">
         <summary className="cursor-pointer font-medium">对照现实：实物上该量到多少</summary>
         <p className="mt-1 text-xs text-ink-soft">照着做好实物后，用万用表量同样两点，和模拟读数对比。差很多：多半是接错孔、虚焊或零件规格不同。</p>
         <ul className="mt-1 flex flex-col gap-1 text-xs">
@@ -136,13 +136,13 @@ export default function ElecPanel({ probes, setProbes, tool, setTool }) {
         <p className="font-medium">电路检查</p>
         <ul className="mt-1 flex flex-col gap-1" data-testid="checks">
           {(L?.checks || []).map((c) => (
-            <li key={c.text} className={`border-l-4 px-2 py-1 text-xs ${LV[c.level] || LV.info}`}>{c.text}{c.fix && <span className="block text-ink-soft">怎么改：{c.fix}</span>}</li>
+            <li key={c.text} className={`px-2 py-1 text-xs ${LV[c.level] || LV.info}`}>{c.text}{c.fix && <span className="block text-ink-soft">怎么改：{c.fix}</span>}</li>
           ))}
           {L && !L.checks.length && <li className="text-xs text-ink-soft">没有发现问题（只检查了模拟里能判断的那些项目）</li>}
         </ul>
       </section>
 
-      <details className="border border-line bg-paper-2 p-2" data-testid="bench-scope-panel">
+      <details className="rounded-xl border border-line/60 bg-paper-2 p-3" data-testid="bench-scope-panel">
         <summary className="cursor-pointer font-medium">示波器（时域模式，v19：仿真你台面上的电路）：开机波形、舵机起步跌落、加不加电容</summary>
         <div className="mt-1"><BenchScope /></div>
       </details>

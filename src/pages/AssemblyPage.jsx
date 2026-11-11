@@ -258,7 +258,7 @@ export default function AssemblyPage() {
     <section className="flex flex-col gap-3 px-3 py-3 lg:h-[calc(100vh-7.5rem)] lg:flex-row" data-testid="assembly">
       <Tour setTab={setTab} />
       <aside className="flex min-h-0 flex-col gap-2 overflow-y-auto lg:w-80">
-        <h1 className="text-xl font-medium">{tr("装配台")} <span className="ml-1 border border-copper px-1.5 py-0.5 align-middle text-xs text-copper">{tr("早期原型，简化仿真")}</span></h1>
+        <h1 className="text-xl font-medium">{tr("装配台")} <span className="ml-1 rounded-full border border-copper px-2 py-0.5 align-middle text-xs text-copper">{tr("早期原型，简化仿真")}</span></h1>
         <p className="text-xs leading-5 text-ink-soft">{tr("零件有真实尺寸（毫米），由 Rapier 刚体引擎做碰撞：零件不会互相穿过去，拖着的零件会被挡住或推开别的零件。")}</p>
         <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={flip} onChange={(e) => setFlip(e.target.checked)} />{tr("排针翻面放（长针朝下，用来插面包板）")}</label>
         <div className="shrink-0 rounded-2xl border border-line/60 bg-paper-2 p-3 text-xs leading-5 shadow-[0_1px_2px_rgba(11,37,69,0.05),0_8px_24px_rgba(11,37,69,0.06)]">
@@ -288,19 +288,19 @@ export default function AssemblyPage() {
           </div>
         )}
         <div className="pointer-events-none absolute left-2 top-2 flex max-w-md flex-col gap-1" aria-live="polite" data-testid="toasts">
-          {demo && <div className="bg-ink/85 px-2 py-1 text-sm text-on-brand" data-testid="demo-step">{demo.text}</div>}
+          {demo && <div className="rounded-lg bg-ink/85 px-3 py-1.5 text-sm text-on-brand" data-testid="demo-step">{demo.text}</div>}
           {toasts.map((t) => (
-            <div key={t.id} className={`px-2 py-1 text-sm ${t.kind === "error" ? "bg-red-700 text-white" : t.kind === "warn" ? "bg-amber-200 text-ink" : t.kind === "ok" ? "bg-emerald-700 text-white" : "bg-paper-2/90 text-ink"}`}>{t.text}</div>
+            <div key={t.id} className={`px-3 py-1.5 text-sm shadow-[0_1px_2px_rgba(11,37,69,0.08)] ${t.kind === "error" ? "rounded-lg bg-[#A11D14] text-white" : t.kind === "warn" ? "rounded-lg bg-[#F3E6C8] text-[#5A3B00]" : t.kind === "ok" ? "rounded-lg bg-brand text-on-brand" : "rounded-lg border border-line/60 bg-paper-2/95 text-ink"}`}>{t.text}</div>
           ))}
         </div>
-        <div className="absolute bottom-2 left-2 bg-paper-2/90 px-2 py-1 font-mono text-xs" data-testid="pen-readout">
+        <div className="absolute bottom-2 left-2 rounded-lg bg-paper-2/90 px-2 py-1 font-mono text-xs" data-testid="pen-readout">
           穿透检测：当前最深 {pen ? pen.now.toFixed(3) : "—"} mm · 本次最深 {pen ? pen.max.toFixed(3) : "—"} mm（阈值 0.1 mm）· 零件 {uids.length}
         </div>
       </div>
       <aside className="flex min-h-0 flex-col gap-3 overflow-y-auto text-sm lg:w-80">
         <div className="flex gap-1" role="tablist">
           {[["tools", "工具与装配"], ["elec", "通电"], ["octo", "八爪鱼"]].map(([k, zh]) => (
-            <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={`min-h-9 flex-1 border ${tab === k ? "border-ink bg-ink text-paper-2" : "border-line bg-paper-2"}`} data-testid={`tab-${k}`}>{tr(zh)}</button>
+            <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={`min-h-9 flex-1 rounded-lg border ${tab === k ? "border-ink bg-ink text-paper-2" : "border-line bg-paper-2"}`} data-testid={`tab-${k}`}>{tr(zh)}</button>
           ))}
         </div>
         <div className={tab === "octo" ? "" : "hidden"}><OctoPanel ready={ready} busy={!!(demo && !demo.done)} clear={clear} run={async (s) => { stopRef.current = false; if (window.__asmSpeed) return driveRun(s); let k = Math.round(s * 120); while (k-- > 0) engine.update(1 / 120); await new Promise((r) => requestAnimationFrame(r)); }} setDemo={setDemo} onExport={() => { localStorage.setItem("octo-guide", JSON.stringify(octoGuide(octoSim, engine))); nav("/assembly/octopus-guide?src=bench"); }} /></div>
@@ -308,7 +308,7 @@ export default function AssemblyPage() {
           <legend className="font-medium">{tr("练习电路（自动装配到桌面上）")}</legend>
           <div className="mt-1 flex flex-col gap-1">
             {Object.entries(PRESETS).map(([k, p]) => (
-              <button key={k} type="button" disabled={!ready || (demo && !demo.done)} onClick={() => { setTab("elec"); buildList(p.text, p.zh.split("：")[0]); }} className="min-h-9 border border-line bg-paper-2 px-2 text-left text-xs disabled:opacity-50" data-testid={`preset-${k}`}>{p.zh}</button>
+              <button key={k} type="button" disabled={!ready || (demo && !demo.done)} onClick={() => { setTab("elec"); buildList(p.text, p.zh.split("：")[0]); }} className="min-h-9 rounded-lg border border-line bg-paper-2 px-2 text-left text-xs disabled:opacity-50" data-testid={`preset-${k}`}>{p.zh}</button>
             ))}
           </div>
           <details className="mt-1 text-xs">

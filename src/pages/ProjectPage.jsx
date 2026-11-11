@@ -99,7 +99,7 @@ export default function ProjectPage() {
       <p className="mt-1 max-w-3xl text-sm text-ink-soft">{tr("跟着 6 步把在线仿真和动手制作连起来：每一步都有通过 / 不通过的检查和提示；做完生成可打印的制作单（零件、接线、焊接顺序、万用表读数、安全）。数字标“估算”的是模型值，没在实物上测过。")}</p>
       <ol className="mt-4 flex flex-wrap gap-1" data-testid="stepper">
         {P.STEPS.map((s, i) => (
-          <li key={s.k}><button type="button" className={s.k === cur ? btnOn : btn} onClick={() => setStep(s.k)} data-testid={`step-${s.k}`} data-done={prog.done[i] ? "1" : "0"}>{prog.done[i] ? "✓ " : `${i + 1}. `}{tr(s.zh, s.en)}{mrep.steps[s.k] && mrep.steps[s.k].status !== "est" ? <span className={`ml-1 inline-block h-2 w-2 rounded-full ${mrep.steps[s.k].status === "dev" ? "bg-red-600" : "bg-green-600"}`} title={tr(Mz.statusText(mrep.steps[s.k].status, mrep.steps[s.k].example))} data-testid={`step-meas-${s.k}`} data-status={mrep.steps[s.k].status} /> : null}</button></li>
+          <li key={s.k}><button type="button" className={s.k === cur ? btnOn : btn} onClick={() => setStep(s.k)} data-testid={`step-${s.k}`} data-done={prog.done[i] ? "1" : "0"}>{prog.done[i] ? "✓ " : `${i + 1}. `}{tr(s.zh, s.en)}{mrep.steps[s.k] && mrep.steps[s.k].status !== "est" ? <span className={`ml-1 inline-block h-2 w-2 rounded-full ${mrep.steps[s.k].status === "dev" ? "bg-[#A11D14]" : "bg-brand"}`} title={tr(Mz.statusText(mrep.steps[s.k].status, mrep.steps[s.k].example))} data-testid={`step-meas-${s.k}`} data-status={mrep.steps[s.k].status} /> : null}</button></li>
         ))}
         <li className="ml-auto"><button type="button" className={btn} onClick={() => { if (confirm(tr("清空本机保存的项目进度（包括实测记录和照片）？"))) { setState(P.emptyState()); setPhotos({}); setStep(null); setMsg(null); } }} data-testid="reset-project">{tr("重置项目")}</button></li>
       </ol>
