@@ -35,7 +35,10 @@ const READ = () => {
       if (c && c.a > 0.05) return c;
       n = n.parentElement;
     }
-    return { r: 231, g: 223, b: 208, a: 1 };
+    const root = parse(getComputedStyle(document.body).backgroundColor) || parse(getComputedStyle(document.documentElement).backgroundColor);
+    if (root && root.a > 0.05) return root;
+    const dark = document.documentElement.getAttribute("data-theme") === "dark";
+    return dark ? { r: 28, g: 25, b: 21, a: 1 } : { r: 231, g: 223, b: 208, a: 1 };
   };
   const cols = [];
   if (s.outlineStyle !== "none" && parseFloat(s.outlineWidth) > 0) { const c = parse(s.outlineColor); if (c && c.a > 0.05) cols.push(c); }
@@ -49,7 +52,7 @@ const READ = () => {
 for (const [k, u] of PAGES) {
   if (ONLY && !ONLY.has(k)) continue;
   const c = await b.newContext({ viewport: { width: 1366, height: 768 }, reducedMotion: "reduce" }); // 站点在减少动态效果时关掉平滑滚动，落点位置才能马上量
-  await c.addInitScript(() => { try { localStorage.setItem("asm-tour-v22-done", "1"); } catch { /* */ } });
+  await c.addInitScript((theme) => { try { localStorage.setItem("asm-tour-v22-done", "1"); if (theme === "light" || theme === "dark" || theme === "system") localStorage.setItem("wb-theme-v1", theme); } catch { /* */ } }, process.env.THEME || "light");
   const p = await c.newPage();
   const errs = [];
   try {
@@ -119,7 +122,7 @@ for (const [k, u] of PAGES) {
   await c.close();
 }
 await b.close();
-fs.writeFileSync(`${OUT}/focus-order.json`, JSON.stringify(rows, null, 1));
+fs.writeFileSync(`${OUT}/focus-order-${process.env.THEME || "light"}.json`, JSON.stringify(rows, null, 1));
 if (MUT) { const want = { "mut-trap": "trap", "mut-order": "order", "mut-visible": "visible", "mut-contrast": "contrast" }; const hit = rows.filter((r) => r.probs?.some((x) => x[0] === want[r.page])).length; console.log(`focus-order 自测：${hit}/4`); process.exit(hit === 4 ? 0 : 1); }
-console.log(`focus-order：${rows.length} 页，${rows.length - fail} 页通过，${fail} 页有问题`);
+console.log(`focus-order（${process.env.THEME || "light"}）：${rows.length} 页，${rows.length - fail} 页通过，${fail} 页有问题`);
 process.exit(fail ? 1 : 0);

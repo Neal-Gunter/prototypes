@@ -53,7 +53,7 @@ export default function RepairPanel() {
     <section className="flex flex-col gap-2 border-b border-line pb-3 text-sm" data-testid="repair-panel">
       <div className="flex items-center justify-between">
         <h2 className="font-medium">维修任务：这个机器人不动，找出故障</h2>
-        <span className={`px-2 py-0.5 text-xs ${rp.done ? "bg-mask text-paper-2" : "bg-line"}`} data-testid="repair-score">
+        <span className={`px-2 py-0.5 text-xs ${rp.done ? "bg-mask text-paper-2" : "border border-line bg-paper-2 text-ink"}`} data-testid="repair-score">
           {rp.done ? `完成 · ${rp.done.score} 分` : `当前 ${Math.max(0, live)} 分`}
         </span>
       </div>

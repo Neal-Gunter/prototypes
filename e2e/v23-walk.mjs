@@ -17,7 +17,7 @@ const rep = [];
 for (const [vk, vp] of VPS) for (const [k, u] of PAGES) {
   if (ONLY && !ONLY.has(k)) continue;
   const ctx = await b.newContext({ viewport: { width: vp.width, height: vp.height }, isMobile: vp.isMobile, hasTouch: vp.hasTouch, deviceScaleFactor: vp.deviceScaleFactor || 1 });
-  await ctx.addInitScript(([LANG, LANG_KEY]) => { try { localStorage.setItem("asm-tour-v22-done", "1"); if (LANG === "en") localStorage.setItem(LANG_KEY, "en"); } catch { /* */ } }, [process.env.LANG_UI || "zh", "ui-lang"]);
+  await ctx.addInitScript(([LANG, LANG_KEY, THEME]) => { try { localStorage.setItem("asm-tour-v22-done", "1"); if (LANG === "en") localStorage.setItem(LANG_KEY, "en"); if (THEME === "light" || THEME === "dark" || THEME === "system") localStorage.setItem("wb-theme-v1", THEME); } catch { /* */ } }, [process.env.LANG_UI || "zh", "ui-lang", process.env.THEME || "light"]);
   const p = await ctx.newPage(); const errs = [];
   p.on("pageerror", (e) => errs.push(e.message.slice(0, 160)));
   await p.goto(BASE + u, { waitUntil: "networkidle", timeout: 90000 }).catch((e) => errs.push("goto " + e.message.slice(0, 100)));

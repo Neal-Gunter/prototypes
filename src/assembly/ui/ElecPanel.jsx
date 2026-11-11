@@ -8,7 +8,7 @@ import { Link } from "react-router-dom";
 import { benchToDesc, BENCH_KEY } from "../../repair/benchImport.js";
 import BenchScope from "./BenchScope.jsx";
 
-const LV = { error: "border-red-700 bg-red-50", warn: "border-amber-500 bg-amber-50", info: "border-line bg-white", ok: "border-emerald-700 bg-emerald-50" };
+const LV = { error: "border-red-700 bg-red-50", warn: "border-amber-500 bg-amber-50", info: "border-line bg-paper-2", ok: "border-emerald-700 bg-emerald-50" };
 
 export default function ElecPanel({ probes, setProbes, tool, setTool }) {
   const [, force] = useState(0);
@@ -55,7 +55,7 @@ export default function ElecPanel({ probes, setProbes, tool, setTool }) {
         <p className="font-medium">电源</p>
         {!boards.length && <p className="text-xs text-ink-soft">桌面上还没有开发板。先点上面的“电路练习”，或从左侧放一块 Pico。</p>}
         {boards.map((b) => (
-          <button key={b.uid} type="button" onClick={() => setBoard(b.uid)} className={`mt-1 flex w-full items-center justify-between border px-2 py-1 text-left text-xs ${cur?.uid === b.uid ? "border-ink" : "border-line"} bg-white`} data-testid={`board-${b.ref}`}>
+          <button key={b.uid} type="button" onClick={() => setBoard(b.uid)} className={`mt-1 flex w-full items-center justify-between border px-2 py-1 text-left text-xs ${cur?.uid === b.uid ? "border-ink" : "border-line"} bg-paper-2`} data-testid={`board-${b.ref}`}>
             <span>{b.ref} · {engine.parts.get(b.uid)?.def.name_zh || b.uid}</span>
             <span className={b.powered ? "text-emerald-700" : "text-ink-soft"} data-testid="power-state">{b.powered ? `已通电（${b.via || "USB"}）` : "未通电"}</span>
           </button>
@@ -71,12 +71,12 @@ export default function ElecPanel({ probes, setProbes, tool, setTool }) {
       {cur && (
         <section>
           <p className="font-medium">固件（{cur.ref}）</p>
-          <textarea aria-label="固件代码" value={code} onChange={(e) => setCode(e.target.value)} spellCheck={false} rows={9} placeholder="点“按接线自动生成”，或者自己写 Arduino 风格代码" className="mt-1 w-full border border-line bg-white p-1 font-mono text-[11px] leading-4" data-testid="fw-code" />
+          <textarea aria-label="固件代码" value={code} onChange={(e) => setCode(e.target.value)} spellCheck={false} rows={9} placeholder="点“按接线自动生成”，或者自己写 Arduino 风格代码" className="mt-1 w-full border border-line bg-paper-2 p-1 font-mono text-[11px] leading-4" data-testid="fw-code" />
           <div className="mt-1 flex flex-wrap gap-1 text-xs">
-            <button type="button" onClick={auto} className="min-h-8 border border-line bg-white px-2" data-testid="fw-auto">按接线自动生成</button>
+            <button type="button" onClick={auto} className="min-h-8 border border-line bg-paper-2 px-2" data-testid="fw-auto">按接线自动生成</button>
             <button type="button" onClick={upload} className="min-h-8 border border-ink bg-ink px-2 text-paper-2" data-testid="fw-upload">上传并运行</button>
-            <button type="button" onClick={() => elec.stop(cur.uid)} className="min-h-8 border border-line bg-white px-2">停止</button>
-            <button type="button" onClick={download} className="min-h-8 border border-line bg-white px-2" data-testid="fw-download">下载 .ino</button>
+            <button type="button" onClick={() => elec.stop(cur.uid)} className="min-h-8 border border-line bg-paper-2 px-2">停止</button>
+            <button type="button" onClick={download} className="min-h-8 border border-line bg-paper-2 px-2" data-testid="fw-download">下载 .ino</button>
           </div>
           <p className="mt-1 text-xs" data-testid="fw-status">
             {st?.error ? <span className="text-red-700">{st.error.line ? `第 ${st.error.line} 行：` : ""}{st.error.msg}</span>
@@ -94,7 +94,7 @@ export default function ElecPanel({ probes, setProbes, tool, setTool }) {
           <p className="font-medium">动手</p>
           {btns.map((b) => (
             <button key={b.uid} type="button" onPointerDown={() => elec.press(b.uid, true)} onPointerUp={() => elec.press(b.uid, false)} onPointerLeave={() => elec.press(b.uid, false)}
-              className={`mt-1 mr-1 min-h-8 border px-2 text-xs ${engine.parts.get(b.uid)?.state.pressed ? "border-ink bg-ink text-paper-2" : "border-line bg-white"}`} data-testid={`press-${b.ref}`}>按住 {b.ref}</button>
+              className={`mt-1 mr-1 min-h-8 border px-2 text-xs ${engine.parts.get(b.uid)?.state.pressed ? "border-ink bg-ink text-paper-2" : "border-line bg-paper-2"}`} data-testid={`press-${b.ref}`}>按住 {b.ref}</button>
           ))}
           {pots.map((p) => (
             <label key={p.uid} className="mt-1 flex items-center gap-2 text-xs">{p.ref}
@@ -111,18 +111,18 @@ export default function ElecPanel({ probes, setProbes, tool, setTool }) {
         <p className="font-medium">万用表</p>
         <div className="mt-1 flex gap-1 text-xs">
           {[["V", "电压"], ["ohm", "电阻"], ["beep", "通断"]].map(([k, zh]) => (
-            <button key={k} type="button" onClick={() => setMode(k)} aria-pressed={mode === k} className={`min-h-8 flex-1 border ${mode === k ? "border-ink bg-ink text-paper-2" : "border-line bg-white"}`}>{zh}</button>
+            <button key={k} type="button" onClick={() => setMode(k)} aria-pressed={mode === k} className={`min-h-8 flex-1 border ${mode === k ? "border-ink bg-ink text-paper-2" : "border-line bg-paper-2"}`}>{zh}</button>
           ))}
-          <button type="button" onClick={() => setTool(tool === "meter" ? "hand" : "meter")} aria-pressed={tool === "meter"} className={`min-h-8 flex-1 border ${tool === "meter" ? "border-copper bg-copper text-white" : "border-line bg-white"}`} data-testid="probe-toggle">表笔</button>
+          <button type="button" onClick={() => setTool(tool === "meter" ? "hand" : "meter")} aria-pressed={tool === "meter"} className={`min-h-8 flex-1 border ${tool === "meter" ? "border-copper bg-copper text-paper" : "border-line bg-paper-2"}`} data-testid="probe-toggle">表笔</button>
         </div>
         <p className="mt-1 text-xs text-ink-soft">选“表笔”后：左键点 = 红表笔，右键（或 Shift+左键）点 = 黑表笔。点针脚、焊盘或面包板孔。</p>
         <p className="text-xs">红：{probes.red ? termLabel(engine, probes.red.term) : "—"} · 黑：{probes.black ? termLabel(engine, probes.black.term) : "—"}
           {(probes.red || probes.black) && <button type="button" className="ml-1 underline" onClick={() => setProbes({})}>收起</button>}</p>
-        <p className="mt-1 border border-line bg-white px-2 py-1 font-mono text-base" data-testid="meter-reading">{reading ? reading.text : "—"}</p>
+        <p className="mt-1 border border-line bg-paper-2 px-2 py-1 font-mono text-base" data-testid="meter-reading">{reading ? reading.text : "—"}</p>
         {reading?.warn && <p className="text-xs text-amber-700">{reading.warn}</p>}
       </section>
 
-      <details open={realOpen} onToggle={(e) => setRealOpen(e.currentTarget.open)} className="border border-copper bg-white p-2" data-testid="real-panel">
+      <details open={realOpen} onToggle={(e) => setRealOpen(e.currentTarget.open)} className="border border-copper bg-paper-2 p-2" data-testid="real-panel">
         <summary className="cursor-pointer font-medium">对照现实：实物上该量到多少</summary>
         <p className="mt-1 text-xs text-ink-soft">照着做好实物后，用万用表量同样两点，和模拟读数对比。差很多：多半是接错孔、虚焊或零件规格不同。</p>
         <ul className="mt-1 flex flex-col gap-1 text-xs">
@@ -142,7 +142,7 @@ export default function ElecPanel({ probes, setProbes, tool, setTool }) {
         </ul>
       </section>
 
-      <details className="border border-line bg-white p-2" data-testid="bench-scope-panel">
+      <details className="border border-line bg-paper-2 p-2" data-testid="bench-scope-panel">
         <summary className="cursor-pointer font-medium">示波器（时域模式，v19：仿真你台面上的电路）：开机波形、舵机起步跌落、加不加电容</summary>
         <div className="mt-1"><BenchScope /></div>
       </details>

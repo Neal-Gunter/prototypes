@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { JOINT_TYPES, unitOf } from "../artic.js";
 
-const btn = "min-h-8 border border-line bg-white px-2 text-xs hover:border-copper disabled:opacity-40";
+const btn = "min-h-8 border border-line bg-paper-2 px-2 text-xs hover:border-copper disabled:opacity-40";
 export default function JointControls({ core, project, pen, onSavePose, onPlayFn, compact = false }) {
   const [stats, setStats] = useState([]);
   const [playing, setPlaying] = useState(null);
@@ -31,7 +31,7 @@ export default function JointControls({ core, project, pen, onSavePose, onPlayFn
           const st = core.J.get(s.id), u = unitOf(s.type);
           if (!st) return null;
           return (
-            <li key={s.id} data-joint={s.id} className="border border-line bg-white p-1.5">
+            <li key={s.id} data-joint={s.id} className="border border-line bg-paper-2 p-1.5">
               <div className="flex items-center gap-1">
                 <span className="min-w-0 flex-1 truncate font-medium">{s.name}</span>
                 <span className="text-ink-soft">{JOINT_TYPES[s.type]} · {st.dp.label}</span>

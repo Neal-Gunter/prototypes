@@ -21,7 +21,7 @@ function Chart({ hist, ch, now, span = 10000 }) {
   const Y = (v) => H / 2 - (v / 60) * (H / 2 - pad);
   const path = (get) => xs.map((h, i) => { const v = get(h); return Number.isFinite(v) ? `${i ? "L" : "M"}${X(h.t).toFixed(1)},${Y(Math.max(-60, Math.min(60, v))).toFixed(1)}` : ""; }).join("");
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full border border-line bg-white" data-testid="link-chart">
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full border border-line bg-paper-2" data-testid="link-chart">
       {[-55, 0, 55].map((v) => <g key={v}><line x1={pad} x2={W - pad} y1={Y(v)} y2={Y(v)} stroke={v ? "#fca5a5" : "#e5e7eb"} strokeDasharray={v ? "3 3" : ""} /><text x={W - pad - 1} y={Y(v) - 2} fontSize="8" textAnchor="end" fill="#9ca3af">{v}°</text></g>)}
       <path d={path((h) => h.sim?.a[ch])} fill="none" stroke="#2563eb" strokeWidth="1.5" data-testid="link-chart-sim" />
       <path d={path((h) => h.real.a[ch])} fill="none" stroke="#b45309" strokeWidth="1.5" strokeDasharray="4 2" data-testid="link-chart-real" />
@@ -90,7 +90,7 @@ export default function LinkPanel({ tid = "link" }) {
           <label key={k} className={`flex items-center gap-0.5 rounded border px-1 ${kind === k ? "border-copper bg-copper/10" : "border-line"}`}>
             <input type="radio" name={`${tid}-kind`} checked={kind === k} disabled={st !== "idle"} onChange={() => setKind(k)} data-testid={`${tid}-kind-${k}`} />{zh}
           </label>))}
-        {kind === "mock" && <select aria-label="模拟设备类型" value={flavor} disabled={st !== "idle"} onChange={(e) => setFlavor(e.target.value)} className="border border-line bg-white" data-testid={`${tid}-flavor`}><option value="ble">像蓝牙（延迟 {MOCK_PRESETS.ble.latencyMs}±{MOCK_PRESETS.ble.jitterMs} ms，丢包 {MOCK_PRESETS.ble.drop * 100}%）</option><option value="serial">像 USB 串口（延迟 {MOCK_PRESETS.serial.latencyMs} ms）</option></select>}
+        {kind === "mock" && <select aria-label="模拟设备类型" value={flavor} disabled={st !== "idle"} onChange={(e) => setFlavor(e.target.value)} className="border border-line bg-paper-2" data-testid={`${tid}-flavor`}><option value="ble">像蓝牙（延迟 {MOCK_PRESETS.ble.latencyMs}±{MOCK_PRESETS.ble.jitterMs} ms，丢包 {MOCK_PRESETS.ble.drop * 100}%）</option><option value="serial">像 USB 串口（延迟 {MOCK_PRESETS.serial.latencyMs} ms）</option></select>}
         <label className="flex items-center gap-0.5" title="演练：不打开串口 / 蓝牙，一个字节都不发，指令只喂给仿真孪生"><input type="checkbox" checked={dry} disabled={st !== "idle"} onChange={(e) => setDry(e.target.checked)} data-testid={`${tid}-dry`} />演练（不发送）</label>
       </div>
       {kind === "mock" && <p className="text-[11px] text-ink-soft" data-testid={`${tid}-mock-note`}>模拟设备 = 浏览器里的一块虚拟板子：跑的是同一份固件逻辑（firmware.js 孪生 + OCTL/1），加了延迟、丢包、坏帧、时钟漂移、电池压降和合成的 IMU 晃动（都是估算）。它只用来演示和测试，<b>不代表真机效果</b>。</p>}
@@ -135,7 +135,7 @@ export default function LinkPanel({ tid = "link" }) {
       </div>}
 
       {s && (s.hist.length > 0 || s.dryRun) && <>
-        <div className="flex items-center gap-1">看哪一路：<select aria-label="看哪一路" value={ch} onChange={(e) => setCh(+e.target.value)} className="border border-line bg-white" data-testid={`${tid}-ch`}>{Array.from({ length: 8 }, (_, i) => <option key={i} value={i}>舵机 {i}</option>)}</select></div>
+        <div className="flex items-center gap-1">看哪一路：<select aria-label="看哪一路" value={ch} onChange={(e) => setCh(+e.target.value)} className="border border-line bg-paper-2" data-testid={`${tid}-ch`}>{Array.from({ length: 8 }, (_, i) => <option key={i} value={i}>舵机 {i}</option>)}</select></div>
         {s.dryRun ? <p className="text-ink-soft" data-testid={`${tid}-dry-note`}>演练模式没有板子遥测，只显示仿真孪生：模式 {MODES[s.ref?.snapshot().mode] || "—"}，舵机 {ch} = {f(s.ref?.snapshot().a[ch])}°。本来要发的最近几帧：<code className="block break-all text-[10px]" data-testid={`${tid}-dry-frames`}>{s.dry.slice(-4).join("  ")}</code></p>
           : <Chart hist={s.hist} ch={ch} now={now} />}
         {!s.dryRun && d && <table className="w-full font-mono text-[11px]" data-testid={`${tid}-diff`}><tbody>
@@ -148,12 +148,12 @@ export default function LinkPanel({ tid = "link" }) {
           <tr><td>收 / 发 / 坏帧 / 重发 / 重连</td><td className="text-right" colSpan="2" data-testid={`${tid}-stats`}>{s.stats.rx} / {s.stats.tx} / {s.stats.badRx} / {s.stats.retries} / {s.stats.reconnects}</td></tr>
         </tbody></table>}
       </>}
-      {s?.logs.length > 0 && <ul className="max-h-28 overflow-auto border border-line bg-white p-1 text-[10px]" data-testid={`${tid}-log`}>{s.logs.slice(-12).map((e, i) => <li key={i} className={e.level === "error" ? "text-red-700" : e.level === "warn" ? "text-amber-700" : ""}>{(e.t / 1000).toFixed(1)}s {e.text}</li>)}</ul>}
+      {s?.logs.length > 0 && <ul className="max-h-28 overflow-auto border border-line bg-paper-2 p-1 text-[10px]" data-testid={`${tid}-log`}>{s.logs.slice(-12).map((e, i) => <li key={i} className={e.level === "error" ? "text-red-700" : e.level === "warn" ? "text-amber-700" : ""}>{(e.t / 1000).toFixed(1)}s {e.text}</li>)}</ul>}
 
       <details data-testid={`${tid}-calib`}><summary className="cursor-pointer font-medium">舵机校准向导（中位 / 下限 / 上限，存在本浏览器）</summary>
         <ol className="mt-1 flex flex-col gap-0.5 text-[11px]">{WIZARD.map((w) => <li key={w.title}><b>{w.title}</b>：{w.text}</li>)}</ol>
         <div className="mt-1 flex flex-wrap items-center gap-1">
-          <label>舵机<select value={cch} onChange={(e) => setCch(+e.target.value)} className="ml-0.5 border border-line bg-white" data-testid={`${tid}-calib-ch`}>{calib.servos.map((_, i) => <option key={i} value={i}>{i}</option>)}</select></label>
+          <label>舵机<select value={cch} onChange={(e) => setCch(+e.target.value)} className="ml-0.5 border border-line bg-paper-2" data-testid={`${tid}-calib-ch`}>{calib.servos.map((_, i) => <option key={i} value={i}>{i}</option>)}</select></label>
           <B t={`${tid}-calib-home`} dis={!live} on={() => run(S.current.pose(Array(8).fill(0)))}>全部回中位</B>
           {[["center", -0.5, "中位 −"], ["center", 0.5, "中位 +"], ["min", -2, "下限 −"], ["min", 2, "下限 +"], ["max", -2, "上限 −"], ["max", 2, "上限 +"]].map(([k, dv, zh]) => <B key={zh} t={`${tid}-calib-${k}-${dv > 0 ? "up" : "down"}`} on={() => { const c = setC(cch, k, calib.servos[cch][k] + dv); tryServo(cch, k, c); }}>{zh}</B>)}
         </div>

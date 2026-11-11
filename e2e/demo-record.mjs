@@ -11,6 +11,7 @@
 // v41：演示装配台新台面、示波器波形、题库/说明页字号，以及致谢页 v41 许可说明。
 // v42：演示学习路径进度、题目与路径互链、新的充电宝路径，以及致谢页 v42。
 // v43：演示零件悬停/焦点高亮和提示、示波器可拖测量光标，以及致谢页 v43。
+// v44：演示配色开关、深色外壳和装配台、打印仍为浅色，以及致谢页 v44。
 // 用法：BASE=http://localhost:4173 OUT=/workspace/proto-site/v33 node e2e/demo-record.mjs  然后用 ffmpeg 转 mp4
 import { chromium } from "playwright";
 import fs from "node:fs";
@@ -63,7 +64,7 @@ await step("题库：学习路径", async () => {
 await step("使用说明：本版更新", async () => {
   await p.goto(BASE + "/help#whats-new"); await T("help-whats-new").waitFor({ timeout: 20000 }); await w(1500);
   await T("help-whats-new").scrollIntoViewIfNeeded(); await w(2000); await scroll(250, 6, 350);
-}, "v43：使用说明「本版更新」汇总到 v43，说明零件高亮、规格提示和示波器测量光标");
+}, "v44：使用说明「本版更新」汇总到 v44，说明在原有纸墨铜 token 上的深色配色、系统/浅色/深色开关，以及打印页始终用浅色");
 await step("拆解：设备列表 + 搜索", async () => {
   await p.goto(BASE + "/teardown/"); await T("teardown-page").waitFor({ timeout: 30000 }); await w(1500);
   await T("td-search").pressSequentially("tp4056", { delay: 120 }); await w(1500); await T("td-search").fill(""); await w(800);
@@ -177,6 +178,20 @@ await step("致谢：v43", async () => {
   await p.goto(BASE + "/credits#v43-measure"); await w(1500);
   await T("credits-v43").scrollIntoViewIfNeeded().catch(() => {}); await w(4000);
 }, "v43：零件描边和示波器光标是自己写的，没有新增第三方材料；高亮不改物理");
+await step("配色：浅色与深色", async () => {
+  await p.goto(BASE + "/"); await w(1500);
+  await T("theme-toggle").waitFor({ timeout: 10000 });
+  await T("theme-toggle").selectOption("dark"); await w(2500); await scroll(250, 3, 300);
+  await p.goto(BASE + "/bank"); await T("bank-paths").waitFor({ timeout: 20000 }).catch(() => {}); await w(2000);
+  await p.goto(BASE + "/help#whats-new"); await T("help-whats-new").waitFor({ timeout: 20000 }); await w(2000);
+  await T("help-whats-new").scrollIntoViewIfNeeded(); await w(2000);
+  await p.goto(BASE + "/assembly/?scene=electrics"); await w(8000);
+  await T("theme-toggle").selectOption("light"); await w(2500);
+}, "v44：顶栏可在系统、浅色、深色之间切换，选择记在本机；深色时外壳、题库、说明和装配台灯光跟着变，示波器屏幕仍是磷光深色");
+await step("致谢：v44", async () => {
+  await p.goto(BASE + "/credits#v44-theme"); await w(1500);
+  await T("credits-v44").scrollIntoViewIfNeeded().catch(() => {}); await w(4000);
+}, "v44：深色值、预渲染脚本和配色开关是自己写的，没有新增第三方材料；打印页仍用浅色");
 await step("工作台：固件编辑器", async () => {
   await p.goto(BASE + "/workbench/"); await T("code").waitFor({ timeout: 30000 }); await w(2500);
   await T("code").focus(); await w(800); await p.keyboard.press("Tab"); await w(1500);

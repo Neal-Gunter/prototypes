@@ -1,12 +1,13 @@
 // v18 示波器面板（维修台 / 工作台共用）。2–4 通道、t/div、V/div、DC/AC 耦合、触发（上升 / 下降沿、电平、自动 / 单次）、
 // 光标读数、数学 A−B、欠压复位阈值线、事件标记。波形来自 src/repair/tboard.js 的时域仿真。早期原型，简化仿真。
 import { useMemo, useRef } from "react";
-import { CH_COLOR as CH_PHOS, CH_INK, scopeBg } from "../../ui/palette.js";
+import { CH_COLOR as CH_PHOS, channelInk, scopeBg } from "../../ui/palette.js";
+import { useTheme } from "../../theme.js";
 import { useT } from "../../i18n.js";
 import { pairOr, voltAtFrac, deltaV, timeAtFrac, deltaT, invDeltaT, CUR_DEFAULT, VCUR_DEFAULT } from "../scopeCursors.js";
 
 const btn = "min-h-11 border border-line bg-paper-2 px-2.5 text-sm hover:border-copper disabled:opacity-40";
-const btnOn = "min-h-11 border border-copper bg-copper px-2.5 text-sm text-white";
+const btnOn = "min-h-11 border border-copper bg-copper px-2.5 text-sm text-paper";
 const sel = "min-h-11 border border-line bg-paper-2 px-1 text-sm";
 export const CH_COLOR = CH_PHOS;
 const MATH_COLOR = "#e09a5a";
@@ -66,6 +67,9 @@ function svgPxDistY(svg, userY, clientY) {
 }
 
 export default function ScopePanel({ s, set, nodes, onCapture, running, testid = "scope", extra = null, ghost = null }) {
+  const [, , theme] = useTheme();
+  const inkCh = channelInk(theme);
+  const mathInk = theme === "dark" ? MATH_COLOR : MATH_INK;
   const tr = useT();
   const drag = useRef(null);
   const upd = (p) => set({ ...s, ...p });
@@ -178,8 +182,8 @@ export default function ScopePanel({ s, set, nodes, onCapture, running, testid =
           {s.err && <div className="mt-1 text-xs text-[#b03a2e]" data-testid={`${testid}-err`}>{s.err}</div>}
           <div className="mt-1 flex flex-wrap gap-x-3 font-mono text-xs" data-testid={`${testid}-readout`}>
             <span>{fT(s.tdiv)}/div</span>
-            {s.chans.map((c, i) => c.on && <span key={i} style={{ color: CH_INK[i] }}>CH{i + 1} {c.node} {fV(c.vdiv)}/div{c.ac ? " AC" : ""}{cap?.meas?.[i] ? ` 峰峰 ${fV(cap.meas[i].pp)} 均值 ${fV(cap.meas[i].mean)} 最低 ${fV(cap.meas[i].min)}` : ""}</span>)}
-            {s.math && cap?.mathMeas && <span style={{ color: MATH_COLOR }}>A−B 最大 {fV(cap.mathMeas.max)} 峰峰 {fV(cap.mathMeas.pp)}</span>}
+            {s.chans.map((c, i) => c.on && <span key={i} style={{ color: inkCh[i] }}>CH{i + 1} {c.node} {fV(c.vdiv)}/div{c.ac ? " AC" : ""}{cap?.meas?.[i] ? ` 峰峰 ${fV(cap.meas[i].pp)} 均值 ${fV(cap.meas[i].mean)} 最低 ${fV(cap.meas[i].min)}` : ""}</span>)}
+            {s.math && cap?.mathMeas && <span style={{ color: mathInk }}>A−B 最大 {fV(cap.mathMeas.max)} 峰峰 {fV(cap.mathMeas.pp)}</span>}
           </div>
           <div className="font-mono text-xs leading-5" data-testid={`${testid}-cursors`}>
             {tr("光标", "Cursors")} t1 {fT(c1 ? c1.t : t1)} · t2 {fT(c2 ? c2.t : t2)} · Δt {fT(c1 && c2 ? c2.t - c1.t : dT)}{((c1 && c2 && c2.t !== c1.t) || invT) ? ` · 1/Δt ${(c1 && c2 && c2.t !== c1.t ? 1 / Math.abs(c2.t - c1.t) : invT).toPrecision(3)} Hz` : ""}

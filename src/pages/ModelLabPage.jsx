@@ -41,8 +41,8 @@ export const LAB_SIMPLIFICATIONS = [
 const UNITS = [["mm", "毫米"], ["cm", "厘米"], ["m", "米"], ["in", "英寸"]];
 const clone = (p) => structuredClone(p);
 const fmt = (v, d = 1) => (Number.isFinite(v) ? v.toFixed(d) : "—");
-const btn = "min-h-9 border border-line bg-white px-2.5 text-sm hover:border-copper disabled:opacity-40";
-const btnOn = "min-h-9 border border-copper bg-copper px-2.5 text-sm text-white";
+const btn = "min-h-9 border border-line bg-paper-2 px-2.5 text-sm hover:border-copper disabled:opacity-40";
+const btnOn = "min-h-9 border border-copper bg-copper px-2.5 text-sm text-paper";
 
 // v13：通用步态编辑器（任何带驱动关节的模型）。预设按“驱动关节的顺序”排相位；前后对比 / 冰面对照见 GaitEditor
 function LabGait({ lab, project, R, an, M, save }) {
@@ -56,7 +56,7 @@ function LabGait({ lab, project, R, an, M, save }) {
   ];
   const rate = Math.min(...js.map((j) => { const d = driveParams(j); return d.lin ? d.speed * 10 : (d.speed * 180) / Math.PI; }).filter((x) => x > 0), 600);
   useEffect(() => { window.__labGait = { g, set: setG }; });
-  return <div className="mt-2 border border-line bg-white p-2" data-testid="lab-gait"><GaitEditor gait={g} setGait={setG} presets={presets} rateLimit={rate} tid="lab-gait" measureSec={10}
+  return <div className="mt-2 border border-line bg-paper-2 p-2" data-testid="lab-gait"><GaitEditor gait={g} setGait={setG} presets={presets} rateLimit={rate} tid="lab-gait" measureSec={10}
     onRun={(x) => { lab.follow = !project.sim?.fixBase; playGait(lab.core, project, x); }} onStop={() => { lab.follow = false; lab.core.stop(); }}
     onMeasure={async (x, o) => { const r = await measureArtic(R, project, an, M, x, { sec: o.sec, mu: o.mu, onProgress: o.onProgress }); window.__labGaitLast = r; return r; }}
     exports={[{ k: "save", zh: "存进工程", make: (x) => { save(x); return null; } }]}
@@ -418,7 +418,7 @@ export default function ModelLabPage() {
   const JointsPanel = () => {
     const js = project.joints, jSel = js.find((j) => j.id === selJoint);
     const mods = project.modules;
-    const num = "w-16 border border-line bg-white px-1";
+    const num = "w-16 border border-line bg-paper-2 px-1";
     const Ed = () => {
       const j = jSel; if (!j) return null;
       const b = jointToBench(j, X.M), pmm = b.p.clone().multiplyScalar(10), L = effLimits(j), u = unitOf(j.type);
@@ -427,10 +427,10 @@ export default function ModelLabPage() {
       const kinds = j.type === "revolute" ? ["none", "sg51r", "mg90s", "custom"] : j.type === "prismatic" ? ["none", "linear"] : ["none"];
       const D = DRIVES[j.drive?.preset] || DRIVES.none;
       return (
-        <div className="mt-2 border border-copper bg-white p-2 text-xs" data-testid="joint-editor">
+        <div className="mt-2 border border-copper bg-paper-2 p-2 text-xs" data-testid="joint-editor">
           <div className="flex flex-wrap items-center gap-1">
             <input aria-label="关节名" data-testid="joint-name" className="min-w-0 flex-1 border border-line px-1" value={j.name} onChange={(e) => updJoint(j.id, (x) => { x.name = e.target.value.slice(0, 40); })} />
-            <select aria-label="关节类型" data-testid="joint-type" className="border border-line bg-white" value={j.type} onChange={(e) => updJoint(j.id, (x) => {
+            <select aria-label="关节类型" data-testid="joint-type" className="border border-line bg-paper-2" value={j.type} onChange={(e) => updJoint(j.id, (x) => {
               x.type = e.target.value; const d = newJoint(x.parent, x.child, x.anchor, x.axis, 0, x.type); x.limits = d.limits; x.home = 0;
               x.drive = { ...x.drive, preset: x.type === "revolute" ? (["sg51r", "mg90s", "custom"].includes(x.drive.preset) ? x.drive.preset : "sg51r") : x.type === "prismatic" ? "linear" : "none" };
               if (x.type === "ball" && an.get(x.child)) x.axis = axisToRaw(an.get(x.child).center.clone().sub(b.p).normalize(), X.M);
@@ -438,15 +438,15 @@ export default function ModelLabPage() {
             <button className={btn} data-testid="joint-del" onClick={() => delJoint(j.id)}>删除关节</button>
           </div>
           <div className="mt-1 flex flex-wrap gap-2">
-            <label>父 <select className="max-w-32 border border-line bg-white" value={j.parent} onChange={(e) => updJoint(j.id, (x) => { x.parent = e.target.value; })}>{mods.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></label>
-            <label>子 <select className="max-w-32 border border-line bg-white" value={j.child} onChange={(e) => updJoint(j.id, (x) => { x.child = e.target.value; })}>{mods.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></label>
+            <label>父 <select className="max-w-32 border border-line bg-paper-2" value={j.parent} onChange={(e) => updJoint(j.id, (x) => { x.parent = e.target.value; })}>{mods.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></label>
+            <label>子 <select className="max-w-32 border border-line bg-paper-2" value={j.child} onChange={(e) => updJoint(j.id, (x) => { x.child = e.target.value; })}>{mods.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></label>
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-1">铰接点（mm，装配台坐标）
             {["x", "y", "z"].map((k, i) => <input key={k} aria-label={`铰接点 ${k}`} data-testid={`anchor-${k}`} type="number" step="0.5" className={num} value={+pmm.getComponent(i).toFixed(2)} onChange={(e) => e.target.value !== "" && setP(i, +e.target.value)} />)}
             <button className={btn} data-testid="reanchor" onClick={() => { setSimOn(false); setMode("joint"); setJd({ parent: j.parent, child: j.child, reanchor: j.id }); }}>在 3D 里重点</button>
           </div>
           {j.type !== "fixed" && <div className="mt-1 flex flex-wrap items-center gap-1">{j.type === "ball" ? "中心轴（摆角从这根轴量）" : j.type === "prismatic" ? "滑动方向" : "转轴"}
-            {["x", "y", "z"].map((k, i) => <input key={k} aria-label={`轴 ${k}`} data-testid={`axis-${k}`} type="number" step="0.1" className="w-14 border border-line bg-white px-1" value={+b.axis.getComponent(i).toFixed(3)} onChange={(e) => { if (e.target.value === "") return; const a = b.axis.toArray(); a[i] = +e.target.value; setA(a); }} />)}
+            {["x", "y", "z"].map((k, i) => <input key={k} aria-label={`轴 ${k}`} data-testid={`axis-${k}`} type="number" step="0.1" className="w-14 border border-line bg-paper-2 px-1" value={+b.axis.getComponent(i).toFixed(3)} onChange={(e) => { if (e.target.value === "") return; const a = b.axis.toArray(); a[i] = +e.target.value; setA(a); }} />)}
             {[["X", [1, 0, 0]], ["Y", [0, 1, 0]], ["Z", [0, 0, 1]]].map(([k, v]) => <button key={k} className={btn} data-testid={`axis-btn-${k}`} onClick={() => setA(v)}>{k}</button>)}
             <button className={btn} onClick={() => setA(b.axis.clone().negate().toArray())}>反向</button>
           </div>}
@@ -457,8 +457,8 @@ export default function ModelLabPage() {
               {(L.min !== j.limits.min || L.max !== j.limits.max) && <span className="text-mark">实际用 {L.min}…{L.max}{u}</span>}</>}
           </div>}
           {L.notes.length > 0 && <p className="text-mark">{L.notes.join("；")}</p>}
-          {j.type !== "fixed" && <div className="mt-1 flex flex-wrap items-center gap-1">驱动 <select aria-label="驱动" data-testid="joint-drive" className="border border-line bg-white" value={j.drive.preset} onChange={(e) => updJoint(j.id, (x) => { x.drive.preset = e.target.value; })}>{kinds.map((k) => <option key={k} value={k}>{DRIVES[k].zh}</option>)}</select>
-            {D.volts?.length > 1 && <label>电压 <select aria-label="电压" data-testid="joint-volt" className="border border-line bg-white" value={j.drive.volt} onChange={(e) => updJoint(j.id, (x) => { x.drive.volt = +e.target.value; })}>{D.volts.map((v) => <option key={v} value={v}>{v} V</option>)}</select></label>}
+          {j.type !== "fixed" && <div className="mt-1 flex flex-wrap items-center gap-1">驱动 <select aria-label="驱动" data-testid="joint-drive" className="border border-line bg-paper-2" value={j.drive.preset} onChange={(e) => updJoint(j.id, (x) => { x.drive.preset = e.target.value; })}>{kinds.map((k) => <option key={k} value={k}>{DRIVES[k].zh}</option>)}</select>
+            {D.volts?.length > 1 && <label>电压 <select aria-label="电压" data-testid="joint-volt" className="border border-line bg-paper-2" value={j.drive.volt} onChange={(e) => updJoint(j.id, (x) => { x.drive.volt = +e.target.value; })}>{D.volts.map((v) => <option key={v} value={v}>{v} V</option>)}</select></label>}
             {j.drive.preset === "custom" && <>扭矩 <input aria-label="扭矩" type="number" step="0.1" className={num} value={j.drive.torque} onChange={(e) => updJoint(j.id, (x) => { x.drive.torque = +e.target.value; })} />kgf·cm 速度 <input aria-label="速度" type="number" className={num} value={j.drive.speed} onChange={(e) => updJoint(j.id, (x) => { x.drive.speed = +e.target.value; })} />°/s（估算）</>}
             {j.drive.preset === "linear" && <>推力 <input aria-label="推力" type="number" step="0.5" className={num} value={j.drive.forceN} onChange={(e) => updJoint(j.id, (x) => { x.drive.forceN = +e.target.value; })} />N 速度 <input aria-label="速度" type="number" className={num} value={j.drive.speedMm} onChange={(e) => updJoint(j.id, (x) => { x.drive.speedMm = +e.target.value; })} />mm/s（估算）</>}
           </div>}
@@ -476,12 +476,12 @@ export default function ModelLabPage() {
           <button className={btn} data-testid="drop-block" disabled={!lab} onClick={dropBlock}>放测试方块</button>
           <label className="flex items-center gap-1 text-xs"><input type="checkbox" checked={showJoints} onChange={(e) => setShowJoints(e.target.checked)} />显示关节标记</label>
         </div>
-        <div className="mt-1 flex flex-wrap items-center gap-1 text-xs">新关节类型 <select aria-label="新关节类型" data-testid="new-joint-type" className="border border-line bg-white" value={newType} onChange={(e) => setNewType(e.target.value)}>{Object.entries(JOINT_TYPES).map(([k, zh]) => <option key={k} value={k}>{zh}</option>)}</select>
+        <div className="mt-1 flex flex-wrap items-center gap-1 text-xs">新关节类型 <select aria-label="新关节类型" data-testid="new-joint-type" className="border border-line bg-paper-2" value={newType} onChange={(e) => setNewType(e.target.value)}>{Object.entries(JOINT_TYPES).map(([k, zh]) => <option key={k} value={k}>{zh}</option>)}</select>
           <button className={btn} data-testid="add-joint" onClick={() => { setSimOn(false); setMode("joint"); setJd(null); }}>+ 在 3D 里加关节</button>
           <button className={btn} data-testid="add-joint-num" disabled={mods.length < 2} onClick={() => { const pa = selMods.size === 2 ? [...selMods] : [mods[0].id, mods[1].id]; const c = an.get(pa[1])?.center || new THREE.Vector3(); setMode("view"); addJointAt(pa[0], pa[1], c.toArray(), null); }}>+ 用数字加（{selMods.size === 2 ? "选中的两块" : "前两块"}，再改数）</button>
         </div>
         {groups?.errors.length > 0 && <ul className="mt-1 text-xs text-mark" data-testid="joint-errors">{groups.errors.map((e) => <li key={e}>⚠ {e}</li>)}</ul>}
-        {mob?.msgs.length > 0 && <ul className="mt-1 border border-line bg-white p-1 text-xs" data-testid="mobility">{mob.msgs.map((m) => <li key={m.t} className={m.lvl === "err" ? "font-medium text-mark" : m.lvl === "warn" ? "text-[#9a5b00]" : "text-ink-soft"}>{m.lvl === "err" ? "⛔ " : m.lvl === "warn" ? "⚠ " : "ⓘ "}{m.t}</li>)}<li className="text-ink-soft">自由度检查（我的补充）：只按当前姿态算，奇异位置可能不准</li></ul>}
+        {mob?.msgs.length > 0 && <ul className="mt-1 border border-line bg-paper-2 p-1 text-xs" data-testid="mobility">{mob.msgs.map((m) => <li key={m.t} className={m.lvl === "err" ? "font-medium text-mark" : m.lvl === "warn" ? "text-[#9a5b00]" : "text-ink-soft"}>{m.lvl === "err" ? "⛔ " : m.lvl === "warn" ? "⚠ " : "ⓘ "}{m.t}</li>)}<li className="text-ink-soft">自由度检查（我的补充）：只按当前姿态算，奇异位置可能不准</li></ul>}
         {js.length > 0 && <ul className="mt-1 flex flex-wrap gap-1 text-xs">{js.map((j) => <li key={j.id}><button data-testid={`joint-${j.id}`} className={(selJoint === j.id ? btnOn : btn)} onClick={() => setSelJoint(selJoint === j.id ? null : j.id)}>{j.name} · {JOINT_TYPES[j.type].slice(0, 2)}{groups?.joints.find((e) => e.j.id === j.id)?.loop ? " · 闭环" : ""}</button></li>)}</ul>}
         {Ed()}
         {lab && <div className="mt-2"><JointControls core={lab.core} project={project} pen={() => labPenetration(lab)} onSavePose={savePose} /></div>}
@@ -495,7 +495,7 @@ export default function ModelLabPage() {
   const TimelineEd = () => {
     const keys = project.timeline.keys;
     return (
-      <div className="mt-2 border border-line bg-white p-2 text-xs" data-testid="timeline-ed">
+      <div className="mt-2 border border-line bg-paper-2 p-2 text-xs" data-testid="timeline-ed">
         <div className="flex flex-wrap items-center gap-1"><span className="font-medium">时间轴关键帧</span>
           <label className="flex items-center gap-0.5"><input type="checkbox" checked={project.timeline.loop} onChange={(e) => upd((p) => { p.timeline.loop = e.target.checked; })} />循环</label>
           <button className={btn} data-testid="add-key" onClick={() => upd((p) => { const k = p.timeline.keys; k.push({ t: k.length ? +(k[k.length - 1].t + 1).toFixed(2) : 0, pose: p.poses[p.poses.length - 1].id }); })}>+ 关键帧</button>
@@ -503,7 +503,7 @@ export default function ModelLabPage() {
         <ul className="mt-1 space-y-0.5">{keys.map((k, i) => (
           <li key={i} className="flex items-center gap-1">
             <input aria-label="时间" type="number" step="0.1" min="0" className="w-16 border border-line px-1" value={k.t} onChange={(e) => upd((p) => { p.timeline.keys[i].t = Math.max(0, +e.target.value || 0); p.timeline.keys.sort((a, b) => a.t - b.t); })} />s
-            <select aria-label="姿态" className="border border-line bg-white" value={k.pose} onChange={(e) => upd((p) => { p.timeline.keys[i].pose = e.target.value; })}>{project.poses.map((q) => <option key={q.id} value={q.id}>{q.name}</option>)}</select>
+            <select aria-label="姿态" className="border border-line bg-paper-2" value={k.pose} onChange={(e) => upd((p) => { p.timeline.keys[i].pose = e.target.value; })}>{project.poses.map((q) => <option key={q.id} value={q.id}>{q.name}</option>)}</select>
             <button onClick={() => upd((p) => { p.timeline.keys.splice(i, 1); })} aria-label="删除关键帧">×</button>
           </li>))}</ul>
         <details className="mt-1"><summary className="cursor-pointer">姿态改名 / 删除（{project.poses.length}）</summary>
@@ -519,7 +519,7 @@ export default function ModelLabPage() {
       <ul>{m.meshes.map((id) => { const me = byId.get(id); return (
         <li key={id} className={`flex items-center gap-1 ${selMeshes.has(id) ? "bg-[#ffe9a8]" : ""}`}>
           <span className="min-w-0 flex-1 truncate" title={me?.name}>{me?.name || id} <span className="text-ink-soft">({me?.tris ?? "?"}△)</span></span>
-          <select aria-label="移到模块" className="max-w-24 border border-line bg-white" value="" onChange={(e) => e.target.value && moveMesh(id, e.target.value)}>
+          <select aria-label="移到模块" className="max-w-24 border border-line bg-paper-2" value="" onChange={(e) => e.target.value && moveMesh(id, e.target.value)}>
             <option value="">移到…</option>
             {project.modules.filter((x) => x.id !== m.id).map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
             <option value="__new">新模块</option>
@@ -534,7 +534,7 @@ export default function ModelLabPage() {
         <h1 className="text-xl font-medium">模型 + 功能图 <span className="ml-1 border border-copper px-1.5 py-0.5 align-middle text-xs text-copper">早期原型，简化仿真</span></h1>
         <Link to="/assembly" className="inline-flex min-h-6 items-center text-sm underline">← 装配台</Link>
         <span className="ml-auto text-xs text-ink-soft">工程：</span>
-        <select aria-label="本机工程" data-testid="project-list" className="min-h-9 max-w-56 border border-line bg-white px-1 text-sm" value={project?.id || ""} onChange={(e) => e.target.value && openSaved(e.target.value)}>
+        <select aria-label="本机工程" data-testid="project-list" className="min-h-9 max-w-56 border border-line bg-paper-2 px-1 text-sm" value={project?.id || ""} onChange={(e) => e.target.value && openSaved(e.target.value)}>
           <option value="">{project ? project.name : "（未打开）"}</option>
           {list.filter((r) => r.id !== project?.id).map((r) => <option key={r.id} value={r.id}>{r.name}（{r.mods} 模块 · {r.fns} 功能）</option>)}
         </select>
@@ -560,9 +560,9 @@ export default function ModelLabPage() {
           <button key={k} data-testid={`mode-${k}`} className={mode === k ? btnOn : btn} onClick={() => { setMode(k); setJd(null); if (k === "joint") setSimOn(false); }}>{zh}</button>
         ))}
       </div>
-      {busy && <p className="mt-2 border border-line bg-white p-2 text-sm" role="status">{busy}</p>}
+      {busy && <p className="mt-2 border border-line bg-paper-2 p-2 text-sm" role="status">{busy}</p>}
       {err && <p className="mt-2 border border-mark bg-[#fbe9e7] p-2 text-sm text-mark" role="alert" data-testid="error">⚠ {err} <button className="ml-2 underline" onClick={() => setErr("")}>关闭</button></p>}
-      {note && !err && <p className="mt-2 border border-line bg-white p-2 text-xs" data-testid="note">{note}</p>}
+      {note && !err && <p className="mt-2 border border-line bg-paper-2 p-2 text-xs" data-testid="note">{note}</p>}
 
       {!project && !busy && (
         <div className="mt-6 border border-dashed border-line bg-paper-2 p-6 text-sm">
@@ -576,7 +576,7 @@ export default function ModelLabPage() {
           {/* 左：树 功能 → 模块 → 网格 */}
           <aside className="border border-line bg-paper-2 p-2 text-sm" data-testid="tree">
             <div className="flex items-center gap-1">
-              <input aria-label="工程名" className="min-w-0 flex-1 border border-line bg-white px-1" value={project.name} onChange={(e) => upd((p) => { p.name = e.target.value.slice(0, 80); })} />
+              <input aria-label="工程名" className="min-w-0 flex-1 border border-line bg-paper-2 px-1" value={project.name} onChange={(e) => upd((p) => { p.name = e.target.value.slice(0, 80); })} />
             </div>
             <div className="mt-2 flex items-center justify-between"><h2 className="font-medium">功能 → 模块 → 网格</h2>
               <button className="text-xs underline" data-testid="add-fn" onClick={() => { const f = newFunction(`功能 ${project.functions.length + 1}`, project.functions.length); upd((p) => p.functions.push(f)); setSelFn(f.id); }}>+ 功能</button></div>
@@ -610,7 +610,7 @@ export default function ModelLabPage() {
               <button className={btn} disabled={!selMods.size} onClick={() => upd((p) => p.modules.forEach((m) => { if (selMods.has(m.id)) m.hidden = true; }))}>隐藏选中</button>
               <button className={btn} data-testid="show-all" onClick={() => { setIsolate(null); upd((p) => p.modules.forEach((m) => { m.hidden = false; })); }}>全部显示</button>
               <label className="flex items-center gap-1">爆炸
-                <select data-testid="explode-mode" className="min-h-9 border border-line bg-white" value={explode.mode} onChange={(e) => setExplode({ ...explode, mode: e.target.value })}>
+                <select data-testid="explode-mode" className="min-h-9 border border-line bg-paper-2" value={explode.mode} onChange={(e) => setExplode({ ...explode, mode: e.target.value })}>
                   <option value="none">不爆炸</option><option value="module">按模块</option><option value="function">按功能</option>
                 </select>
                 <input type="range" min="0.1" max="1.5" step="0.05" value={explode.amount} onChange={(e) => setExplode({ ...explode, amount: +e.target.value })} aria-label="爆炸距离" data-testid="explode-amt" />
@@ -626,7 +626,7 @@ export default function ModelLabPage() {
               ) : (
                 <div className="flex h-full items-center justify-center p-6 text-center text-sm text-ink-soft">还没有 3D 模型。点“① 上传 3D 模型”（只在本机解析）</div>
               )}
-              {mode !== "view" && <div className="pointer-events-none absolute left-2 top-2 bg-white/90 px-2 py-1 text-xs" data-testid="mode-hint">{mode === "joint" ? (jd?.reanchor ? "点模型表面 = 新的铰接点" : !jd?.parent ? "① 点父模块（不动的那块，比如底座）" : !jd.child ? "② 点子模块（会动的那块）" : `③ 点表面上的铰接点（新关节类型：${JOINT_TYPES[newType]}）`) : mode === "bind" ? (fnSel ? `绑定到“${fnSel.name}”：点模块 = 加入 / 移出` : "先点功能图上的热点或左边的功能") : mode === "mesh" ? `已选 ${selMeshes.size} 个网格（点网格切换）` : "在右边功能图上拖框"}</div>}
+              {mode !== "view" && <div className="pointer-events-none absolute left-2 top-2 bg-paper-2/90 px-2 py-1 text-xs" data-testid="mode-hint">{mode === "joint" ? (jd?.reanchor ? "点模型表面 = 新的铰接点" : !jd?.parent ? "① 点父模块（不动的那块，比如底座）" : !jd.child ? "② 点子模块（会动的那块）" : `③ 点表面上的铰接点（新关节类型：${JOINT_TYPES[newType]}）`) : mode === "bind" ? (fnSel ? `绑定到“${fnSel.name}”：点模块 = 加入 / 移出` : "先点功能图上的热点或左边的功能") : mode === "mesh" ? `已选 ${selMeshes.size} 个网格（点网格切换）` : "在右边功能图上拖框"}</div>}
             </div>
             {parsed && X && JointsPanel()}
             {parsed && X && (
@@ -634,9 +634,9 @@ export default function ModelLabPage() {
                 <div>
                   <div className="font-medium">尺寸和单位</div>
                   <div className="mt-1 flex flex-wrap items-center gap-2">
-                    <label>单位 <select data-testid="units" className="border border-line bg-white" value={project.model.units} onChange={(e) => upd((p) => { p.model.units = e.target.value; })}>{UNITS.map(([k, zh]) => <option key={k} value={k}>{zh}（{k}）</option>)}</select></label>
-                    <label>缩放 <input data-testid="scale" type="number" min="0.001" max="1000" step="0.1" className="w-20 border border-line bg-white px-1" value={project.model.scale} onChange={(e) => { const v = +e.target.value; if (v > 0) upd((p) => { p.model.scale = v; }); }} /></label>
-                    <label>朝上 <select data-testid="upaxis" className="border border-line bg-white" value={project.model.upAxis} onChange={(e) => upd((p) => { p.model.upAxis = e.target.value; })}><option value="y">Y 轴</option><option value="z">Z 轴</option></select></label>
+                    <label>单位 <select data-testid="units" className="border border-line bg-paper-2" value={project.model.units} onChange={(e) => upd((p) => { p.model.units = e.target.value; })}>{UNITS.map(([k, zh]) => <option key={k} value={k}>{zh}（{k}）</option>)}</select></label>
+                    <label>缩放 <input data-testid="scale" type="number" min="0.001" max="1000" step="0.1" className="w-20 border border-line bg-paper-2 px-1" value={project.model.scale} onChange={(e) => { const v = +e.target.value; if (v > 0) upd((p) => { p.model.scale = v; }); }} /></label>
+                    <label>朝上 <select data-testid="upaxis" className="border border-line bg-paper-2" value={project.model.upAxis} onChange={(e) => upd((p) => { p.model.upAxis = e.target.value; })}><option value="y">Y 轴</option><option value="z">Z 轴</option></select></label>
                   </div>
                   <p className="mt-1 text-xs text-ink-soft">原始包围盒 {fmt(parsed.raw.x, 3)} × {fmt(parsed.raw.y, 3)} × {fmt(parsed.raw.z, 3)}（文件单位）。{project.model.unitWhy}</p>
                 </div>
@@ -658,7 +658,7 @@ export default function ModelLabPage() {
           <section className="min-w-0 space-y-2">
             <div className="border border-line bg-paper-2 p-2">
               <div className="flex items-center justify-between"><h2 className="font-medium">功能图</h2>
-                {pdf && <label className="text-xs">PDF 页 <select className="border border-line bg-white" value={pdf.page} onChange={(e) => pdfPage(+e.target.value)}>{Array.from({ length: Math.min(pdf.pages, 200) }, (_, i) => <option key={i} value={i + 1}>{i + 1}</option>)}</select> / {pdf.pages}</label>}</div>
+                {pdf && <label className="text-xs">PDF 页 <select className="border border-line bg-paper-2" value={pdf.page} onChange={(e) => pdfPage(+e.target.value)}>{Array.from({ length: Math.min(pdf.pages, 200) }, (_, i) => <option key={i} value={i + 1}>{i + 1}</option>)}</select> / {pdf.pages}</label>}</div>
               {diagramUrl && project.diagram ? (
                 <DiagramPanel url={diagramUrl} w={project.diagram.w} h={project.diagram.h} functions={project.functions} selFn={selFn} hlFns={hlFns} drawing={mode === "draw"} onRegion={selectFn} onDraw={onDraw}
                   onRemoveRegion={(fid, i) => updFn(fid, (f) => { f.regions.splice(i, 1); })} />
@@ -666,21 +666,21 @@ export default function ModelLabPage() {
             </div>
 
             {mode === "mesh" && (
-              <div className="border border-copper bg-white p-2 text-sm">
+              <div className="border border-copper bg-paper-2 p-2 text-sm">
                 <div>选网格拆分：已选 {selMeshes.size} 个</div>
                 <div className="mt-1 flex gap-1.5"><button className={btn} data-testid="split-meshes" disabled={!selMeshes.size} onClick={splitSelectedMeshes}>拆成新模块</button><button className={btn} onClick={() => setSelMeshes(new Set())}>清空</button></div>
               </div>
             )}
             {selMods.size >= 2 && (
-              <div className="border border-line bg-white p-2 text-sm">已选 {selMods.size} 个模块 <button className={btn + " ml-2"} data-testid="merge" onClick={mergeSelected}>合并成一个模块</button></div>
+              <div className="border border-line bg-paper-2 p-2 text-sm">已选 {selMods.size} 个模块 <button className={btn + " ml-2"} data-testid="merge" onClick={mergeSelected}>合并成一个模块</button></div>
             )}
 
             {fnSel && (
-              <div className="border border-line bg-white p-2 text-sm" data-testid="fn-panel">
+              <div className="border border-line bg-paper-2 p-2 text-sm" data-testid="fn-panel">
                 <div className="flex items-center gap-1">
                   <input type="color" aria-label="功能颜色" value={fnSel.color} onChange={(e) => updFn(fnSel.id, (f) => { f.color = e.target.value; })} />
                   <input data-testid="fn-name" aria-label="功能名称" className="min-w-0 flex-1 border border-line px-1" value={fnSel.name} onChange={(e) => updFn(fnSel.id, (f) => { f.name = e.target.value.slice(0, 40); })} />
-                  <select data-testid="fn-kind" aria-label="功能类型" className="border border-line bg-white" value={fnSel.kind} onChange={(e) => updFn(fnSel.id, (f) => { f.kind = e.target.value; })}>{FUNC_KINDS.map((k) => <option key={k}>{k}</option>)}</select>
+                  <select data-testid="fn-kind" aria-label="功能类型" className="border border-line bg-paper-2" value={fnSel.kind} onChange={(e) => updFn(fnSel.id, (f) => { f.kind = e.target.value; })}>{FUNC_KINDS.map((k) => <option key={k}>{k}</option>)}</select>
                 </div>
                 <p className="mt-1 text-xs text-ink-soft">{fnSel.regions.length} 个热点区域 · 绑定 {fnSel.modules.length} 个模块</p>
                 <textarea aria-label="说明" className="mt-1 w-full border border-line p-1 text-xs" rows={2} value={fnSel.note} placeholder="说明（可选）" onChange={(e) => updFn(fnSel.id, (f) => { f.note = e.target.value.slice(0, 500); })} />
@@ -712,7 +712,7 @@ export default function ModelLabPage() {
             )}
 
             {modSel && (
-              <div className="border border-line bg-white p-2 text-sm" data-testid="mod-panel">
+              <div className="border border-line bg-paper-2 p-2 text-sm" data-testid="mod-panel">
                 <div className="flex items-center gap-1">
                   <input data-testid="mod-color" type="color" aria-label="模块颜色" value={modSel.color} onChange={(e) => updMod(modSel.id, (m) => { m.color = e.target.value; })} />
                   <input data-testid="mod-name" aria-label="模块名称" className="min-w-0 flex-1 border border-line px-1" value={modSel.name} onChange={(e) => updMod(modSel.id, (m) => { m.name = e.target.value.slice(0, 60); })} />
@@ -720,8 +720,8 @@ export default function ModelLabPage() {
                 {an.get(modSel.id) && (() => { const a = an.get(modSel.id); return (
                   <p className="mt-1 text-xs" data-testid="mod-info">{fmt(a.sizeMm.x)} × {fmt(a.sizeMm.y)} × {fmt(a.sizeMm.z)} mm · 体积 {fmt(a.volCm3, 2)} cm³（{a.volHow}）· 质量 {fmt(a.massG, 1)} g（{a.massHow}）· 碰撞：{a.colliderUsed === "hull" ? `凸包 ${a.hullPts} 点` : "方块"}</p>); })()}
                 <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
-                  <label>碰撞体 <select data-testid="mod-collider" className="border border-line bg-white" value={modSel.collider} onChange={(e) => updMod(modSel.id, (m) => { m.collider = e.target.value; })}><option value="hull">凸包</option><option value="box">方块</option></select></label>
-                  <label>材料 <select data-testid="mod-material" className="border border-line bg-white" value={modSel.material} onChange={(e) => updMod(modSel.id, (m) => { m.material = e.target.value; })}>{Object.entries(MATERIALS).map(([k, v]) => <option key={k} value={k}>{v.zh} · {v.rho} g/cm³</option>)}</select></label>
+                  <label>碰撞体 <select data-testid="mod-collider" className="border border-line bg-paper-2" value={modSel.collider} onChange={(e) => updMod(modSel.id, (m) => { m.collider = e.target.value; })}><option value="hull">凸包</option><option value="box">方块</option></select></label>
+                  <label>材料 <select data-testid="mod-material" className="border border-line bg-paper-2" value={modSel.material} onChange={(e) => updMod(modSel.id, (m) => { m.material = e.target.value; })}>{Object.entries(MATERIALS).map(([k, v]) => <option key={k} value={k}>{v.zh} · {v.rho} g/cm³</option>)}</select></label>
                   <label>实测质量 <input data-testid="mod-mass" type="number" min="0" step="0.1" placeholder="留空=估算" className="w-20 border border-line px-1" value={modSel.massG ?? ""} onChange={(e) => updMod(modSel.id, (m) => { const v = parseFloat(e.target.value); m.massG = v > 0 ? Math.min(v, 1e6) : null; })} /> g</label>
                 </div>
                 <div className="mt-1 text-xs">属于功能：{project.functions.length ? project.functions.map((f) => (

@@ -31,7 +31,7 @@ const rows = []; let fail = 0;
 for (const [k, u, act, o = {}] of STATES) {
   if (ONLY && !ONLY.has(k)) continue;
   const c = await b.newContext({ viewport: { width: o.w || 1366, height: o.h || 768 } });
-  await c.addInitScript(([l, tour]) => { try { if (!tour) localStorage.setItem("asm-tour-v22-done", "1"); else localStorage.removeItem("asm-tour-v22-done"); localStorage.setItem("ui-lang", l); } catch { /* */ } }, [LANG, !!o.tour]);
+  await c.addInitScript(([l, tour, theme]) => { try { if (!tour) localStorage.setItem("asm-tour-v22-done", "1"); else localStorage.removeItem("asm-tour-v22-done"); localStorage.setItem("ui-lang", l); if (theme === "light" || theme === "dark" || theme === "system") localStorage.setItem("wb-theme-v1", theme); } catch { /* */ } }, [LANG, !!o.tour, process.env.THEME || "light"]);
   const p = await c.newPage();
   try {
     await p.goto(BASE + u, { waitUntil: "load", timeout: 60000 });
@@ -50,6 +50,6 @@ for (const [k, u, act, o = {}] of STATES) {
   await c.close();
 }
 await b.close();
-fs.writeFileSync(`${OUT}/axe-states-${LANG}.json`, JSON.stringify(rows, null, 1));
-console.log(`axe-states（${LANG}）：${rows.length - fail} PASS / ${fail} FAIL · 违规规则合计 ${rows.reduce((a, r) => a + (r.violations?.length || 0), 0)}`);
+fs.writeFileSync(`${OUT}/axe-states-${LANG}-${process.env.THEME || "light"}.json`, JSON.stringify(rows, null, 1));
+console.log(`axe-states（${LANG} / ${process.env.THEME || "light"}）：${rows.length - fail} PASS / ${fail} FAIL · 违规规则合计 ${rows.reduce((a, r) => a + (r.violations?.length || 0), 0)}`);
 process.exit(fail ? 1 : 0);

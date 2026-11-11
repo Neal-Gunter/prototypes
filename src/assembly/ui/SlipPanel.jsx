@@ -28,9 +28,9 @@ export default function SlipPanel({ measure, onCaster, tid = "octo-slip" }) {
     <fieldset className="flex flex-col gap-1" data-testid={tid}>
       <legend className="font-medium">横坡侧滑补偿（v15，我的补充 · 简化仿真）</legend>
       <div className="flex flex-wrap items-center gap-1">
-        <label>台面支点<select value={live} data-testid={`${tid}-caster`} className="ml-0.5 border border-line bg-white" onChange={(e) => { setLive(e.target.value); onCaster?.(e.target.value); }}>{Object.keys(CASTERS).map((k) => <option key={k} value={k}>{CZH[k] || k}</option>)}</select></label>
+        <label>台面支点<select value={live} data-testid={`${tid}-caster`} className="ml-0.5 border border-line bg-paper-2" onChange={(e) => { setLive(e.target.value); onCaster?.(e.target.value); }}>{Object.keys(CASTERS).map((k) => <option key={k} value={k}>{CZH[k] || k}</option>)}</select></label>
         <label>坡度<input type="number" min={0} max={6} step={0.5} value={deg} onChange={(e) => setDeg(+e.target.value)} className="ml-0.5 w-12 border border-line" data-testid={`${tid}-deg`} />°</label>
-        <label><select value={dir} onChange={(e) => setDir(e.target.value)} className="border border-line bg-white" data-testid={`${tid}-dir`}><option value="cross">横坡（往右下）</option><option value="crossL">横坡（往左下）</option></select></label>
+        <label><select value={dir} onChange={(e) => setDir(e.target.value)} className="border border-line bg-paper-2" data-testid={`${tid}-dir`}><option value="cross">横坡（往右下）</option><option value="crossL">横坡（往左下）</option></select></label>
         <button type="button" disabled={!!busy} onClick={run} data-testid={`${tid}-run`} className="rounded border border-copper px-1.5 disabled:opacity-40">跑 5 组对比（各 10 s）</button>
         {busy && <span data-testid={`${tid}-busy`}>正在跑 {busy}…</span>}
       </div>

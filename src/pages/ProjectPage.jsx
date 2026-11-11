@@ -14,8 +14,8 @@ import * as Mz from "../project/measure.js";
 import MeasurePanel from "../project/MeasurePanel.jsx";
 
 const FW = P.firmwarePins(BODY_H, BATT_H);
-const btn = "min-h-9 border border-line bg-white px-2.5 text-sm hover:border-copper disabled:opacity-40";
-const btnOn = "min-h-9 border border-copper bg-copper px-2.5 text-sm text-white";
+const btn = "min-h-9 border border-line bg-paper-2 px-2.5 text-sm hover:border-copper disabled:opacity-40";
+const btnOn = "min-h-9 border border-copper bg-copper px-2.5 text-sm text-paper";
 const PROC_ROWS = [["p-octo-frame-v10", "PLA 骨架 + 上层板（v10）", "v10 frame", "struct", [90, 90, 37], "CC0", "proc", ""], ["p-octo-arm-v10", "PLA 短触手（v10）", "v10 arm", "struct", [60, 8, 4], "CC0", "proc", ""], ["p-octo-vdiv-1s", "100k/100k 电池检测分压小板", "1S divider", "passive", [10, 6, 2], "CC0", "proc", ""]];
 const load = () => { try { const s = JSON.parse(localStorage.getItem(P.PROJECT_KEY)); return s && s.v === 25 ? s : P.emptyState(); } catch { return P.emptyState(); } };
 const loadPhotos = () => { try { return JSON.parse(localStorage.getItem(Mz.PHOTO_KEY)) || {}; } catch { return {}; } };
@@ -43,7 +43,7 @@ function DeckView({ state, dims }) {
   const S = 24; // px / cm
   const roles = Object.keys(DECK_V10);
   return (
-    <svg viewBox="-110 -110 220 220" className="h-64 w-64 border border-line bg-white" data-testid="deck-view" role="img" aria-label={tr("上层板俯视图")}>
+    <svg viewBox="-110 -110 220 220" className="h-64 w-64 border border-line bg-paper-2" data-testid="deck-view" role="img" aria-label={tr("上层板俯视图")}>
       <circle r={P.DECK_R * S} fill="#f6f1e7" stroke="#999" />
       {Array.from({ length: 8 }, (_, i) => { const a = (i * Math.PI) / 4; const on = state.placed?.[`S${i}`] === `S${i}`; return <rect key={i} x={Math.cos(a) * 3.9 * S - 6} y={Math.sin(a) * 3.9 * S - 6} width="12" height="12" fill={on ? "#b87333" : "none"} stroke="#b87333" strokeDasharray={on ? "" : "2 2"} />; })}
       {roles.map((r) => { const at = state.placed?.[r]; if (!at) return null; const f = P.footprint(r, at, dims); if (!f) return null; return (
@@ -164,7 +164,7 @@ export default function ProjectPage() {
           {cur === "solder" && (
             <div className="mt-2 space-y-2 text-sm">
               <p className="text-ink-soft">{tr("按推荐顺序点焊盘焊接。加热时间和助焊剂决定焊点质量（和 3D 装配台同一套估算模型）：太短虚焊、太长或没助焊剂在相邻焊盘边容易连锡、再长烫坏焊盘。想在 3D 里练：")} <Link className="underline" to="/assembly?scene=electrics">{tr("电路练习")}</Link> · <Link className="underline" to="/assembly?scene=fault">{tr("故障练习（虚焊 + 反装）")}</Link></p>
-              <div className="flex flex-wrap items-center gap-3 border border-line bg-white p-2">
+              <div className="flex flex-wrap items-center gap-3 border border-line bg-paper-2 p-2">
                 <label className="flex items-center gap-1">{tr("电池")} <button type="button" className={state.batPlugged ? btnOn : btn} onClick={() => upd((s) => { s.batPlugged = !s.batPlugged; })} data-testid="bat-plug">{state.batPlugged ? tr("插着") : tr("拔掉了")}</button></label>
                 <label className="flex items-center gap-1">{tr("加热")} <input type="range" min="0.2" max="6" step="0.1" value={t} onChange={(e) => setT(+e.target.value)} data-testid="solder-t" /> <span className="w-12" data-testid="solder-t-val">{t.toFixed(1)} s</span></label>
                 <label className="flex items-center gap-1"><input type="checkbox" checked={flux} onChange={(e) => setFlux(e.target.checked)} data-testid="solder-flux" /> {tr("助焊剂")}</label>
@@ -185,7 +185,7 @@ export default function ProjectPage() {
 
           {cur === "check" && sim && (
             <div className="mt-2 space-y-3 text-sm">
-              <div className="flex flex-wrap items-center gap-3 border border-line bg-white p-2">
+              <div className="flex flex-wrap items-center gap-3 border border-line bg-paper-2 p-2">
                 <label className="flex items-center gap-1">{tr("电池")} <button type="button" className={state.batPlugged ? btnOn : btn} onClick={() => upd((s) => { s.batPlugged = !s.batPlugged; })} data-testid="bat-plug">{state.batPlugged ? tr("插着") : tr("拔掉了")}</button></label>
                 <label className="flex items-center gap-1">{tr("开关")} <button type="button" className={state.swOn ? btnOn : btn} onClick={() => upd((s) => { s.swOn = !s.swOn; })} data-testid="sw-on">{state.swOn ? "ON" : "OFF"}</button></label>
                 <span data-testid="rails">{tr("电池")} {sim.idle.rails.vbat} V · {tr("升压")} {sim.idle.rails.boost?.BST1?.v ?? 0} / {sim.idle.rails.boost?.BST2?.v ?? 0} V · 3V3 {sim.idle.rails.v33} V · {tr("电流")} {(sim.idle.rails.iBat * 1000).toFixed(0)} mA（{tr("估算")}）</span>
@@ -209,13 +209,13 @@ export default function ProjectPage() {
                 <button type="button" className={btn} disabled={!sheet} onClick={() => download("octopus-v10-build-sheet.html", sheetHtml(sheet), "text/html;charset=utf-8")} data-testid="sheet-html">{tr("下载 HTML")}</button>
                 <button type="button" className={btn} disabled={!sheet} onClick={() => { const w = window.open(URL.createObjectURL(new Blob([sheetHtml(sheet)], { type: "text/html;charset=utf-8" })), "_blank"); if (!w) setMsg({ ok: false, text: tr("浏览器拦截了新窗口：用下载 HTML") }); }} data-testid="sheet-print">{tr("打印版（新窗口）")}</button>
               </div>
-              {sheet && <iframe title={tr("制作单预览")} className="h-[32rem] w-full border border-line bg-white" srcDoc={sheetHtml(sheet)} data-testid="sheet-preview" />}
+              {sheet && <iframe title={tr("制作单预览")} className="h-[32rem] w-full border border-line bg-paper-2" srcDoc={sheetHtml(sheet)} data-testid="sheet-preview" />}
             </div>
           )}
         </section>
 
         <aside className="space-y-3">
-          <div className="border border-line bg-white p-3">
+          <div className="border border-line bg-paper-2 p-3">
             <h3 className="mb-1 font-semibold">{tr("这一步的检查")} <span className={prog.done[ci] ? "text-green-700" : "text-red-700"} data-testid="step-verdict">{prog.done[ci] ? tr("通过") : tr("未通过")}</span></h3>
             <Checks list={prog.checks[cur]} />
           </div>

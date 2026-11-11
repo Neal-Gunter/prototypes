@@ -43,7 +43,7 @@ export function setCam(k, motion) {
   window.__asmCam(c.pos.map((v, i) => v + o[i]), c.tgt.map((v, i) => v + o[i]));
   return true;
 }
-const Btn = ({ children, on, dis, t, cls = "", submit }) => <button type={submit ? "submit" : "button"} disabled={dis} onClick={on} data-testid={t} className={`min-h-8 border border-line bg-white px-2 text-xs disabled:opacity-40 ${cls}`}>{children}</button>;
+const Btn = ({ children, on, dis, t, cls = "", submit }) => <button type={submit ? "submit" : "button"} disabled={dis} onClick={on} data-testid={t} className={`min-h-8 border border-line bg-paper-2 px-2 text-xs disabled:opacity-40 ${cls}`}>{children}</button>;
 
 function TopView({ snap, plan }) {
   if (!snap) return null;
@@ -64,7 +64,7 @@ function TopView({ snap, plan }) {
   const pts = tr.map((q) => P(q.x, q.z).join(",")).join(" ");
   const nose = P(p.x + 6 * Math.sin(p.h), p.z - 6 * Math.cos(p.h));
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full border border-line bg-white" data-testid="octo-topview">
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full border border-line bg-paper-2" data-testid="octo-topview">
       <defs><pattern id="g" width={S * 5} height={S * 5} patternUnits="userSpaceOnUse" x={(cx - ox * S) % (S * 5)} y={(cz - oz * S) % (S * 5)}><path d={`M ${S * 5} 0 L 0 0 0 ${S * 5}`} fill="none" stroke="#e7e2d8" strokeWidth="0.6" /></pattern></defs>
       <rect width={W} height={H} fill="url(#g)" />
       <polyline points={pts} fill="none" stroke="#b06a2c" strokeWidth="1" />
@@ -251,11 +251,11 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
         <summary className="cursor-pointer text-ink-soft">高级设置：阶段 / 故障场景 / 固件模式 / 固件修正开关</summary>
         <div className="mt-1 flex flex-col gap-1">
         <label className="mt-1">按 md 的阶段装：
-          <select value={phase} onChange={(e) => setPhase(+e.target.value)} className="ml-1 w-full border border-line bg-white" data-testid="octo-phase">{PHASES.map((p) => <option key={p.k} value={p.k}>{p.zh}</option>)}</select>
+          <select value={phase} onChange={(e) => setPhase(+e.target.value)} className="ml-1 w-full border border-line bg-paper-2" data-testid="octo-phase">{PHASES.map((p) => <option key={p.k} value={p.k}>{p.zh}</option>)}</select>
         </label>
         <p className="text-ink-soft">{ph.md}{ph.textOnly ? "（这一阶段只有文字说明，台面按阶段 4 摆）" : ""}</p>
         <label>故障 / 维修场景：
-          <select value={fault} onChange={(e) => setFault(e.target.value)} className="ml-1 w-full border border-line bg-white" data-testid="octo-fault">{(variant === "v10" ? FAULTS_V10 : FAULTS).map((f) => <option key={f.k} value={f.k}>{f.zh}</option>)}</select>
+          <select value={fault} onChange={(e) => setFault(e.target.value)} className="ml-1 w-full border border-line bg-paper-2" data-testid="octo-fault">{(variant === "v10" ? FAULTS_V10 : FAULTS).map((f) => <option key={f.k} value={f.k}>{f.zh}</option>)}</select>
         </label>
         {(variant === "v10" ? FAULTS_V10 : FAULTS).find((f) => f.k === fault)?.md && <p className="text-ink-soft">出处：{(variant === "v10" ? FAULTS_V10 : FAULTS).find((f) => f.k === fault).md}</p>}
         <div className="flex gap-2">
@@ -333,7 +333,7 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
             {snap.servos.map((s) => <tr key={s.role} className={s.buzz || s.collide ? "text-red-700" : ""}><td>{s.ch}</td><td>{s.role}{s.type === "360" ? "(360°)" : ""}</td><td>{s.us ? s.us.toFixed(0) : "—"}</td><td>{s.cmd == null ? "—" : s.cmd.toFixed(0)}</td><td>{s.ang.toFixed(0)}</td><td>{s.I.toFixed(2)}</td><td>{s.collide ? "碰" : s.buzz ? "响" : ""}</td></tr>)}
           </tbody></table>
         </details>}
-        {snap.log.length > 0 && <pre className="max-h-32 overflow-auto border border-line bg-white p-1 text-[10px]" role="region" tabIndex={0} aria-label="运行日志（可滚动）" data-testid="octo-log">{snap.log.slice(-14).join("\n")}</pre>}
+        {snap.log.length > 0 && <pre className="max-h-32 overflow-auto border border-line bg-paper-2 p-1 text-[10px]" role="region" tabIndex={0} aria-label="运行日志（可滚动）" data-testid="octo-log">{snap.log.slice(-14).join("\n")}</pre>}
         {snap.events.length > 0 && <ul className="text-[11px] text-ink-soft">{snap.events.slice(-5).map((e, i) => <li key={i}>{e.t}s {e.zh}</li>)}</ul>}
         <p className="text-ink-soft">{EST.friction}。{variant === "v10" ? V10_EST.gap : isB ? EST.gap : ""}</p>
       </>}

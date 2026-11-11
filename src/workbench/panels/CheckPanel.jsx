@@ -59,7 +59,7 @@ export default function CheckPanel({ analysis }) {
         </h2>
         <span
           data-testid="check-badge"
-          className={`px-2 py-0.5 text-xs ${ok ? "bg-mask text-paper-2" : errors.length ? "bg-mark text-paper-2" : "bg-line text-ink"}`}
+          className={`px-2 py-0.5 text-xs ${ok ? "bg-mask text-paper-2" : errors.length ? "bg-mark text-paper-2" : "border border-line bg-paper-2 text-ink"}`}
         >
           {ok ? "检查通过" : hide ? "有故障" : errors.length ? `${errors.length} 个错误` : "未完成"}
         </span>

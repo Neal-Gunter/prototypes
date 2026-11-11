@@ -1,4 +1,6 @@
 import { useMemo, useRef } from "react";
+import { themeVars } from "../../ui/palette.js";
+import { useTheme } from "../../theme.js";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
@@ -70,14 +72,17 @@ function Robot() {
 }
 
 export default function RobotScene() {
+  const [, , theme] = useTheme();
+  const C = themeVars(theme);
+  const dark = theme === "dark";
   return (
     <Canvas camera={{ position: [7.5, 5, 10], fov: 42 }} dpr={[1, 2]} gl={{ preserveDrawingBuffer: true }}>
-      <color attach="background" args={["#f7f3ea"]} />
-      <ambientLight intensity={0.8} />
-      <directionalLight position={[5, 10, 6]} intensity={1.5} />
+      <color attach="background" args={[C.paper]} />
+      <ambientLight intensity={dark ? 0.45 : 0.8} />
+      <directionalLight position={[5, 10, 6]} intensity={dark ? 0.9 : 1.5} />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2.2, 0]}>
         <circleGeometry args={[9, 48]} />
-        <meshStandardMaterial color="#e2d8c5" />
+        <meshStandardMaterial color={C.paper2} />
       </mesh>
       <Robot />
       <OrbitControls target={[0, 0.6, 0]} enablePan={false} minDistance={6} maxDistance={25} />

@@ -9,6 +9,25 @@
       name="description"
       content="可点击的概念页面：在浏览器里按想法、仿真、装配看一个硬件想法。仿真面板是占位，等候名单不会发送。"
     />
+    <script>
+      /* v44：在首屏绘制前写上 data-theme，避免闪一下。键名和 theme.js 保持一致。 */
+      (function () {
+        var KEY = "wb-theme-v1";
+        var pref = "system";
+        try {
+          var v = localStorage.getItem(KEY);
+          if (v === "light" || v === "dark" || v === "system") pref = v;
+        } catch (e) {}
+        var dark = pref === "dark" || (pref !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        var t = dark ? "dark" : "light";
+        var r = document.documentElement;
+        r.setAttribute("data-theme", t);
+        r.setAttribute("data-theme-pref", pref);
+        r.style.colorScheme = t;
+        var m = document.querySelector('meta[name="theme-color"]');
+        if (m) m.setAttribute("content", dark ? "#1c1915" : "#1b1814");
+      })();
+    </script>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   </head>
   <body>

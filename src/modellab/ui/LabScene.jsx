@@ -1,5 +1,7 @@
 // v11 模型实验室 3D 视图：每个网格按所属模块上色；高亮 / 半透明 / 隐藏 / 隔离 / 爆炸；点选模块或网格
 import { useEffect, useMemo, useRef } from "react";
+import { themeVars } from "../../ui/palette.js";
+import { useTheme } from "../../theme.js";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
@@ -94,6 +96,9 @@ function JointMarker({ j, M, r, sel, onClick }) {
 }
 
 export default function LabScene({ meshes, M, project, modOf, visible, hl, selMeshes, offsets, sizeCm, showCard, onPick, wire, lab, joints = [], showJoints = true, selJoint, onJoint, blocks = 0, pickPts = [] }) {
+  const [, , theme] = useTheme();
+  const C = themeVars(theme);
+  const dark = theme === "dark";
   const markRef = useRef(), blockRef = useRef();
   const r = Math.max(sizeCm.x, sizeCm.y, sizeCm.z, 3);
   const groupRef = useRef();

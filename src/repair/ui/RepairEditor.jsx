@@ -5,9 +5,9 @@ import { faultOptions } from "../faults.js";
 import { validateScenario, fromBench, exportPack, importPack, LS_KEY } from "../editor.js";
 import { BENCH_KEY } from "../benchImport.js";
 
-const btn = "min-h-9 border border-line bg-white px-2.5 text-sm hover:border-copper disabled:opacity-40";
-const btnOn = "min-h-9 border border-copper bg-copper px-2.5 text-sm text-white";
-const inp = "w-full border border-line bg-white px-2 py-1 text-sm";
+const btn = "min-h-9 border border-line bg-paper-2 px-2.5 text-sm hover:border-copper disabled:opacity-40";
+const btnOn = "min-h-9 border border-copper bg-copper px-2.5 text-sm text-paper";
+const inp = "w-full border border-line bg-paper-2 px-2 py-1 text-sm";
 const load = () => { try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; } catch { return []; } };
 const benchDesc = () => { try { return JSON.parse(localStorage.getItem(BENCH_KEY)); } catch { return null; } };
 
@@ -56,7 +56,7 @@ export default function RepairEditor({ onSaved, onPlay }) {
   return (
     <div className="grid gap-3 lg:grid-cols-[1fr_360px]" data-testid="editor">
       <div className="space-y-2 text-sm">
-        <section className="border border-line bg-white p-2">
+        <section className="border border-line bg-paper-2 p-2">
           <h2 className="mb-1 font-medium">1. 选板子</h2>
           <div className="flex flex-wrap gap-1">
             {Object.entries(TEMPLATES).map(([k, t]) => <button key={k} type="button" className={src === k ? btnOn : btn} onClick={() => { setSrc(k); setFaults([]); setOptI(0); }} data-testid={`ed-tpl-${k}`}>{t.zh}</button>)}
@@ -64,7 +64,7 @@ export default function RepairEditor({ onSaved, onPlay }) {
           </div>
           <p className="mt-1 text-xs text-ink-soft">{src === "bench" ? (bench ? `导入于 ${new Date(bench.at).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" })}（北京时间）：${board.parts.length} 个零件。只导入电阻、LED 和板子的 3V3 / USB 5V 电源脚；GPIO、按钮、舵机不导入（我的补充：保持简单）。` : "") : "要导入自己的电路：去「装配台」→ 电路面板，点「做成维修关卡」。"}</p>
         </section>
-        <section className="border border-line bg-white p-2">
+        <section className="border border-line bg-paper-2 p-2">
           <h2 className="mb-1 font-medium">2. 注入故障（从列表里选，{opts.length} 种可选）</h2>
           <div className="flex gap-1">
             <select className={inp} value={optI} onChange={(e) => setOptI(+e.target.value)} data-testid="ed-fault-select">{opts.map((o, i) => <option key={i} value={i}>{o.zh}</option>)}</select>
@@ -72,7 +72,7 @@ export default function RepairEditor({ onSaved, onPlay }) {
           </div>
           <ul className="mt-1 text-xs" data-testid="ed-faults">{faults.map((x, i) => <li key={i}>{i + 1}. {x.zh} <button type="button" className="text-red-700 underline" onClick={() => setFaults(faults.filter((_, j) => j !== i))}>删</button></li>)}</ul>
         </section>
-        <section className="grid gap-2 border border-line bg-white p-2 md:grid-cols-2">
+        <section className="grid gap-2 border border-line bg-paper-2 p-2 md:grid-cols-2">
           <h2 className="font-medium md:col-span-2">3. 关卡文字</h2>
           <label>标题<input className={inp} value={f.title} onChange={set("title")} data-testid="ed-title" /></label>
           <label>难度 / 标准工时（分钟，估算）<div className="flex gap-1"><select className={inp} value={f.stars} onChange={set("stars")}>{[1, 2, 3, 4, 5].map((n) => <option key={n}>{n}</option>)}</select><input className={inp} type="number" value={f.parMin} onChange={set("parMin")} /></div></label>
@@ -84,7 +84,7 @@ export default function RepairEditor({ onSaved, onPlay }) {
         </section>
       </div>
       <aside className="space-y-2 text-sm">
-        <section className="border border-line bg-white p-2" data-testid="ed-validate">
+        <section className="border border-line bg-paper-2 p-2" data-testid="ed-validate">
           <h2 className="mb-1 font-medium">校验</h2>
           {!v ? <p>先选一块板子</p> : <ul className="text-xs">
             {v.errors.map((e) => <li key={e} className="text-red-700">✗ {e}</li>)}
@@ -98,7 +98,7 @@ export default function RepairEditor({ onSaved, onPlay }) {
           </div>
           {msg && <p className="mt-1 text-xs" data-testid="ed-msg">{msg}</p>}
         </section>
-        <section className="border border-line bg-white p-2">
+        <section className="border border-line bg-paper-2 p-2">
           <h2 className="mb-1 font-medium">自制关卡（{list.length}）</h2>
           <ul className="text-xs">{list.map((s) => <li key={s.id} className="flex justify-between gap-1"><span>{s.title}（{s.faults.length} 个故障）</span><span><button type="button" className="underline" onClick={() => onPlay?.(s.id)}>玩</button> <button type="button" className="text-red-700 underline" onClick={() => persist(list.filter((x) => x.id !== s.id))}>删</button></span></li>)}</ul>
           <div className="mt-2 flex flex-wrap gap-1">

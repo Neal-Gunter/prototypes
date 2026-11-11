@@ -63,7 +63,7 @@ function ReworkTools({ sel }) {
   const all = () => { const r = engine.desolderAll(sel); setMsg(`拆焊模式：吸掉 ${r.n} 个焊点${r.lifted ? `，其中 ${r.lifted} 个焊盘翘起（返修次数到上限）` : ""}。现在可以拿下来复用。`); bump((x) => x + 1); };
   const lift = () => { const r = engine.liftOff(sel); setMsg(r.ok ? `已拿下（${r.group.length} 个零件一起），拖到新位置或贴到另一块转接板上再焊。累计受热 ${(r.heat || 0).toFixed(0)} s（估算）。` : r.why); bump((x) => x + 1); };
   return (
-    <div className="border border-line bg-white p-2 text-xs leading-5" data-testid="rework-tools">
+    <div className="border border-line bg-paper-2 p-2 text-xs leading-5" data-testid="rework-tools">
       <p className="font-medium">{trS("拆焊返修")} <span className="font-normal text-ink-soft">{trS("（我的补充 · 简化规则，阈值为估算）")}</span></p>
       <p className="text-ink-soft">同一个焊盘拆到第 3 次、或一次吸锡超过 4 s，焊盘会翘起（开路，需要飞线）。{P.state.heat ? ` 这个零件累计受热 ${P.state.heat.toFixed(0)} s（估算上限 30 s）。` : ""}</p>
       <div className="mt-1 flex flex-wrap gap-1">
@@ -261,13 +261,13 @@ export default function AssemblyPage() {
         <h1 className="text-xl font-medium">{tr("装配台")} <span className="ml-1 border border-copper px-1.5 py-0.5 align-middle text-xs text-copper">{tr("早期原型，简化仿真")}</span></h1>
         <p className="text-xs leading-5 text-ink-soft">{tr("零件有真实尺寸（毫米），由 Rapier 刚体引擎做碰撞：零件不会互相穿过去，拖着的零件会被挡住或推开别的零件。")}</p>
         <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={flip} onChange={(e) => setFlip(e.target.checked)} />{tr("排针翻面放（长针朝下，用来插面包板）")}</label>
-        <div className="shrink-0 border border-line bg-white p-2 text-xs leading-5">
+        <div className="shrink-0 border border-line bg-paper-2 p-2 text-xs leading-5">
           <Link to="/assembly/model" className="font-medium underline">{tr("上传自己的 3D 模型 + 功能图 →")}</Link>
           <span className="text-ink-soft">{tr("（拆模块、绑定功能，再放到这里做碰撞）")}</span>
           {customMsg && <p data-testid="custom-msg" className={customMsg.ok ? "mt-1" : "mt-1 text-mark"}>{customMsg.text}{customMsg.id && <> · <Link className="underline" to={customMsg.id.startsWith("demo") ? `/assembly/model?demo${customMsg.id === "demo" ? "" : "=" + customMsg.id.slice(5)}` : `/assembly/model?p=${encodeURIComponent(customMsg.id)}`}>回去编辑</Link></>}</p>}
         </div>
         {artic && (
-          <div className="max-h-[38vh] shrink-0 overflow-auto border border-line bg-white p-2" data-testid="bench-joints">
+          <div className="max-h-[38vh] shrink-0 overflow-auto border border-line bg-paper-2 p-2" data-testid="bench-joints">
             <div className="mb-1 text-xs font-medium">上传模型的关节：{artic.project.name}</div>
             <JointControls core={artic.core} project={artic.project} compact />
             <button className="mt-1 text-xs underline" onClick={() => setArtic(null)}>收起</button>
@@ -290,17 +290,17 @@ export default function AssemblyPage() {
         <div className="pointer-events-none absolute left-2 top-2 flex max-w-md flex-col gap-1" aria-live="polite" data-testid="toasts">
           {demo && <div className="bg-ink/85 px-2 py-1 text-sm text-paper-2" data-testid="demo-step">{demo.text}</div>}
           {toasts.map((t) => (
-            <div key={t.id} className={`px-2 py-1 text-sm ${t.kind === "error" ? "bg-red-700 text-white" : t.kind === "warn" ? "bg-amber-200 text-ink" : t.kind === "ok" ? "bg-emerald-700 text-white" : "bg-white/90 text-ink"}`}>{t.text}</div>
+            <div key={t.id} className={`px-2 py-1 text-sm ${t.kind === "error" ? "bg-red-700 text-white" : t.kind === "warn" ? "bg-amber-200 text-ink" : t.kind === "ok" ? "bg-emerald-700 text-white" : "bg-paper-2/90 text-ink"}`}>{t.text}</div>
           ))}
         </div>
-        <div className="absolute bottom-2 left-2 bg-white/90 px-2 py-1 font-mono text-xs" data-testid="pen-readout">
+        <div className="absolute bottom-2 left-2 bg-paper-2/90 px-2 py-1 font-mono text-xs" data-testid="pen-readout">
           穿透检测：当前最深 {pen ? pen.now.toFixed(3) : "—"} mm · 本次最深 {pen ? pen.max.toFixed(3) : "—"} mm（阈值 0.1 mm）· 零件 {uids.length}
         </div>
       </div>
       <aside className="flex min-h-0 flex-col gap-3 overflow-y-auto text-sm lg:w-80">
         <div className="flex gap-1" role="tablist">
           {[["tools", "工具与装配"], ["elec", "通电"], ["octo", "八爪鱼"]].map(([k, zh]) => (
-            <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={`min-h-9 flex-1 border ${tab === k ? "border-ink bg-ink text-paper-2" : "border-line bg-white"}`} data-testid={`tab-${k}`}>{tr(zh)}</button>
+            <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={`min-h-9 flex-1 border ${tab === k ? "border-ink bg-ink text-paper-2" : "border-line bg-paper-2"}`} data-testid={`tab-${k}`}>{tr(zh)}</button>
           ))}
         </div>
         <div className={tab === "octo" ? "" : "hidden"}><OctoPanel ready={ready} busy={!!(demo && !demo.done)} clear={clear} run={async (s) => { stopRef.current = false; if (window.__asmSpeed) return driveRun(s); let k = Math.round(s * 120); while (k-- > 0) engine.update(1 / 120); await new Promise((r) => requestAnimationFrame(r)); }} setDemo={setDemo} onExport={() => { localStorage.setItem("octo-guide", JSON.stringify(octoGuide(octoSim, engine))); nav("/assembly/octopus-guide?src=bench"); }} /></div>
@@ -308,16 +308,16 @@ export default function AssemblyPage() {
           <legend className="font-medium">{tr("练习电路（自动装配到桌面上）")}</legend>
           <div className="mt-1 flex flex-col gap-1">
             {Object.entries(PRESETS).map(([k, p]) => (
-              <button key={k} type="button" disabled={!ready || (demo && !demo.done)} onClick={() => { setTab("elec"); buildList(p.text, p.zh.split("：")[0]); }} className="min-h-9 border border-line bg-white px-2 text-left text-xs disabled:opacity-50" data-testid={`preset-${k}`}>{p.zh}</button>
+              <button key={k} type="button" disabled={!ready || (demo && !demo.done)} onClick={() => { setTab("elec"); buildList(p.text, p.zh.split("：")[0]); }} className="min-h-9 border border-line bg-paper-2 px-2 text-left text-xs disabled:opacity-50" data-testid={`preset-${k}`}>{p.zh}</button>
             ))}
           </div>
           <details className="mt-1 text-xs">
             <summary className="cursor-pointer">{tr("导入清单（粘贴文字清单，照着装配）")}</summary>
-            <textarea aria-label="零件清单文本" value={listText} onChange={(e) => setListText(e.target.value)} rows={8} spellCheck={false} className="mt-1 w-full border border-line bg-white p-1 font-mono text-[11px] leading-4" data-testid="list-text" />
+            <textarea aria-label="零件清单文本" value={listText} onChange={(e) => setListText(e.target.value)} rows={8} spellCheck={false} className="mt-1 w-full border border-line bg-paper-2 p-1 font-mono text-[11px] leading-4" data-testid="list-text" />
             <button type="button" disabled={!ready || (demo && !demo.done)} onClick={() => buildList(listText)} className="min-h-8 border border-ink px-2 disabled:opacity-50" data-testid="list-build">{tr("照清单装配")}</button>
             <p className="mt-1 text-ink-soft">每行一件：面包板 / 板子 / 零件 / 跳线 / 导线 / 舵机 / USB，“#”后是注释。<Link to="/assembly/guide" className="underline">看装配指南格式</Link></p>
           </details>
-          <button type="button" disabled={!ready || !uids.length} onClick={exportGuide} className="mt-1 min-h-9 w-full border border-copper bg-white px-2 text-xs disabled:opacity-50" data-testid="guide-btn">{tr("生成装配指南（物料清单、接线表、步骤、.ino，可打印）")}</button>
+          <button type="button" disabled={!ready || !uids.length} onClick={exportGuide} className="mt-1 min-h-9 w-full border border-copper bg-paper-2 px-2 text-xs disabled:opacity-50" data-testid="guide-btn">{tr("生成装配指南（物料清单、接线表、步骤、.ino，可打印）")}</button>
           {listErr.length > 0 && <ul className="mt-1 list-disc pl-4 text-xs text-red-700" data-testid="list-errors">{listErr.slice(0, 8).map((e) => <li key={e}>{e}</li>)}</ul>}
         </fieldset>
         <div className={tab === "elec" ? "" : "hidden"}><ElecPanel probes={probes} setProbes={setProbes} tool={tool} setTool={pickTool} /></div>
@@ -326,7 +326,7 @@ export default function AssemblyPage() {
           <legend className="font-medium">{tr("工具")}</legend>
           <div className="mt-1 flex gap-1">
             {TOOLS.map((t) => (
-              <button key={t.k} type="button" onClick={() => pickTool(t.k)} title={tr(t.tip)} aria-pressed={tool === t.k} className={`min-h-9 flex-1 border px-2 ${tool === t.k ? "border-ink bg-ink text-paper-2" : "border-line bg-white"}`} data-testid={`tool-${t.k}`}>{tr(t.zh)}</button>
+              <button key={t.k} type="button" onClick={() => pickTool(t.k)} title={tr(t.tip)} aria-pressed={tool === t.k} className={`min-h-9 flex-1 border px-2 ${tool === t.k ? "border-ink bg-ink text-paper-2" : "border-line bg-paper-2"}`} data-testid={`tool-${t.k}`}>{tr(t.zh)}</button>
             ))}
           </div>
           <p className="mt-1 text-xs text-ink-soft">{tr(TOOLS.find((t) => t.k === tool).tip)}</p>
@@ -338,9 +338,9 @@ export default function AssemblyPage() {
         </div>
         <div className="flex flex-wrap gap-1">
           <button type="button" onClick={play} disabled={!ready || (demo && !demo.done)} className="min-h-9 border border-ink px-3 hover:bg-ink hover:text-paper-2 disabled:opacity-50" data-testid="demo-btn">{tr("自动装配演示")}</button>
-          <button type="button" onClick={() => { stopRef.current = true; }} className="min-h-9 border border-line bg-white px-3">{tr("停止")}</button>
-          <button type="button" onClick={clear} className="min-h-9 border border-line bg-white px-3" data-testid="clear-btn">{tr("清空桌面")}</button>
-          <button type="button" onClick={() => window.dispatchEvent(new Event("open-tour"))} className="min-h-9 border border-line bg-white px-3" data-testid="tour-btn">{tr("新手导览")}</button>
+          <button type="button" onClick={() => { stopRef.current = true; }} className="min-h-9 border border-line bg-paper-2 px-3">{tr("停止")}</button>
+          <button type="button" onClick={clear} className="min-h-9 border border-line bg-paper-2 px-3" data-testid="clear-btn">{tr("清空桌面")}</button>
+          <button type="button" onClick={() => window.dispatchEvent(new Event("open-tour"))} className="min-h-9 border border-line bg-paper-2 px-3" data-testid="tour-btn">{tr("新手导览")}</button>
         </div>
         <label className="flex items-center gap-2"><input type="checkbox" checked={debug} onChange={(e) => setDebug(e.target.checked)} data-testid="debug-toggle" />{tr("显示碰撞盒（调试）")}</label>
         {pen?.pair && pen.now > 0.01 && <p className="text-xs text-ink-soft">最深的一对：{pen.pair.join(" ↔ ")}</p>}

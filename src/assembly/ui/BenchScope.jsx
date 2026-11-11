@@ -15,9 +15,9 @@ import { buildCircuit, boardOf, boardPins, termLabel, elemKind } from "../netlis
 import { engine } from "../engine.js";
 import { elec } from "../elecStore.js";
 
-const btn = "min-h-9 border border-line bg-white px-2.5 text-sm hover:border-copper disabled:opacity-40";
-const btnOn = "min-h-9 border border-copper bg-copper px-2.5 text-sm text-white";
-const sel = "min-h-9 border border-line bg-white px-1 text-sm";
+const btn = "min-h-9 border border-line bg-paper-2 px-2.5 text-sm hover:border-copper disabled:opacity-40";
+const btnOn = "min-h-9 border border-copper bg-copper px-2.5 text-sm text-paper";
+const sel = "min-h-9 border border-line bg-paper-2 px-1 text-sm";
 const NODES = ["VBAT", "5VA", "5VB", "EN", "SENSE"];
 const X = { buildCircuit, boardOf, boardPins, termLabel, elemKind };
 const CAP_OPTS = [0, 100e-6, 470e-6, 1000e-6];
@@ -209,7 +209,7 @@ export default function BenchScope() {
   if (!open) return <button type="button" className={btn} onClick={() => setOpen(true)} data-testid="bench-scope-open">打开示波器（大窗口）</button>;
   return createPortal(
     <div className="fixed inset-0 z-[60] overflow-auto bg-black/40 p-4" onClick={(e) => e.target === e.currentTarget && setOpen(false)}>
-      <div className="mx-auto max-w-6xl bg-white p-3 shadow-xl" data-testid="bench-scope">
+      <div className="mx-auto max-w-6xl bg-paper-2 p-3 shadow-xl" data-testid="bench-scope">
         <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
           <b>工作台示波器（时域模式 · 早期原型，简化仿真）</b>
           <div className="flex gap-1">

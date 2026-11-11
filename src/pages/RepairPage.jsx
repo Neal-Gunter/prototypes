@@ -14,8 +14,8 @@ import { useLang } from "../i18n.js";
 import RepairEditor from "../repair/ui/RepairEditor.jsx";
 
 const PROG_KEY = "repair.progress.v1";
-const btn = "min-h-9 border border-line bg-white px-2.5 text-sm hover:border-copper disabled:opacity-40";
-const btnOn = "min-h-9 border border-copper bg-copper px-2.5 text-sm text-white";
+const btn = "min-h-9 border border-line bg-paper-2 px-2.5 text-sm hover:border-copper disabled:opacity-40";
+const btnOn = "min-h-9 border border-copper bg-copper px-2.5 text-sm text-paper";
 const loadJSON = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
 const TOOL_ORDER = ["hand", "meter", "tweezers", "iron", "braid", "magnifier", "scope", "crimper"];
 const TPL_ZH = { led: "LED 夜灯", psu: "稳压模块", sensor: "传感器", octo: "八爪鱼 v10", rig: "三板台架" };
@@ -115,7 +115,7 @@ export default function RepairPage() {
       <div className="mb-3 flex flex-wrap items-center gap-3">
         <h1 className="text-xl font-semibold">维修关卡</h1>
         {pathId && <PathFollowBanner pathId={pathId} kind="repair" refId={sid} lang={lang} />}
-        <span className="border border-line bg-white px-2 py-0.5 text-xs text-ink-soft">早期原型，简化仿真 · 不替代真实安全培训</span>
+        <span className="border border-line bg-paper-2 px-2 py-0.5 text-xs text-ink-soft">早期原型，简化仿真 · 不替代真实安全培训</span>
         <div className="ml-auto flex gap-1">
           <button type="button" className={tab === "play" ? btnOn : btn} onClick={() => setTab("play")} data-testid="tab-play">闯关</button>
           <button type="button" className={tab === "editor" ? btnOn : btn} onClick={() => setTab("editor")} data-testid="tab-editor">关卡编辑器</button>
@@ -129,7 +129,7 @@ export default function RepairPage() {
         <aside className="space-y-1" data-testid="scenario-list">
           {all.map((s, i) => (
             <button key={s.id} type="button" onClick={() => setScenario(s.id)} data-testid={`sc-${s.id}`}
-              className={`block w-full border px-2 py-1.5 text-left text-sm ${s.id === sid ? "border-copper bg-[#fbf3ea]" : "border-line bg-white hover:border-copper"}`}>
+              className={`block w-full border px-2 py-1.5 text-left text-sm ${s.id === sid ? "border-copper bg-[#fbf3ea]" : "border-line bg-paper-2 hover:border-copper"}`}>
               <div className="flex justify-between"><span>{s.custom ? "自制" : i + 1}. {s.title}</span><span className="text-xs text-ink-soft">{progress[s.id] ? "★".repeat(progress[s.id]) : ""}</span></div>
               <div className="text-xs text-ink-soft">难度 {STAR(s.stars || 1)} · {s.template === "bench" || s.board ? "自制板" : TPL_ZH[s.template]}</div>
             </button>
@@ -137,7 +137,7 @@ export default function RepairPage() {
           <h3 className="pt-2 text-sm font-medium">示波器关卡（v18，时域仿真）</h3>
           {SCOPE_SCENARIOS.map((s, i) => (
             <button key={s.id} type="button" onClick={() => setScenario(s.id)} data-testid={`scope-sc-${s.id}`}
-              className={`block w-full border px-2 py-1.5 text-left text-sm ${s.id === sid ? "border-copper bg-[#fbf3ea]" : "border-line bg-white hover:border-copper"}`}>
+              className={`block w-full border px-2 py-1.5 text-left text-sm ${s.id === sid ? "border-copper bg-[#fbf3ea]" : "border-line bg-paper-2 hover:border-copper"}`}>
               <div className="flex justify-between"><span>S{i + 1}. {s.title}</span><span className="text-xs text-ink-soft">{progress[s.id] ? "★".repeat(progress[s.id]) : ""}</span></div>
               <div className="text-xs text-ink-soft">难度 {STAR(s.stars || 1)} · {TPL_ZH[s.template]}</div>
             </button>
@@ -147,7 +147,7 @@ export default function RepairPage() {
 
         {/* 板子 */}
         <main className="min-w-0 space-y-2">
-          <div className="border border-line bg-white p-2 text-sm" data-testid="complaint">
+          <div className="border border-line bg-paper-2 p-2 text-sm" data-testid="complaint">
             <b>客户：</b>{sc.complaint}
             <ul className="mt-1 list-disc pl-5 text-ink-soft">{sc.symptoms?.map((x) => <li key={x}>{x}</li>)}</ul>
           </div>
@@ -176,14 +176,14 @@ export default function RepairPage() {
             <button type="button" className={btn} onClick={() => setScenario(sid)} data-testid="restart">重来</button>
             <span className="ml-auto text-xs text-ink-soft">工时 {game.minutes.toFixed(1)} 分钟（估算，标准 {sc.parMin}）</span>
           </div>
-          {flash && <p className={`border px-2 py-1 text-sm ${flash.bad ? "border-red-300 bg-red-50 text-red-800" : "border-line bg-white"}`} data-testid="flash">{flash.text}</p>}
+          {flash && <p className={`border px-2 py-1 text-sm ${flash.bad ? "border-red-300 bg-red-50 text-red-800" : "border-line bg-paper-2"}`} data-testid="flash">{flash.text}</p>}
           {hintsShown.length > 0 && <ol className="list-decimal border border-amber-300 bg-amber-50 py-1 pl-6 pr-2 text-sm" data-testid="hints">{hintsShown.map((h) => <li key={h}>{h}</li>)}</ol>}
           {report && <ReportCard r={report} onNext={() => { const L = sc.scope ? SCOPE_SCENARIOS : all; const i = L.findIndex((s) => s.id === sid); if (L[i + 1]) setScenario(L[i + 1].id); }} />}
         </main>
 
         {/* 右栏：选中对象、万用表、状态、记录 */}
         <aside className="space-y-2 text-sm">
-          <section className="border border-line bg-white p-2" data-testid="context">
+          <section className="border border-line bg-paper-2 p-2" data-testid="context">
             <h2 className="mb-1 font-medium">选中：{!sel ? "（在板子上点一下）" : sel.type === "pin" ? `${sel.ref} 的 ${sel.pin} 脚` : sel.type === "pad" ? `背面焊盘 ${sel.ref}.${sel.pin}（${sel.net}）` : sel.type === "tp" ? `测试点 ${sel.tp}（${sel.net}）` : sel.ref || sel.id}</h2>
             {selPart && <p className="mb-1 text-xs text-ink-soft">{selPart.zh}{selPart.state.present === false ? "（空焊盘）" : ""}</p>}
             <div className="flex flex-wrap gap-1">
@@ -218,7 +218,7 @@ export default function RepairPage() {
             )}
           </section>
 
-          <section className="border border-line bg-white p-2" data-testid="meter">
+          <section className="border border-line bg-paper-2 p-2" data-testid="meter">
             <h2 className="mb-1 font-medium">万用表</h2>
             <div className="mb-1 flex flex-wrap gap-1">{Object.entries(MODE_ZH).map(([k, v]) => <button key={k} type="button" className={game.mode === k ? btnOn : btn} onClick={() => { game.mode = k; rerender(); }} data-testid={`mode-${k}`}>{v}</button>)}</div>
             <div className="bg-[#c8d4b8] px-2 py-2 font-mono text-lg text-[#1d2a12]" data-testid="reading">{reading.text}</div>
@@ -227,7 +227,7 @@ export default function RepairPage() {
             <p className="mt-1 text-xs text-ink-soft">只量低压板子。永远不要用表笔去碰市电（220 V 插座、适配器里面）。</p>
           </section>
 
-          <section className="border border-line bg-white p-2" data-testid="status">
+          <section className="border border-line bg-paper-2 p-2" data-testid="status">
             <h2 className="mb-1 font-medium">现象{game.power ? "" : "（断电中）"}</h2>
             <ul className="space-y-0.5 text-xs">
               {Object.entries(o.leds).map(([k, l]) => <li key={k}>{k}：{l.state}</li>)}
@@ -239,7 +239,7 @@ export default function RepairPage() {
             </ul>
           </section>
 
-          <section className="border border-line bg-white p-2">
+          <section className="border border-line bg-paper-2 p-2">
             <h2 className="mb-1 font-medium">维修记录</h2>
             <ol ref={logRef} className="max-h-56 space-y-0.5 overflow-auto text-xs" data-testid="log">
               {game.log.map((e, i) => <li key={i} className={e.bad ? "text-red-700" : ""}><span className="text-ink-soft">{e.t}′ [{e.kind}]</span> {e.text}</li>)}

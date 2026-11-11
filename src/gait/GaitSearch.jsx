@@ -3,13 +3,17 @@
 import { useEffect, useRef, useState } from "react";
 import { OBJECTIVES, RATE_CAP, SERVO_RATE_MAX } from "./search.js";
 import { curvePath, gaitPeriod } from "./gait.js";
-import { CHART, CHART_INK, line as lineCol } from "../ui/palette.js";
+import { chartInk, chartStroke, themeVars } from "../ui/palette.js";
+import { useTheme } from "../theme.js";
 
-const B = ({ children, on, dis, t, cls = "" }) => <button type="button" disabled={dis} onClick={on} data-testid={t} className={`min-h-7 border border-line bg-white px-2 text-xs disabled:opacity-40 ${cls}`}>{children}</button>;
+const B = ({ children, on, dis, t, cls = "" }) => <button type="button" disabled={dis} onClick={on} data-testid={t} className={`min-h-7 border border-line bg-paper-2 px-2 text-xs disabled:opacity-40 ${cls}`}>{children}</button>;
 const f = (v, d = 2) => (v == null || !Number.isFinite(v) ? "—" : (+v).toFixed(d));
 const CAPS = [{ n: 40, zh: "40 次（约 1 分钟）" }, { n: 120, zh: "120 次" }, { n: 240, zh: "240 次" }, { n: 480, zh: "480 次（约 10 分钟）" }];
 
 function Chart({ hist, tid }) {
+  const [, , theme] = useTheme();
+  const C = themeVars(theme);
+  const ink = chartInk(theme);
   const W = 300, H = 80;
   if (!hist?.length) return <svg viewBox={`0 0 ${W} ${H}`} className="w-full border border-line bg-paper-2" data-testid={`${tid}-chart`} />;
   const xs = hist.map((h) => h.evals), ys = hist.flatMap((h) => [h.best, h.mean]).filter(Number.isFinite);
@@ -18,18 +22,20 @@ function Chart({ hist, tid }) {
   const path = (k) => hist.map((h, i) => `${i ? "L" : "M"}${X(h.evals).toFixed(1)},${Y(h[k]).toFixed(1)}`).join("");
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full border border-line bg-paper-2" data-testid={`${tid}-chart`}>
-      <path d={path("mean")} fill="none" stroke={lineCol} strokeWidth="1" />
-      <path d={path("best")} fill="none" stroke={CHART[0]} strokeWidth="1.6" />
-      <text x="2" y="10" fontSize="7" fill="#4a433a">{f(y1)}</text><text x="2" y={H - 12} fontSize="7" fill="#4a433a">{f(y0)}</text>
-      <text x={W - 2} y={H - 2} fontSize="7" fill="#4a433a" textAnchor="end">评估次数 {x1}</text>
-      <text x="30" y="10" fontSize="7" fill={CHART_INK[0]}>— 至今最好分数</text><text x="110" y="10" fontSize="7" fill="#4a433a">— 每代平均</text>
+      <path d={path("mean")} fill="none" stroke={C.line} strokeWidth="1" />
+      <path d={path("best")} fill="none" stroke={chartStroke(theme)[0]} strokeWidth="1.6" />
+      <text x="2" y="10" fontSize="7" fill={C.inkSoft}>{f(y1)}</text><text x="2" y={H - 12} fontSize="7" fill={C.inkSoft}>{f(y0)}</text>
+      <text x={W - 2} y={H - 2} fontSize="7" fill={C.inkSoft} textAnchor="end">评估次数 {x1}</text>
+      <text x="30" y="10" fontSize="7" fill={ink[0]}>— 至今最好分数</text><text x="110" y="10" fontSize="7" fill={C.inkSoft}>— 每代平均</text>
     </svg>
   );
 }
 function Preview({ g, tid }) {
+  const [, , theme] = useTheme();
+  const C = themeVars(theme);
   const W = 300, H = 56, T = Math.min(6, 2 * gaitPeriod(g)), range = Math.max(10, ...g.joints.map((J) => Math.abs(J.offset || 0) + Math.abs(J.amp || 0)));
-  const cols = CHART;
-  return <svg viewBox={`0 0 ${W} ${H}`} className="w-full border border-line bg-paper-2" data-testid={`${tid}-preview`}><line x1="0" x2={W} y1={H / 2} y2={H / 2} stroke={lineCol} />{g.joints.map((J, i) => <path key={i} d={curvePath(J, W, H, T, range)} fill="none" stroke={cols[i % 8]} strokeWidth="1.1" />)}<text x="3" y="9" fontSize="7" fill="#4a433a">至今最好：{g.joints.length} 个关节 · ±{range.toFixed(0)} · {T.toFixed(1)} s</text></svg>;
+  const cols = chartStroke(theme);
+  return <svg viewBox={`0 0 ${W} ${H}`} className="w-full border border-line bg-paper-2" data-testid={`${tid}-preview`}><line x1="0" x2={W} y1={H / 2} y2={H / 2} stroke={C.line} />{g.joints.map((J, i) => <path key={i} d={curvePath(J, W, H, T, range)} fill="none" stroke={cols[i % 8]} strokeWidth="1.1" />)}<text x="3" y="9" fontSize="7" fill={C.inkSoft}>至今最好：{g.joints.length} 个关节 · ±{range.toFixed(0)} · {T.toFixed(1)} s</text></svg>;
 }
 
 // props: kind ("octo" | "artic"), makeJob() → job 的模型部分（gait0、project…），onApply(g), onPreview(g), exports [{k, zh, make(g)}], note, tid
@@ -78,12 +84,12 @@ export default function GaitSearch({ kind, makeJob, onApply, onPreview, exports 
   const best = st?.best, d = st?.done, rb = d?.robust;
   const download = (o) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([o.text], { type: o.mime || "text/plain" })); a.download = o.name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
   return (
-    <fieldset className="flex flex-col gap-1 border border-line bg-white p-2 text-xs" data-testid={`${tid}-panel`}>
+    <fieldset className="flex flex-col gap-1 border border-line bg-paper-2 p-2 text-xs" data-testid={`${tid}-panel`}>
       <legend className="font-medium">自动步态搜索（v15 · sep-CMA-ES，后台 Worker 池）· 早期原型，简化仿真</legend>
       <div className="flex flex-wrap items-center gap-1">
-        <label>目标<select value={obj} onChange={(e) => setObj(e.target.value)} data-testid={`${tid}-obj`} className="ml-0.5 border border-line bg-white">{Object.entries(OBJECTIVES).map(([k, o]) => <option key={k} value={k}>{o.zh}</option>)}</select></label>
+        <label>目标<select value={obj} onChange={(e) => setObj(e.target.value)} data-testid={`${tid}-obj`} className="ml-0.5 border border-line bg-paper-2">{Object.entries(OBJECTIVES).map(([k, o]) => <option key={k} value={k}>{o.zh}</option>)}</select></label>
         <label>种子<input type="number" min="1" value={seed} onChange={(e) => setSeed(Math.max(1, Math.round(+e.target.value) || 1))} data-testid={`${tid}-seed`} className="ml-0.5 w-12 border border-line px-0.5 font-mono" /></label>
-        <label>算力上限<select value={cap} onChange={(e) => setCap(+e.target.value)} data-testid={`${tid}-cap`} className="ml-0.5 border border-line bg-white">{CAPS.map((c) => <option key={c.n} value={c.n}>{c.zh}</option>)}{!CAPS.some((c) => c.n === cap) && <option value={cap}>{cap} 次</option>}</select></label>
+        <label>算力上限<select value={cap} onChange={(e) => setCap(+e.target.value)} data-testid={`${tid}-cap`} className="ml-0.5 border border-line bg-paper-2">{CAPS.map((c) => <option key={c.n} value={c.n}>{c.zh}</option>)}{!CAPS.some((c) => c.n === cap) && <option value={cap}>{cap} 次</option>}</select></label>
         <label>最长<input type="number" min="10" max="3600" value={maxSec} onChange={(e) => setMaxSec(Math.min(3600, Math.max(10, +e.target.value || 600)))} data-testid={`${tid}-maxsec`} className="ml-0.5 w-14 border border-line px-0.5 font-mono" />s</label>
       </div>
       {obj === "mix" && <div className="flex flex-wrap gap-2" data-testid={`${tid}-weights`}>{[["speed", "速度"], ["straight", "直线"], ["stable", "稳定"], ["energy", "省电"]].map(([k, zh]) => <label key={k} className="flex items-center gap-0.5">{zh}<input type="range" min="0" max="3" step="0.1" value={w[k]} onChange={(e) => setW({ ...w, [k]: +e.target.value })} data-testid={`${tid}-w-${k}`} /><span className="font-mono">{w[k].toFixed(1)}</span></label>)}</div>}
@@ -92,7 +98,7 @@ export default function GaitSearch({ kind, makeJob, onApply, onPreview, exports 
         <label className="flex items-center gap-0.5"><input type="checkbox" checked={robust} onChange={(e) => setRobust(e.target.checked)} data-testid={`${tid}-robust`} />搜完做鲁棒性复评</label>
         <label className="flex items-center gap-0.5"><input type="checkbox" checked={usePool} onChange={(e) => setUsePool(e.target.checked)} data-testid={`${tid}-pool`} />Worker 池并行（{hc} 线程 = 本机 hardwareConcurrency，v15）</label>
         {obj === "robust" && <label className="flex items-center gap-0.5"><input type="checkbox" checked={heldOut} onChange={(e) => setHeldOut(e.target.checked)} data-testid={`${tid}-heldout`} />复评用“留出工况”（11 个，和训练不重叠）</label>}
-        {kind === "octo" && <label>支点<select value={caster} onChange={(e) => setCaster(e.target.value)} data-testid={`${tid}-caster`} className="ml-0.5 border border-line bg-white"><option value="wheel">定向小轮（v15 推荐，估算）</option><option value="ball">万向珠（v14）</option></select></label>}
+        {kind === "octo" && <label>支点<select value={caster} onChange={(e) => setCaster(e.target.value)} data-testid={`${tid}-caster`} className="ml-0.5 border border-line bg-paper-2"><option value="wheel">定向小轮（v15 推荐，估算）</option><option value="ball">万向珠（v14）</option></select></label>}
         {kind === "octo" && <label className="flex items-center gap-0.5"><input type="checkbox" checked={sym} onChange={(e) => setSym(e.target.checked)} data-testid={`${tid}-sym`} />左右对称（21 维；不勾 = 33 维）</label>}
       </div>
       {obj === "robust" && <p className="text-ink-soft" data-testid={`${tid}-robust-note`}>多工况鲁棒（v15，我的补充）：每个候选在 6 个训练工况上评（μ 0.35 / 0.7、质量 ×0.9 / ×1.15 + 零位误差种子、横坡 1.5° 左 / 右），分数 = ½ 平均 + ½ 最差 − {f(weights.drift, 1)}×最差工况的 (|侧漂| + 0.2×|航向|)/时长；舵机角速度硬限 {RATE_CAP} °/s（= {SERVO_RATE_MAX} 的 80 %）。慢 6 倍，建议开 Worker 池。</p>}

@@ -13,7 +13,7 @@ function Compare({ ids, rows, onClear }) {
   const vol = (r) => +(r.dims.x * r.dims.y * r.dims.z / 1000).toFixed(2);
   const line = (k, f) => <tr className="border-b border-line"><th className="py-1 pr-2 text-left font-normal text-ink-soft">{k}</th><td className="pr-2">{f(a)}</td><td>{f(b)}</td></tr>;
   return (
-    <section className="mt-6 border border-line bg-white p-3" data-testid="compare-panel">
+    <section className="mt-6 border border-line bg-paper-2 p-3" data-testid="compare-panel">
       <div className="flex items-center justify-between"><h2 className="font-medium">两个零件对比</h2><button type="button" className="border border-line px-2 text-xs" onClick={onClear}>清空对比</button></div>
       <table className="mt-2 w-full text-sm">
         <thead><tr className="border-b border-ink"><th></th><th className="text-left">{a.name_zh}</th><th className="text-left">{b.name_zh}</th></tr></thead>
@@ -63,7 +63,7 @@ export default function PartsPage() {
       )}
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_24rem]">
         <div className="flex h-[72vh] flex-col"><PartsBrowser onPick={setSel} favs={favs} cmp={cmp} onCmp={onCmp} /></div>
-        <aside className="border border-line bg-white p-3">
+        <aside className="border border-line bg-paper-2 p-3">
           <h2 className="mb-2 font-medium">零件详情</h2>
           <Suspense fallback={<div className="aspect-square w-full border border-line bg-paper-2" />}><PartViewer id={sel} /></Suspense>
           <div className="mt-2 flex gap-2 text-xs">

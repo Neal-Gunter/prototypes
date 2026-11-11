@@ -17,7 +17,7 @@ const rows = []; let fail = 0;
 for (const [k, u] of PAGES) {
   if (ONLY && !ONLY.has(k)) continue;
   const c = await b.newContext({ viewport: { width: 1366, height: 768 } });
-  await c.addInitScript((l) => { try { localStorage.setItem("asm-tour-v22-done", "1"); localStorage.setItem("ui-lang", l); } catch { /* */ } }, LANG);
+  await c.addInitScript(([l, theme]) => { try { localStorage.setItem("asm-tour-v22-done", "1"); localStorage.setItem("ui-lang", l); if (theme === "light" || theme === "dark" || theme === "system") localStorage.setItem("wb-theme-v1", theme); } catch { /* */ } }, [LANG, process.env.THEME || "light"]);
   const p = await c.newPage();
   try {
     await p.goto(BASE + u, { waitUntil: "load", timeout: 60000 });
@@ -35,7 +35,7 @@ for (const [k, u] of PAGES) {
   await c.close();
 }
 await b.close();
-fs.writeFileSync(`${OUT}/axe-${LANG}.json`, JSON.stringify(rows, null, 1));
+fs.writeFileSync(`${OUT}/axe-${LANG}-${process.env.THEME || "light"}.json`, JSON.stringify(rows, null, 1));
 const tot = rows.reduce((a, r) => a + (r.violations?.length || 0), 0);
-console.log(`axe-check（${LANG}）：${rows.length - fail} PASS / ${fail} FAIL · 违规规则合计 ${tot}`);
+console.log(`axe-check（${LANG} / ${process.env.THEME || "light"}）：${rows.length - fail} PASS / ${fail} FAIL · 违规规则合计 ${tot}`);
 process.exit(fail ? 1 : 0);

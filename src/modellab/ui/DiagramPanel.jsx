@@ -14,7 +14,7 @@ export default function DiagramPanel({ url, w, h, functions, selFn, hlFns, drawi
         <span>{w}×{h} 像素</span>
         <label className="ml-auto flex items-center gap-1">缩放<input type="range" min="1" max="3" step="0.25" value={zoom} onChange={(e) => setZoom(+e.target.value)} aria-label="功能图缩放" /></label>
       </div>
-      <div className="max-h-[60vh] overflow-auto border border-line bg-white">
+      <div className="max-h-[60vh] overflow-auto border border-line bg-paper-2">
         <div ref={box} data-testid="diagram" className={`relative select-none ${drawing ? "cursor-crosshair" : ""}`} style={{ width: `${zoom * 100}%`, aspectRatio: `${w} / ${h}` }}
           onPointerDown={(e) => { if (!drawing || e.button !== 0) return; e.currentTarget.setPointerCapture(e.pointerId); const p = norm(e); setDrag({ a: p, b: p }); }}
           onPointerMove={(e) => drag && setDrag((d) => ({ ...d, b: norm(e) }))}

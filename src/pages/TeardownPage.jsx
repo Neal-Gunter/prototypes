@@ -110,7 +110,7 @@ export default function TeardownPage() {
         <aside>
           <label className="text-sm">
             <span className="sr-only">{L({ zh: "搜索设备", en: "Search devices" })}</span>
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={L({ zh: "按名称或型号搜：舵机、18650、风扇…", en: "Search by name or model: servo, 18650, fan…" })} className="w-full border border-line bg-white px-2 py-1.5 text-sm" data-testid="td-search" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={L({ zh: "按名称或型号搜：舵机、18650、风扇…", en: "Search by name or model: servo, 18650, fan…" })} className="w-full border border-line bg-paper-2 px-2 py-1.5 text-sm" data-testid="td-search" />
           </label>
           {isMainsQuery(q) && <p className="mt-2 border border-red-700 bg-red-50 px-2 py-1 text-xs text-red-900" role="alert" data-testid="td-mains">{L({ zh: `这里只收低压直流设备（电池或 USB 供电，≤ ${MAX_VOLTS} V）。插市电的设备（充电头、适配器、家电）有高压和断电后仍带电的电容，不提供拆解步骤，也请不要自己拆。`, en: `Low-voltage DC devices only (battery or USB powered, ${MAX_VOLTS} V or less). Mains devices (chargers, adapters, appliances) carry high voltage and capacitors that stay charged after unplugging, so there are no teardown steps for them. Please do not open them yourself.` })}</p>}
           <ul className="mt-2 space-y-2" data-testid="td-list">
@@ -118,7 +118,7 @@ export default function TeardownPage() {
               const p = readProgress(d.id).steps.length;
               return (
                 <li key={d.id}>
-                  <button type="button" onClick={() => { const n = new URLSearchParams(); n.set("d", d.id); const path = params.get("path"); if (path) n.set("path", path); setParams(n); }} className={`w-full border px-3 py-2 text-left text-sm ${d.id === dev.id ? "border-ink bg-ink text-paper" : "border-line bg-white hover:border-ink"}`} data-testid={`td-device-${d.id}`} aria-current={d.id === dev.id ? "true" : undefined}>
+                  <button type="button" onClick={() => { const n = new URLSearchParams(); n.set("d", d.id); const path = params.get("path"); if (path) n.set("path", path); setParams(n); }} className={`w-full border px-3 py-2 text-left text-sm ${d.id === dev.id ? "border-ink bg-ink text-paper" : "border-line bg-paper-2 hover:border-ink"}`} data-testid={`td-device-${d.id}`} aria-current={d.id === dev.id ? "true" : undefined}>
                     <span className="block font-medium">{L(d.name)}</span>
                     <span className={`block font-mono text-[11px] ${d.id === dev.id ? "text-paper-2" : "text-ink-soft"}`}>{d.model}</span>
                     <span className={`block text-[11px] ${d.id === dev.id ? "text-paper-2" : "text-ink-soft"}`}>{L({ zh: `${d.steps.length} 步 · 约 ${d.minutes} 分钟 · ${d.battery ? "含电池" : "无电池"} · ${d.volts} V 直流 · 已完成 ${p}`, en: `${d.steps.length} steps · about ${d.minutes} min · ${d.battery ? "has a battery" : "no battery"} · ${d.volts} V DC · ${p} done` })}</span>
@@ -167,7 +167,7 @@ export default function TeardownPage() {
             </div>
             <ol className="mt-2 space-y-4" data-testid="td-steps">
               {dev.steps.map((s, i) => (
-                <li key={i} id={`td-step-${i + 1}`} tabIndex={-1} aria-current={sN === i + 1 ? "step" : undefined} className={`grid gap-3 border p-3 sm:grid-cols-[1fr_14rem] ${prog.steps.includes(i) ? "border-green-700 bg-green-50" : "border-line bg-white"} ${sN === i + 1 ? "outline outline-4 outline-blue-700" : ""}`} data-testid="td-step">
+                <li key={i} id={`td-step-${i + 1}`} tabIndex={-1} aria-current={sN === i + 1 ? "step" : undefined} className={`grid gap-3 border p-3 sm:grid-cols-[1fr_14rem] ${prog.steps.includes(i) ? "border-green-700 bg-green-50" : "border-line bg-paper-2"} ${sN === i + 1 ? "outline outline-4 outline-blue-700" : ""}`} data-testid="td-step">
                   <div>
                     <label className="flex items-start gap-2 font-medium">
                       <input type="checkbox" checked={prog.steps.includes(i)} onChange={() => toggle("steps", i)} data-testid={`td-step-check-${i}`} className="mt-1" />
@@ -198,7 +198,7 @@ export default function TeardownPage() {
                 ))}
               </tbody>
             </table>
-            <button type="button" onClick={save} className="mt-3 border border-ink bg-ink px-3 py-2 text-sm text-paper hover:bg-white hover:text-ink" data-testid="td-save">{L({ zh: "存进零件库（本机工作台库存）", en: "Save modules to parts library (local bench inventory)" })}</button>
+            <button type="button" onClick={save} className="mt-3 border border-ink bg-ink px-3 py-2 text-sm text-paper hover:bg-paper-2 hover:text-ink" data-testid="td-save">{L({ zh: "存进零件库（本机工作台库存）", en: "Save modules to parts library (local bench inventory)" })}</button>
             {saved ? <p className="mt-2 text-sm text-green-800" role="status" data-testid="td-saved">{saved}</p> : null}
           </section>
 

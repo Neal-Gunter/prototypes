@@ -2,22 +2,25 @@
 // 只负责编辑和显示；“在台面上跑”“测量”“导出”由调用方传进来（八爪鱼 = 固件孪生，模型实验室 = ArticCore）。
 import { useMemo, useRef, useState } from "react";
 import { WAVES, curvePath, maxRate, jointValue, gaitPeriod } from "./gait.js";
-import { CHART, line as lineCol } from "../ui/palette.js";
+import { chartStroke, themeVars } from "../ui/palette.js";
+import { useTheme } from "../theme.js";
 
-const B = ({ children, on, dis, t, cls = "" }) => <button type="button" disabled={dis} onClick={on} data-testid={t} className={`min-h-7 border border-line bg-white px-2 text-xs disabled:opacity-40 ${cls}`}>{children}</button>;
+const B = ({ children, on, dis, t, cls = "" }) => <button type="button" disabled={dis} onClick={on} data-testid={t} className={`min-h-7 border border-line bg-paper-2 px-2 text-xs disabled:opacity-40 ${cls}`}>{children}</button>;
 const Num = ({ v, set, step = 1, min, max, t, w = "w-14" }) => <input type="number" step={step} min={min} max={max} value={v} data-testid={t} onChange={(e) => set(+e.target.value)} className={`${w} border border-line px-0.5 text-right font-mono text-[11px]`} />;
 const f = (v, d = 2) => (v == null || !Number.isFinite(v) ? "—" : v.toFixed(d));
 
 // 全部关节叠在一张图里（2 个周期），竖线 = 当前时刻
 function Overview({ g, range, t }) {
+  const [, , theme] = useTheme();
+  const C = themeVars(theme);
   const W = 300, H = 70, T = Math.min(6, 2 * gaitPeriod(g));
-  const cols = CHART;
+  const cols = chartStroke(theme);
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full border border-line bg-paper-2" data-testid="gait-overview">
-      <line x1="0" x2={W} y1={H / 2} y2={H / 2} stroke={lineCol} />
+      <line x1="0" x2={W} y1={H / 2} y2={H / 2} stroke={C.line} />
       {g.joints.map((J, i) => <path key={i} d={curvePath(J, W, H, T, range)} fill="none" stroke={cols[i % cols.length]} strokeWidth="1.2" />)}
-      {t != null && <line x1={((t % T) / T) * W} x2={((t % T) / T) * W} y1="0" y2={H} stroke="#333" strokeDasharray="2 2" />}
-      <text x="3" y="10" fontSize="8" fill="#4a433a">±{+(+range).toFixed(1)}{g.joints[0]?.unit || "°"} · {T.toFixed(1)} s</text>
+      {t != null && <line x1={((t % T) / T) * W} x2={((t % T) / T) * W} y1="0" y2={H} stroke={C.ink} strokeDasharray="2 2" />}
+      <text x="3" y="10" fontSize="8" fill={C.inkSoft}>±{+(+range).toFixed(1)}{g.joints[0]?.unit || "°"} · {T.toFixed(1)} s</text>
     </svg>
   );
 }
@@ -25,6 +28,9 @@ function Overview({ g, range, t }) {
 // props: gait, setGait, presets [{k, zh, make}], rateLimit (°/s), onRun(g), onStop(), onMeasure(g, {sec, mu, onProgress}) → report,
 //        exports [{k, zh, make(g) → {name, text, mime}}], note, tid（data-testid 前缀）, time（当前播放时刻，可选）
 export default function GaitEditor({ gait, setGait, presets = [], rateLimit = 300, onRun, onStop, onMeasure, exports = [], note, tid = "gait", time = null, measureSec = 15, controlLabel = "冰面对照（μ = 0）" }) {
+  const [, , theme] = useTheme();
+  const C = themeVars(theme);
+  const cols = chartStroke(theme);
   const [busy, setBusy] = useState(null);
   const [res, setRes] = useState([]);
   const [sec, setSec] = useState(measureSec);
@@ -66,14 +72,14 @@ export default function GaitEditor({ gait, setGait, presets = [], rateLimit = 30
             return (
               <tr key={i} data-testid={`${tid}-row-${i}`} className={fast ? "bg-amber-50" : ""}>
                 <td className="max-w-[7rem] truncate text-left" title={J.name}>{J.name}</td>
-                <td><select value={J.wave} data-testid={`${tid}-wave-${i}`} onChange={(e) => upd(i, "wave", e.target.value)} className="border border-line bg-white text-[11px]">{Object.entries(WAVES).map(([k, zh]) => <option key={k} value={k}>{zh}</option>)}</select></td>
+                <td><select value={J.wave} data-testid={`${tid}-wave-${i}`} onChange={(e) => upd(i, "wave", e.target.value)} className="border border-line bg-paper-2 text-[11px]">{Object.entries(WAVES).map(([k, zh]) => <option key={k} value={k}>{zh}</option>)}</select></td>
                 <td><Num v={J.amp} set={(v) => upd(i, "amp", v)} t={`${tid}-amp-${i}`} /></td>
                 <td><Num v={J.phase} set={(v) => upd(i, "phase", v)} step={15} t={`${tid}-phase-${i}`} /></td>
                 <td><Num v={J.offset} set={(v) => upd(i, "offset", v)} t={`${tid}-offset-${i}`} w="w-12" /></td>
                 <td><Num v={J.freq} set={(v) => upd(i, "freq", v)} step={0.1} min={0.05} max={3} t={`${tid}-freq-${i}`} w="w-12" /></td>
                 <td><Num v={J.duty} set={(v) => upd(i, "duty", v)} step={0.05} min={0.05} max={0.95} t={`${tid}-duty-${i}`} w="w-12" /></td>
                 <td title={fast ? `最大角速度 ${Number.isFinite(r) ? r.toFixed(0) : "∞（突变）"} ${J.unit === "mm" ? "mm" : "°"}/s，超过 ${rateLimit}：舵机跟不上，会被限速` : `最大 ${r.toFixed(0)} /s`}>
-                  <svg width="96" height="22" className="border border-line bg-paper-2" data-testid={`${tid}-curve-${i}`}><line x1="0" x2="96" y1="11" y2="11" stroke={lineCol} /><path d={curvePath(J, 96, 22, 2, range, 60)} fill="none" stroke={fast ? "#8a4a14" : CHART[0]} strokeWidth="1.2" />{time != null && <circle cx={((time % 2) / 2) * 96} cy={11 - (jointValue(J, time) / range) * 11} r="2" fill={CHART[1]} />}</svg>
+                  <svg width="96" height="22" className="border border-line bg-paper-2" data-testid={`${tid}-curve-${i}`}><line x1="0" x2="96" y1="11" y2="11" stroke={C.line} /><path d={curvePath(J, 96, 22, 2, range, 60)} fill="none" stroke={fast ? C.copperDeep : cols[0]} strokeWidth="1.2" />{time != null && <circle cx={((time % 2) / 2) * 96} cy={11 - (jointValue(J, time) / range) * 11} r="2" fill={cols[1]} />}</svg>
                   {fast && <span className="ml-0.5 text-amber-700" data-testid={`${tid}-fast-${i}`}>快</span>}
                 </td>
               </tr>

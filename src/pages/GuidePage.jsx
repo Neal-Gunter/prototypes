@@ -35,12 +35,12 @@ export default function GuidePage() {
       <div className="no-print mb-4 flex flex-wrap items-center gap-2">
         <Link to="/assembly" className="underline">← 回装配台</Link>
         <span className="text-ink-soft">来源：</span>
-        <button type="button" onClick={() => setParams({ src: "default" })} aria-pressed={src === "default"} className={`min-h-8 border px-2 ${src === "default" ? "border-ink bg-ink text-paper-2" : "border-line bg-white"}`}>默认电路练习</button>
-        <button type="button" disabled={!local} onClick={() => setParams({ src: "bench" })} aria-pressed={src === "bench"} className={`min-h-8 border px-2 disabled:opacity-40 ${src === "bench" ? "border-ink bg-ink text-paper-2" : "border-line bg-white"}`} title={local ? "" : "先在装配台点“生成装配指南”"}>我桌面上的电路</button>
+        <button type="button" onClick={() => setParams({ src: "default" })} aria-pressed={src === "default"} className={`min-h-8 border px-2 ${src === "default" ? "border-ink bg-ink text-paper-2" : "border-line bg-paper-2"}`}>默认电路练习</button>
+        <button type="button" disabled={!local} onClick={() => setParams({ src: "bench" })} aria-pressed={src === "bench"} className={`min-h-8 border px-2 disabled:opacity-40 ${src === "bench" ? "border-ink bg-ink text-paper-2" : "border-line bg-paper-2"}`} title={local ? "" : "先在装配台点“生成装配指南”"}>我桌面上的电路</button>
         <span className="flex-1" />
         <button type="button" onClick={() => window.print()} className="min-h-8 border border-ink px-3" data-testid="guide-print">打印 / 存成 PDF</button>
         {g.sketch && <button type="button" onClick={() => save("sketch.ino", g.sketch)} className="min-h-8 border border-ink bg-ink px-3 text-paper-2" data-testid="guide-ino">下载 .ino</button>}
-        {g.listText && <button type="button" onClick={() => save("装配清单.txt", g.listText)} className="min-h-8 border border-line bg-white px-3">下载清单</button>}
+        {g.listText && <button type="button" onClick={() => save("装配清单.txt", g.listText)} className="min-h-8 border border-line bg-paper-2 px-3">下载清单</button>}
       </div>
 
       <header className="border-b border-line pb-3">
@@ -108,11 +108,11 @@ export default function GuidePage() {
       {g.sketch && (
         <section className="mt-6">
           <h2 className="text-lg font-medium">{tr("5. 固件（Arduino 风格，按接线自动生成）", "5. Firmware (Arduino-style, generated from the wiring)")}</h2>
-          <pre className="mt-2 overflow-x-auto border border-line bg-white p-2 font-mono text-[11px] leading-4" role="region" tabIndex={0} aria-label="示例代码（可滚动）" data-testid="guide-code">{g.sketch}</pre>
+          <pre className="mt-2 overflow-x-auto border border-line bg-paper-2 p-2 font-mono text-[11px] leading-4" role="region" tabIndex={0} aria-label="示例代码（可滚动）" data-testid="guide-code">{g.sketch}</pre>
         </section>
       )}
 
-      <section id="model-lab" className="mt-6 border border-line bg-white p-3" data-testid="guide-model-lab">
+      <section id="model-lab" className="mt-6 border border-line bg-paper-2 p-3" data-testid="guide-model-lab">
         <h2 className="text-lg font-medium">模型 + 功能图 + 关节（v11–v12，早期原型，简化仿真）</h2>
         <p className="text-xs text-ink-soft">在 <Link className="underline" to="/assembly/model">/assembly/model</Link> 上传自己的 3D 模型和一张功能图，把“哪个功能由哪些模块组成”画出来，再把模型放到装配台上做碰撞。🔒 文件只在本机浏览器里解析，不上传；工程存在本机 IndexedDB。</p>
         <ol className="mt-2 list-decimal pl-5 text-xs leading-5">
@@ -132,7 +132,7 @@ export default function GuidePage() {
         <p className="mt-2 text-xs text-ink-soft">简化：球关节没有马达，限位是软的（硬扳能超出几度）；关节两侧那一对不互相碰撞；碰撞是凸包 / 方块（凹处被填平）；质量是体积 × 密度的估算；功能绑定只是标签，不做电路仿真；单位靠猜，猜错请手动改；贴图、动画忽略；Draco 压缩和引用外部文件的 glTF 不支持。</p>
       </section>
 
-      <section id="repair" className="mt-6 border border-line bg-white p-3" data-testid="guide-repair">
+      <section id="repair" className="mt-6 border border-line bg-paper-2 p-3" data-testid="guide-repair">
         <h2 className="text-lg font-medium">维修关卡（v17，早期原型，简化仿真）</h2>
         <p className="text-xs text-ink-soft">在 <Link className="underline" to="/repair">/repair</Link> 练习排查故障：客户描述 → 看现象 → 量电压 / 电阻 / 通断 → 找到根本原因 → 断电拔电池后再动烙铁 → 交付验收。读数来自仿真，不是实测；<b>不替代真实安全培训</b>。</p>
         <ol className="mt-2 list-decimal pl-5 text-xs leading-5">
@@ -146,7 +146,7 @@ export default function GuidePage() {
         <p className="mt-2 text-xs text-red-800">所有关卡都是低压直流。永远不要用表笔去碰 220 V 市电（插座、适配器里面、电源板的高压一侧）——那需要专门的培训和工具。</p>
       </section>
 
-      <section id="scope" className="mt-6 border border-line bg-white p-3" data-testid="guide-scope">
+      <section id="scope" className="mt-6 border border-line bg-paper-2 p-3" data-testid="guide-scope">
         <h2 className="text-lg font-medium">示波器和时域模式（v18，早期原型，简化仿真）</h2>
         <p className="text-xs text-ink-soft">万用表只看平均值；电压“一下子”跌下去、纹波、噪声要用示波器看。在 <Link className="underline" to="/repair">/repair</Link> 打开“时域”，或玩“示波器关卡”。读数来自仿真，不是实测；<b>不替代真实安全培训</b>。</p>
         <ol className="mt-2 list-decimal pl-5 text-xs leading-5">
@@ -161,7 +161,7 @@ export default function GuidePage() {
         <p className="mt-2 text-xs text-ink-soft">简化（我的补充）：理想元件，没有 EMI、温度、PCB 寄生，只算写明的 ESR、线阻、端子接触电阻、电池内阻；升压和舵机是行为模型，数值多为估算。</p>
       </section>
 
-      <section id="bench-netlist" className="mt-6 border border-line bg-white p-3" data-testid="guide-bench-netlist">
+      <section id="bench-netlist" className="mt-6 border border-line bg-paper-2 p-3" data-testid="guide-bench-netlist">
         <h2 className="text-lg font-medium">示波器看我的电路（v19，早期原型，简化仿真）</h2>
         <p className="text-xs text-ink-soft">在 <Link className="underline" to="/assembly?scene=electrics">装配台</Link> 的“电”页签打开示波器，默认是“我的电路（台面）”：程序按你在 3D 台面上实际放的零件和接的线生成电路再仿真。原来的参考板示波器保留为“备用”，它不是你的台面电路。</p>
         <ol className="mt-2 list-decimal pl-5 text-xs leading-5">
@@ -173,7 +173,7 @@ export default function GuidePage() {
         </ol>
         <p className="mt-2 text-xs text-ink-soft">简化（我的补充）：线阻、端子接触电阻、主控和 LDO 电流、舵机电流、电池老化内阻都是<b>估算</b>；面包板上的传感器等未建模零件只提示、不参与仿真；同一台面多块主控时只有第一块驱动舵机信号。读数不是实测，<b>不替代真实安全培训</b>。</p>
       </section>
-      <section id="parts-lib" className="mt-6 border border-line bg-white p-3" data-testid="guide-parts-lib">
+      <section id="parts-lib" className="mt-6 border border-line bg-paper-2 p-3" data-testid="guide-parts-lib">
         <h2 className="text-lg font-medium">零件库（v20，早期原型，简化仿真）</h2>
         <p className="text-xs text-ink-soft">打开 <Link className="underline" to="/parts">零件库</Link>（装配台左侧的零件面板是同一套）。现在共 2940 个零件：2415 个真实 CAD 模型（Adafruit、KiCad、SparkFun、乐鑫、Seeed），525 个按标准尺寸程序生成（螺丝、轴承、齿轮、型材、步进电机、舵机、电池、保险丝、插头等）。</p>
         <ol className="mt-2 list-decimal pl-5 text-xs leading-5">

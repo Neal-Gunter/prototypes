@@ -46,7 +46,7 @@ export default function OctoGuidePage() {
       <p className="text-ink-soft">按你给的 md（octopus-ai 目录 9 个文件）复刻。{g.phaseZh}{g.fault ? ` · 场景：${g.fault}` : ""} · 固件{g.mode === "mcp" ? "：小智 MCP（模拟）" : "：蓝牙串口 .ino"} · 生成于 {fmtTime(g.created)}</p>
       <p className="text-xs"><a href="#plus" className="text-copper underline">→ 完善版（我的补充）：改动表、物料、修正后的固件和文档下载</a>{g.variant === "plus" ? "（台面当前就是完善版）" : ""}</p>
       <p className="text-xs"><a href="#v10" className="text-copper underline" data-testid="og-v10-link">→ v10 紧凑无线版（我的补充）：电池在身上、手机 BLE 遥控、117 g（估算）</a>{g.variant === "v10" ? "（这份指南当前就是 v10）" : ""}</p>
-      <nav className="mt-3 border border-line bg-white p-2 text-xs print:hidden" data-testid="og-toc"><b>目录</b>
+      <nav className="mt-3 border border-line bg-paper-2 p-2 text-xs print:hidden" data-testid="og-toc"><b>目录</b>
         <ol className="mt-1 grid grid-cols-1 gap-x-4 sm:grid-cols-2">{TOC.map(([id, zh]) => <li key={id}><a href={`#${id}`} onClick={(e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ block: "start" }); history.replaceState(history.state, "", `${location.pathname}${location.search}#${id}`); }} className={`underline ${id === "plus" || id === "s10" || id === "s11" || id === "s12" || id === "v10" || id === "link" ? "text-copper" : ""}`}>{zh}</a></li>)}</ol></nav>
       {g.fixes?.length > 0 && <p className="text-xs text-ink-soft">台面打开的固件修正：{g.fixes.length} 项（见下面“md 里不对的地方”）</p>}
 
@@ -81,10 +81,10 @@ export default function OctoGuidePage() {
 
       <h2 id="s8" className="mt-6 text-lg font-medium">8. 固件（md 原文，一字未改）</h2>
       <p className="text-xs text-ink-soft">台面跑的是这份代码的 JS 移植；“修正”只在台面上开关，不改这里的原文。</p>
-      <div className="mt-2 flex flex-wrap gap-1 text-xs">{Object.keys(MD_SOURCES).map((k) => <button key={k} type="button" onClick={() => setFile(k)} className={`border px-2 py-0.5 ${file === k ? "border-ink bg-ink text-paper-2" : "border-line bg-white"}`}>{k}</button>)}
+      <div className="mt-2 flex flex-wrap gap-1 text-xs">{Object.keys(MD_SOURCES).map((k) => <button key={k} type="button" onClick={() => setFile(k)} className={`border px-2 py-0.5 ${file === k ? "border-ink bg-ink text-paper-2" : "border-line bg-paper-2"}`}>{k}</button>)}
         <button type="button" onClick={() => save(file, MD_SOURCES[file])} className="border border-copper px-2 py-0.5" data-testid="og-save">下载 {file}</button></div>
       <p className="mt-2 text-[11px] text-ink-soft">源码原样显示（注释是中文原文，英文模式下也不做机翻，免得改坏代码；下载的文件和这里一字不差）。</p>
-      <pre lang="zh" translate="no" data-no-mt="" className="mt-1 max-h-[32rem] overflow-auto border border-line bg-white p-2 text-[11px] leading-4 print:max-h-none" role="region" tabIndex={0} aria-label="固件源代码（可滚动）" data-testid="og-ino">{MD_SOURCES[file]}</pre>
+      <pre lang="zh" translate="no" data-no-mt="" className="mt-1 max-h-[32rem] overflow-auto border border-line bg-paper-2 p-2 text-[11px] leading-4 print:max-h-none" role="region" tabIndex={0} aria-label="固件源代码（可滚动）" data-testid="og-ino">{MD_SOURCES[file]}</pre>
 
       <h2 id="plus" className="mt-8 text-lg font-medium text-copper">9. 完善版改动表（我的补充）</h2>
       <p className="text-xs text-ink-soft">md 原样模式不受影响（上面第 8 节一字未改）。下面每一行都是我按自己的判断补的：“出处”里 datasheet＝芯片 / 模块资料查得到的事实，推理＝读 md 代码或简单计算，估算＝台面仿真或经验值、需要实物验证。没有编任何 datasheet 数字和价格。</p>
@@ -97,11 +97,11 @@ export default function OctoGuidePage() {
 
       <h2 id="s11" className="mt-6 text-lg font-medium text-copper">11. 完善版固件 + 文档下载（我的补充）</h2>
       <p className="text-xs text-ink-soft">octopus_plus 文件夹（.ino + 4 个头文件）v8（2026-10-30）用免费的 arduino-cli 1.5.1 + esp32 核心 3.3.12 按 ESP32S3 Dev Module 重新编译通过：OCTO_RIG 8 / 16 均为程序 620 776 B（47%）、全局变量 30 720 B（9%），我们的文件 0 个 warning；未上实物。xiaozhi/octopus_mcp.cpp 只做了<b>桩编译</b>（上游 mcp_server.h @ addb1ed + 空实现 McpServer，通过、0 warning），不等于在小智工程里真编译。md 原样的 body_firmware_A.ino 在 ESP32‑S3 上编译失败（无经典蓝牙 BluetoothSerial；OctopusBody / Pca9685 缺无参构造）。复现：scripts/fw-compile.sh。</p>
-      <div className="mt-2 flex flex-wrap gap-1 text-xs">{Object.keys(PLUS_SOURCES).map((k) => <button key={k} type="button" onClick={() => setPfile(k)} className={`border px-2 py-0.5 ${pfile === k ? "border-copper bg-copper text-paper-2" : "border-line bg-white"}`}>{k}</button>)}
+      <div className="mt-2 flex flex-wrap gap-1 text-xs">{Object.keys(PLUS_SOURCES).map((k) => <button key={k} type="button" onClick={() => setPfile(k)} className={`border px-2 py-0.5 ${pfile === k ? "border-copper bg-copper text-paper-2" : "border-line bg-paper-2"}`}>{k}</button>)}
         <button type="button" onClick={() => save(pfile.split("/").pop(), PLUS_SOURCES[pfile])} className="border border-copper px-2 py-0.5" data-testid="og-plus-save">下载 {pfile.split("/").pop()}</button>
         <button type="button" onClick={() => Object.keys(PLUS_SOURCES).forEach((k, i) => setTimeout(() => save(k.split("/").pop(), PLUS_SOURCES[k]), i * 300))} className="border border-copper px-2 py-0.5" data-testid="og-plus-save-all">全部下载（{Object.keys(PLUS_SOURCES).length} 个文件）</button></div>
       <p className="mt-2 text-[11px] text-ink-soft">源码原样显示（注释是中文原文，英文模式下也不做机翻，免得改坏代码；下载的文件和这里一字不差）。</p>
-      <pre lang="zh" translate="no" data-no-mt="" className="mt-1 max-h-[32rem] overflow-auto border border-line bg-white p-2 text-[11px] leading-4 print:max-h-none" role="region" tabIndex={0} aria-label="加强版固件源代码（可滚动）" data-testid="og-plus-src">{PLUS_SOURCES[pfile]}</pre>
+      <pre lang="zh" translate="no" data-no-mt="" className="mt-1 max-h-[32rem] overflow-auto border border-line bg-paper-2 p-2 text-[11px] leading-4 print:max-h-none" role="region" tabIndex={0} aria-label="加强版固件源代码（可滚动）" data-testid="og-plus-src">{PLUS_SOURCES[pfile]}</pre>
 
       <h2 id="s12" className="mt-8 text-lg font-medium text-copper">12. 如何实际动手做（我的补充）</h2>
       <p className="text-xs text-ink-soft">把上面每一节对到现实里的步骤。事实只取自你的 md 和 datasheet；没有出处的只写做法，不写数字。台面是简化仿真，实物以实测为准。</p>

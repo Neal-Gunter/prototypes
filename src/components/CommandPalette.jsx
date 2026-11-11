@@ -66,7 +66,7 @@ export default function CommandPalette() {
         <input id="pal-in" ref={inp} value={q} onChange={(e) => { setQ(e.target.value); setSel(0); }} placeholder={tr("跳到页面、零件、场景…（↑↓ 选，回车打开，Esc 关）")}
           role="combobox" aria-expanded="true" aria-controls="pal-list" aria-autocomplete="list" aria-activedescendant={items.length ? `pal-opt-${sel}` : undefined}
           onKeyDown={(e) => { if (e.key === "ArrowDown") { e.preventDefault(); setSel((s) => Math.min(items.length - 1, s + 1)); } else if (e.key === "ArrowUp") { e.preventDefault(); setSel((s) => Math.max(0, s - 1)); } else if (e.key === "Home" && e.ctrlKey) { e.preventDefault(); setSel(0); } else if (e.key === "End" && e.ctrlKey) { e.preventDefault(); setSel(Math.max(0, items.length - 1)); } else if (e.key === "Enter") go(items[sel]); }}
-          className="w-full border-b border-line bg-white px-3 py-2 text-base outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-copper" data-testid="palette-input" />
+          className="w-full border-b border-line bg-paper-2 px-3 py-2 text-base outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-copper" data-testid="palette-input" />
         <ul ref={list} id="pal-list" role="listbox" aria-label={tr("结果")} className="max-h-[50vh] overflow-auto text-sm" data-testid="palette-list">
           {items.map((it, i) => (
             <li key={it[1]} id={`pal-opt-${i}`} role="option" aria-selected={i === sel} onMouseEnter={() => setSel(i)} onClick={() => go(it)} className={`flex w-full cursor-pointer gap-2 px-3 py-1.5 text-left ${i === sel ? "bg-ink text-paper-2" : ""}`} data-testid="palette-item">

@@ -2,7 +2,8 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Html, Line } from "@react-three/drei";
-import { paper, line as lineCol, inkSoft } from "../../ui/palette.js";
+import { themeVars } from "../../ui/palette.js";
+import { useTheme } from "../../theme.js";
 import { getEntry, toDef } from "../catalog.js";
 import * as THREE from "three";
 import { ProcMesh, Glb, hullGeom } from "./partMeshes.jsx";
@@ -27,7 +28,7 @@ function Axis({ from, dir, len, label, side }) {
     <group>
       <Line points={pts} color="#b45309" lineWidth={2} />
       {ticks}
-      {on && <Html position={mid} center zIndexRange={[20, 0]}><span className="pointer-events-none select-none whitespace-nowrap rounded bg-white/90 px-1 text-[11px] text-amber-800" data-testid="ruler-label">{label}</span></Html>}
+      {on && <Html position={mid} center zIndexRange={[20, 0]}><span className="pointer-events-none select-none whitespace-nowrap rounded bg-paper-2/90 px-1 text-[11px] text-amber-800" data-testid="ruler-label">{label}</span></Html>}
     </group>
   );
 }
@@ -60,6 +61,9 @@ function ColliderOverlay({ cols }) {
   return <group>{segs.map((pts, i) => <Line key={i} points={pts} segments color={pal[i % pal.length]} lineWidth={1.5} depthTest={false} transparent opacity={0.85} />)}</group>;
 }
 export default function PartViewer({ id }) {
+  const [, , theme] = useTheme();
+  const C = themeVars(theme);
+  const dark = theme === "dark";
   const [def, setDef] = useState(null);
   const [ruler, setRuler] = useState(true);
   const [coll, setColl] = useState(false);
@@ -80,7 +84,7 @@ export default function PartViewer({ id }) {
           </Suspense>
           {ruler && <Ruler d={d} />}
           {coll && <ColliderOverlay cols={def.colliders} />}
-          <gridHelper args={[Math.ceil(Math.max(d.x, d.z) / 10) * 2 + 2, (Math.ceil(Math.max(d.x, d.z) / 10) * 2 + 2), inkSoft, lineCol]} />
+          <gridHelper args={[Math.ceil(Math.max(d.x, d.z) / 10) * 2 + 2, (Math.ceil(Math.max(d.x, d.z) / 10) * 2 + 2), C.inkSoft, C.line]} />
           <OrbitControls makeDefault target={[0, d.y / 20, 0]} />
         </Canvas>
       </div>

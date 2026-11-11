@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { containerClass } from "../container";
 import CommandPalette from "./CommandPalette.jsx";
 import { useLang, tr } from "../i18n.js";
+import { useTheme } from "../theme.js";
 
 function navClass({ isActive }) {
   return `inline-flex min-h-11 shrink-0 items-center whitespace-nowrap px-3 text-base ${
@@ -18,6 +19,7 @@ const PROTO_PATHS = ["/workbench", "/assembly", "/parts", "/credits", "/repair",
 export default function Layout() {
   const { pathname } = useLocation();
   const [lang, setLang] = useLang();
+  const [themePref, setThemePref, themeResolved] = useTheme();
   const en = lang === "en";
 
   useEffect(() => {
@@ -29,7 +31,7 @@ export default function Layout() {
       <a className="skip-link" href="#main">
         {tr("跳到内容")}
       </a>
-      <div className="no-print sticky top-0 z-40 bg-ink px-4 py-2 text-center text-sm leading-6 text-paper-2">
+      <div className="no-print sticky top-0 z-40 bg-[#1b1814] px-4 py-2 text-center text-sm leading-6 text-[#f7f3ea]">
         {PROTO_PATHS.some((p) => pathname.startsWith(p)) ? (
           <p data-testid="banner">
             {en ? <>Early prototype, simplified simulation<span className="hidden sm:inline"> · <span lang="zh-Hans">早期原型，简化仿真</span></span></> : <>早期原型，简化仿真<span className="hidden sm:inline"> · <span lang="en">Early prototype, simplified simulation</span></span></>}
@@ -37,7 +39,7 @@ export default function Layout() {
         ) : (
           <p data-testid="banner">{en ? <>Concept demo, not a finished product<span className="hidden sm:inline"> · <span lang="zh-Hans">概念演示，不是成品</span></span></> : <>概念演示，不是成品<span className="hidden sm:inline"> · <span lang="en">Concept demo, not a finished product</span></span></>}</p>
         )}
-        {en ? <p className="text-xs text-paper-2/80" data-testid="mt-banner">Some text on this site is machine-translated (offline, Argos Translate) and may be wrong or read oddly; for safety steps (batteries, soldering, power) the Chinese text is authoritative — switch to 中文 to check. <a href={import.meta.env.BASE_URL + "help#faq"} className="underline">Why?</a></p> : null}
+        {en ? <p className="text-xs text-[#f7f3ea]/80" data-testid="mt-banner">Some text on this site is machine-translated (offline, Argos Translate) and may be wrong or read oddly; for safety steps (batteries, soldering, power) the Chinese text is authoritative — switch to 中文 to check. <a href={import.meta.env.BASE_URL + "help#faq"} className="underline">Why?</a></p> : null}
       </div>
       <div className="relative flex flex-1 flex-col">
         <div
@@ -103,6 +105,23 @@ export default function Layout() {
               <button type="button" onClick={() => window.dispatchEvent(new Event("open-palette"))} className="inline-flex min-h-9 shrink-0 items-center gap-1 whitespace-nowrap border border-line px-2 text-xs text-ink-soft hover:text-ink" title={tr("命令面板：跳到页面、零件、场景")} data-testid="palette-btn">
                 {tr("搜索跳转")} <kbd className="hidden font-mono sm:inline">Ctrl/⌘ K</kbd>
               </button>
+              <label className="inline-flex min-h-9 shrink-0 items-center gap-1 text-xs text-ink-soft">
+                <span className="sr-only">{tr("配色：系统 / 浅色 / 深色", "Colour theme: system / light / dark")}</span>
+                <select
+                  data-testid="theme-toggle"
+                  data-theme-pref={themePref}
+                  data-theme-resolved={themeResolved}
+                  aria-label={tr("配色：系统 / 浅色 / 深色", "Colour theme: system / light / dark")}
+                  title={tr("配色", "Colour theme")}
+                  value={themePref}
+                  onChange={(e) => setThemePref(e.target.value)}
+                  className="min-h-9 border border-line bg-paper-2 px-1 text-xs text-ink"
+                >
+                  <option value="system">{tr("系统", "System")}</option>
+                  <option value="light">{tr("浅色", "Light")}</option>
+                  <option value="dark">{tr("深色", "Dark")}</option>
+                </select>
+              </label>
               <button type="button" onClick={() => setLang(en ? "zh" : "en")} className="inline-flex min-h-9 shrink-0 items-center whitespace-nowrap border border-line px-2 text-xs text-ink-soft hover:text-ink" aria-label={en ? "中文：切换到中文界面" : "EN: Switch the UI to English"} title={tr("切换界面语言")} data-testid="lang-toggle" data-lang={lang}>
                 {en ? "中文" : "EN"}
               </button>

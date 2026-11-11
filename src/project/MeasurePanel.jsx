@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import * as Mz from "./measure.js";
 import { tr } from "../i18n.js";
 
-const btn = "min-h-9 border border-line bg-white px-2.5 text-sm hover:border-copper disabled:opacity-40";
+const btn = "min-h-9 border border-line bg-paper-2 px-2.5 text-sm hover:border-copper disabled:opacity-40";
 export const ST_CLS = { est: "border-line bg-paper text-ink-soft", ok: "border-green-600 bg-green-50 text-green-800", dev: "border-red-600 bg-red-50 text-red-800", cal: "border-blue-600 bg-blue-50 text-blue-800" };
 const ST_EN = { est: "Estimate only", ok: "Verified on real hardware", dev: "Deviates", cal: "Calibrated from this reading" };
 const EX_EN = { est: "Estimate only", ok: "Example data: matches (not measured)", dev: "Example data: deviates (not measured)", cal: "Example data: calibrated (not measured)" };
@@ -38,7 +38,7 @@ export default function MeasurePanel({ state, setState, photos, setPhotos, repor
     setState(res.state); setPhotos(res.photos || {}); setNote({ ok: true, text: res.msg });
   };
   return (
-    <div className="space-y-3 border border-line bg-white p-3" data-testid="measure-panel">
+    <div className="space-y-3 border border-line bg-paper-2 p-3" data-testid="measure-panel">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="font-semibold">{tr("实测对比（我的补充）", "Measured vs estimated (my addition)")}</h3>
         <span className="text-xs" data-testid="measure-counts">{r.example ? tr("示例数据吻合") : tr("已验证")} {r.counts.ok} · {tr("校准后吻合")} {r.counts.cal} · {tr("有偏差")} {r.counts.dev} · {tr("仅估算")} {r.counts.est} / {r.counts.n}</span>
