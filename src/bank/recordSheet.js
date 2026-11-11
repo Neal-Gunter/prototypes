@@ -33,7 +33,7 @@ export const RECORD_SOFT = "#4a4338";
 
 // Usable area after 16/12/18 mm margins:
 // A4 width 210-24=186 mm; Letter height 279.4-34=245.4 mm. Stay inside both.
-const SHEET_CSS = (en, title) => `
+const SHEET_CSS = (en, title, paper) => `
 html,body{background:${RECORD_PAPER};color:${RECORD_INK};color-scheme:light;}
 *{box-sizing:border-box;}
 body{margin:0;font:11pt/1.45 "Source Han Serif SC","Noto Serif CJK SC","Songti SC","SimSun",serif;}
@@ -50,7 +50,7 @@ h1{margin:6px 0 0;font:16pt/1.3 serif;font-weight:600;}
 .steps li{margin:0 0 3px;break-inside:avoid;}
 h2{margin:12px 0 0;font:12pt/1.3 serif;font-weight:600;}
 .foot{margin:12px 0 0;font:8.5pt/1.4 sans-serif;color:${RECORD_SOFT};}
-@page{margin:16mm 12mm 18mm;@top-right{content:"${css(title)}";font-size:9px;color:#555;}@bottom-center{content:${en ? '"Page " counter(page) " of " counter(pages)' : '"第 " counter(page) " 页 / 共 " counter(pages) " 页"'};font-size:9px;color:#555;}}
+@page{${paper && RECORD_PAPERS.includes(paper) ? `size:${paper};` : ""}margin:16mm 12mm 18mm;@top-right{content:"${css(title)}";font-size:9px;color:#555;}@bottom-center{content:${en ? '"Page " counter(page) " of " counter(pages)' : '"第 " counter(page) " 页 / 共 " counter(pages) " 页"'};font-size:9px;color:#555;}}
 @media print{
   html,body{background:${RECORD_PAPER} !important;color:${RECORD_INK} !important;color-scheme:light;}
   .noprint{display:none !important;}
@@ -63,7 +63,9 @@ function css(s) {
   return String(s ?? "").replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
 
-export function recordHtml({ path, lang = "zh", name = "", prog, quiz, now = new Date() } = {}) {
+export const RECORD_PAPERS = ["A4", "Letter"];
+
+export function recordHtml({ path, lang = "zh", name = "", prog, quiz, now = new Date(), paper } = {}) {
   if (!path) return "";
   const en = lang === "en";
   const title = recordTitle(path, lang);
@@ -76,7 +78,7 @@ export function recordHtml({ path, lang = "zh", name = "", prog, quiz, now = new
   const kicker = en ? "Self-study record — not an official certificate" : "自学记录（不是正式证书）";
   const h1 = en ? "Self-study record" : "自学记录";
   const disclaimer = en
-    ? "This is a self-study record from an early prototype (simplified simulation). It only reflects the learning-path steps and the short quiz completed in this browser. It is not a diploma, licence, or official certificate, and it does not show that you are qualified to repair real hardware. The name below stays on this sheet and is not sent to any server."
+    ? "This is a self-study record from an early prototype (simplified simulation). It only reflects the learning-path steps and the short quiz completed in this browser. It is not an official certificate, diploma or licence, and it does not show that you are qualified to repair real hardware. The name below stays on this sheet and is not sent to any server."
     : "这是早期原型（简化仿真）里的一份自学记录，只反映你在这台浏览器里完成的学习路径步骤和短测验。它不是文凭、执照或正式证书，也不证明你已具备维修实物的资格。下面的姓名只写在这份记录上，不会被发送到任何服务器。";
   const nameLabel = en ? "Name" : "姓名";
   const nameValue = displayName || (en ? "(not provided)" : "（未填写）");
@@ -103,12 +105,12 @@ export function recordHtml({ path, lang = "zh", name = "", prog, quiz, now = new
   }).join("");
 
   return `<!doctype html>
-<html lang="${en ? "en" : "zh-CN"}" data-theme="light" data-record="1" data-path="${esc(path.id)}">
+<html lang="${en ? "en" : "zh-CN"}" data-theme="light" data-record="1" data-path="${esc(path.id)}" data-paper="${esc(RECORD_PAPERS.includes(paper) ? paper : "auto")}">
 <meta charset="utf-8">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="${RECORD_PAPER}">
 <title>${esc(h1)} · ${esc(title)}</title>
-<style>${SHEET_CSS(en, `${h1} · ${title}`)}</style>
+<style>${SHEET_CSS(en, `${h1} · ${title}`, paper)}</style>
 <body>
   <div class="noprint">
     <button type="button" onclick="window.print()">${esc(printBtn)}</button>

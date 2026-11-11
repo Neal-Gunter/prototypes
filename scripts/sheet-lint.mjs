@@ -4,9 +4,12 @@
 //   示意图里每段文字按它实际的字号估算宽度，不超出它的方块（估算：汉字 1 个字号宽，其他字符 0.56 个字号宽；放不下的改成编号 + 图例）、
 //   图例里的编号和方块里的编号对得上、停止点前缀不重复（v36 录演示时发现“停止点：停止点：”）。
 // 真正分页后的检查（每页页码、步骤没被切开）在 e2e/sheet-pdf-lint.mjs。
+// v45：同时检查每条学习路径的自学记录打印页（浅色、页码、非正式证书说明、步骤和成绩、英文无汉字）。
 // 用法：node scripts/sheet-lint.mjs   自测：MUTATE=1 node scripts/sheet-lint.mjs（故意改坏，必须每项都查出来）
 const { DEVICES } = await import("../src/teardown/devices.js");
 const { guideHtml, textW } = await import("../src/teardown/guideSheet.js");
+const { PATHS, stepKey } = await import("../src/bank/paths.js");
+const { recordHtml, RECORD_PAPER, RECORD_INK, formatQuizScore } = await import("../src/bank/recordSheet.js");
 const MUT = process.env.MUTATE === "1";
 const CJK = /[\u3400-\u9fff\uff00-\uffef\u3000-\u303f]/;
 const lint = (d, lang, html) => {
@@ -47,12 +50,60 @@ const lint = (d, lang, html) => {
   steps.forEach((st, i) => { if (!st.split("</li>")[0].includes(`&amp;s=${i + 1}"`)) bad("qr", `第 ${i + 1} 步的方块里没有它自己的二维码`); });
   return P;
 };
+
+const sampleRecord = (path, name = "Alex Lee") => {
+  const done = {};
+  (path.steps || []).forEach((st, i) => { done[stepKey(path.id, st, i)] = true; });
+  const quiz = { answers: {}, correct: 3, total: 4, at: "2026-11-11T04:00:00.000Z" };
+  return { path, name, prog: { v: 1, paths: { [path.id]: { done, quiz, name } } }, quiz, now: new Date("2026-11-11T04:00:00.000Z") };
+};
+const lintRecord = (path, lang, html) => {
+  const P = [], bad = (k, m) => P.push({ k, m: `${path.id}/${lang}: ${m}` });
+  if (!html) { bad("empty", "没有打印页"); return P; }
+  if (!/data-record="1"/.test(html)) bad("mark", "没有自学记录标记");
+  if (!/color-scheme:\s*light/.test(html) || !html.includes(RECORD_PAPER) || !html.includes(RECORD_INK)) bad("light", "不是固定浅色");
+  if (/data-theme="dark"/.test(html) || /prefers-color-scheme:\s*dark/.test(html)) bad("light", "含深色主题规则");
+  if (!/counter\(page\)/.test(html) || !/counter\(pages\)/.test(html)) bad("pageno", "没有页码（@page counter）");
+  if (!/\.sheet\{[^}]*break-inside:avoid/.test(html.replace(/\s/g, " "))) bad("break", "记录主体没有设 break-inside:avoid");
+  if (/size:\s*(A4|Letter)\b/i.test(html)) bad("paper", "写死了纸张尺寸，无法同时适配 A4 和 Letter");
+  if (!/#record\b/.test(html) && !/id="record"/.test(html)) bad("id", "没有记录主体 id");
+  if (lang === "en") {
+    const body = html.replace(/<style[\s\S]*?<\/style>/, "").replace(/<[^>]+>/g, " ");
+    const m = body.match(CJK);
+    if (m) bad("cjk", `英文版有汉字“${m[0]}”`);
+    if (!/Self-study record/.test(html) || !/not an official certificate/i.test(html)) bad("label", "没有标明这是自学记录、不是正式证书");
+  } else {
+    if (!/自学记录/.test(html) || !/不是正式证书/.test(html)) bad("label", "没有标明这是自学记录、不是正式证书");
+  }
+  const title = lang === "en" ? (path.titleEn || path.title) : path.title;
+  if (title && !html.includes(title)) bad("title", "没有路径标题");
+  if (!/Alex Lee/.test(html)) bad("name", "没有姓名");
+  if (!/2026-11-11/.test(html)) bad("date", "没有日期");
+  const score = formatQuizScore({ correct: 3, total: 4 }, lang === "en");
+  if (!html.includes(score)) bad("score", `没有测验成绩“${score}”`);
+  const want = (path.steps || []).length;
+  const got = (html.match(/data-step="/g) || []).length;
+  if (got !== want) bad("count", `打印页 ${got} 步，数据 ${want} 步`);
+  (path.steps || []).forEach((st, i) => {
+    const label = lang === "en" ? (st.titleEn || st.title) : st.title;
+    if (label && !html.includes(label)) bad("steps", `缺少第 ${i + 1} 步“${label}”`);
+  });
+  return P;
+};
+
 let all = [], n = 0;
 if (!MUT) {
   for (const d of DEVICES) for (const lang of ["zh", "en"]) { all.push(...lint(d, lang, guideHtml(d, lang))); n++; }
   for (const x of all) console.log("✗", x.m);
   console.log(`sheet-lint：${DEVICES.length} 台 × 2 种语言 = ${n} 份打印页，${DEVICES.reduce((a, d) => a + d.steps.length, 0) * 2} 步，${all.length} 个问题`);
-  process.exit(all.length ? 1 : 0);
+  let recN = 0, recP = [];
+  for (const path of PATHS) for (const lang of ["zh", "en"]) {
+    recP.push(...lintRecord(path, lang, recordHtml({ ...sampleRecord(path), lang })));
+    recN++;
+  }
+  for (const x of recP) console.log("✗", x.m);
+  console.log(`sheet-lint 自学记录：${PATHS.length} 条路径 × 2 种语言 = ${recN} 份，${recP.length} 个问题`);
+  process.exit(all.length || recP.length ? 1 : 0);
 }
 // 自测：每种改坏方式都必须被查出来
 const d0 = DEVICES[0], h0 = guideHtml(d0, "en");
@@ -75,4 +126,21 @@ for (const [k, h] of [["label", hw.replace(/>1<\/text>/, ">很长很长的标签
   const hit = lint(wide, "zh", h).some((x) => x.k === k); console.log(hit ? "✓" : "✗", `改坏 ${k} →`, hit ? "查出" : "没查出"); ok += hit;
 }
 console.log(`sheet-lint 自测：${ok}/${cases.length + 2}`);
-process.exit(ok === cases.length + 2 ? 0 : 1);
+const p0 = PATHS[0];
+const r0 = recordHtml({ ...sampleRecord(p0), lang: "en" });
+const recCases = [
+  ["pageno", r0.replace(/counter\(page\)/g, "1")],
+  ["light", r0.replace(/color-scheme:\s*light/g, "color-scheme: dark").replace(new RegExp(RECORD_PAPER, "g"), "#111")],
+  ["cjk", r0.replace("</h1>", "汉</h1>")],
+  ["label", r0.replace(/Self-study record/g, "Certificate").replace(/not an official certificate/gi, "official diploma")],
+  ["name", r0.replace(/Alex Lee/g, "——")],
+  ["count", r0.replace(/data-step="/g, 'data-x="')],
+];
+let rok = 0;
+for (const [k, h] of recCases) {
+  const hit = lintRecord(p0, "en", h).some((x) => x.k === k);
+  console.log(hit ? "✓" : "✗", `自学记录改坏 ${k} → ${hit ? "查出" : "没查出"}`);
+  rok += hit;
+}
+console.log(`sheet-lint 自学记录自测：${rok}/${recCases.length}`);
+process.exit(ok === cases.length + 2 && rok === recCases.length ? 0 : 1);

@@ -299,6 +299,17 @@ export default function CreditsPage() {
         <li>{en ? "No new third-party licences in this release." : "本版没有新增第三方许可。"}</li>
       </ul>
 
+
+      <h2 className="mt-8 text-xl font-medium" id="v45-quiz">{en ? "v45: path quiz and self-study record" : "v45：路径测验和自学记录"}</h2>
+      <p className="mt-2 leading-7 text-ink-soft" data-testid="credits-v45">
+        {en
+          ? "v45 adds no new third-party material. The short quizzes, the self-study record print sheet, and the What’s new text on the help page were written for this project. Quiz questions are drawn only from each path’s own notes and tasks. The typed name and the quiz result stay in this browser and are not sent anywhere. The printed record is labelled a self-study record, not an official certificate, and it always stays on the light palette."
+          : "v45 没有增加新的第三方材料。路径末尾的短测验、自学记录打印页，以及使用说明里的「本版更新」，都是本项目自己写的。测验题只根据各路径已有的说明和题面来出。填写的姓名和测验成绩只留在这台浏览器里，不会被发送到任何地方。打印页标明这是自学记录、不是正式证书，并且始终用浅色。"}
+      </p>
+      <ul className="mt-2 list-disc space-y-1 pl-6 text-sm leading-6 text-ink-soft" data-testid="credits-v45-list">
+        <li>{en ? "No new third-party licences in this release." : "本版没有新增第三方许可。"}</li>
+      </ul>
+
       <h2 className="mt-8 text-xl font-medium">代码库</h2>
       <p className="mt-2 leading-7 text-ink-soft">
         React、three.js、@dimforge/rapier3d-compat（Apache-2.0，物理碰撞）、@react-three/fiber、@react-three/drei、zustand、Tailwind CSS（除注明外均为 MIT 许可）。模型转换脚本用 glTF‑Transform 和 meshoptimizer（MIT，只在开发时运行）。“模型 + 功能图”页（v11）在浏览器里用 occt-import-js（LGPL‑2.1，读 STEP；作为单独的 JS + wasm 文件按需加载，没有改动，可替换）和 pdfjs-dist（Apache-2.0，读 PDF 功能图，按需加载）。内置示例的八爪鱼 GLB 和功能图 SVG 由本项目从 v10 预设自制；v12 的 2 自由度机械臂示例（OBJ + 功能图 + 工程）由本项目脚本自制，CC0。关节和舵机运动用同一个 Rapier 引擎。

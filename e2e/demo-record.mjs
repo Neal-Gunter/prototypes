@@ -12,6 +12,7 @@
 // v42：演示学习路径进度、题目与路径互链、新的充电宝路径，以及致谢页 v42。
 // v43：演示零件悬停/焦点高亮和提示、示波器可拖测量光标，以及致谢页 v43。
 // v44：演示配色开关、深色外壳和装配台、打印仍为浅色，以及致谢页 v44。
+// v45：演示路径末尾的短测验和自学记录打印页，以及致谢页 v45。
 // 用法：BASE=http://localhost:4173 OUT=/workspace/proto-site/v33 node e2e/demo-record.mjs  然后用 ffmpeg 转 mp4
 import { chromium } from "playwright";
 import fs from "node:fs";
@@ -61,10 +62,31 @@ await step("题库：学习路径", async () => {
   await T("bank-path-link-1").click(); await T("bank-path-nav").waitFor({ timeout: 20000 }); await w(2000);
   await T("bank-item-paths-dx-psu-bridge-01").scrollIntoViewIfNeeded().catch(() => {}); await w(1500);
 }, "v42：学习路径能记下每一步是否完成，题目和路径步骤互相链接；新增充电宝从拆开到查短路的路径（简化仿真，未经实物验证）");
+await step("题库：路径测验和自学记录", async () => {
+  await p.goto(BASE + "/bank?path=path-night-light"); await T("bank-path-detail").waitFor({ timeout: 20000 }); await w(1200);
+  for (let i = 0; i < 3; i++) {
+    const btn = T(`bank-path-done-${i}`);
+    if (await btn.count()) {
+      const pressed = await btn.getAttribute("aria-pressed");
+      if (pressed !== "true") { await btn.click(); await w(400); }
+    }
+  }
+  await T("bank-path-quiz").scrollIntoViewIfNeeded(); await w(1000);
+  for (const [q, o] of [["nl-first", "b"], ["nl-cells", "b"], ["nl-stop", "b"], ["nl-sim", "b"]]) {
+    await T(`bank-path-quiz-opt-${q}-${o}`).click(); await w(350);
+  }
+  await T("bank-path-quiz-submit").click();
+  await T("bank-path-quiz-result").waitFor({ timeout: 8000 }); await w(1800);
+  await T("bank-path-record").scrollIntoViewIfNeeded(); await w(800);
+  await T("bank-path-record-name").fill("李七"); await w(800);
+  const [pop] = await Promise.all([c.waitForEvent("page", { timeout: 10000 }), T("bank-path-record-print").click()]);
+  await pop.waitForLoadState("domcontentloaded"); await w(2500);
+  await pop.close();
+}, "v45：路径末尾有短测验，每个选项都有说明，成绩记在本机，可以重做；打印页是自学记录而不是正式证书，始终浅色，兼顾 A4 和 Letter");
 await step("使用说明：本版更新", async () => {
   await p.goto(BASE + "/help#whats-new"); await T("help-whats-new").waitFor({ timeout: 20000 }); await w(1500);
   await T("help-whats-new").scrollIntoViewIfNeeded(); await w(2000); await scroll(250, 6, 350);
-}, "v44：使用说明「本版更新」汇总到 v44，说明在原有纸墨铜 token 上的深色配色、系统/浅色/深色开关，以及打印页始终用浅色");
+}, "v45：使用说明「本版更新」改为汇总 v41 到 v45，并说明路径测验和自学记录打印页");
 await step("拆解：设备列表 + 搜索", async () => {
   await p.goto(BASE + "/teardown/"); await T("teardown-page").waitFor({ timeout: 30000 }); await w(1500);
   await T("td-search").pressSequentially("tp4056", { delay: 120 }); await w(1500); await T("td-search").fill(""); await w(800);
@@ -192,6 +214,10 @@ await step("致谢：v44", async () => {
   await p.goto(BASE + "/credits#v44-theme"); await w(1500);
   await T("credits-v44").scrollIntoViewIfNeeded().catch(() => {}); await w(4000);
 }, "v44：深色值、预渲染脚本和配色开关是自己写的，没有新增第三方材料；打印页仍用浅色");
+await step("致谢：v45", async () => {
+  await p.goto(BASE + "/credits#v45-quiz"); await w(1500);
+  await T("credits-v45").scrollIntoViewIfNeeded().catch(() => {}); await w(4000);
+}, "v45：路径测验和自学记录是自己写的，没有新增第三方材料；姓名和成绩只留在本机");
 await step("工作台：固件编辑器", async () => {
   await p.goto(BASE + "/workbench/"); await T("code").waitFor({ timeout: 30000 }); await w(2500);
   await T("code").focus(); await w(800); await p.keyboard.press("Tab"); await w(1500);

@@ -2,12 +2,15 @@
 // 再用 pdftotext 逐页取文字，检查：每页都有页码“第 N 页 / 共 M 页”（Page N of M）、第 1 页有目录、
 // 每一步的标题和说明最后几个字在同一页（步骤没有被分页切开）、每一步的示意图文字也在这一页。早期原型，简化仿真。
 // 自测：MUTATE=1 故意去掉“不在步骤中间分页”和页码，检查必须报出问题（退出码反过来：查出问题 = 0）。
+// v45：同时用 A4 和 Letter 检查每条学习路径的自学记录打印页（页码、非正式证书说明、步骤和成绩都在同一页）。
 // 用法：CHROME=/usr/bin/google-chrome node e2e/sheet-pdf-lint.mjs   （OUT 目录可选，写 logs/sheet-pdf-lint.json）
 import { chromium } from "playwright";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 const { DEVICES } = await import("../src/teardown/devices.js");
 const { guideHtml, tocPageMap, tocPageLabel } = await import("../src/teardown/guideSheet.js");
+const { PATHS, stepKey } = await import("../src/bank/paths.js");
+const { recordHtml, formatQuizScore } = await import("../src/bank/recordSheet.js");
 const MUT = process.env.MUTATE === "1";
 const OUT = process.env.OUT || "/tmp/sheet-lint";
 fs.mkdirSync(`${OUT}/logs`, { recursive: true });
@@ -102,6 +105,54 @@ if (!MUT) {
   if (!first.includes(wantRange)) bad(`PDF 目录里没有安全节的跨页范围 ${wantRange}`);
   stat.push({ id: d.id + "-span", lang, pages: pages.length, steps: d.steps.length, cut: 0, kb: Math.round(pdf.length / 1024) });
   console.log(`span-backfill safety=${info.spans?.safety} mats=${info.matsPage} pdfPages=${pages.length}`);
+}
+
+
+if (!MUT) {
+  const sample = (path) => {
+    const done = {};
+    (path.steps || []).forEach((st, i) => { done[stepKey(path.id, st, i)] = true; });
+    const quiz = { answers: {}, correct: 3, total: 4, at: "2026-11-11T04:00:00.000Z" };
+    return { path, name: "Alex Lee", prog: { v: 1, paths: { [path.id]: { done, quiz, name: "Alex Lee" } } }, quiz, now: new Date("2026-11-11T04:00:00.000Z") };
+  };
+  for (const path of PATHS) for (const lang of ["zh", "en"]) for (const paper of ["A4", "Letter"]) {
+    const html = recordHtml({ ...sample(path), lang, paper });
+    await p.setContent(html, { waitUntil: "load" });
+    const pdf = await p.pdf({ preferCSSPageSize: true, printBackground: true });
+    const f = `/tmp/record-${path.id}-${lang}-${paper}.pdf`;
+    fs.writeFileSync(f, pdf);
+    const pages = execFileSync("pdftotext", ["-enc", "UTF-8", f, "-"]).toString().split("\f").filter((t) => t.trim());
+    const bad = (m) => probs.push(`record/${path.id}/${lang}/${paper}: ${m}`);
+    const M = pages.length;
+    const text = pages.map((t) => W(t)).join("");
+    pages.forEach((t, k) => {
+      const want = lang === "en" ? `Page ${k + 1} of ${M}` : `第${k + 1}页/共${M}页`;
+      if (!W(t).includes(W(want))) bad(`第 ${k + 1} 页没有页码“${want}”`);
+    });
+    if (M !== 1) bad(`应为 1 页，实际 ${M} 页（应同时放入 ${paper}）`);
+    const title = W(lang === "en" ? (path.titleEn || path.title) : path.title);
+    if (title && !text.includes(title)) bad("没有路径标题");
+    if (!text.includes(W("Alex Lee"))) bad("没有姓名");
+    if (!text.includes(W("2026-11-11"))) bad("没有日期");
+    const score = formatQuizScore({ correct: 3, total: 4 }, lang === "en");
+    if (!text.includes(W(score))) bad(`没有测验成绩“${score}”`);
+    if (lang === "en") {
+      if (!text.toLowerCase().includes(W("Self-study record").toLowerCase()) || !text.toLowerCase().includes(W("not an official certificate").toLowerCase())) bad("没有标明自学记录 / 非正式证书");
+      const m = (pages.join(" ")).match(/[\u3400-\u9fff\uff00-\uffef\u3000-\u303f]/);
+      if (m) bad(`英文版有汉字“${m[0]}”`);
+    } else {
+      if (!text.includes(W("自学记录")) || !text.includes(W("不是正式证书"))) bad("没有标明自学记录 / 非正式证书");
+    }
+    (path.steps || []).forEach((st, i) => {
+      const label = W(lang === "en" ? (st.titleEn || st.title) : st.title);
+      if (label && !text.includes(label)) bad(`缺少第 ${i + 1} 步`);
+    });
+    // 标题和最后一步应在同一页（没有被切开）
+    const last = path.steps[path.steps.length - 1];
+    const lastLabel = W(lang === "en" ? (last.titleEn || last.title) : last.title);
+    if (M === 1 && title && lastLabel && !(text.includes(title) && text.includes(lastLabel))) bad("标题和步骤不在同一页");
+    stat.push({ id: `record-${path.id}-${paper}`, lang, pages: M, steps: path.steps.length, cut: M === 1 ? 0 : 1, kb: Math.round(pdf.length / 1024) });
+  }
 }
 
 await b.close();
