@@ -136,7 +136,7 @@ export default function ElecPanel({ probes, setProbes, tool, setTool }) {
         <p className="font-medium">电路检查</p>
         <ul className="mt-1 flex flex-col gap-1" data-testid="checks">
           {(L?.checks || []).map((c) => (
-            <li key={c.text} className={`px-2 py-1 text-xs ${LV[c.level] || LV.info}`}>{c.text}{c.fix && <span className="block text-ink-soft">怎么改：{c.fix}</span>}</li>
+            <li key={c.text} className={`px-2 py-1 text-xs ${LV[c.level] || LV.info}`}>{c.text}{c.fix && <span className="block">怎么改：{c.fix}</span>}</li>
           ))}
           {L && !L.checks.length && <li className="text-xs text-ink-soft">没有发现问题（只检查了模拟里能判断的那些项目）</li>}
         </ul>

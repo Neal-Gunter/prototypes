@@ -167,7 +167,7 @@ export default function TeardownPage() {
             </div>
             <ol className="mt-2 space-y-4" data-testid="td-steps">
               {dev.steps.map((s, i) => (
-                <li key={i} id={`td-step-${i + 1}`} tabIndex={-1} aria-current={sN === i + 1 ? "step" : undefined} className={`grid gap-3 rounded-2xl border p-3 sm:grid-cols-[1fr_14rem] ${prog.steps.includes(i) ? "border-brand bg-[#E8F1FB]" : "border-line/60 bg-paper-2"} ${sN === i + 1 ? "outline outline-4 outline-brand" : ""}`} data-testid="td-step">
+                <li key={i} id={`td-step-${i + 1}`} tabIndex={-1} aria-current={sN === i + 1 ? "step" : undefined} className={`grid gap-3 rounded-2xl border p-3 sm:grid-cols-[1fr_14rem] ${prog.steps.includes(i) ? "border-brand bg-[#E8F1FB] text-[#0B2545]" : "border-line/60 bg-paper-2"} ${sN === i + 1 ? "outline outline-4 outline-brand" : ""}`} data-testid="td-step">
                   <div>
                     <label className="flex items-start gap-2 font-medium">
                       <input type="checkbox" checked={prog.steps.includes(i)} onChange={() => toggle("steps", i)} data-testid={`td-step-check-${i}`} className="mt-1" />
@@ -176,7 +176,7 @@ export default function TeardownPage() {
                     <p className="mt-1 text-sm">{L(s.d)}</p>
                     {s.warn ? <p className="mt-1 border-l-4 border-amber-600 pl-2 text-sm text-amber-900" data-testid="td-warn">{L(s.warn)}</p> : null}
                     {s.stop ? <p className="mt-1 border-l-4 border-red-700 pl-2 text-sm font-medium text-red-900" data-testid="td-stop">{L(s.stop)}</p> : null}
-                    <p className="mt-1 text-[11px] text-ink-soft">{L(UNVERIFIED)}</p>
+                    <p className={`mt-1 text-[11px] ${prog.steps.includes(i) ? "text-[#2F4E70]" : "text-ink-soft"}`}>{L(UNVERIFIED)}</p>
                   </div>
                   <StepFig dev={dev} fig={s.fig} L={L} i={i} />
                 </li>
