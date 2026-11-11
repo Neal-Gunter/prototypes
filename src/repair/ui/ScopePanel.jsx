@@ -28,6 +28,43 @@ export function captureOpts(s) {
   return { exp: s.exp, run: s.exp !== "steady" || undefined, tdiv: s.tdiv, pre: s.pre, chans, math: s.math ? { a: 0, b: 1 } : null, trig: s.trig.src === "none" ? null : { src: s.trig.src, slope: s.trig.slope, level: s.trig.level, mode: s.trig.mode === "single" ? "normal" : "auto" } };
 }
 
+
+function svgFrac(e, svg, GW, GH) {
+  try {
+    const ctm = svg.getScreenCTM();
+    if (ctm) {
+      const pt = svg.createSVGPoint();
+      pt.x = e.clientX; pt.y = e.clientY;
+      const loc = pt.matrixTransform(ctm.inverse());
+      return { fx: Math.max(0, Math.min(1, loc.x / GW)), fy: Math.max(0, Math.min(1, loc.y / GH)) };
+    }
+  } catch { /* 回退到盒子比例 */ }
+  const r = svg.getBoundingClientRect();
+  return { fx: Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)), fy: Math.max(0, Math.min(1, (e.clientY - r.top) / r.height)) };
+}
+function svgPxDistX(svg, userX, clientX) {
+  try {
+    const ctm = svg.getScreenCTM();
+    if (ctm) {
+      const pt = svg.createSVGPoint(); pt.x = userX; pt.y = 0;
+      return Math.abs(clientX - pt.matrixTransform(ctm).x);
+    }
+  } catch { /* */ }
+  const r = svg.getBoundingClientRect();
+  return Math.abs(clientX - (r.left + (userX / 500) * r.width));
+}
+function svgPxDistY(svg, userY, clientY) {
+  try {
+    const ctm = svg.getScreenCTM();
+    if (ctm) {
+      const pt = svg.createSVGPoint(); pt.x = 0; pt.y = userY;
+      return Math.abs(clientY - pt.matrixTransform(ctm).y);
+    }
+  } catch { /* */ }
+  const r = svg.getBoundingClientRect();
+  return Math.abs(clientY - (r.top + (userY / 320) * r.height));
+}
+
 export default function ScopePanel({ s, set, nodes, onCapture, running, testid = "scope", extra = null, ghost = null }) {
   const tr = useT();
   const drag = useRef(null);
@@ -74,15 +111,14 @@ export default function ScopePanel({ s, set, nodes, onCapture, running, testid =
         <div>
           <svg viewBox={`-2 -2 ${GW + 4} ${GH + 4}`} className="max-h-[400px] w-full touch-none" style={{ background: scopeBg, touchAction: "none" }} data-testid={`${testid}-screen`}
             onPointerDown={(e) => {
-              const svg = e.currentTarget, r = svg.getBoundingClientRect();
-              const fx = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
-              const fy = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height));
+              const svg = e.currentTarget;
+              const { fx, fy } = svgFrac(e, svg, GW, GH);
               const slop = 16;
               const hits = [
-                { kind: "t", k: 0, d: Math.abs(fx - cur[0]) * r.width },
-                { kind: "t", k: 1, d: Math.abs(fx - cur[1]) * r.width },
-                { kind: "v", k: 0, d: Math.abs(fy - vcur[0]) * r.height },
-                { kind: "v", k: 1, d: Math.abs(fy - vcur[1]) * r.height },
+                { kind: "t", k: 0, d: svgPxDistX(svg, cur[0] * GW, e.clientX) },
+                { kind: "t", k: 1, d: svgPxDistX(svg, cur[1] * GW, e.clientX) },
+                { kind: "v", k: 0, d: svgPxDistY(svg, vcur[0] * GH, e.clientY) },
+                { kind: "v", k: 1, d: svgPxDistY(svg, vcur[1] * GH, e.clientY) },
               ].filter((h) => h.d <= slop).sort((a, b) => a.d - b.d);
               const hit = hits[0];
               if (hit) {
@@ -98,11 +134,10 @@ export default function ScopePanel({ s, set, nodes, onCapture, running, testid =
               }
             }}
             onPointerMove={(e) => {
-              const d = drag.current; if (!d || d.placed && !d.moved && !(e.buttons & 1)) return;
-              if (!(e.buttons & 1) && !d.moved) return;
-              const r = e.currentTarget.getBoundingClientRect();
-              const fx = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
-              const fy = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height));
+              const d = drag.current; if (!d) return;
+              if (d.placed && !d.moved && !(e.buttons & 1)) return;
+              if (!(e.buttons & 1) && e.pointerType !== "touch" && !d.moved) return;
+              const { fx, fy } = svgFrac(e, e.currentTarget, GW, GH);
               if (d.kind === "t") { const next = (s.cur && s.cur.length >= 2 ? s.cur.slice() : cur.slice()); if (Math.abs(next[d.k] - fx) > 0.002) d.moved = true; next[d.k] = fx; upd({ cur: next }); }
               else { const next = (s.vcur && s.vcur.length >= 2 ? s.vcur.slice() : vcur.slice()); if (Math.abs(next[d.k] - fy) > 0.002) d.moved = true; next[d.k] = fy; upd({ vcur: next }); }
             }}
