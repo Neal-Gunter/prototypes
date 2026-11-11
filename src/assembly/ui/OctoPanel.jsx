@@ -284,7 +284,7 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
           </tbody></table>
           <p className="text-ink-soft">电流、电压是估算模型（{variant === "v10" ? `${V10_EST.current}；${V10_EST.qtpy}` : EST.current}）</p>
           <ul className="mt-1 flex flex-col gap-0.5" data-testid="octo-checks">
-            {[...errs, ...warns, ...snap.checks.filter((c) => c.ok)].slice(0, 14).map((c, i) => <li key={i} className={c.ok ? "rounded-lg bg-[#E8F1FB] px-2 py-0.5 text-brand" : c.level === "err" ? "rounded-lg bg-[#FDECEC] px-2 py-0.5 text-[#A11D14]" : "rounded-lg bg-[#F3E6C8] px-2 py-0.5 text-[#5A3B00]"}>{c.ok ? "✓" : c.level === "err" ? "✗" : "!"} {c.zh} <span className="text-ink-soft">（{c.md}）</span></li>)}
+            {[...errs, ...warns, ...snap.checks.filter((c) => c.ok)].slice(0, 14).map((c, i) => <li key={i} className={c.ok ? "rounded-lg bg-[#E8F1FB] px-2 py-0.5 text-brand" : c.level === "err" ? "rounded-lg bg-[#FDECEC] px-2 py-0.5 text-[#A11D14]" : "rounded-lg bg-[#F3E6C8] px-2 py-0.5 text-[#5A3B00]"}>{c.ok ? "✓" : c.level === "err" ? "✗" : "!"} {c.zh} <span>（{c.md}）</span></li>)}
           </ul>
         </fieldset>
         {!noBody && <fieldset className="flex flex-col gap-1" data-testid="octo-controls">
