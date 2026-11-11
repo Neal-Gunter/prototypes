@@ -87,7 +87,7 @@ for (const lang of ["zh", "en"]) {
   const news = await T("help-whats-new").innerText();
   ok(/v41/.test(news) && /v40/.test(news) && /v32/.test(news) && /frontend-design|纸/.test(news), "帮助页「本版更新」含 v41", news.slice(0, 240));
   const start = await T("help-whats-new").getAttribute("start");
-  ok(start === "41", "本版更新列表从 41 起号", String(start));
+  ok(Number(start) >= 41, "本版更新列表从 41 或更新的版本起号", String(start));
   await shot(p, "help-whats-new-zh");
 
   await p.goto(BASE + "/credits#v41-ui");

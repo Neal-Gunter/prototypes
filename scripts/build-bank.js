@@ -5,6 +5,8 @@ import { tmpdir } from "node:os";
 import {
   ROOT, DATA, MODES, DIFFICULTIES, hash, readJSON, writeJSON, writeJSONStable, stamp, log,
 } from "./bank/lib.js";
+import { PATHS } from "../src/bank/paths.js";
+import { buildPathMap, attachPathMap } from "../src/bank/pathMap.js";
 
 const SEEDS = join(DATA, "seeds/bank-items.json");
 const DEST = join(DATA, "bank");
@@ -179,7 +181,10 @@ export function build({ now = Date.now(), dataDir = DATA, dest = join(dataDir, "
         for (const diff of DIFFICULTIES) prevBank[mode][diff] = readJSON(join(dest, mode, `${diff}.json`)) || [];
       }
     }
-    const index = buildIndex(bank, prevIndex, now, prevIndex ? prevBank : null);
+    let index = buildIndex(bank, prevIndex, now, prevIndex ? prevBank : null);
+    const flat = [];
+    for (const mode of MODES) for (const diff of DIFFICULTIES) flat.push(...bank[mode][diff]);
+    index = attachPathMap(index, buildPathMap(PATHS, flat));
     const work = mkdtempSync(join(tmpdir(), "bank-"));
     try {
       writeBankTree(work, bank, index);

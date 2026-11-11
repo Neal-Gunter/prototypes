@@ -2,6 +2,7 @@
 // “存进零件库”（写进本机工作台库存）、本项目自绘的步骤插图和交互爆炸图。文字全部自写，中文 / English 都是手写。
 import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { PathFollowBanner } from "../bank/PathChrome.jsx";
 import { containerClass } from "../container";
 import { useLang } from "../i18n";
 import { DEVICES, DEVICE_BY_ID, COMMON_SAFETY, UNVERIFIED, searchDevices, isMainsQuery, MAX_VOLTS } from "../teardown/devices.js";
@@ -103,6 +104,7 @@ export default function TeardownPage() {
       <h1 className="mt-1 text-2xl font-semibold">{L({ zh: "拆解模式", en: "Teardown mode" })}</h1>
       <p className="mt-2 max-w-3xl text-sm text-ink-soft">{L({ zh: "一步一步拆开常见的小设备，看懂里面的模块，再把拆下来的模块存进本机的零件库，拿到装配台上用。指南文字和插图都是本项目自己写、自己画的。", en: "Take common small devices apart step by step, understand the modules inside, then save the removed modules to the parts library in this browser and use them on the assembly bench. All guide text and diagrams are written and drawn by this project." })}</p>
       <p className="mt-2 inline-block border border-amber-700 bg-amber-50 px-2 py-1 text-sm text-amber-900" data-testid="td-unverified">{L(UNVERIFIED)}{L({ zh: "。你的设备可能和这里写的不一样，以实物为准。", en: ". Your device may differ; trust what you see." })}</p>
+      {params.get("path") && <PathFollowBanner pathId={params.get("path")} kind="teardown" refId={dev.id} lang={lang} />}
 
       <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-6 [overflow-wrap:anywhere] lg:grid-cols-[16rem_minmax(0,1fr)]">
         <aside>
@@ -116,7 +118,7 @@ export default function TeardownPage() {
               const p = readProgress(d.id).steps.length;
               return (
                 <li key={d.id}>
-                  <button type="button" onClick={() => setParams({ d: d.id })} className={`w-full border px-3 py-2 text-left text-sm ${d.id === dev.id ? "border-ink bg-ink text-paper" : "border-line bg-white hover:border-ink"}`} data-testid={`td-device-${d.id}`} aria-current={d.id === dev.id ? "true" : undefined}>
+                  <button type="button" onClick={() => { const n = new URLSearchParams(); n.set("d", d.id); const path = params.get("path"); if (path) n.set("path", path); setParams(n); }} className={`w-full border px-3 py-2 text-left text-sm ${d.id === dev.id ? "border-ink bg-ink text-paper" : "border-line bg-white hover:border-ink"}`} data-testid={`td-device-${d.id}`} aria-current={d.id === dev.id ? "true" : undefined}>
                     <span className="block font-medium">{L(d.name)}</span>
                     <span className={`block font-mono text-[11px] ${d.id === dev.id ? "text-paper-2" : "text-ink-soft"}`}>{d.model}</span>
                     <span className={`block text-[11px] ${d.id === dev.id ? "text-paper-2" : "text-ink-soft"}`}>{L({ zh: `${d.steps.length} 步 · 约 ${d.minutes} 分钟 · ${d.battery ? "含电池" : "无电池"} · ${d.volts} V 直流 · 已完成 ${p}`, en: `${d.steps.length} steps · about ${d.minutes} min · ${d.battery ? "has a battery" : "no battery"} · ${d.volts} V DC · ${p} done` })}</span>

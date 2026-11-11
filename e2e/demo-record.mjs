@@ -9,6 +9,7 @@
 // v39：题库扩到 50 题，演示新诊断题、CR2032 钥匙扣灯、打印目录页码、致谢页 v39。
 // v40：演示学习路径、帮助页「本版更新」、致谢页 v40；题库列表等 bank-list-ready。
 // v41：演示装配台新台面、示波器波形、题库/说明页字号，以及致谢页 v41 许可说明。
+// v42：演示学习路径进度、题目与路径互链、新的充电宝路径，以及致谢页 v42。
 // 用法：BASE=http://localhost:4173 OUT=/workspace/proto-site/v33 node e2e/demo-record.mjs  然后用 ffmpeg 转 mp4
 import { chromium } from "playwright";
 import fs from "node:fs";
@@ -52,15 +53,16 @@ await step("题库：诊断连到维修关卡", async () => {
 }, "v39 诊断题：小夜灯不亮先查电池，做完跳到已有的维修关卡 led-dead-battery");
 await step("题库：学习路径", async () => {
   await p.goto(BASE + "/bank"); await T("bank-paths").waitFor({ timeout: 20000 }); await w(1500);
-  await T("bank-path-path-night-light").scrollIntoViewIfNeeded(); await w(800);
-  await T("bank-path-path-night-light").click(); await T("bank-path-detail").waitFor({ timeout: 10000 }); await w(2000);
-  await scroll(200, 4, 300);
-  await T("bank-path-link-1").click(); await T("bank-path-nav").waitFor({ timeout: 20000 }); await w(2500);
-}, "v40：把拆解、诊断和维修关卡串成 3 到 5 步的学习路径；说明自己写，是简化仿真");
+  await T("bank-path-path-powerbank-hot").scrollIntoViewIfNeeded(); await w(800);
+  await T("bank-path-path-powerbank-hot").click(); await T("bank-path-detail").waitFor({ timeout: 10000 }); await w(1500);
+  if (await T("bank-path-done-0").count()) { await T("bank-path-done-0").click(); await w(800); }
+  await T("bank-path-link-1").click(); await T("bank-path-nav").waitFor({ timeout: 20000 }); await w(2000);
+  await T("bank-item-paths-dx-psu-bridge-01").scrollIntoViewIfNeeded().catch(() => {}); await w(1500);
+}, "v42：学习路径能记下每一步是否完成，题目和路径步骤互相链接；新增充电宝从拆开到查短路的路径（简化仿真，未经实物验证）");
 await step("使用说明：本版更新", async () => {
   await p.goto(BASE + "/help#whats-new"); await T("help-whats-new").waitFor({ timeout: 20000 }); await w(1500);
   await T("help-whats-new").scrollIntoViewIfNeeded(); await w(2000); await scroll(250, 6, 350);
-}, "v41：使用说明「本版更新」汇总到 v41，说明按开源 frontend-design skill 润色了图形");
+}, "v42：使用说明「本版更新」汇总到 v42，说明路径能记下进度，题目和路径步骤可以互相反跳");
 await step("拆解：设备列表 + 搜索", async () => {
   await p.goto(BASE + "/teardown/"); await T("teardown-page").waitFor({ timeout: 30000 }); await w(1500);
   await T("td-search").pressSequentially("tp4056", { delay: 120 }); await w(1500); await T("td-search").fill(""); await w(800);
@@ -150,6 +152,10 @@ await step("致谢：v41", async () => {
   await p.goto(BASE + "/credits#v41-ui"); await w(1500);
   await T("credits-v41").scrollIntoViewIfNeeded().catch(() => {}); await w(4000);
 }, "v41：视觉参考是 Apache-2.0 的 frontend-design skill；规则用自己的话写下，没有把 skill 原文写进产品，也没有加新的网页字体");
+await step("致谢：v42", async () => {
+  await p.goto(BASE + "/credits#v42-paths"); await w(1500);
+  await T("credits-v42").scrollIntoViewIfNeeded().catch(() => {}); await w(4000);
+}, "v42：路径进度只存在这台浏览器；新路径说明是自己写的，没有新增第三方材料");
 await step("工作台：固件编辑器", async () => {
   await p.goto(BASE + "/workbench/"); await T("code").waitFor({ timeout: 30000 }); await w(2500);
   await T("code").focus(); await w(800); await p.keyboard.press("Tab"); await w(1500);

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-10T04:18:04.642Z",
+  "generatedAt": "2026-11-10T00:00:00.000Z",
   "modes": {
     "firmware": {
       "intro": {
@@ -132,5 +132,421 @@
       }
     }
   },
-  "total": 50
+  "total": 50,
+  "pathLinks": {
+    "dx-dead-battery-01": [
+      {
+        "pathId": "path-night-light",
+        "step": 1,
+        "kind": "bank",
+        "title": "小夜灯不亮：从拆开到动手修",
+        "titleEn": "A night light that stays dark: from teardown to a repair",
+        "stepTitle": "完全不亮：先查电池还是先换灯珠？",
+        "stepTitleEn": "Completely dark: check the cells first, or swap the LED?",
+        "href": "/bank?mode=diagnosis&diff=intro&id=dx-dead-battery-01&path=path-night-light"
+      }
+    ],
+    "wb-led-res-01": [
+      {
+        "pathId": "path-led-polarity",
+        "step": 0,
+        "kind": "bank",
+        "title": "灯不亮：先把线和极性接对",
+        "titleEn": "An LED that will not light: get the wiring and polarity right first",
+        "stepTitle": "给 Pico 的 GP15 接一颗带电阻的 LED",
+        "stepTitleEn": "Wire an LED and resistor to Pico GP15",
+        "href": "/bank?mode=workbench&diff=intro&id=wb-led-res-01&path=path-led-polarity"
+      }
+    ],
+    "wb-no-short-01": [
+      {
+        "pathId": "path-led-polarity",
+        "step": 1,
+        "kind": "bank",
+        "title": "灯不亮：先把线和极性接对",
+        "titleEn": "An LED that will not light: get the wiring and polarity right first",
+        "stepTitle": "LED 必须经过电阻，电源不能短接",
+        "stepTitleEn": "The LED must go through a resistor, and the supply must not be shorted",
+        "href": "/bank?mode=workbench&diff=intro&id=wb-no-short-01&path=path-led-polarity"
+      }
+    ],
+    "as-cap-orient-01": [
+      {
+        "pathId": "path-led-polarity",
+        "step": 2,
+        "kind": "bank",
+        "title": "灯不亮：先把线和极性接对",
+        "titleEn": "An LED that will not light: get the wiring and polarity right first",
+        "stepTitle": "电解电容负极朝向标记后再焊接",
+        "stepTitleEn": "Align the electrolytic capacitor’s negative lead with the mark before soldering",
+        "href": "/bank?mode=assembly&diff=intermediate&id=as-cap-orient-01&path=path-led-polarity"
+      }
+    ],
+    "dx-reverse-01": [
+      {
+        "pathId": "path-led-polarity",
+        "step": 3,
+        "kind": "bank",
+        "title": "灯不亮：先把线和极性接对",
+        "titleEn": "An LED that will not light: get the wiring and polarity right first",
+        "stepTitle": "换了灯珠还是不亮：先查什么？",
+        "stepTitleEn": "The new LED still does not light: what do you check first?",
+        "href": "/bank?mode=diagnosis&diff=intro&id=dx-reverse-01&path=path-led-polarity"
+      }
+    ],
+    "wb-fuse-vsys-01": [
+      {
+        "pathId": "path-octo-power",
+        "step": 0,
+        "kind": "bank",
+        "title": "八爪鱼能开机却不走路",
+        "titleEn": "The octopus powers on but will not walk",
+        "stepTitle": "5 V 要经过保险丝再进 Pico 的 VSYS，并且共地",
+        "stepTitleEn": "5 V must go through a fuse into the Pico VSYS, and share a ground",
+        "href": "/bank?mode=workbench&diff=intermediate&id=wb-fuse-vsys-01&path=path-octo-power"
+      }
+    ],
+    "wb-servo-01": [
+      {
+        "pathId": "path-octo-power",
+        "step": 1,
+        "kind": "bank",
+        "title": "八爪鱼能开机却不走路",
+        "titleEn": "The octopus powers on but will not walk",
+        "stepTitle": "舵机电源、地和信号都要接到位，并且共地",
+        "stepTitleEn": "The servo supply, ground and signal must all be connected, and share a ground",
+        "href": "/bank?mode=workbench&diff=intermediate&id=wb-servo-01&path=path-octo-power"
+      }
+    ],
+    "dx-octo-batt-01": [
+      {
+        "pathId": "path-octo-power",
+        "step": 2,
+        "kind": "bank",
+        "title": "八爪鱼能开机却不走路",
+        "titleEn": "The octopus powers on but will not walk",
+        "stepTitle": "八爪鱼能开机但不走路：先查电池电压",
+        "stepTitleEn": "The octopus powers on but will not walk: check the battery voltage first",
+        "href": "/bank?mode=diagnosis&diff=intermediate&id=dx-octo-batt-01&path=path-octo-power"
+      }
+    ],
+    "dx-psu-bridge-01": [
+      {
+        "pathId": "path-powerbank-hot",
+        "step": 1,
+        "kind": "bank",
+        "title": "充电宝一插电就发烫：先拆开再查短路",
+        "titleEn": "A power bank that runs hot when plugged in: open it, then look for a short",
+        "stepTitle": "电源模块一插上就烫手：会不会是输出被焊锡桥短接？",
+        "stepTitleEn": "A power module that is hot as soon as you plug it in: could the output be bridged with solder?",
+        "href": "/bank?mode=diagnosis&diff=intermediate&id=dx-psu-bridge-01&path=path-powerbank-hot"
+      }
+    ]
+  },
+  "pathStepBank": {
+    "path-night-light": [
+      [
+        {
+          "id": "dx-dead-battery-01",
+          "mode": "diagnosis",
+          "diff": "intro",
+          "title": "小夜灯完全不亮：先查电池还是先换灯珠？",
+          "titleEn": "The night light is completely dark: battery first, or a new LED?"
+        }
+      ],
+      [
+        {
+          "id": "dx-dead-battery-01",
+          "mode": "diagnosis",
+          "diff": "intro",
+          "title": "小夜灯完全不亮：先查电池还是先换灯珠？",
+          "titleEn": "The night light is completely dark: battery first, or a new LED?"
+        }
+      ],
+      [
+        {
+          "id": "dx-dead-battery-01",
+          "mode": "diagnosis",
+          "diff": "intro",
+          "title": "小夜灯完全不亮：先查电池还是先换灯珠？",
+          "titleEn": "The night light is completely dark: battery first, or a new LED?"
+        }
+      ]
+    ],
+    "path-led-polarity": [
+      [
+        {
+          "id": "wb-led-res-01",
+          "mode": "workbench",
+          "diff": "intro",
+          "title": "给 Pico 的 GP15 接一颗带电阻的 LED",
+          "titleEn": "Wire an LED and resistor to Pico GP15"
+        },
+        {
+          "id": "wb-no-short-01",
+          "mode": "workbench",
+          "diff": "intro",
+          "title": "LED 必须经过电阻，电源不能短接",
+          "titleEn": "The LED must go through a resistor; do not short the supply"
+        },
+        {
+          "id": "as-cap-orient-01",
+          "mode": "assembly",
+          "diff": "intermediate",
+          "title": "电解电容负极朝向标记后再焊接",
+          "titleEn": "Orient the electrolytic capacitor to its minus mark, then solder"
+        },
+        {
+          "id": "dx-reverse-01",
+          "mode": "diagnosis",
+          "diff": "intro",
+          "title": "换了灯珠还是不亮：先查什么？",
+          "titleEn": "The new LED still does not light: what do you check first?"
+        }
+      ],
+      [
+        {
+          "id": "wb-led-res-01",
+          "mode": "workbench",
+          "diff": "intro",
+          "title": "给 Pico 的 GP15 接一颗带电阻的 LED",
+          "titleEn": "Wire an LED and resistor to Pico GP15"
+        },
+        {
+          "id": "wb-no-short-01",
+          "mode": "workbench",
+          "diff": "intro",
+          "title": "LED 必须经过电阻，电源不能短接",
+          "titleEn": "The LED must go through a resistor; do not short the supply"
+        },
+        {
+          "id": "as-cap-orient-01",
+          "mode": "assembly",
+          "diff": "intermediate",
+          "title": "电解电容负极朝向标记后再焊接",
+          "titleEn": "Orient the electrolytic capacitor to its minus mark, then solder"
+        },
+        {
+          "id": "dx-reverse-01",
+          "mode": "diagnosis",
+          "diff": "intro",
+          "title": "换了灯珠还是不亮：先查什么？",
+          "titleEn": "The new LED still does not light: what do you check first?"
+        }
+      ],
+      [
+        {
+          "id": "wb-led-res-01",
+          "mode": "workbench",
+          "diff": "intro",
+          "title": "给 Pico 的 GP15 接一颗带电阻的 LED",
+          "titleEn": "Wire an LED and resistor to Pico GP15"
+        },
+        {
+          "id": "wb-no-short-01",
+          "mode": "workbench",
+          "diff": "intro",
+          "title": "LED 必须经过电阻，电源不能短接",
+          "titleEn": "The LED must go through a resistor; do not short the supply"
+        },
+        {
+          "id": "as-cap-orient-01",
+          "mode": "assembly",
+          "diff": "intermediate",
+          "title": "电解电容负极朝向标记后再焊接",
+          "titleEn": "Orient the electrolytic capacitor to its minus mark, then solder"
+        },
+        {
+          "id": "dx-reverse-01",
+          "mode": "diagnosis",
+          "diff": "intro",
+          "title": "换了灯珠还是不亮：先查什么？",
+          "titleEn": "The new LED still does not light: what do you check first?"
+        }
+      ],
+      [
+        {
+          "id": "wb-led-res-01",
+          "mode": "workbench",
+          "diff": "intro",
+          "title": "给 Pico 的 GP15 接一颗带电阻的 LED",
+          "titleEn": "Wire an LED and resistor to Pico GP15"
+        },
+        {
+          "id": "wb-no-short-01",
+          "mode": "workbench",
+          "diff": "intro",
+          "title": "LED 必须经过电阻，电源不能短接",
+          "titleEn": "The LED must go through a resistor; do not short the supply"
+        },
+        {
+          "id": "as-cap-orient-01",
+          "mode": "assembly",
+          "diff": "intermediate",
+          "title": "电解电容负极朝向标记后再焊接",
+          "titleEn": "Orient the electrolytic capacitor to its minus mark, then solder"
+        },
+        {
+          "id": "dx-reverse-01",
+          "mode": "diagnosis",
+          "diff": "intro",
+          "title": "换了灯珠还是不亮：先查什么？",
+          "titleEn": "The new LED still does not light: what do you check first?"
+        }
+      ],
+      [
+        {
+          "id": "wb-led-res-01",
+          "mode": "workbench",
+          "diff": "intro",
+          "title": "给 Pico 的 GP15 接一颗带电阻的 LED",
+          "titleEn": "Wire an LED and resistor to Pico GP15"
+        },
+        {
+          "id": "wb-no-short-01",
+          "mode": "workbench",
+          "diff": "intro",
+          "title": "LED 必须经过电阻，电源不能短接",
+          "titleEn": "The LED must go through a resistor; do not short the supply"
+        },
+        {
+          "id": "as-cap-orient-01",
+          "mode": "assembly",
+          "diff": "intermediate",
+          "title": "电解电容负极朝向标记后再焊接",
+          "titleEn": "Orient the electrolytic capacitor to its minus mark, then solder"
+        },
+        {
+          "id": "dx-reverse-01",
+          "mode": "diagnosis",
+          "diff": "intro",
+          "title": "换了灯珠还是不亮：先查什么？",
+          "titleEn": "The new LED still does not light: what do you check first?"
+        }
+      ]
+    ],
+    "path-octo-power": [
+      [
+        {
+          "id": "wb-fuse-vsys-01",
+          "mode": "workbench",
+          "diff": "intermediate",
+          "title": "5 V 要经过保险丝再进 Pico 的 VSYS，并且共地",
+          "titleEn": "5 V must reach Pico VSYS through a fuse, with a common ground"
+        },
+        {
+          "id": "wb-servo-01",
+          "mode": "workbench",
+          "diff": "intermediate",
+          "title": "舵机电源、地和信号都要接到位，并且共地",
+          "titleEn": "Wire servo power, ground and signal, with a common ground"
+        },
+        {
+          "id": "dx-octo-batt-01",
+          "mode": "diagnosis",
+          "diff": "intermediate",
+          "title": "八爪鱼能开机但不走路：先查电池电压",
+          "titleEn": "The octopus powers on but will not walk: check the battery voltage first"
+        }
+      ],
+      [
+        {
+          "id": "wb-fuse-vsys-01",
+          "mode": "workbench",
+          "diff": "intermediate",
+          "title": "5 V 要经过保险丝再进 Pico 的 VSYS，并且共地",
+          "titleEn": "5 V must reach Pico VSYS through a fuse, with a common ground"
+        },
+        {
+          "id": "wb-servo-01",
+          "mode": "workbench",
+          "diff": "intermediate",
+          "title": "舵机电源、地和信号都要接到位，并且共地",
+          "titleEn": "Wire servo power, ground and signal, with a common ground"
+        },
+        {
+          "id": "dx-octo-batt-01",
+          "mode": "diagnosis",
+          "diff": "intermediate",
+          "title": "八爪鱼能开机但不走路：先查电池电压",
+          "titleEn": "The octopus powers on but will not walk: check the battery voltage first"
+        }
+      ],
+      [
+        {
+          "id": "wb-fuse-vsys-01",
+          "mode": "workbench",
+          "diff": "intermediate",
+          "title": "5 V 要经过保险丝再进 Pico 的 VSYS，并且共地",
+          "titleEn": "5 V must reach Pico VSYS through a fuse, with a common ground"
+        },
+        {
+          "id": "wb-servo-01",
+          "mode": "workbench",
+          "diff": "intermediate",
+          "title": "舵机电源、地和信号都要接到位，并且共地",
+          "titleEn": "Wire servo power, ground and signal, with a common ground"
+        },
+        {
+          "id": "dx-octo-batt-01",
+          "mode": "diagnosis",
+          "diff": "intermediate",
+          "title": "八爪鱼能开机但不走路：先查电池电压",
+          "titleEn": "The octopus powers on but will not walk: check the battery voltage first"
+        }
+      ],
+      [
+        {
+          "id": "wb-fuse-vsys-01",
+          "mode": "workbench",
+          "diff": "intermediate",
+          "title": "5 V 要经过保险丝再进 Pico 的 VSYS，并且共地",
+          "titleEn": "5 V must reach Pico VSYS through a fuse, with a common ground"
+        },
+        {
+          "id": "wb-servo-01",
+          "mode": "workbench",
+          "diff": "intermediate",
+          "title": "舵机电源、地和信号都要接到位，并且共地",
+          "titleEn": "Wire servo power, ground and signal, with a common ground"
+        },
+        {
+          "id": "dx-octo-batt-01",
+          "mode": "diagnosis",
+          "diff": "intermediate",
+          "title": "八爪鱼能开机但不走路：先查电池电压",
+          "titleEn": "The octopus powers on but will not walk: check the battery voltage first"
+        }
+      ]
+    ],
+    "path-powerbank-hot": [
+      [
+        {
+          "id": "dx-psu-bridge-01",
+          "mode": "diagnosis",
+          "diff": "intermediate",
+          "title": "稳压模块一插上就烫手：会不会是输出被焊锡桥短接？",
+          "titleEn": "The regulator gets hot as soon as it is plugged in: is the output bridged?"
+        }
+      ],
+      [
+        {
+          "id": "dx-psu-bridge-01",
+          "mode": "diagnosis",
+          "diff": "intermediate",
+          "title": "稳压模块一插上就烫手：会不会是输出被焊锡桥短接？",
+          "titleEn": "The regulator gets hot as soon as it is plugged in: is the output bridged?"
+        }
+      ],
+      [
+        {
+          "id": "dx-psu-bridge-01",
+          "mode": "diagnosis",
+          "diff": "intermediate",
+          "title": "稳压模块一插上就烫手：会不会是输出被焊锡桥短接？",
+          "titleEn": "The regulator gets hot as soon as it is plugged in: is the output bridged?"
+        }
+      ]
+    ]
+  }
 }

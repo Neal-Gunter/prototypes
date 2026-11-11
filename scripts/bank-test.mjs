@@ -336,5 +336,74 @@ ok(!/WebAssembly|wasm/.test(readFileSync(new URL("../src/validators/c-lite.js", 
   ok(tocPageLabel(2, 1, false) === "第 2 页" && tocPageLabel(2, 3, false) === "第 2–4 页" && tocPageLabel(4, 2, true) === "p. 4–5", "tocPageLabel 单页和跨页");
 }
 
+
+// ---------- v42：路径进度存储 + 构建期映射 + 新设备路径 ----------
+{
+  const { PATHS, findPath, pathStepHref, stepKey } = await import("../src/bank/paths.js");
+  const { buildPathMap } = await import("../src/bank/pathMap.js");
+  const prog = await import("../src/bank/progress.js");
+  const { DEVICES } = await import("../src/teardown/devices.js");
+  const doc = readJSON(join(DATA, "seeds/bank-items.json"));
+  const items = doc.items || [];
+  const ids = new Set(items.map((it) => it.id));
+  const map = buildPathMap(PATHS, items);
+  const pub = readJSON(join(ROOT, "public/bank/index.json")) || readJSON(join(DATA, "bank/index.json"));
+
+  ok(PATHS.length >= 4, `学习路径 ${PATHS.length} 条（≥4）`);
+  const usedDevices = new Set();
+  for (const pa of PATHS) for (const st of pa.steps) if (st.kind === "teardown") usedDevices.add(st.device);
+  const fresh = findPath("path-powerbank-hot");
+  ok(fresh && fresh.steps.length >= 3 && fresh.steps.length <= 5, "新路径存在且为 3–5 步");
+  ok(fresh.steps[0].kind === "teardown" && fresh.steps[0].device === "powerbank-18650", "新路径从尚未覆盖的充电宝拆解开始");
+  ok(fresh.steps.some((st) => st.kind === "bank") && fresh.steps.some((st) => st.kind === "repair"), "新路径含诊断/题库和维修");
+  const otherTeardowns = PATHS.filter((pa) => pa.id !== "path-powerbank-hot").flatMap((pa) => pa.steps.filter((st) => st.kind === "teardown").map((st) => st.device));
+  ok(!otherTeardowns.includes("powerbank-18650"), "充电宝此前没有学习路径");
+  ok(DEVICES.some((d) => d.id === "powerbank-18650"), "充电宝拆解设备存在");
+  ok(/未经实物验证|not verified/i.test(fresh.summary + fresh.summaryEn + fresh.steps.map((s) => s.note + s.noteEn).join("")), "新路径注明未经实物验证");
+  ok(!/[一-鿿]/.test(fresh.titleEn + fresh.summaryEn + fresh.steps.map((st) => (st.titleEn || "") + (st.noteEn || "")).join("")), "新路径英文里没有汉字");
+
+  ok(map.pathLinks["dx-dead-battery-01"]?.some((x) => x.pathId === "path-night-light"), "诊断题映射到小夜灯路径步骤");
+  ok(map.pathLinks["dx-psu-bridge-01"]?.some((x) => x.pathId === "path-powerbank-hot" && x.step === 1), "短路诊断题映射到充电宝路径");
+  ok(!map.pathLinks["fw-btn-led-01"], "对不上的题目不出现在映射里");
+  ok(Array.isArray(map.pathStepBank["path-powerbank-hot"]?.[0]) && map.pathStepBank["path-powerbank-hot"][0].some((it) => it.id === "dx-psu-bridge-01"), "拆解步骤能链回相关题目");
+  if (pub) {
+    ok(pub.pathLinks?.["dx-psu-bridge-01"]?.some((x) => x.pathId === "path-powerbank-hot"), "构建产物 index.json 含 pathLinks");
+    ok(pub.pathStepBank?.["path-night-light"]?.[0]?.some((it) => it.id === "dx-dead-battery-01"), "构建产物 index.json 含 pathStepBank");
+  }
+
+  const mem = () => {
+    const s = new Map();
+    return {
+      getItem: (k) => (s.has(k) ? s.get(k) : null),
+      setItem: (k, v) => { s.set(k, String(v)); },
+      removeItem: (k) => { s.delete(k); },
+      _raw: s,
+    };
+  };
+  const st = mem();
+  ok(prog.parsePathProgress(null).v === 1 && Object.keys(prog.parsePathProgress(null).paths).length === 0, "空值解析成空白进度");
+  ok(Object.keys(prog.parsePathProgress("{").paths).length === 0, "坏 JSON 解析成空白进度");
+  ok(Object.keys(prog.parsePathProgress({ v: 99, paths: { x: { done: { a: true } } } }).paths).length === 0, "错误版本丢弃");
+  ok(Object.keys(prog.parsePathProgress({ v: 1, paths: [] }).paths).length === 0, "paths 为数组时丢弃");
+  ok(Object.keys(prog.parsePathProgress({ v: 1, paths: null }).paths).length === 0, "paths 为 null 时丢弃");
+  const dirty = prog.parsePathProgress({ v: 1, paths: { "path-night-light": { done: { "k": 1, "": true, ok: true }, extra: 1 }, bad: "nope" } });
+  ok(dirty.paths["path-night-light"] && dirty.paths["path-night-light"].done.k && dirty.paths["path-night-light"].done.ok && !dirty.paths.bad, "只保留结构正常的完成标记");
+  let p = prog.loadPathProgress(st);
+  ok(p.v === 1 && Object.keys(p.paths).length === 0, "空存储加载为空白");
+  p = prog.markPathStep("path-powerbank-hot", 0, true, st);
+  const k0 = stepKey("path-powerbank-hot", fresh.steps[0], 0);
+  ok(p.paths["path-powerbank-hot"].done[k0], "可标记某一步完成");
+  ok(prog.pathStats(fresh, p).done === 1 && prog.pathStats(fresh, p).nextIndex === 1, "进度统计和继续位置");
+  const href = prog.resumeHref(fresh, p);
+  ok(href.includes("dx-psu-bridge-01") && href.includes("path-powerbank-hot"), "继续按钮指向下一步题目", href);
+  p = prog.markItemDone("dx-psu-bridge-01", st);
+  ok(prog.pathStats(fresh, p).done === 2, "做完对应题目会记下该步");
+  p = prog.resetPathProgress("path-powerbank-hot", st);
+  ok(!p.paths["path-powerbank-hot"] && prog.pathStats(fresh, p).done === 0, "重置后该路径进度清空");
+  const st2 = mem();
+  st2.setItem(prog.PATH_PROGRESS_KEY, "not-json");
+  ok(prog.pathStats(fresh, prog.loadPathProgress(st2)).done === 0, "存储里的坏数据不会让进度崩溃");
+}
+
 console.log(`bank-test ${pass} PASS / ${fail} FAIL`);
 process.exit(fail ? 1 : 0);

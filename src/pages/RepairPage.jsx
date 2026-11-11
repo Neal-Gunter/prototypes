@@ -8,6 +8,9 @@ import { SCOPE_SCENARIOS, metricOf } from "../repair/scopeScenarios.js";
 import ScopePanel, { defaultScope, captureOpts, CH_COLOR } from "../repair/ui/ScopePanel.jsx";
 import { LS_KEY } from "../repair/editor.js";
 import BoardView from "../repair/ui/BoardView.jsx";
+import { PathFollowBanner } from "../bank/PathChrome.jsx";
+import { markRepairSceneDone } from "../bank/progress.js";
+import { useLang } from "../i18n.js";
 import RepairEditor from "../repair/ui/RepairEditor.jsx";
 
 const PROG_KEY = "repair.progress.v1";
@@ -22,6 +25,8 @@ export function scopeNodes(b) { const out = []; const add = (n) => { if (n && !o
 function customList() { return loadJSON(LS_KEY, []).map((s) => ({ ...s, custom: true })); }
 
 export default function RepairPage() {
+  const [lang] = useLang();
+  const pathId = new URLSearchParams(typeof location !== "undefined" ? location.search : "").get("path") || "";
   const [tab, setTab] = useState(() => (new URLSearchParams(location.search).get("tab") === "editor" ? "editor" : "play"));
   const [customs, setCustoms] = useState(customList);
   const all = useMemo(() => [...SCENARIOS, ...customs], [customs]);
@@ -60,7 +65,7 @@ export default function RepairPage() {
     if (a.a === "deliver") {
       const rep = game.report();
       setReport({ ...rep, checks: r.checks, order: r.order });
-      if (game.solved) { const p = { ...loadJSON(PROG_KEY, {}) }; p[game.sc.id] = Math.max(p[game.sc.id] || 0, rep.stars); localStorage.setItem(PROG_KEY, JSON.stringify(p)); setProgress(p); }
+      if (game.solved) { const p = { ...loadJSON(PROG_KEY, {}) }; p[game.sc.id] = Math.max(p[game.sc.id] || 0, rep.stars); localStorage.setItem(PROG_KEY, JSON.stringify(p)); setProgress(p); markRepairSceneDone(game.sc.id); }
     }
     setFlash(r.text ? { text: r.text, bad: !r.ok } : null);
     rerender();
@@ -109,6 +114,7 @@ export default function RepairPage() {
     <div className="mx-auto max-w-7xl p-4">
       <div className="mb-3 flex flex-wrap items-center gap-3">
         <h1 className="text-xl font-semibold">维修关卡</h1>
+        {pathId && <PathFollowBanner pathId={pathId} kind="repair" refId={sid} lang={lang} />}
         <span className="border border-line bg-white px-2 py-0.5 text-xs text-ink-soft">早期原型，简化仿真 · 不替代真实安全培训</span>
         <div className="ml-auto flex gap-1">
           <button type="button" className={tab === "play" ? btnOn : btn} onClick={() => setTab("play")} data-testid="tab-play">闯关</button>

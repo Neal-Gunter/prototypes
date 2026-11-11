@@ -1,4 +1,5 @@
 // v40：把已有的拆解、诊断、接线、装配和维修关卡串成 3–5 步的短学习路径。
+// v42：增加一条尚未覆盖的设备路径，并给步骤稳定键（给进度存储用）。
 // 说明文字自己写，按公开资料整理。早期原型，简化仿真。
 export const PATHS = [
   {
@@ -140,6 +141,41 @@ export const PATHS = [
       },
     ],
   },
+  {
+    id: "path-powerbank-hot",
+    title: "充电宝一插电就发烫：先拆开再查短路",
+    titleEn: "A power bank that runs hot when plugged in: open it, then look for a short",
+    summary: "先拆开单节 18650 USB 充电宝，看充电和升压板、电芯和 USB 口怎么连；再做一道关于“电源模块一插上就发烫、会不会是输出被焊锡桥短接”的诊断题；最后在稳压模块维修关卡里按同样的思路排短路。维修关卡是通用的稳压模块简化仿真，不是这块充电宝的 1:1 模型。指南和题面都按公开资料整理，未经实物验证。",
+    summaryEn: "First open a single-cell 18650 USB power bank and see how the charge/boost board, the cell and the USB port are connected. Then work a diagnosis task about a power module that runs hot when plugged in — possibly an output solder bridge. Finally practise the same idea in a regulator-module repair level. The repair level is a generic, simplified regulator simulation, not a one-to-one model of this power bank. The guide and the tasks are compiled from public information and not verified on hardware.",
+    steps: [
+      {
+        kind: "teardown",
+        device: "powerbank-18650",
+        title: "拆开单节 18650 充电宝",
+        titleEn: "Open the single-cell 18650 power bank",
+        note: "看电芯、保护/充电升压板和 USB 口的位置，以及输出会从哪走。先处理电池，遇到停止点先停。锂电芯不要短路或刺穿。指南未经实物验证。",
+        noteEn: "See where the cell, the protection/charge-boost board and the USB port sit, and where the output path runs. Deal with the battery first, and stop at every stop point. Do not short or puncture the Li-ion cell. The guide is not verified on a real device.",
+      },
+      {
+        kind: "bank",
+        id: "dx-psu-bridge-01",
+        mode: "diagnosis",
+        diff: "intermediate",
+        title: "电源模块一插上就烫手：会不会是输出被焊锡桥短接？",
+        titleEn: "A power module that is hot as soon as you plug it in: could the output be bridged with solder?",
+        note: "先判断该不该先查输出端有没有锡桥，再打开对应的维修关卡。题面针对的是稳压模块，用来练同一类短路思路。",
+        noteEn: "First decide whether to look for a solder bridge on the output, then open the matching repair level. The task is written for a regulator module, and is here to practise the same kind of short-circuit reasoning.",
+      },
+      {
+        kind: "repair",
+        scene: "psu-output-bridge",
+        title: "在维修关卡里排除输出端短路",
+        titleEn: "Clear an output short in the repair level",
+        note: "关卡是稳压模块的简化仿真，用来练步骤，不能代替对充电宝实物的检查。",
+        noteEn: "The level is a simplified regulator-module simulation for practising the steps; it does not replace inspecting a real power bank.",
+      },
+    ],
+  },
 ];
 
 export function findPath(id) {
@@ -171,4 +207,15 @@ export function pathStepHref(step, pathId) {
 export function stepIndexForItem(path, itemId) {
   if (!path) return -1;
   return path.steps.findIndex((s) => s.kind === "bank" && s.id === itemId);
+}
+
+/** Stable key for a step, used by localStorage progress (v42). */
+export function stepKey(pathId, step, index) {
+  const ref = (step && (step.id || step.device || step.scene)) || String(index);
+  return `${pathId}:${index}:${step?.kind || "step"}:${ref}`;
+}
+
+export function bankItemsOnPath(path) {
+  if (!path) return [];
+  return path.steps.filter((s) => s.kind === "bank" && s.id).map((s) => s.id);
 }

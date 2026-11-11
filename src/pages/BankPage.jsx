@@ -1,11 +1,14 @@
-// v38–v40：题库练习页。先加载 index.json，再按 mode × difficulty 按需加载。v40 增加学习路径，列表在加载完成后才标 ready。早期原型，简化仿真。
+// v38–v42：题库练习页。先加载 index.json，再按 mode × difficulty 按需加载。v40 增加学习路径，列表在加载完成后才标 ready。v42 增加路径进度、题目与路径互链。早期原型，简化仿真。
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { containerClass } from "../container";
 import { useLang, tr } from "../i18n.js";
 import { loadIndex, loadBank, freshnessFlag, itemStale, MODES, DIFFICULTIES } from "../bank/load.js";
 import { practiceItem } from "../bank/practice.js";
-import { PATHS, findPath, pathStepHref, stepIndexForItem } from "../bank/paths.js";
+import { PATHS, findPath, pathStepHref, stepIndexForItem, stepKey } from "../bank/paths.js";
+import { pathLinksFromPaths, pathStepBankFromPaths } from "../bank/pathMap.js";
+import { markItemDone, pathStats, resumeHref, isStepDone } from "../bank/progress.js";
+import { usePathProgress, PathProgressBar, pathProgressLabel, PathCardControls, PathResetButton, StepDoneButton, ItemPathLinks, StepRelatedItems } from "../bank/PathChrome.jsx";
 
 const MODE_LABEL = {
   firmware: ["固件时序", "Firmware timing"],
@@ -20,6 +23,9 @@ const DIFF_LABEL = {
   advanced: ["提高", "Advanced"],
 };
 const L = (en, pair) => (en ? pair[1] : pair[0]);
+const pathStatsSafe = (path, prog) => pathStats(path, prog);
+const resumeHrefSafe = (path, prog) => resumeHref(path, prog);
+const pathStepDone = (path, prog, i) => isStepDone(prog, path.id, stepKey(path.id, path.steps[i], i));
 const fmtDate = (iso) => {
   if (!iso) return "—";
   const d = new Date(iso);
@@ -28,7 +34,11 @@ const fmtDate = (iso) => {
   return `${y}-${m}-${day}`;
 };
 
-function Result({ r }) {
+function PassWatch({ r, itemId }) {
+  useEffect(() => { if (r?.pass && itemId) markItemDone(itemId); }, [r, itemId]);
+  return null;
+}
+function Result({ r, itemId }) {
   if (!r) return null;
   return (
     <div className={`mt-3 border px-3 py-2 text-sm ${r.pass ? "border-ink" : "border-copper"}`} data-testid="bank-result" data-pass={r.pass ? "1" : "0"}>
@@ -50,7 +60,7 @@ function FirmwarePractice({ item, lang, onDone }) {
       <label className="block text-sm" htmlFor="bank-fw-src">{tr("固件代码（类 Arduino 解释器，简化仿真）", "Firmware (Arduino-like interpreter, simplified simulation)")}</label>
       <textarea id="bank-fw-src" data-testid="bank-editor" className="mt-1 min-h-48 w-full border border-line bg-paper p-2 font-mono text-sm" value={src} onChange={(e) => setSrc(e.target.value)} spellCheck={false} />
       <button type="submit" className="mt-2 inline-flex min-h-11 items-center border border-ink px-4 hover:bg-ink hover:text-paper-2" data-testid="bank-run">{tr("运行并对照时序", "Run and check the timeline")}</button>
-      <Result r={r} />
+      <PassWatch r={r} itemId={item.id} /><Result r={r} itemId={item.id} />
     </form>
   );
 }
@@ -64,7 +74,7 @@ function CodePractice({ item, lang }) {
       <label className="block text-sm" htmlFor="bank-cc-src">{tr(`代码（${fmt}，只做结构检查，不编译）`, `Code (${fmt}, structure check only, not compiled)`)}</label>
       <textarea id="bank-cc-src" data-testid="bank-editor" className="mt-1 min-h-48 w-full border border-line bg-paper p-2 font-mono text-sm" value={src} onChange={(e) => setSrc(e.target.value)} spellCheck={false} />
       <button type="submit" className="mt-2 inline-flex min-h-11 items-center border border-ink px-4 hover:bg-ink hover:text-paper-2" data-testid="bank-run">{tr("检查", "Check")}</button>
-      <Result r={r} />
+      <PassWatch r={r} itemId={item.id} /><Result r={r} itemId={item.id} />
     </form>
   );
 }
@@ -90,7 +100,7 @@ function QuizPractice({ item, lang }) {
         </fieldset>
       ))}
       <button type="submit" className="inline-flex min-h-11 items-center border border-ink px-4 hover:bg-ink hover:text-paper-2" data-testid="bank-run">{tr("提交判断", "Submit")}</button>
-      <Result r={r} />
+      <PassWatch r={r} itemId={item.id} /><Result r={r} itemId={item.id} />
       {url && (
         <p className="text-sm">
           <Link className="underline" to={url} data-testid="bank-repair-link">{tr("打开对应的维修关卡继续练习", "Open the matching repair level")}</Link>
@@ -122,7 +132,7 @@ function WiresPractice({ item, lang }) {
         <button type="button" className="inline-flex min-h-11 items-center border border-line px-3" onClick={() => setWires((w) => [...w, { a: "", b: "" }])} data-testid="bank-add-wire">{tr("加一根线", "Add a wire")}</button>
         <button type="submit" className="inline-flex min-h-11 items-center border border-ink px-4 hover:bg-ink hover:text-paper-2" data-testid="bank-run">{tr("检查连接", "Check the wiring")}</button>
       </div>
-      <Result r={r} />
+      <PassWatch r={r} itemId={item.id} /><Result r={r} itemId={item.id} />
     </form>
   );
 }
@@ -148,7 +158,7 @@ function StepsPractice({ item, lang }) {
         <button type="button" className="inline-flex min-h-11 items-center border border-line px-3" onClick={() => setSteps((s) => [...s, { part: "", orient: "" }])} data-testid="bank-add-step">{tr("加一步", "Add a step")}</button>
         <button type="submit" className="inline-flex min-h-11 items-center border border-ink px-4 hover:bg-ink hover:text-paper-2" data-testid="bank-run">{tr("检查顺序", "Check the order")}</button>
       </div>
-      <Result r={r} />
+      <PassWatch r={r} itemId={item.id} /><Result r={r} itemId={item.id} />
     </form>
   );
 }
@@ -170,13 +180,14 @@ function PathNav({ path, itemId, lang }) {
   );
 }
 
-function Practice({ item, lang, pathId }) {
+function Practice({ item, lang, pathId, pathLinks }) {
   const t = item.passCondition?.type;
   const path = findPath(pathId);
   return (
     <section className="mt-6 border border-line bg-paper-2 p-5" data-testid="bank-practice" data-id={item.id}>
       <PathNav path={path} itemId={item.id} lang={lang} />
       <h2 className="text-xl font-medium">{lang === "en" ? (item.titleEn || item.title) : item.title}</h2>
+      <ItemPathLinks itemId={item.id} pathLinks={pathLinks} lang={lang} currentPathId={pathId} />
       <p className="mt-2 text-sm leading-7 text-ink-soft">{lang === "en" ? (item.promptEn || item.prompt) : item.prompt}</p>
       {itemStale(item) || item._stale ? <p className="mt-2 text-sm" data-testid="bank-item-stale">{tr("来源可能已变更，仍可练习。", "The source may have changed; you can still practise.")}</p> : null}
       <p className="mt-1 text-xs text-ink-soft">{item.attribution || tr("按公开资料整理", "Compiled from public information")}</p>
@@ -208,6 +219,9 @@ export default function BankPage() {
   const [err, setErr] = useState("");
   const [items, setItems] = useState(null);
   const [loading, setLoading] = useState(false);
+  const prog = usePathProgress();
+  const pathLinks = index?.pathLinks || pathLinksFromPaths();
+  const pathStepBank = index?.pathStepBank || pathStepBankFromPaths();
 
   useEffect(() => { document.title = en ? "Problem bank · prototype" : "题库 · 原型"; }, [en]);
   useEffect(() => {
@@ -282,14 +296,15 @@ export default function BankPage() {
       )}
       <section className="mt-8" data-testid="bank-paths">
         <h2 className="text-xl font-medium tracking-tight">{tr("学习路径", "Learning paths")}</h2>
-        <p className="mt-2 max-w-2xl text-base leading-7 text-ink-soft">{tr("把拆解、诊断、接线和维修关卡串成 3 到 5 步的短路径。说明是自己写的。这是简化仿真，不是实物课。", "Short 3-to-5-step paths that chain a teardown, a diagnosis or wiring task, and a repair level. The notes are original. This is a simplified simulation, not a lesson on a real device.")}</p>
-        <ul className="mt-3 grid gap-3 sm:grid-cols-3">
+        <p className="mt-2 max-w-2xl text-base leading-7 text-ink-soft">{tr("把拆解、诊断、接线和维修关卡串成 3 到 5 步的短路径。进度只存在这台浏览器里。说明是自己写的。这是简化仿真，不是实物课。", "Short 3-to-5-step paths that chain a teardown, a diagnosis or wiring task, and a repair level. Progress stays in this browser only. The notes are original. This is a simplified simulation, not a lesson on a real device.")}</p>
+        <ul className="mt-3 grid gap-3 sm:grid-cols-2">
           {PATHS.map((pa) => (
-            <li key={pa.id}>
-              <button type="button" className={`flex min-h-11 w-full flex-col items-start border px-4 py-3 text-left text-sm ${pathId === pa.id ? "border-ink bg-paper-2" : "border-line bg-paper-2/60"}`} onClick={() => setSel("", "", "", pa.id)} data-testid={`bank-path-${pa.id}`} aria-pressed={pathId === pa.id}>
+            <li key={pa.id} className={`border px-4 py-3 ${pathId === pa.id ? "border-ink bg-paper-2" : "border-line bg-paper-2/60"}`}>
+              <button type="button" className="flex min-h-11 w-full flex-col items-start text-left text-sm" onClick={() => setSel("", "", "", pa.id)} data-testid={`bank-path-${pa.id}`} aria-pressed={pathId === pa.id}>
                 <span className="font-medium">{en ? pa.titleEn : pa.title}</span>
                 <span className="mt-1 text-xs text-ink-soft">{tr(`${pa.steps.length} 步`, `${pa.steps.length} steps`)}</span>
               </button>
+              <PathCardControls path={pa} lang={lang} prog={prog} />
             </li>
           ))}
         </ul>
@@ -298,11 +313,18 @@ export default function BankPage() {
         <section className="mt-6 border border-line bg-paper-2 p-5" data-testid="bank-path-detail" data-path={currentPath.id} data-count={currentPath.steps.length}>
           <h2 className="text-lg font-medium">{en ? currentPath.titleEn : currentPath.title}</h2>
           <p className="mt-2 text-sm leading-7 text-ink-soft">{en ? currentPath.summaryEn : currentPath.summary}</p>
+          <PathProgressBar done={pathStatsSafe(currentPath, prog).done} total={currentPath.steps.length} testid="bank-path-detail-progress" label={pathProgressLabel(pathStatsSafe(currentPath, prog).done, currentPath.steps.length, en)} />
+          <div className="mt-2 flex flex-wrap gap-2">
+            <Link className="inline-flex min-h-11 items-center border border-ink px-3 text-sm hover:bg-ink hover:text-paper-2" to={resumeHrefSafe(currentPath, prog)} data-testid="bank-path-detail-resume">{tr("继续学习", "Resume")}</Link>
+            <PathResetButton pathId={currentPath.id} lang={lang} testid="bank-path-detail-reset" />
+          </div>
           <ol className="mt-3 list-decimal space-y-3 pl-6">
             {currentPath.steps.map((st, i) => (
-              <li key={currentPath.id + "-" + i} data-testid={`bank-path-step-${i}`} data-kind={st.kind}>
+              <li key={currentPath.id + "-" + i} data-testid={`bank-path-step-${i}`} data-kind={st.kind} data-done={pathStepDone(currentPath, prog, i) ? "1" : "0"}>
                 <Link className="underline" to={pathStepHref(st, currentPath.id)} data-testid={`bank-path-link-${i}`}>{en ? (st.titleEn || st.title) : st.title}</Link>
                 <p className="mt-1 text-sm text-ink-soft">{en ? st.noteEn : st.note}</p>
+                <StepRelatedItems items={(pathStepBank[currentPath.id] || [])[i] || []} currentId={st.kind === "bank" ? st.id : ""} lang={lang} pathId={currentPath.id} testid={`bank-path-related-${i}`} />
+                <StepDoneButton pathId={currentPath.id} index={i} lang={lang} prog={prog} />
               </li>
             ))}
           </ol>
@@ -315,18 +337,26 @@ export default function BankPage() {
           {items && !loading && (
             <ul className="mt-3 divide-y divide-line border border-line" data-testid="bank-list-ready" data-count={items.length}>
               {items.map((it) => (
-                <li key={it.id}>
+                <li key={it.id} className="px-0">
                   <button type="button" className={`flex min-h-11 w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm ${id === it.id ? "bg-paper-2" : ""}`} onClick={() => setSel(mode, diff, it.id)} data-testid={`bank-item-${it.id}`} aria-pressed={id === it.id}>
-                    <span>{en ? (it.titleEn || it.title) : it.title}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block">{en ? (it.titleEn || it.title) : it.title}</span>
+                      {pathLinks[it.id] && <span className="mt-0.5 block text-xs text-ink-soft" data-testid={`bank-item-path-flag-${it.id}`}>{tr("出现在学习路径中", "On a learning path")}</span>}
+                    </span>
                     {(it._stale || itemStale(it)) && <span className="shrink-0 text-xs text-ink-soft">{tr("可能已变更", "May have changed")}</span>}
                   </button>
+                  {pathLinks[it.id] && (
+                    <div className="px-3 pb-2">
+                      <ItemPathLinks itemId={it.id} pathLinks={pathLinks} lang={lang} />
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
           )}
         </section>
       )}
-      {current && <Practice item={current} lang={lang} pathId={pathId} />}
+      {current && <Practice item={current} lang={lang} pathId={pathId} pathLinks={pathLinks} />}
     </div>
   );
 }
