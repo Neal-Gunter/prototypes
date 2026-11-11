@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-11T02:24:47.662Z",
+  "generatedAt": "2026-11-11T03:01:43.002Z",
   "ok": true,
   "errors": [],
   "stale": [
@@ -37,7 +37,7 @@
   },
   "total": 50,
   "index": {
-    "generatedAt": "2026-11-11T02:24:47.662Z",
+    "generatedAt": "2026-11-11T03:01:43.002Z",
     "modes": {
       "firmware": {
         "intro": {
