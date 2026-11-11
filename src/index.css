@@ -79,8 +79,11 @@ body {
   box-shadow: var(--shadow-soft);
 }
 
-.skip-link:focus {
+.skip-link:focus,
+.skip-link:focus-visible {
   transform: none;
+  /* 覆盖默认软阴影，否则会把 :focus-visible 的外环挤掉；深色下软阴影几乎是深蓝，环对比度不够。 */
+  box-shadow: 0 0 0 4px var(--color-ink);
 }
 
 .hatch {
