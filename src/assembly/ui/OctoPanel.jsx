@@ -274,8 +274,8 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
       {built && snap && <>
         <fieldset data-testid="octo-power">
           <legend className="font-medium">通电状态</legend>
-          {variant === "v10" && <p className="text-emerald-800" data-testid="octo-v10-onboard">电源：1S {LIPO.mah} mAh LiPo 装在机身上（没有墙插、没有 USB 线；USB‑C 只在充电时插）。{snap.pBatAvg ? `平均耗电 ${snap.pBatAvg.toFixed(2)} W → 满电约 ${(LIPO.wh / snap.pBatAvg).toFixed(1)} h（估算，按现在这段动作的平均功率）` : ""}</p>}
-          <p className={snap.espOn ? "text-emerald-700" : "text-red-700"}>{variant === "v10" ? "QT Py ESP32‑S3" : "ESP32"}：{snap.espOn ? `运行中（启动 ${snap.boots} 次）` : "没在运行"}{snap.halted ? ` · 固件停在：${snap.halted}` : ""}</p>
+          {variant === "v10" && <p className="rounded-lg bg-[#E8F1FB] px-2 py-1 text-brand" data-testid="octo-v10-onboard">电源：1S {LIPO.mah} mAh LiPo 装在机身上（没有墙插、没有 USB 线；USB‑C 只在充电时插）。{snap.pBatAvg ? `平均耗电 ${snap.pBatAvg.toFixed(2)} W → 满电约 ${(LIPO.wh / snap.pBatAvg).toFixed(1)} h（估算，按现在这段动作的平均功率）` : ""}</p>}
+          <p className={snap.espOn ? "rounded-full bg-[#E8F1FB] px-2 py-0.5 text-brand" : "rounded-full bg-[#FDECEC] px-2 py-0.5 text-[#A11D14]"}>{variant === "v10" ? "QT Py ESP32‑S3" : "ESP32"}：{snap.espOn ? `运行中（启动 ${snap.boots} 次）` : "没在运行"}{snap.halted ? ` · 固件停在：${snap.halted}` : ""}</p>
           <table className="mt-1 w-full font-mono text-[11px]"><tbody>
             <tr><td>电池</td><td>{fx(R.vbat, 2)} V</td><td>舵机 V+</td><td>{fx(R.vservo, 2)} V</td></tr>
             <tr><td>{variant === "v10" ? "QT Py BAT" : "ESP32 5V"}</td><td>{fx(R.espIn, 2)} V</td><td>3V3</td><td>{fx(R.v33, 2)} V</td></tr>
@@ -284,7 +284,7 @@ export default function OctoPanel({ ready, busy, clear, run, setDemo, onExport }
           </tbody></table>
           <p className="text-ink-soft">电流、电压是估算模型（{variant === "v10" ? `${V10_EST.current}；${V10_EST.qtpy}` : EST.current}）</p>
           <ul className="mt-1 flex flex-col gap-0.5" data-testid="octo-checks">
-            {[...errs, ...warns, ...snap.checks.filter((c) => c.ok)].slice(0, 14).map((c, i) => <li key={i} className={c.ok ? "text-emerald-700" : c.level === "err" ? "text-red-700" : "text-amber-700"}>{c.ok ? "✓" : c.level === "err" ? "✗" : "!"} {c.zh} <span className="text-ink-soft">（{c.md}）</span></li>)}
+            {[...errs, ...warns, ...snap.checks.filter((c) => c.ok)].slice(0, 14).map((c, i) => <li key={i} className={c.ok ? "rounded-lg bg-[#E8F1FB] px-2 py-0.5 text-brand" : c.level === "err" ? "rounded-lg bg-[#FDECEC] px-2 py-0.5 text-[#A11D14]" : "rounded-lg bg-[#F3E6C8] px-2 py-0.5 text-[#5A3B00]"}>{c.ok ? "✓" : c.level === "err" ? "✗" : "!"} {c.zh} <span className="text-ink-soft">（{c.md}）</span></li>)}
           </ul>
         </fieldset>
         {!noBody && <fieldset className="flex flex-col gap-1" data-testid="octo-controls">

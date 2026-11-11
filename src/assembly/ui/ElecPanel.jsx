@@ -55,9 +55,9 @@ export default function ElecPanel({ probes, setProbes, tool, setTool }) {
         <p className="font-medium">电源</p>
         {!boards.length && <p className="text-xs text-ink-soft">桌面上还没有开发板。先点上面的“电路练习”，或从左侧放一块 Pico。</p>}
         {boards.map((b) => (
-          <button key={b.uid} type="button" onClick={() => setBoard(b.uid)} className={`mt-1 flex w-full items-center justify-between border px-2 py-1 text-left text-xs ${cur?.uid === b.uid ? "border-ink" : "border-line"} bg-paper-2`} data-testid={`board-${b.ref}`}>
+          <button key={b.uid} type="button" onClick={() => setBoard(b.uid)} className={`mt-1 flex w-full items-center justify-between rounded-lg border px-2 py-1 text-left text-xs ${cur?.uid === b.uid ? "border-ink" : "border-line/60"} bg-paper-2`} data-testid={`board-${b.ref}`}>
             <span>{b.ref} · {engine.parts.get(b.uid)?.def.name_zh || b.uid}</span>
-            <span className={b.powered ? "text-emerald-700" : "text-ink-soft"} data-testid="power-state">{b.powered ? `已通电（${b.via || "USB"}）` : "未通电"}</span>
+            <span className={b.powered ? "rounded-full bg-[#E8F1FB] px-2 py-0.5 text-brand" : "text-ink-soft"} data-testid="power-state">{b.powered ? `已通电（${b.via || "USB"}）` : "未通电"}</span>
           </button>
         ))}
         {boards.some((b) => b.powered) && (
@@ -71,19 +71,19 @@ export default function ElecPanel({ probes, setProbes, tool, setTool }) {
       {cur && (
         <section>
           <p className="font-medium">固件（{cur.ref}）</p>
-          <textarea aria-label="固件代码" value={code} onChange={(e) => setCode(e.target.value)} spellCheck={false} rows={9} placeholder="点“按接线自动生成”，或者自己写 Arduino 风格代码" className="mt-1 w-full border border-line bg-paper-2 p-1 font-mono text-[11px] leading-4" data-testid="fw-code" />
+          <textarea aria-label="固件代码" value={code} onChange={(e) => setCode(e.target.value)} spellCheck={false} rows={9} placeholder="点“按接线自动生成”，或者自己写 Arduino 风格代码" className="mt-1 w-full rounded-lg border border-line bg-paper-2 p-1 font-mono text-[11px] leading-4" data-testid="fw-code" />
           <div className="mt-1 flex flex-wrap gap-1 text-xs">
-            <button type="button" onClick={auto} className="min-h-8 border border-line bg-paper-2 px-2" data-testid="fw-auto">按接线自动生成</button>
-            <button type="button" onClick={upload} className="min-h-8 border border-ink bg-ink px-2 text-paper-2" data-testid="fw-upload">上传并运行</button>
-            <button type="button" onClick={() => elec.stop(cur.uid)} className="min-h-8 border border-line bg-paper-2 px-2">停止</button>
-            <button type="button" onClick={download} className="min-h-8 border border-line bg-paper-2 px-2" data-testid="fw-download">下载 .ino</button>
+            <button type="button" onClick={auto} className="min-h-8 rounded-lg border border-line bg-paper-2 px-2" data-testid="fw-auto">按接线自动生成</button>
+            <button type="button" onClick={upload} className="min-h-8 rounded-lg border border-ink bg-ink px-2 text-paper-2" data-testid="fw-upload">上传并运行</button>
+            <button type="button" onClick={() => elec.stop(cur.uid)} className="min-h-8 rounded-lg border border-line bg-paper-2 px-2">停止</button>
+            <button type="button" onClick={download} className="min-h-8 rounded-lg border border-line bg-paper-2 px-2" data-testid="fw-download">下载 .ino</button>
           </div>
           <p className="mt-1 text-xs" data-testid="fw-status">
-            {st?.error ? <span className="text-red-700">{st.error.line ? `第 ${st.error.line} 行：` : ""}{st.error.msg}</span>
-              : st?.running ? <span className="text-emerald-700">运行中</span>
+            {st?.error ? <span className="rounded-full bg-[#FDECEC] px-2 py-0.5 text-[#A11D14]">{st.error.line ? `第 ${st.error.line} 行：` : ""}{st.error.msg}</span>
+              : st?.running ? <span className="rounded-full bg-[#E8F1FB] px-2 py-0.5 text-brand">运行中</span>
               : st?.unpowered ? <span className="text-ink-soft">已上传，等通电（插上 USB 后从头运行）</span>
               : st?.done ? "程序结束" : <span className="text-ink-soft">还没上传</span>}
-            {st?.warn && <span className="ml-1 text-amber-700">{st.warn}</span>}
+            {st?.warn && <span className="ml-1 rounded-full bg-[#F3E6C8] px-2 py-0.5 text-[#5A3B00]">{st.warn}</span>}
           </p>
           <pre className="mt-1 h-24 overflow-y-auto rounded-lg border border-line bg-ink p-2 font-mono text-[11px] leading-4 text-paper-2" role="region" tabIndex={0} aria-label="串口监视器（可滚动）" data-testid="serial">{(st?.serial || "").slice(-1500) || "（串口监视器）"}</pre>
         </section>
