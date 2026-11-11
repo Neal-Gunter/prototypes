@@ -1,4 +1,4 @@
-// v38–v42：题库练习页。先加载 index.json，再按 mode × difficulty 按需加载。v40 增加学习路径，列表在加载完成后才标 ready。v42 增加路径进度、题目与路径互链。早期原型，简化仿真。
+// v38–v45：题库练习页。先加载 index.json，再按 mode × difficulty 按需加载。v40 增加学习路径，列表在加载完成后才标 ready。v42 增加路径进度、题目与路径互链。v45 在路径末尾加测验和自学记录。早期原型，简化仿真。
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { containerClass } from "../container";
@@ -9,6 +9,7 @@ import { PATHS, findPath, pathStepHref, stepIndexForItem, stepKey } from "../ban
 import { pathLinksFromPaths, pathStepBankFromPaths } from "../bank/pathMap.js";
 import { markItemDone, pathStats, resumeHref, isStepDone } from "../bank/progress.js";
 import { usePathProgress, PathProgressBar, pathProgressLabel, PathCardControls, PathResetButton, StepDoneButton, ItemPathLinks, StepRelatedItems } from "../bank/PathChrome.jsx";
+import { PathQuiz, PathRecordBar } from "../bank/PathQuiz.jsx";
 
 const MODE_LABEL = {
   firmware: ["固件时序", "Firmware timing"],
@@ -328,6 +329,8 @@ export default function BankPage() {
               </li>
             ))}
           </ol>
+          <PathQuiz path={currentPath} lang={lang} prog={prog} />
+          <PathRecordBar path={currentPath} lang={lang} prog={prog} />
         </section>
       )}
       {mode && diff && (

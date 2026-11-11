@@ -1,9 +1,11 @@
-// v42：学习路径每一步的完成状态，存在本机 localStorage。键带版本号；坏数据就当成空白。早期原型。
+// v42：学习路径每一步的完成状态，存在本机 localStorage。键带版本号；坏数据就当成空白。
+// v45：同一条记录里保存测验成绩和自学记录上的姓名（仍只留在本机，不外传）。早期原型。
 import { PATHS, findPath, pathStepHref, stepKey } from "./paths.js";
 
 export const PATH_PROGRESS_KEY = "wb-path-progress-v1";
 export const PATH_PROGRESS_VERSION = 1;
 export const PATH_PROGRESS_EVENT = "wb-path-progress";
+export const PATH_NAME_MAX = 80;
 
 export function emptyPathProgress() {
   return { v: PATH_PROGRESS_VERSION, paths: {} };
@@ -46,6 +48,38 @@ function sanitizeDone(raw) {
   return done;
 }
 
+export function sanitizeName(raw) {
+  if (typeof raw !== "string") return "";
+  const s = raw.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
+  return s.slice(0, PATH_NAME_MAX);
+}
+
+function sanitizeQuiz(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const answers = {};
+  if (raw.answers && typeof raw.answers === "object" && !Array.isArray(raw.answers)) {
+    for (const [k, v] of Object.entries(raw.answers)) {
+      if (typeof k === "string" && k && typeof v === "string" && v) answers[k] = v.slice(0, 32);
+    }
+  }
+  const correct = Math.max(0, Math.floor(Number(raw.correct) || 0));
+  const total = Math.max(0, Math.floor(Number(raw.total) || 0));
+  const at = typeof raw.at === "string" ? raw.at.slice(0, 40) : "";
+  if (!Object.keys(answers).length && !total && !at) return null;
+  const out = { answers, correct, total };
+  if (at) out.at = at;
+  return out;
+}
+
+function packPathRec(raw) {
+  const rec = { done: sanitizeDone(raw && raw.done) };
+  const quiz = sanitizeQuiz(raw && raw.quiz);
+  if (quiz) rec.quiz = quiz;
+  const name = sanitizeName(raw && raw.name);
+  if (name) rec.name = name;
+  return rec;
+}
+
 export function parsePathProgress(raw) {
   if (raw == null || raw === "") return emptyPathProgress();
   let data = raw;
@@ -62,7 +96,7 @@ export function parsePathProgress(raw) {
   const paths = {};
   for (const [id, rec] of Object.entries(data.paths)) {
     if (!id || !rec || typeof rec !== "object" || Array.isArray(rec)) continue;
-    paths[id] = { done: sanitizeDone(rec.done) };
+    paths[id] = packPathRec(rec);
   }
   return { v: PATH_PROGRESS_VERSION, paths };
 }
@@ -103,10 +137,10 @@ export function isStepDone(prog, pathId, key) {
 export function setStepDone(pathId, key, done = true, storage = defaultStorage()) {
   if (!pathId || !key) return loadPathProgress(storage);
   const prog = loadPathProgress(storage);
-  const rec = { ...(prog.paths[pathId]?.done || {}) };
-  if (done) rec[key] = true;
-  else delete rec[key];
-  prog.paths[pathId] = { done: rec };
+  const rec = packPathRec(prog.paths[pathId] || {});
+  if (done) rec.done[key] = true;
+  else delete rec.done[key];
+  prog.paths[pathId] = rec;
   return savePathProgress(prog, storage);
 }
 
@@ -117,23 +151,27 @@ export function resetPathProgress(pathId, storage = defaultStorage()) {
   return savePathProgress(prog, storage);
 }
 
-export function markItemDone(itemId, storage = defaultStorage()) {
-  if (!itemId) return loadPathProgress(storage);
+function markMatchingSteps(match, storage) {
   let prog = loadPathProgress(storage);
   let changed = false;
   for (const path of PATHS) {
     path.steps.forEach((st, i) => {
-      if (st.kind === "bank" && st.id === itemId) {
-        const key = stepKey(path.id, st, i);
-        if (!prog.paths[path.id]) prog.paths[path.id] = { done: {} };
-        if (!prog.paths[path.id].done[key]) {
-          prog.paths[path.id].done[key] = true;
-          changed = true;
-        }
+      if (!match(st)) return;
+      const key = stepKey(path.id, st, i);
+      if (!prog.paths[path.id]) prog.paths[path.id] = packPathRec({});
+      if (!prog.paths[path.id].done) prog.paths[path.id].done = {};
+      if (!prog.paths[path.id].done[key]) {
+        prog.paths[path.id].done[key] = true;
+        changed = true;
       }
     });
   }
   return changed ? savePathProgress(prog, storage) : prog;
+}
+
+export function markItemDone(itemId, storage = defaultStorage()) {
+  if (!itemId) return loadPathProgress(storage);
+  return markMatchingSteps((st) => st.kind === "bank" && st.id === itemId, storage);
 }
 
 export function markPathStep(pathId, index, done = true, storage = defaultStorage()) {
@@ -144,21 +182,37 @@ export function markPathStep(pathId, index, done = true, storage = defaultStorag
 
 export function markRepairSceneDone(sceneId, storage = defaultStorage()) {
   if (!sceneId) return loadPathProgress(storage);
-  let prog = loadPathProgress(storage);
-  let changed = false;
-  for (const path of PATHS) {
-    path.steps.forEach((st, i) => {
-      if (st.kind === "repair" && st.scene === sceneId) {
-        const key = stepKey(path.id, st, i);
-        if (!prog.paths[path.id]) prog.paths[path.id] = { done: {} };
-        if (!prog.paths[path.id].done[key]) {
-          prog.paths[path.id].done[key] = true;
-          changed = true;
-        }
-      }
-    });
-  }
-  return changed ? savePathProgress(prog, storage) : prog;
+  return markMatchingSteps((st) => st.kind === "repair" && st.scene === sceneId, storage);
+}
+
+export function pathQuizResult(prog, pathId) {
+  return prog?.paths?.[pathId]?.quiz || null;
+}
+
+export function pathRecordName(prog, pathId) {
+  return sanitizeName(prog?.paths?.[pathId]?.name);
+}
+
+export function setPathQuiz(pathId, quiz, storage = defaultStorage()) {
+  if (!pathId) return loadPathProgress(storage);
+  const prog = loadPathProgress(storage);
+  const rec = packPathRec(prog.paths[pathId] || {});
+  const clean = sanitizeQuiz(quiz);
+  if (clean) rec.quiz = clean;
+  else delete rec.quiz;
+  prog.paths[pathId] = rec;
+  return savePathProgress(prog, storage);
+}
+
+export function setPathRecordName(pathId, name, storage = defaultStorage()) {
+  if (!pathId) return loadPathProgress(storage);
+  const prog = loadPathProgress(storage);
+  const rec = packPathRec(prog.paths[pathId] || {});
+  const clean = sanitizeName(name);
+  if (clean) rec.name = clean;
+  else delete rec.name;
+  prog.paths[pathId] = rec;
+  return savePathProgress(prog, storage);
 }
 
 export function resumeHref(path, prog) {

@@ -1,4 +1,4 @@
-// v38：题库管线 + 页面校验器单测（不开浏览器）。早期原型，简化仿真。
+// v38：题库管线 + 页面校验器单测（不开浏览器）。v45 增加路径测验和自学记录检查。早期原型，简化仿真。
 import { gzipSync } from "node:zlib";
 import { readFileSync, mkdirSync, rmSync, cpSync, existsSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -403,7 +403,86 @@ ok(!/WebAssembly|wasm/.test(readFileSync(new URL("../src/validators/c-lite.js", 
   const st2 = mem();
   st2.setItem(prog.PATH_PROGRESS_KEY, "not-json");
   ok(prog.pathStats(fresh, prog.loadPathProgress(st2)).done === 0, "存储里的坏数据不会让进度崩溃");
+
+  // v45：测验成绩和姓名与进度存在同一条版本化记录里；标记步骤时不得冲掉已有成绩。
+  const { PATH_QUIZZES, quizFor, gradeQuiz, quizCoverage } = await import("../src/bank/pathQuiz.js");
+  const { recordHtml, formatQuizScore, RECORD_PAPER, RECORD_INK } = await import("../src/bank/recordSheet.js");
+  const CJK = /[\u3400-\u9fff\uff00-\uffef\u3000-\u303f]/;
+  const cov = quizCoverage(PATHS, PATH_QUIZZES);
+  ok(cov.every((x) => x.n >= 3 && x.n <= 5), "每条路径都有 3–5 道测验题", JSON.stringify(cov));
+  ok(PATHS.every((pa) => quizFor(pa.id)), "每条路径都能取到测验");
+  for (const pa of PATHS) {
+    const quiz = quizFor(pa.id);
+    const ids = new Set();
+    for (const q of quiz.questions) {
+      ok(q.id && !ids.has(q.id), `${pa.id} 题号唯一 ${q.id}`);
+      ids.add(q.id);
+      ok(q.prompt?.zh && q.prompt?.en, `${pa.id}/${q.id} 有中英文题干`);
+      ok(!CJK.test(q.prompt.en), `${pa.id}/${q.id} 英文题干无汉字`);
+      ok(Array.isArray(q.options) && q.options.length >= 2, `${pa.id}/${q.id} 至少两个选项`);
+      ok(q.options.some((o) => o.id === q.correct), `${pa.id}/${q.id} 正解存在`);
+      for (const o of q.options) {
+        ok(o.id && o.zh && o.en && o.explain?.zh && o.explain?.en, `${pa.id}/${q.id}/${o.id} 选项和说明完整`);
+        ok(!CJK.test(o.en) && !CJK.test(o.explain.en), `${pa.id}/${q.id}/${o.id} 英文无汉字`);
+      }
+    }
+    const allCorrect = Object.fromEntries(quiz.questions.map((q) => [q.id, q.correct]));
+    const g = gradeQuiz(quiz, allCorrect);
+    ok(g.correct === g.total && g.total === quiz.questions.length, `${pa.id} 全对计分 ${g.correct}/${g.total}`);
+    const allWrong = Object.fromEntries(quiz.questions.map((q) => [q.id, (q.options.find((o) => o.id !== q.correct) || q.options[0]).id]));
+    const w = gradeQuiz(quiz, allWrong);
+    ok(w.correct === 0 && w.total === quiz.questions.length, `${pa.id} 全错计分为 0`);
+  }
+
+  const st3 = mem();
+  let p3 = prog.markPathStep("path-night-light", 0, true, st3);
+  const night = findPath("path-night-light");
+  const nightQuiz = quizFor("path-night-light");
+  const first = nightQuiz.questions[0];
+  p3 = prog.setPathQuiz("path-night-light", { answers: { [first.id]: first.correct }, correct: 1, total: nightQuiz.questions.length, at: "2026-11-11T04:00:00.000Z" }, st3);
+  p3 = prog.setPathRecordName("path-night-light", "  李七  ", st3);
+  ok(p3.paths["path-night-light"].quiz?.correct === 1, "测验成绩写入同一条进度");
+  ok(p3.paths["path-night-light"].name === "李七", "姓名去空白后写入进度");
+  p3 = prog.markPathStep("path-night-light", 1, true, st3);
+  ok(p3.paths["path-night-light"].quiz?.correct === 1 && p3.paths["path-night-light"].name === "李七", "再标记步骤时保留测验和姓名");
+  const dirtyQuiz = prog.parsePathProgress({ v: 1, paths: { "path-night-light": { done: { ok: true }, quiz: "nope", name: ["x"], extra: 1 } } });
+  ok(dirtyQuiz.paths["path-night-light"].done.ok && !dirtyQuiz.paths["path-night-light"].quiz && !dirtyQuiz.paths["path-night-light"].name, "坏的测验/姓名字段被丢掉，完成标记仍在");
+  ok(prog.sanitizeName("a".repeat(200)).length === prog.PATH_NAME_MAX, "姓名有长度上限");
+  p3 = prog.resetPathProgress("path-night-light", st3);
+  ok(!p3.paths["path-night-light"], "重置路径时测验和姓名一并清除");
+
+  const filled = {
+    v: 1,
+    paths: {
+      "path-night-light": {
+        done: Object.fromEntries(night.steps.map((st, i) => [stepKey("path-night-light", st, i), true])),
+        quiz: { answers: { [first.id]: first.correct }, correct: 3, total: 4, at: "2026-11-11T04:00:00.000Z" },
+        name: "Alex",
+      },
+    },
+  };
+  const recProg = prog.parsePathProgress(filled);
+  for (const lang of ["zh", "en"]) {
+    const html = recordHtml({ path: night, lang, name: "Alex", prog: recProg, quiz: recProg.paths["path-night-light"].quiz, now: new Date("2026-11-11T04:00:00.000Z") });
+    ok(html.includes("data-record=\"1\""), `${lang} 自学记录带标记`);
+    ok(html.includes("color-scheme:light") && html.includes(RECORD_PAPER) && html.includes(RECORD_INK), `${lang} 自学记录固定浅色`);
+    ok(/counter\(page\)/.test(html) && /counter\(pages\)/.test(html), `${lang} 自学记录有页码`);
+    ok(/break-inside:avoid/.test(html), `${lang} 自学记录主体避免中部分页`);
+    ok(!/size:\s*(A4|Letter|auto)/i.test(html), `${lang} 不写死纸张尺寸，以便 A4 和 Letter`);
+    if (lang === "en") {
+      ok(/Self-study record/.test(html) && /not an official certificate/i.test(html), "英文自学记录标明非正式证书");
+      const body = html.replace(/<style[\s\S]*?<\/style>/, "").replace(/<[^>]+>/g, " ");
+      ok(!CJK.test(body), "英文自学记录正文无汉字");
+    } else {
+      ok(/自学记录/.test(html) && /不是正式证书/.test(html), "中文自学记录标明非正式证书");
+    }
+    ok(html.includes("Alex") && html.includes("2026-11-11"), `${lang} 含姓名和日期`);
+    ok(html.includes(formatQuizScore(recProg.paths["path-night-light"].quiz, lang === "en")), `${lang} 含测验成绩`);
+    ok(html.includes(lang === "en" ? night.titleEn : night.title), `${lang} 含路径标题`);
+    for (const st of night.steps) ok(html.includes(lang === "en" ? st.titleEn : st.title), `${lang} 含步骤 ${st.title}`);
+  }
 }
+
 
 console.log(`bank-test ${pass} PASS / ${fail} FAIL`);
 process.exit(fail ? 1 : 0);

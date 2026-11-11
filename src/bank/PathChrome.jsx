@@ -1,4 +1,5 @@
 // v42：学习路径进度条、继续/重置，以及题目与路径步骤的互相链接。保持 v41 的纸、墨语言。
+// v45：卡片上增加测验与自学记录入口；重置时一并清掉测验成绩和姓名。
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { findPath, stepKey } from "./paths.js";
@@ -110,6 +111,13 @@ export function PathCardControls({ path, lang, prog }) {
         >
           {st.done === 0 ? (en ? "Start" : "开始") : st.complete ? (en ? "Review" : "再看一遍") : (en ? "Resume" : "继续学习")}
         </Link>
+        <Link
+          className="inline-flex min-h-11 items-center border border-line px-3 text-sm"
+          to={"/bank?path=" + encodeURIComponent(path.id) + "#path-quiz"}
+          data-testid={`bank-path-quiz-link-${path.id}`}
+        >
+          {en ? "Quiz & record" : "测验与记录"}
+        </Link>
       </div>
     </div>
   );
@@ -119,7 +127,7 @@ export function PathResetButton({ pathId, lang, testid }) {
   const en = lang === "en";
   const onReset = () => {
     const ok = typeof window !== "undefined" && window.confirm(
-      en ? "Clear the progress for this learning path? This only affects this browser." : "清除这条学习路径的进度？只影响这台浏览器。"
+      en ? "Clear the progress, quiz result and saved name for this learning path? This only affects this browser." : "清除这条学习路径的进度、测验成绩和已保存的姓名？只影响这台浏览器。"
     );
     if (ok) resetPathProgress(pathId);
   };
