@@ -8,6 +8,7 @@
 // v38：加题库目录、黄标、固件时序练习、模板代码检查、诊断跳转维修关卡、致谢页 v38。
 // v39：题库扩到 50 题，演示新诊断题、CR2032 钥匙扣灯、打印目录页码、致谢页 v39。
 // v40：演示学习路径、帮助页「本版更新」、致谢页 v40；题库列表等 bank-list-ready。
+// v41：演示装配台新台面、示波器波形、题库/说明页字号，以及致谢页 v41 许可说明。
 // 用法：BASE=http://localhost:4173 OUT=/workspace/proto-site/v33 node e2e/demo-record.mjs  然后用 ffmpeg 转 mp4
 import { chromium } from "playwright";
 import fs from "node:fs";
@@ -59,7 +60,7 @@ await step("题库：学习路径", async () => {
 await step("使用说明：本版更新", async () => {
   await p.goto(BASE + "/help#whats-new"); await T("help-whats-new").waitFor({ timeout: 20000 }); await w(1500);
   await T("help-whats-new").scrollIntoViewIfNeeded(); await w(2000); await scroll(250, 6, 350);
-}, "v40：使用说明增加「本版更新」，用中英文汇总 v32 到 v40");
+}, "v41：使用说明「本版更新」汇总到 v41，说明按开源 frontend-design skill 润色了图形");
 await step("拆解：设备列表 + 搜索", async () => {
   await p.goto(BASE + "/teardown/"); await T("teardown-page").waitFor({ timeout: 30000 }); await w(1500);
   await T("td-search").pressSequentially("tp4056", { delay: 120 }); await w(1500); await T("td-search").fill(""); await w(800);
@@ -104,7 +105,20 @@ await step("装配台：3D 场景", async () => {
   await p.goto(BASE + "/assembly/?scene=electrics"); await w(9000);
   const cv = p.locator("canvas").first();
   if (await cv.count()) { const bb = await cv.boundingBox(); if (bb) { const cx = bb.x + bb.width / 2, cy = bb.y + bb.height / 2; await p.mouse.move(cx, cy); await p.mouse.down({ button: "left" }); for (let i = 0; i < 30; i++) { await p.mouse.move(cx + i * 8, cy + Math.sin(i / 5) * 20); await w(60); } await p.mouse.up(); await w(1500); await p.mouse.wheel(0, -400); await w(2000); } }
-}, "装配台：3D 物理场景，拖动零件、缩放视角");
+}, "v41：装配台台面换成带切割垫细格的木纹，灯光和阴影更软，导线颜色更接近 PVC");
+await step("装配台：示波器", async () => {
+  await T("tab-elec").click().catch(() => {});
+  const details = T("bench-scope-panel");
+  await details.waitFor({ timeout: 20000 });
+  await details.scrollIntoViewIfNeeded();
+  if ((await details.getAttribute("open")) == null) await details.locator("summary").first().click();
+  await w(400);
+  await T("bench-scope-open").click();
+  await T("bench-scope").waitFor({ timeout: 20000 });
+  await T("mscope").waitFor({ timeout: 20000 });
+  if (await T("mscope-capture").count()) await T("mscope-capture").click();
+  await w(4500);
+}, "v41：示波器改成更深的磷光屏、更细的刻度和略粗带一点辉光的波形；读数在纸色底上用过对比度的颜色");
 await step("装配台：键盘操作", async () => {
   await T("asm-a11y").focus(); await w(800);
   for (let i = 0; i < 3; i++) { await p.keyboard.press("ArrowRight"); await w(700); }
@@ -130,8 +144,12 @@ await step("致谢：v39", async () => {
 }, "v39：内容 hash 只算题面；Actions 默认离线；找空位不推出桌边并会试叠高；焦点环对比度至少 3:1；打印目录带页码");
 await step("致谢：v40", async () => {
   await p.goto(BASE + "/credits#v40-paths"); await w(1500);
-  await T("credits-v40").scrollIntoViewIfNeeded().catch(() => {}); await w(4000);
+  await T("credits-v40").scrollIntoViewIfNeeded().catch(() => {}); await w(2500);
 }, "v40：章节跨页时回填打印目录页码；题库列表等加载完成再检查；学习路径说明和使用说明「本版更新」都是自己写的");
+await step("致谢：v41", async () => {
+  await p.goto(BASE + "/credits#v41-ui"); await w(1500);
+  await T("credits-v41").scrollIntoViewIfNeeded().catch(() => {}); await w(4000);
+}, "v41：视觉参考是 Apache-2.0 的 frontend-design skill；规则用自己的话写下，没有把 skill 原文写进产品，也没有加新的网页字体");
 await step("工作台：固件编辑器", async () => {
   await p.goto(BASE + "/workbench/"); await T("code").waitFor({ timeout: 30000 }); await w(2500);
   await T("code").focus(); await w(800); await p.keyboard.press("Tab"); await w(1500);
