@@ -406,7 +406,7 @@ export default function ModelLabPage() {
   // ---------- 渲染 ----------
   const unbound = project ? project.modules.filter((m) => !fnOfMod.get(m.id)) : [];
   const ModRow = ({ m, fnId }) => (
-    <div data-mod={m.id} className={`flex items-center gap-1 px-1 ${hl.has(m.id) ? "bg-[#fff1d6]" : ""}`}>
+    <div data-mod={m.id} className={`flex items-center gap-1 px-1 ${hl.has(m.id) ? "bg-amber-50" : ""}`}>
       <input type="checkbox" aria-label={`选中 ${m.name}`} checked={selMods.has(m.id)} onChange={() => setSelMods((s) => { const t = new Set(s); t.has(m.id) ? t.delete(m.id) : t.add(m.id); return t; })} />
       <span className="inline-block h-3 w-3 shrink-0 border border-ink/30" style={{ background: m.color }} />
       <button className="min-w-0 flex-1 truncate text-left" onClick={() => { setSelMods(new Set([m.id])); if (!fnId) setSelFn(null); }} title={m.name}>{m.name}</button>
@@ -583,7 +583,7 @@ export default function ModelLabPage() {
             <ul className="mt-1 max-h-[62vh] overflow-auto">
               {project.functions.map((f) => (
                 <li key={f.id} className="mt-1">
-                  <div data-fn={f.id} className={`flex items-center gap-1 px-1 ${selFn === f.id || hlFns.has(f.id) ? "bg-[#fff1d6]" : ""}`}>
+                  <div data-fn={f.id} className={`flex items-center gap-1 px-1 ${selFn === f.id || hlFns.has(f.id) ? "bg-amber-50" : ""}`}>
                     <span className="inline-block h-3 w-3 shrink-0" style={{ background: f.color }} />
                     <button className="min-w-0 flex-1 truncate text-left font-medium" onClick={() => selectFn(f.id)}>{f.name}</button>
                     <span className="text-xs text-ink-soft">{f.kind}</span>

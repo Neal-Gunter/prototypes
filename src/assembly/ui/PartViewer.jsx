@@ -75,10 +75,10 @@ export default function PartViewer({ id }) {
     <div className="relative" data-testid="part-viewer">
       <div className="aspect-square w-full border border-line bg-paper-2">
         <Canvas key={id} camera={{ position: cam, fov: 35, near: 0.01, far: 500 }} dpr={[1, 1.5]} frameloop="demand">
-          <color attach="background" args={[paper]} />
+          <color attach="background" args={[C.paper]} />
           <hemisphereLight args={["#f4efe6", "#6e5a45", 0.7]} />
-          <directionalLight position={[5, 8, 6]} intensity={1.15} />
-          <directionalLight position={[-4, 3, -2]} intensity={0.25} />
+          <directionalLight position={[5, 8, 6]} intensity={dark ? 0.85 : 1.15} />
+          <directionalLight position={[-4, 3, -2]} intensity={dark ? 0.16 : 0.25} />
           <Suspense fallback={null}>
             {def.kind === "glb" ? <Glb def={def} /> : <ProcMesh def={def} />}
           </Suspense>

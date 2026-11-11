@@ -115,11 +115,11 @@ export default function LabScene({ meshes, M, project, modOf, visible, hl, selMe
   const grid = lab && !project.sim?.fixBase ? Math.max(grid0, 160) : grid0; // 自由底座时桌面画大一点（物理地面 400 cm 宽），走出去也看得见
   return (
     <Canvas shadows={false} camera={{ fov: 40, position: [20, 20, 20] }} gl={{ preserveDrawingBuffer: true, antialias: true }} onPointerMissed={(e) => e.button === 0 && onPick(null, null, e)}>
-      <color attach="background" args={["#f6f4ef"]} />
+      <color attach="background" args={[C.paper]} />
       <hemisphereLight args={["#ffffff", "#8a8577", 1.4]} />
-      <directionalLight position={[30, 50, 20]} intensity={1.6} />
-      <gridHelper args={[grid, grid, "#b9b2a3", "#ddd7ca"]} position={[0, -0.002, 0]} />
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}><planeGeometry args={[grid, grid]} /><meshStandardMaterial color="#ebe6da" /></mesh>
+      <directionalLight position={[30, 50, 20]} intensity={dark ? 0.9 : 1.6} />
+      <gridHelper args={[grid, grid, C.inkSoft, C.line]} position={[0, -0.002, 0]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}><planeGeometry args={[grid, grid]} /><meshStandardMaterial color={C.paper2} /></mesh>
       {showCard && (
         <group position={[sizeCm.x / 2 + CARD[0] / 2 + 2, CARD[1] / 2, 0]}>
           <mesh><boxGeometry args={CARD} /><meshStandardMaterial color="#5a8fd8" transparent opacity={0.55} /></mesh>

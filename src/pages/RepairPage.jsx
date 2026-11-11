@@ -129,7 +129,7 @@ export default function RepairPage() {
         <aside className="space-y-1" data-testid="scenario-list">
           {all.map((s, i) => (
             <button key={s.id} type="button" onClick={() => setScenario(s.id)} data-testid={`sc-${s.id}`}
-              className={`block w-full border px-2 py-1.5 text-left text-sm ${s.id === sid ? "border-copper bg-[#fbf3ea]" : "border-line bg-paper-2 hover:border-copper"}`}>
+              className={`block w-full border px-2 py-1.5 text-left text-sm ${s.id === sid ? "border-copper bg-paper" : "border-line bg-paper-2 hover:border-copper"}`}>
               <div className="flex justify-between"><span>{s.custom ? "自制" : i + 1}. {s.title}</span><span className="text-xs text-ink-soft">{progress[s.id] ? "★".repeat(progress[s.id]) : ""}</span></div>
               <div className="text-xs text-ink-soft">难度 {STAR(s.stars || 1)} · {s.template === "bench" || s.board ? "自制板" : TPL_ZH[s.template]}</div>
             </button>
@@ -137,7 +137,7 @@ export default function RepairPage() {
           <h3 className="pt-2 text-sm font-medium">示波器关卡（v18，时域仿真）</h3>
           {SCOPE_SCENARIOS.map((s, i) => (
             <button key={s.id} type="button" onClick={() => setScenario(s.id)} data-testid={`scope-sc-${s.id}`}
-              className={`block w-full border px-2 py-1.5 text-left text-sm ${s.id === sid ? "border-copper bg-[#fbf3ea]" : "border-line bg-paper-2 hover:border-copper"}`}>
+              className={`block w-full border px-2 py-1.5 text-left text-sm ${s.id === sid ? "border-copper bg-paper" : "border-line bg-paper-2 hover:border-copper"}`}>
               <div className="flex justify-between"><span>S{i + 1}. {s.title}</span><span className="text-xs text-ink-soft">{progress[s.id] ? "★".repeat(progress[s.id]) : ""}</span></div>
               <div className="text-xs text-ink-soft">难度 {STAR(s.stars || 1)} · {TPL_ZH[s.template]}</div>
             </button>
@@ -255,7 +255,7 @@ export default function RepairPage() {
 
 function ReportCard({ r, onNext }) {
   return (
-    <section className={`border p-3 text-sm ${r.solved ? "border-copper bg-[#fbf3ea]" : "border-red-300 bg-red-50"}`} data-testid="report">
+    <section className={`border p-3 text-sm ${r.solved ? "border-copper bg-paper" : "border-red-300 bg-red-50"}`} data-testid="report">
       <h2 className="text-lg font-semibold">{r.solved ? `修好了！${"★".repeat(r.stars)}${"☆".repeat(3 - r.stars)}  ${r.total} 分` : "还没修好"}</h2>
       <ul className="my-1 text-xs">{r.checks?.map((c) => <li key={c.zh} className={c.ok ? "" : "text-red-700"}>{c.ok ? "✓" : "✗"} {c.zh}：{c.info}</li>)}{r.order === false && <li className="text-red-700">✗ 修理顺序不对</li>}</ul>
       {r.solved && <>
